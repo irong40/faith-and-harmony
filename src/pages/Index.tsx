@@ -1,45 +1,63 @@
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f9f6f1] to-[#f5f0e8] py-12">
-      <div className="max-w-5xl mx-auto px-8 font-serif text-gray-800">
-        {/* Header */}
-        <header className="text-center mb-16 animate-fade-in">
-          <h1 className="text-6xl font-bold mb-4 text-gray-900 tracking-tight leading-tight">
-            Faith & Harmony LLC
-          </h1>
-          <div className="w-24 h-1 bg-gradient-to-r from-amber-600 to-amber-400 mx-auto mb-6 rounded-full"></div>
-          <p className="text-2xl text-gray-600 italic font-light tracking-wide">
-            Where Innovation Meets Legacy
-          </p>
-        </header>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 font-sans text-gray-800">
+      <div className="max-w-6xl mx-auto px-8">
+        {/* Hero Section */}
+        <section className="py-20 text-center">
+          <div className="mb-8">
+            <h1 className="text-7xl font-bold mb-6 text-indigo-900 font-serif tracking-tight leading-tight">
+              Faith & Harmony LLC
+            </h1>
+            <div className="w-32 h-1 bg-gradient-to-r from-amber-500 to-yellow-400 mx-auto mb-8 rounded-full"></div>
+            <h2 className="text-5xl font-bold mb-6 text-indigo-800 font-serif">
+              Empowering Legacy, Automating Purpose
+            </h2>
+            <p className="text-2xl text-gray-700 mb-12 max-w-4xl mx-auto leading-relaxed">
+              From gospel music to government contracting, we fuse culture, technology, and automation to help our people win.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+              <button className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold text-lg rounded-full hover:from-indigo-700 hover:to-indigo-800 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+                Explore Our Services
+              </button>
+              <button className="px-10 py-4 bg-gradient-to-r from-amber-500 to-yellow-400 text-indigo-900 font-semibold text-lg rounded-full hover:from-amber-600 hover:to-yellow-500 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+                Book a Free Consultation
+              </button>
+            </div>
+          </div>
+        </section>
 
-        {/* About Us Section */}
-        <section className="mb-16 bg-white/60 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300">
-          <h2 className="text-4xl font-bold mb-6 text-gray-900 text-center">About Us</h2>
-          <p className="text-xl text-gray-700 leading-8 text-center max-w-4xl mx-auto font-light">
-            Faith & Harmony LLC is a purpose-driven company that blends audio/visual consulting, cultural merchandise, and digital innovation. 
-            We work at the intersection of community, creativity, and technology to support churches, educators, and entrepreneurs.
+        {/* About Faith & Harmony Section */}
+        <section className="mb-20 bg-white/80 backdrop-blur-sm rounded-3xl p-10 shadow-xl hover:shadow-2xl transition-all duration-300">
+          <h2 className="text-5xl font-bold mb-8 text-indigo-900 text-center font-serif">About Faith & Harmony</h2>
+          <p className="text-xl text-gray-700 leading-8 max-w-5xl mx-auto text-center">
+            Faith & Harmony LLC is a purpose-driven company built by Dr. Adam Pierce to support Black excellence through automation, creative media, and spiritual grounding. Whether you're building a brand, preserving a legacy, or protecting digital systems—we help you move with power and peace.
           </p>
         </section>
 
         {/* Our Services Section */}
-        <section className="mb-16">
-          <h2 className="text-4xl font-bold mb-10 text-gray-900 text-center">Our Services</h2>
-          <div className="grid md:grid-cols-2 gap-6">
+        <section className="mb-20">
+          <h2 className="text-5xl font-bold mb-12 text-indigo-900 text-center font-serif">Our Services</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { icon: "🎧", text: "AV Consulting for churches and events" },
-              { icon: "🛠️", text: "Custom digital tools like Vendor Assistant" },
-              { icon: "🎷", text: "Gospel Music projects and education" },
-              { icon: "🛍️", text: "Cultural merchandise and event support" }
+              { icon: "🎥", title: "AI Video Creation & Content Automation", description: "Streamline your content creation with cutting-edge AI tools" },
+              { icon: "🏛️", title: "Masonic & OES Digital Projects", description: "Preserve and modernize fraternal organization traditions" },
+              { icon: "📚", title: "Black History Storytelling Packages", description: "Craft compelling narratives that honor our heritage" },
+              { icon: "🛡️", title: "Cybersecurity AI Tools (Sentinel AI)", description: "Protect your digital assets with intelligent security solutions" },
+              { icon: "🧾", title: "Vendor Assistant Systems for Events", description: "Automate your event management and vendor operations" },
+              { icon: "🎷", title: "Church Tech & Gospel Saxophone Programs", description: "Enhance worship through technology and musical excellence" },
+              { icon: "🌱", title: "Financial Freedom & Land Ownership Coaching", description: "Build generational wealth through strategic planning" }
             ].map((service, index) => (
-              <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-6 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group">
-                <div className="flex items-center space-x-4">
-                  <span className="text-3xl group-hover:scale-110 transition-transform duration-300">
+              <div key={index} className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group border border-indigo-100">
+                <div className="text-center mb-6">
+                  <span className="text-5xl mb-4 block group-hover:scale-110 transition-transform duration-300">
                     {service.icon}
                   </span>
-                  <p className="text-lg text-gray-700 font-medium">
-                    {service.text}
+                  <h3 className="text-xl font-bold text-indigo-900 mb-3 font-serif">
+                    {service.title}
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    {service.description}
                   </p>
                 </div>
               </div>
@@ -47,39 +65,84 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Current Projects Section */}
-        <section className="mb-16">
-          <h2 className="text-4xl font-bold mb-10 text-gray-900 text-center">Current Projects</h2>
-          <div className="space-y-6">
+        {/* Featured Projects Section */}
+        <section className="mb-20">
+          <h2 className="text-5xl font-bold mb-12 text-indigo-900 text-center font-serif">Featured Projects</h2>
+          <div className="space-y-8">
             {[
-              { title: "Sentinel AI", description: "An AI-powered cybersecurity assessment platform." },
-              { title: "Vendor Assistant", description: "A plug-and-play automation toolkit for pop-up vendors." },
-              { title: "Faith in Harmony Music", description: "Gospel saxophone training with spiritual devotion." }
+              { 
+                title: "\"They Never Told Us...\" YouTube Series", 
+                description: "Educational content series uncovering untold stories and hidden history for community empowerment."
+              },
+              { 
+                title: "Sentinel AI Cybersecurity Platform", 
+                description: "AI-powered security assessment tools protecting organizations from digital threats."
+              },
+              { 
+                title: "Virtual Lodge Lecture Series", 
+                description: "Digital preservation and modernization of fraternal organization teachings and ceremonies."
+              },
+              { 
+                title: "Church Audio Rewire & Hybrid Musician Setup", 
+                description: "Complete audio visual consulting for worship spaces and musician integration systems."
+              }
             ].map((project, index) => (
-              <div key={index} className="bg-white/70 backdrop-blur-sm rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 border-l-4 border-amber-500">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{project.title}</h3>
-                <p className="text-lg text-gray-700">{project.description}</p>
+              <div key={index} className="bg-gradient-to-r from-white/90 to-indigo-50/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border-l-4 border-amber-500">
+                <h3 className="text-2xl font-bold text-indigo-900 mb-3 font-serif">{project.title}</h3>
+                <p className="text-lg text-gray-700 leading-relaxed">{project.description}</p>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Contact Us Section */}
-        <section className="mb-16 bg-white/60 backdrop-blur-sm rounded-2xl p-8 shadow-lg text-center">
-          <h2 className="text-4xl font-bold mb-6 text-gray-900">Contact Us</h2>
-          <p className="text-xl text-gray-700 mb-4">Ready to start your project?</p>
-          <a 
-            href="mailto:info@faithandharmonyllc.com" 
-            className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-amber-600 to-amber-500 text-white font-semibold text-lg rounded-full hover:from-amber-700 hover:to-amber-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
-          >
-            info@faithandharmonyllc.com
-          </a>
+        {/* Call to Action Section */}
+        <section className="mb-20 bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-3xl p-12 shadow-2xl text-center text-white">
+          <h2 className="text-4xl font-bold mb-6 font-serif">Let's Build Your Legacy</h2>
+          <p className="text-xl mb-8 opacity-90">Ready to transform your vision into reality?</p>
+          <button className="px-12 py-5 bg-gradient-to-r from-amber-500 to-yellow-400 text-indigo-900 font-bold text-xl rounded-full hover:from-amber-600 hover:to-yellow-500 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+            Book a Discovery Call
+          </button>
+        </section>
+
+        {/* Contact Section */}
+        <section className="mb-20 bg-white/90 backdrop-blur-sm rounded-3xl p-10 shadow-xl text-center">
+          <h2 className="text-4xl font-bold mb-8 text-indigo-900 font-serif">Contact Us</h2>
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="space-y-4">
+              <div className="flex items-center justify-center space-x-3">
+                <span className="text-2xl">📞</span>
+                <a href="tel:760-575-4876" className="text-xl text-indigo-700 hover:text-indigo-900 font-semibold">
+                  760-575-4876
+                </a>
+              </div>
+              <div className="flex items-center justify-center space-x-3">
+                <span className="text-2xl">📧</span>
+                <a href="mailto:dradamopierce@gmail.com" className="text-xl text-indigo-700 hover:text-indigo-900 font-semibold">
+                  dradamopierce@gmail.com
+                </a>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-center space-x-3">
+                <span className="text-2xl">🌐</span>
+                <span className="text-xl text-gray-700">faithandharmonyllc.com</span>
+              </div>
+              <div className="flex justify-center space-x-6">
+                <span className="text-2xl cursor-pointer hover:scale-110 transition-transform">📺</span>
+                <span className="text-2xl cursor-pointer hover:scale-110 transition-transform">📱</span>
+                <span className="text-2xl cursor-pointer hover:scale-110 transition-transform">🎵</span>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Footer */}
-        <footer className="text-center pt-8 border-t border-gray-200">
-          <p className="text-gray-500 text-lg font-light">
+        <footer className="text-center py-8 border-t border-indigo-200">
+          <p className="text-gray-600 text-lg">
             &copy; 2025 Faith & Harmony LLC. All rights reserved.
+          </p>
+          <p className="text-indigo-700 text-sm mt-2 font-semibold">
+            Dr. Adam Pierce - Empowering Legacy, Automating Purpose
           </p>
         </footer>
       </div>
