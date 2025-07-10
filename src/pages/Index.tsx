@@ -1,4 +1,6 @@
 
+import { Link } from "react-router-dom";
+
 const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 font-sans text-gray-800">
@@ -17,9 +19,9 @@ const Index = () => {
               From gospel music to government contracting, we fuse culture, technology, and automation to help our people win.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-              <button className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold text-lg rounded-full hover:from-indigo-700 hover:to-indigo-800 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+              <Link to="/services" className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold text-lg rounded-full hover:from-indigo-700 hover:to-indigo-800 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
                 Explore Our Services
-              </button>
+              </Link>
               <button className="px-10 py-4 bg-gradient-to-r from-amber-500 to-yellow-400 text-indigo-900 font-semibold text-lg rounded-full hover:from-amber-600 hover:to-yellow-500 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
                 Book a Free Consultation
               </button>
@@ -40,27 +42,29 @@ const Index = () => {
           <h2 className="text-5xl font-bold mb-12 text-indigo-900 text-center font-serif">Our Services</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { icon: "🎥", title: "AI Video Creation & Content Automation", description: "Streamline your content creation with cutting-edge AI tools" },
-              { icon: "🏛️", title: "Masonic & OES Digital Projects", description: "Preserve and modernize fraternal organization traditions" },
-              { icon: "📚", title: "Black History Storytelling Packages", description: "Craft compelling narratives that honor our heritage" },
-              { icon: "🛡️", title: "Cybersecurity AI Tools (Sentinel AI)", description: "Protect your digital assets with intelligent security solutions" },
-              { icon: "🧾", title: "Vendor Assistant Systems for Events", description: "Automate your event management and vendor operations" },
-              { icon: "🎷", title: "Church Tech & Gospel Saxophone Programs", description: "Enhance worship through technology and musical excellence" },
-              { icon: "🌱", title: "Financial Freedom & Land Ownership Coaching", description: "Build generational wealth through strategic planning" }
+              { icon: "🎥", title: "AI Video Creation & Content Automation", description: "Streamline your content creation with cutting-edge AI tools", link: "/services/ai-video-creation" },
+              { icon: "🏛️", title: "Masonic & OES Digital Projects", description: "Preserve and modernize fraternal organization traditions", link: "/services/masonic-digital-projects" },
+              { icon: "📚", title: "Black History Storytelling Packages", description: "Craft compelling narratives that honor our heritage", link: "/services/black-history-storytelling" },
+              { icon: "🛡️", title: "Cybersecurity AI Tools (Sentinel AI)", description: "Protect your digital assets with intelligent security solutions", link: "/services/cybersecurity-ai" },
+              { icon: "🧾", title: "Vendor Assistant Systems for Events", description: "Automate your event management and vendor operations", link: "/services/vendor-assistant" },
+              { icon: "🎷", title: "Church Tech & Gospel Saxophone Programs", description: "Enhance worship through technology and musical excellence", link: "/services/church-tech" },
+              { icon: "🌱", title: "Financial Freedom & Land Ownership Coaching", description: "Build generational wealth through strategic planning", link: "/services/financial-coaching" }
             ].map((service, index) => (
-              <div key={index} className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group border border-indigo-100">
-                <div className="text-center mb-6">
-                  <span className="text-5xl mb-4 block group-hover:scale-110 transition-transform duration-300">
-                    {service.icon}
-                  </span>
-                  <h3 className="text-xl font-bold text-indigo-900 mb-3 font-serif">
-                    {service.title}
-                  </h3>
-                  <p className="text-gray-700 leading-relaxed">
-                    {service.description}
-                  </p>
+              <Link key={index} to={service.link} className="group">
+                <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group border border-indigo-100">
+                  <div className="text-center mb-6">
+                    <span className="text-5xl mb-4 block group-hover:scale-110 transition-transform duration-300">
+                      {service.icon}
+                    </span>
+                    <h3 className="text-xl font-bold text-indigo-900 mb-3 font-serif">
+                      {service.title}
+                    </h3>
+                    <p className="text-gray-700 leading-relaxed">
+                      {service.description}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </section>
