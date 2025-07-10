@@ -11,7 +11,7 @@ const Index = () => {
             </h1>
             <div className="w-32 h-1 bg-gradient-to-r from-amber-500 to-yellow-400 mx-auto mb-8 rounded-full"></div>
             <h2 className="text-5xl font-bold mb-6 text-indigo-800 font-serif">
-              Empowering Legacy, Automating Purpose
+              Rooted in Purpose, Driven by Service
             </h2>
             <p className="text-2xl text-gray-700 mb-12 max-w-4xl mx-auto leading-relaxed">
               From gospel music to government contracting, we fuse culture, technology, and automation to help our people win.
@@ -142,7 +142,7 @@ const Index = () => {
             &copy; 2025 Faith & Harmony LLC. All rights reserved.
           </p>
           <p className="text-indigo-700 text-sm mt-2 font-semibold">
-            Dr. Adam Pierce - Empowering Legacy, Automating Purpose
+            Dr. Adam Pierce - Rooted in Purpose, Driven by Service
           </p>
         </footer>
       </div>
