@@ -50,6 +50,20 @@ const Services = () => {
       description: "Build generational wealth through strategic planning, property investment, and financial education.",
       link: "/services/financial-coaching",
       highlights: ["Personal financial planning", "Real estate guidance", "Generational wealth building"]
+    },
+    {
+      icon: "🚁",
+      title: "Aerial Photography & Inspections",
+      description: "FAA Part 107 certified drone services for stunning aerial photography and detailed property inspections.",
+      link: "/services/aerial-photography",
+      highlights: ["Land and sea coverage", "Property inspections", "4K video and photography"]
+    },
+    {
+      icon: "🌐",
+      title: "Website Hosting & Development",
+      description: "Professional web design, development, and reliable hosting services for businesses and organizations.",
+      link: "/services/website-hosting",
+      highlights: ["Custom web design", "Reliable hosting", "Ongoing support"]
     }
   ];
 

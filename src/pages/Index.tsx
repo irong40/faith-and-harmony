@@ -25,9 +25,9 @@ const Index = () => {
               <button className="px-10 py-4 bg-gradient-to-r from-amber-500 to-yellow-400 text-indigo-900 font-semibold text-lg rounded-full hover:from-amber-600 hover:to-yellow-500 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
                 Book a Free Consultation
               </button>
-              <a href="https://faithandharmonyllc.com/" target="_blank" rel="noopener noreferrer" className="px-10 py-4 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold text-lg rounded-full hover:from-emerald-700 hover:to-emerald-800 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+              <Link to="/shop" className="px-10 py-4 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold text-lg rounded-full hover:from-emerald-700 hover:to-emerald-800 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
                 Shop at Our Store
-              </a>
+              </Link>
             </div>
           </div>
         </section>
@@ -51,7 +51,9 @@ const Index = () => {
               { icon: "🛡️", title: "Cybersecurity AI Tools (Sentinel AI)", description: "Protect your digital assets with intelligent security solutions", link: "/services/cybersecurity-ai" },
               { icon: "🧾", title: "Vendor Assistant Systems for Events", description: "Automate your event management and vendor operations", link: "/services/vendor-assistant" },
               { icon: "🎷", title: "Church Tech & Gospel Saxophone Programs", description: "Enhance worship through technology and musical excellence", link: "/services/church-tech" },
-              { icon: "🌱", title: "Financial Freedom & Land Ownership Coaching", description: "Build generational wealth through strategic planning", link: "/services/financial-coaching" }
+              { icon: "🌱", title: "Financial Freedom & Land Ownership Coaching", description: "Build generational wealth through strategic planning", link: "/services/financial-coaching" },
+              { icon: "🚁", title: "Aerial Photography & Inspections", description: "FAA Part 107 certified drone services for land and sea", link: "/services/aerial-photography" },
+              { icon: "🌐", title: "Website Hosting & Development", description: "Professional web design, development, and hosting services", link: "/services/website-hosting" }
             ].map((service, index) => (
               <Link key={index} to={service.link} className="group">
                 <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group border border-indigo-100">
