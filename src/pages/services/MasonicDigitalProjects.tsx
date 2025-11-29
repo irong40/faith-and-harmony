@@ -1,57 +1,57 @@
 import { Link } from "react-router-dom";
+import logoIcon from "@/assets/logo-icon.png";
 
 const MasonicDigitalProjects = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 font-sans text-gray-800">
+    <div className="min-h-screen bg-background font-sans text-foreground">
       <div className="max-w-6xl mx-auto px-8">
         {/* Navigation */}
-        <nav className="py-6">
-          <Link to="/" className="text-indigo-700 hover:text-indigo-900 font-semibold">
-            ← Back to Home
+        <nav className="py-6 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3">
+            <img src={logoIcon} alt="Faith & Harmony" className="w-10 h-10" />
+            <span className="font-display font-bold text-xl text-primary">Faith & Harmony</span>
+          </Link>
+          <Link to="/services" className="text-primary hover:text-accent font-semibold transition-colors">
+            ← Back to Services
           </Link>
         </nav>
 
         {/* Hero Section */}
         <section className="py-16 text-center">
           <div className="text-6xl mb-6">🏛️</div>
-          <h1 className="text-5xl font-bold mb-6 text-indigo-900 font-serif">
+          <h1 className="text-5xl font-bold mb-6 text-primary font-display">
             Masonic & OES Digital Projects
           </h1>
-          <p className="text-xl text-gray-700 mb-8 max-w-4xl mx-auto leading-relaxed">
-            Preserve sacred traditions while embracing modern technology. We help Masonic lodges and OES chapters digitize their legacy and connect their communities.
+          <p className="text-xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
+            Preserve your lodge's legacy and modernize your fraternal traditions with digital solutions built by someone who understands the work.
           </p>
+          <div className="inline-block bg-accent/20 border border-accent rounded-full px-6 py-3">
+            <span className="text-accent font-bold text-lg">Starting at $250 per project</span>
+          </div>
         </section>
 
         {/* What We Offer */}
-        <section className="mb-16 bg-white/80 backdrop-blur-sm rounded-3xl p-10 shadow-xl">
-          <h2 className="text-4xl font-bold mb-8 text-indigo-900 text-center font-serif">Sacred Technology Solutions</h2>
+        <section className="mb-16 bg-card rounded-3xl p-10 shadow-xl border border-border">
+          <h2 className="text-4xl font-bold mb-8 text-primary text-center font-display">What We Offer</h2>
           <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div>
-                <h3 className="text-xl font-bold text-indigo-800 mb-3">Digital Preservation of Rituals</h3>
-                <p className="text-gray-700">Securely digitize and preserve ceremonial content, historical documents, and traditional practices for future generations.</p>
+                <h3 className="text-xl font-bold text-primary mb-3">Digital Preservation</h3>
+                <p className="text-card-foreground">Archive and digitize historical documents, photographs, and records for future generations.</p>
               </div>
               <div>
-                <h3 className="text-xl font-bold text-indigo-800 mb-3">Virtual Meeting Platforms</h3>
-                <p className="text-gray-700">Custom-built secure platforms for conducting lodge meetings, degree work, and educational sessions online.</p>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-indigo-800 mb-3">Membership Management Systems</h3>
-                <p className="text-gray-700">Comprehensive databases for tracking membership, dues, attendance, and fraternal progress.</p>
+                <h3 className="text-xl font-bold text-primary mb-3">Virtual Meeting Platforms</h3>
+                <p className="text-card-foreground">Secure platforms for virtual lodge meetings, study groups, and educational sessions.</p>
               </div>
             </div>
             <div className="space-y-6">
               <div>
-                <h3 className="text-xl font-bold text-indigo-800 mb-3">Educational Content Libraries</h3>
-                <p className="text-gray-700">Interactive digital libraries containing lectures, historical resources, and educational materials.</p>
+                <h3 className="text-xl font-bold text-primary mb-3">Lecture Series Production</h3>
+                <p className="text-card-foreground">Professional video lectures for education and instruction within your organization.</p>
               </div>
               <div>
-                <h3 className="text-xl font-bold text-indigo-800 mb-3">Secure Communication Tools</h3>
-                <p className="text-gray-700">Encrypted messaging and document sharing systems that maintain the privacy and security of fraternal communications.</p>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-indigo-800 mb-3">Digital Certificates & Records</h3>
-                <p className="text-gray-700">Modern systems for issuing and tracking digital certificates, awards, and membership credentials.</p>
+                <h3 className="text-xl font-bold text-primary mb-3">Membership Management</h3>
+                <p className="text-card-foreground">Digital tools to track membership, dues, and communications.</p>
               </div>
             </div>
           </div>
@@ -59,69 +59,52 @@ const MasonicDigitalProjects = () => {
 
         {/* Who We Serve */}
         <section className="mb-16">
-          <h2 className="text-4xl font-bold mb-8 text-indigo-900 text-center font-serif">Organizations We Serve</h2>
+          <h2 className="text-4xl font-bold mb-8 text-primary text-center font-display">Who We Serve</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { title: "Masonic Lodges", description: "Blue lodges, Scottish Rite, York Rite, and other Masonic bodies seeking digital transformation." },
-              { title: "Order of Eastern Star", description: "OES chapters looking to modernize their operations while preserving traditions." },
-              { title: "Prince Hall Organizations", description: "Historic fraternal organizations embracing technology for growth and preservation." },
-              { title: "Other Fraternal Groups", description: "Knights of Pythias, Odd Fellows, and similar organizations with rich traditions." }
-            ].map((item, index) => (
-              <div key={index} className="bg-white/90 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300">
-                <h3 className="text-lg font-bold text-indigo-900 mb-3">{item.title}</h3>
-                <p className="text-gray-700">{item.description}</p>
+              "Prince Hall Blue Lodges",
+              "OES Chapters",
+              "Prince Hall Concordant Bodies",
+              "Other Fraternal Organizations"
+            ].map((org, index) => (
+              <div key={index} className="bg-card rounded-2xl p-6 shadow-lg border border-border text-center hover:shadow-xl transition-shadow">
+                <h3 className="text-lg font-bold text-primary">{org}</h3>
               </div>
             ))}
           </div>
         </section>
 
         {/* Why This Matters */}
-        <section className="mb-16 bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-3xl p-10 shadow-2xl text-white">
-          <h2 className="text-4xl font-bold mb-8 text-center font-serif">Why Digital Preservation Matters</h2>
-          <div className="grid md:grid-cols-3 gap-8">
+        <section className="mb-16 bg-primary rounded-3xl p-10 shadow-2xl">
+          <h2 className="text-4xl font-bold mb-8 text-center font-display text-primary-foreground">Why This Matters</h2>
+          <div className="grid md:grid-cols-3 gap-8 text-secondary">
             <div>
-              <h3 className="text-xl font-bold mb-4">🏛️ Legacy Preservation</h3>
-              <p>Ensure that centuries-old traditions and wisdom are preserved for future generations in accessible digital formats.</p>
+              <h3 className="text-xl font-bold mb-4 text-accent">Legacy Preservation</h3>
+              <p className="opacity-90">Our history and traditions deserve to be preserved for those who come after us.</p>
             </div>
             <div>
-              <h3 className="text-xl font-bold mb-4">🌐 Global Connection</h3>
-              <p>Connect brothers and sisters across distances, enabling participation regardless of geographic limitations.</p>
+              <h3 className="text-xl font-bold mb-4 text-accent">Global Connection</h3>
+              <p className="opacity-90">Connect members across distances while maintaining the integrity of our practices.</p>
             </div>
             <div>
-              <h3 className="text-xl font-bold mb-4">🔒 Security & Privacy</h3>
-              <p>Maintain the sacred nature of fraternal work through advanced encryption and secure access controls.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Our Approach */}
-        <section className="mb-16">
-          <h2 className="text-4xl font-bold mb-8 text-indigo-900 text-center font-serif">Our Respectful Approach</h2>
-          <div className="bg-white/90 rounded-3xl p-8 shadow-lg">
-            <div className="grid md:grid-cols-2 gap-8">
-              <div>
-                <h3 className="text-2xl font-bold text-indigo-800 mb-4">Understanding Sacred Traditions</h3>
-                <p className="text-gray-700 mb-4">Dr. Pierce brings deep respect for fraternal traditions and understands the balance between preserving ancient wisdom and embracing modern tools.</p>
-                <p className="text-gray-700">Every solution is designed with the utmost respect for the sacred nature of Masonic and OES work.</p>
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold text-indigo-800 mb-4">Security-First Mindset</h3>
-                <p className="text-gray-700 mb-4">With a background in cybersecurity, we ensure that all digital systems maintain the highest levels of security and privacy.</p>
-                <p className="text-gray-700">Your fraternal communications and documents remain protected and accessible only to authorized members.</p>
-              </div>
+              <h3 className="text-xl font-bold mb-4 text-accent">Security First</h3>
+              <p className="opacity-90">Your lodge's information is handled with the discretion and security it deserves.</p>
             </div>
           </div>
         </section>
 
         {/* Call to Action */}
         <section className="mb-20 text-center">
-          <h2 className="text-4xl font-bold mb-6 text-indigo-900 font-serif">Ready to Modernize Your Lodge?</h2>
-          <p className="text-xl text-gray-700 mb-8">Let's discuss how digital tools can strengthen your fraternal bonds while preserving your sacred traditions.</p>
+          <h2 className="text-4xl font-bold mb-6 text-primary font-display">Ready to Modernize Your Lodge?</h2>
+          <p className="text-xl text-muted-foreground mb-8">Let's discuss how we can help preserve your legacy while embracing the future.</p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
-            <button className="px-10 py-4 bg-gradient-to-r from-amber-500 to-yellow-400 text-indigo-900 font-semibold text-lg rounded-full hover:from-amber-600 hover:to-yellow-500 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
-              Schedule Lodge Consultation
-            </button>
-            <Link to="/services" className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold text-lg rounded-full hover:from-indigo-700 hover:to-indigo-800 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+            <Link 
+              to="/request-service?service=MASONIC" 
+              className="px-10 py-4 bg-gradient-to-r from-accent to-amber-400 text-primary font-semibold text-lg rounded-full hover:opacity-90 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+            >
+              Request This Service
+            </Link>
+            <Link to="/services" className="px-10 py-4 bg-primary text-primary-foreground font-semibold text-lg rounded-full hover:opacity-90 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
               View All Services
             </Link>
           </div>

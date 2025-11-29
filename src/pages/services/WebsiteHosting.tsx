@@ -1,145 +1,125 @@
 import { Link } from "react-router-dom";
-import { Globe, CheckCircle, Code, Server, Palette, Zap, Shield, Headphones } from "lucide-react";
+import logoIcon from "@/assets/logo-icon.png";
 
 const WebsiteHosting = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 font-sans text-gray-800">
+    <div className="min-h-screen bg-background font-sans text-foreground">
       <div className="max-w-6xl mx-auto px-8">
-        {/* Header */}
-        <header className="py-6 flex justify-between items-center border-b border-indigo-200">
-          <Link to="/" className="text-2xl font-bold text-indigo-900 font-serif">Faith & Harmony</Link>
-          <nav className="flex items-center gap-6">
-            <Link to="/" className="text-gray-700 hover:text-indigo-700 transition-colors">Home</Link>
-            <Link to="/services" className="text-indigo-700 font-semibold">Services</Link>
-            <Link to="/shop" className="text-gray-700 hover:text-indigo-700 transition-colors">Shop</Link>
-          </nav>
-        </header>
+        {/* Navigation */}
+        <nav className="py-6 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3">
+            <img src={logoIcon} alt="Faith & Harmony" className="w-10 h-10" />
+            <span className="font-display font-bold text-xl text-primary">Faith & Harmony</span>
+          </Link>
+          <Link to="/services" className="text-primary hover:text-accent font-semibold transition-colors">
+            ← Back to Services
+          </Link>
+        </nav>
 
         {/* Hero Section */}
         <section className="py-16 text-center">
-          <div className="inline-block p-4 bg-indigo-100 rounded-2xl mb-6">
-            <Globe className="w-12 h-12 text-indigo-700" />
-          </div>
-          <h1 className="text-5xl font-bold mb-4 text-indigo-900 font-serif">Website Hosting & Development</h1>
-          <div className="w-24 h-1 bg-gradient-to-r from-amber-500 to-yellow-400 mx-auto mb-6 rounded-full"></div>
-          <p className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
-            Professional website design, development, and hosting services tailored for small businesses, 
-            organizations, and entrepreneurs. We build beautiful, functional websites that grow with you.
+          <div className="text-6xl mb-6">🌐</div>
+          <h1 className="text-5xl font-bold mb-6 text-primary font-display">
+            Website Hosting & Development
+          </h1>
+          <p className="text-xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
+            Professional web design, development, and hosting services. From simple landing pages to full e-commerce solutions.
           </p>
-        </section>
-
-        {/* Services Grid */}
-        <section className="pb-16">
-          <h2 className="text-3xl font-bold mb-8 text-indigo-900 font-serif text-center">Our Web Services</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { icon: Palette, title: "Custom Web Design", description: "Beautiful, modern designs tailored to your brand identity and business goals" },
-              { icon: Code, title: "Web Development", description: "Responsive, fast-loading websites built with modern technologies" },
-              { icon: Server, title: "Reliable Hosting", description: "Secure, fast hosting with 99.9% uptime guarantee and daily backups" },
-              { icon: Zap, title: "Performance Optimization", description: "Speed optimization, SEO, and performance tuning for better rankings" },
-              { icon: Shield, title: "Security & SSL", description: "Free SSL certificates, malware protection, and regular security updates" },
-              { icon: Headphones, title: "Ongoing Support", description: "Maintenance, updates, and technical support when you need it" }
-            ].map((service, index) => (
-              <div key={index} className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
-                <service.icon className="w-10 h-10 text-indigo-600 mb-4" />
-                <h3 className="text-xl font-bold text-indigo-900 mb-2">{service.title}</h3>
-                <p className="text-gray-700">{service.description}</p>
-              </div>
-            ))}
+          <div className="inline-block bg-accent/20 border border-accent rounded-full px-6 py-3">
+            <span className="text-accent font-bold text-lg">Starting at $750 per project</span>
           </div>
         </section>
 
-        {/* Packages */}
-        <section className="pb-16">
-          <h2 className="text-3xl font-bold mb-8 text-indigo-900 font-serif text-center">Packages</h2>
+        {/* Services */}
+        <section className="mb-16 bg-card rounded-3xl p-10 shadow-xl border border-border">
+          <h2 className="text-4xl font-bold mb-8 text-primary text-center font-display">What We Offer</h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-bold text-primary mb-3">Custom Website Design</h3>
+                <p className="text-card-foreground">Unique designs that reflect your brand and connect with your audience.</p>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-primary mb-3">Website Development</h3>
+                <p className="text-card-foreground">Modern, responsive websites built with the latest technologies.</p>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-primary mb-3">E-Commerce Solutions</h3>
+                <p className="text-card-foreground">Online stores with secure payment processing and inventory management.</p>
+              </div>
+            </div>
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-bold text-primary mb-3">Website Hosting</h3>
+                <p className="text-card-foreground">Reliable, secure hosting with regular backups and maintenance.</p>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-primary mb-3">Domain Management</h3>
+                <p className="text-card-foreground">Help you secure and manage your perfect domain name.</p>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-primary mb-3">Website Maintenance</h3>
+                <p className="text-card-foreground">Ongoing updates, security patches, and content changes.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Types of Websites */}
+        <section className="mb-16">
+          <h2 className="text-4xl font-bold mb-8 text-primary text-center font-display">Types of Websites We Build</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              {
-                name: "Starter",
-                price: "Starting at $499",
-                features: ["5-page responsive website", "Mobile-friendly design", "Basic SEO setup", "Contact form", "1 year hosting included", "Email support"]
-              },
-              {
-                name: "Professional",
-                price: "Starting at $999",
-                features: ["Up to 15 pages", "Custom design", "Advanced SEO", "Blog integration", "Social media integration", "Priority support", "Monthly maintenance"],
-                popular: true
-              },
-              {
-                name: "Enterprise",
-                price: "Custom Quote",
-                features: ["Unlimited pages", "E-commerce integration", "Custom functionality", "Database integration", "API development", "24/7 support", "Dedicated hosting"]
-              }
-            ].map((pkg, index) => (
-              <div key={index} className={`bg-white rounded-xl p-6 shadow-lg ${pkg.popular ? 'ring-2 ring-amber-500 relative' : ''}`}>
-                {pkg.popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-sm px-4 py-1 rounded-full font-semibold">
-                    Most Popular
-                  </span>
-                )}
-                <h3 className="text-2xl font-bold text-indigo-900 mb-2">{pkg.name}</h3>
-                <p className="text-3xl font-bold text-indigo-700 mb-6">{pkg.price}</p>
-                <ul className="space-y-3">
-                  {pkg.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <CheckCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+              { title: "Business Websites", description: "Professional sites for small businesses and entrepreneurs." },
+              { title: "Church Websites", description: "Ministry sites with sermon archives, event calendars, and giving options." },
+              { title: "Portfolio Sites", description: "Showcase your work, art, or professional accomplishments." },
+              { title: "E-Commerce Stores", description: "Sell products and services online with secure checkout." },
+              { title: "Event Websites", description: "Promote events with registration and ticketing." },
+              { title: "Personal Blogs", description: "Share your thoughts, stories, and expertise with the world." }
+            ].map((item, index) => (
+              <div key={index} className="bg-card rounded-2xl p-6 shadow-lg border border-border hover:shadow-xl transition-shadow">
+                <h3 className="text-lg font-bold text-primary mb-3">{item.title}</h3>
+                <p className="text-card-foreground">{item.description}</p>
               </div>
             ))}
           </div>
         </section>
 
-        {/* What We Build */}
-        <section className="pb-16">
-          <div className="bg-white rounded-3xl p-10 shadow-xl">
-            <h2 className="text-3xl font-bold mb-8 text-indigo-900 font-serif text-center">What We Build</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                "Business Websites",
-                "Church & Ministry Sites",
-                "Portfolio Sites",
-                "Landing Pages",
-                "E-commerce Stores",
-                "Membership Sites",
-                "Event Websites",
-                "Non-profit Sites",
-                "Blogs & Publications",
-                "Organization Sites",
-                "Real Estate Sites",
-                "Service Directories"
-              ].map((item, index) => (
-                <div key={index} className="bg-indigo-50 rounded-lg p-3 text-center text-indigo-900 font-medium">
-                  {item}
-                </div>
-              ))}
+        {/* Why Choose Us */}
+        <section className="mb-16 bg-primary rounded-3xl p-10 shadow-2xl">
+          <h2 className="text-4xl font-bold mb-8 text-center font-display text-primary-foreground">Why Choose Faith & Harmony?</h2>
+          <div className="grid md:grid-cols-2 gap-8 text-secondary">
+            <div>
+              <h3 className="text-xl font-bold mb-4 text-accent">We Speak Your Language</h3>
+              <p className="mb-6 opacity-90">No confusing tech jargon—we explain everything in terms you understand.</p>
+              <h3 className="text-xl font-bold mb-4 text-accent">You Own Everything</h3>
+              <p className="opacity-90">Your website, your domain, your content. We don't hold anything hostage.</p>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold mb-4 text-accent">Ongoing Support</h3>
+              <p className="mb-6 opacity-90">We don't disappear after launch. We're here for questions and updates.</p>
+              <h3 className="text-xl font-bold mb-4 text-accent">Fair Pricing</h3>
+              <p className="opacity-90">Professional quality without enterprise-level prices.</p>
             </div>
           </div>
         </section>
 
-        {/* CTA */}
-        <section className="pb-20">
-          <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-3xl p-10 text-center text-white">
-            <h2 className="text-3xl font-bold mb-4 font-serif">Ready to Launch Your Website?</h2>
-            <p className="text-lg mb-6 opacity-90">Let's discuss your project and create something amazing together</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="mailto:dradamopierce@gmail.com" className="px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-400 text-indigo-900 font-bold rounded-full hover:from-amber-600 hover:to-yellow-500 transition-all">
-                Start Your Project
-              </a>
-              <a href="tel:760-575-4876" className="px-8 py-4 bg-white/20 text-white font-bold rounded-full hover:bg-white/30 transition-all">
-                Call: 760-575-4876
-              </a>
-            </div>
+        {/* Call to Action */}
+        <section className="mb-20 text-center">
+          <h2 className="text-4xl font-bold mb-6 text-primary font-display">Ready to Get Online?</h2>
+          <p className="text-xl text-muted-foreground mb-8">Let's discuss your website needs and build something great together.</p>
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+            <Link 
+              to="/request-service?service=WEBSITE" 
+              className="px-10 py-4 bg-gradient-to-r from-accent to-amber-400 text-primary font-semibold text-lg rounded-full hover:opacity-90 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+            >
+              Request This Service
+            </Link>
+            <Link to="/services" className="px-10 py-4 bg-primary text-primary-foreground font-semibold text-lg rounded-full hover:opacity-90 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+              View All Services
+            </Link>
           </div>
         </section>
-
-        {/* Footer */}
-        <footer className="text-center py-8 border-t border-indigo-200">
-          <p className="text-gray-600 text-lg">&copy; 2025 Faith & Harmony LLC. All rights reserved.</p>
-          <p className="text-indigo-700 text-sm mt-2 font-semibold">Dr. Adam Pierce - Rooted in Purpose, Driven by Service</p>
-        </footer>
       </div>
     </div>
   );
