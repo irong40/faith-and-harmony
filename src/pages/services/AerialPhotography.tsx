@@ -1,103 +1,119 @@
 import { Link } from "react-router-dom";
-import { Camera, CheckCircle, Plane, Shield, MapPin, Building } from "lucide-react";
+import logoIcon from "@/assets/logo-icon.png";
 
 const AerialPhotography = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50 font-sans text-gray-800">
+    <div className="min-h-screen bg-background font-sans text-foreground">
       <div className="max-w-6xl mx-auto px-8">
-        {/* Header */}
-        <header className="py-6 flex justify-between items-center border-b border-indigo-200">
-          <Link to="/" className="text-2xl font-bold text-indigo-900 font-serif">Faith & Harmony</Link>
-          <nav className="flex items-center gap-6">
-            <Link to="/" className="text-gray-700 hover:text-indigo-700 transition-colors">Home</Link>
-            <Link to="/services" className="text-indigo-700 font-semibold">Services</Link>
-            <Link to="/shop" className="text-gray-700 hover:text-indigo-700 transition-colors">Shop</Link>
-          </nav>
-        </header>
+        {/* Navigation */}
+        <nav className="py-6 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3">
+            <img src={logoIcon} alt="Faith & Harmony" className="w-10 h-10" />
+            <span className="font-display font-bold text-xl text-primary">Faith & Harmony</span>
+          </Link>
+          <Link to="/services" className="text-primary hover:text-accent font-semibold transition-colors">
+            ← Back to Services
+          </Link>
+        </nav>
 
         {/* Hero Section */}
         <section className="py-16 text-center">
-          <div className="inline-block p-4 bg-indigo-100 rounded-2xl mb-6">
-            <Plane className="w-12 h-12 text-indigo-700" />
-          </div>
-          <h1 className="text-5xl font-bold mb-4 text-indigo-900 font-serif">Aerial Photography & Inspections</h1>
-          <div className="w-24 h-1 bg-gradient-to-r from-amber-500 to-yellow-400 mx-auto mb-6 rounded-full"></div>
-          <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-4 py-2 rounded-full font-semibold mb-6">
-            <Shield className="w-5 h-5" />
-            FAA Part 107 Certified
-          </div>
-          <p className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
-            Professional drone services for land, sea, and beyond. From stunning aerial photography to detailed property inspections, 
-            we deliver high-quality imagery and data you can trust.
+          <div className="text-6xl mb-6">🚁</div>
+          <h1 className="text-5xl font-bold mb-6 text-primary font-display">
+            Aerial Photography & Inspections
+          </h1>
+          <p className="text-xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
+            FAA Part 107 certified drone services for real estate, land surveying, roof inspections, and more. See your property from a new perspective.
           </p>
+          <div className="inline-block bg-accent/20 border border-accent rounded-full px-6 py-3">
+            <span className="text-accent font-bold text-lg">Starting at $250 per project</span>
+          </div>
         </section>
 
-        {/* Services Grid */}
-        <section className="pb-16">
-          <h2 className="text-3xl font-bold mb-8 text-indigo-900 font-serif text-center">Our Aerial Services</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Services */}
+        <section className="mb-16 bg-card rounded-3xl p-10 shadow-xl border border-border">
+          <h2 className="text-4xl font-bold mb-8 text-primary text-center font-display">Our Services</h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-bold text-primary mb-3">Real Estate Photography</h3>
+                <p className="text-card-foreground">Stunning aerial views to showcase properties and attract buyers.</p>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-primary mb-3">Land Parcel Documentation</h3>
+                <p className="text-card-foreground">Comprehensive aerial documentation for land purchases and development planning.</p>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-primary mb-3">Roof Inspections</h3>
+                <p className="text-card-foreground">Safe, detailed roof assessments without ladders or scaffolding.</p>
+              </div>
+            </div>
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-bold text-primary mb-3">Agricultural Surveys</h3>
+                <p className="text-card-foreground">Monitor crop health, irrigation, and land conditions from above.</p>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-primary mb-3">Marine Photography</h3>
+                <p className="text-card-foreground">Waterfront properties, boats, and coastal documentation.</p>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-primary mb-3">Construction Progress</h3>
+                <p className="text-card-foreground">Document construction projects from start to finish.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Why Choose Us */}
+        <section className="mb-16">
+          <h2 className="text-4xl font-bold mb-8 text-primary text-center font-display">Why Choose Us</h2>
+          <div className="grid md:grid-cols-3 gap-6">
             {[
-              { icon: Camera, title: "Aerial Photography", description: "Stunning high-resolution photos for real estate, events, marketing, and personal projects" },
-              { icon: Building, title: "Property Inspections", description: "Detailed roof, structural, and property inspections without the need for ladders or scaffolding" },
-              { icon: MapPin, title: "Land Surveys", description: "Comprehensive aerial mapping and surveying for construction, agriculture, and land management" },
-              { icon: Plane, title: "Marine/Coastal", description: "Offshore and coastal photography, dock inspections, and waterfront property surveys" },
-              { icon: Shield, title: "Insurance Documentation", description: "Pre and post-storm inspections, damage assessments, and claim documentation" },
-              { icon: CheckCircle, title: "Progress Monitoring", description: "Construction progress tracking, site documentation, and time-lapse projects" }
-            ].map((service, index) => (
-              <div key={index} className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all">
-                <service.icon className="w-10 h-10 text-indigo-600 mb-4" />
-                <h3 className="text-xl font-bold text-indigo-900 mb-2">{service.title}</h3>
-                <p className="text-gray-700">{service.description}</p>
+              { title: "FAA Certified", description: "Part 107 certified pilot ensuring legal, safe, and professional operations." },
+              { title: "High-Quality Equipment", description: "Professional-grade drones with high-resolution cameras for stunning results." },
+              { title: "Quick Turnaround", description: "Fast delivery of edited photos and videos for your projects." },
+              { title: "Flexible Scheduling", description: "We work around your schedule and weather conditions." },
+              { title: "Detailed Reports", description: "Professional inspection reports with annotated findings when needed." },
+              { title: "Competitive Pricing", description: "Quality aerial services at reasonable rates." }
+            ].map((item, index) => (
+              <div key={index} className="bg-card rounded-2xl p-6 shadow-lg border border-border hover:shadow-xl transition-shadow">
+                <h3 className="text-lg font-bold text-primary mb-3">{item.title}</h3>
+                <p className="text-card-foreground">{item.description}</p>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Why Choose Us */}
-        <section className="pb-16">
-          <div className="bg-white rounded-3xl p-10 shadow-xl">
-            <h2 className="text-3xl font-bold mb-8 text-indigo-900 font-serif text-center">Why Choose Our Drone Services?</h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              {[
-                "FAA Part 107 Certified - fully licensed and insured",
-                "High-resolution 4K video and photography",
-                "Land, sea, and coastal capabilities",
-                "Fast turnaround on deliverables",
-                "Professional editing and post-processing",
-                "Competitive pricing for all project sizes",
-                "Experienced pilot with attention to detail",
-                "Flexible scheduling including weekends"
-              ].map((item, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <CheckCircle className="w-6 h-6 text-amber-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-700">{item}</span>
-                </div>
-              ))}
-            </div>
+        {/* Service Area */}
+        <section className="mb-16 bg-primary rounded-3xl p-10 shadow-2xl">
+          <h2 className="text-4xl font-bold mb-8 text-center font-display text-primary-foreground">Service Area</h2>
+          <div className="text-center text-secondary">
+            <p className="text-xl mb-4 opacity-90">
+              Serving the Hampton Roads, Virginia area and surrounding regions.
+            </p>
+            <p className="opacity-80">
+              Travel available for larger projects—contact us for a quote.
+            </p>
           </div>
         </section>
 
-        {/* CTA */}
-        <section className="pb-20">
-          <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 rounded-3xl p-10 text-center text-white">
-            <h2 className="text-3xl font-bold mb-4 font-serif">Ready to Take Your Project to New Heights?</h2>
-            <p className="text-lg mb-6 opacity-90">Contact us for a free consultation and quote</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="mailto:dradamopierce@gmail.com" className="px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-400 text-indigo-900 font-bold rounded-full hover:from-amber-600 hover:to-yellow-500 transition-all">
-                Get a Quote
-              </a>
-              <a href="tel:760-575-4876" className="px-8 py-4 bg-white/20 text-white font-bold rounded-full hover:bg-white/30 transition-all">
-                Call: 760-575-4876
-              </a>
-            </div>
+        {/* Call to Action */}
+        <section className="mb-20 text-center">
+          <h2 className="text-4xl font-bold mb-6 text-primary font-display">Ready for a New Perspective?</h2>
+          <p className="text-xl text-muted-foreground mb-8">Let's discuss your aerial photography or inspection needs.</p>
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+            <Link 
+              to="/request-service?service=AERIAL" 
+              className="px-10 py-4 bg-gradient-to-r from-accent to-amber-400 text-primary font-semibold text-lg rounded-full hover:opacity-90 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+            >
+              Request This Service
+            </Link>
+            <Link to="/services" className="px-10 py-4 bg-primary text-primary-foreground font-semibold text-lg rounded-full hover:opacity-90 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+              View All Services
+            </Link>
           </div>
         </section>
-
-        {/* Footer */}
-        <footer className="text-center py-8 border-t border-indigo-200">
-          <p className="text-gray-600 text-lg">&copy; 2025 Faith & Harmony LLC. All rights reserved.</p>
-          <p className="text-indigo-700 text-sm mt-2 font-semibold">Dr. Adam Pierce - Rooted in Purpose, Driven by Service</p>
-        </footer>
       </div>
     </div>
   );
