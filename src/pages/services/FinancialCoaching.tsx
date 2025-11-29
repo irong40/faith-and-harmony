@@ -1,21 +1,11 @@
 import { Link } from "react-router-dom";
-import logoIcon from "@/assets/logo-icon.png";
+import Navbar from "@/components/Navbar";
 
 const FinancialCoaching = () => {
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
+      <Navbar />
       <div className="max-w-6xl mx-auto px-8">
-        {/* Navigation */}
-        <nav className="py-6 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <img src={logoIcon} alt="Faith & Harmony" className="w-10 h-10" />
-            <span className="font-display font-bold text-xl text-primary">Faith & Harmony</span>
-          </Link>
-          <Link to="/services" className="text-primary hover:text-accent font-semibold transition-colors">
-            ← Back to Services
-          </Link>
-        </nav>
-
         {/* Hero Section */}
         <section className="py-16 text-center">
           <div className="text-6xl mb-6">🌱</div>

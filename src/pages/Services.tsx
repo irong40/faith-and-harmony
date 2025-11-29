@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import logoIcon from "@/assets/logo-icon.png";
+import Navbar from "@/components/Navbar";
 
 const Services = () => {
   const services = [
@@ -70,17 +70,8 @@ const Services = () => {
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
+      <Navbar />
       <div className="max-w-6xl mx-auto px-8">
-        {/* Navigation */}
-        <nav className="py-6 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <img src={logoIcon} alt="Faith & Harmony" className="w-10 h-10" />
-            <span className="text-accent hover:text-primary-foreground font-semibold transition-colors">
-              ← Back to Home
-            </span>
-          </Link>
-        </nav>
-
         {/* Hero Section */}
         <section className="py-16 text-center">
           <h1 className="text-6xl font-bold mb-6 text-primary font-display tracking-tight leading-tight">

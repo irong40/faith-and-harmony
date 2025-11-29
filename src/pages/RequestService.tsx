@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Send, CheckCircle } from "lucide-react";
+import { Send, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { SERVICES, BUDGET_RANGES, CONTACT_METHODS, HOW_HEARD_OPTIONS, ServiceCode, getServiceByCode } from "@/data/services";
 import { ConditionalFields } from "@/components/service-request/ConditionalFields";
-import logoIcon from "@/assets/logo-icon.png";
+import Navbar from "@/components/Navbar";
 
 export default function RequestService() {
   const [searchParams] = useSearchParams();
@@ -156,19 +156,7 @@ export default function RequestService() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-primary py-4">
-        <div className="max-w-4xl mx-auto px-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <img src={logoIcon} alt="Faith & Harmony" className="w-10 h-10" />
-            <span className="text-primary-foreground font-display font-bold text-xl">Faith & Harmony</span>
-          </Link>
-          <Link to="/services" className="text-primary-foreground hover:text-accent transition-colors flex items-center gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Services
-          </Link>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="max-w-4xl mx-auto px-4 py-12">
         <div className="text-center mb-12">
