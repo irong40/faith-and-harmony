@@ -4,89 +4,91 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Faith & Harmony Brand Colors */
+    --background: 33 28% 89%; /* Cream #eae3d9 */
+    --foreground: 280 73% 14%; /* Dark purple #2b0a3d */
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 280 73% 14%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 280 73% 14%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 280 73% 14%; /* Dark purple #2b0a3d */
+    --primary-foreground: 38 64% 63%; /* Gold #dfae62 */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 33 28% 89%; /* Cream #eae3d9 */
+    --secondary-foreground: 280 73% 14%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 15% 42%; /* Slate #5b657a */
+    --muted-foreground: 220 15% 30%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 38 64% 63%; /* Gold #dfae62 */
+    --accent-foreground: 280 73% 14%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 280 30% 80%;
+    --input: 280 30% 80%;
+    --ring: 38 64% 63%; /* Gold */
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Brand-specific tokens */
+    --brand-purple: 280 73% 14%;
+    --brand-purple-light: 298 37% 34%; /* #753679 */
+    --brand-gold: 38 64% 63%;
+    --brand-cream: 33 28% 89%;
+    --brand-slate: 220 15% 42%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 280 73% 14%;
+    --sidebar-foreground: 33 28% 89%;
+    --sidebar-primary: 38 64% 63%;
+    --sidebar-primary-foreground: 280 73% 14%;
+    --sidebar-accent: 298 37% 34%;
+    --sidebar-accent-foreground: 33 28% 89%;
+    --sidebar-border: 280 50% 25%;
+    --sidebar-ring: 38 64% 63%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 280 73% 8%;
+    --foreground: 33 28% 89%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 280 73% 12%;
+    --card-foreground: 33 28% 89%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 280 73% 12%;
+    --popover-foreground: 33 28% 89%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 38 64% 63%; /* Gold */
+    --primary-foreground: 280 73% 14%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 280 50% 20%;
+    --secondary-foreground: 33 28% 89%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 280 50% 20%;
+    --muted-foreground: 220 15% 60%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 298 37% 34%;
+    --accent-foreground: 33 28% 89%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 280 50% 25%;
+    --input: 280 50% 25%;
+    --ring: 38 64% 63%;
+
+    --sidebar-background: 280 73% 8%;
+    --sidebar-foreground: 33 28% 89%;
+    --sidebar-primary: 38 64% 63%;
+    --sidebar-primary-foreground: 280 73% 14%;
+    --sidebar-accent: 280 50% 20%;
+    --sidebar-accent-foreground: 33 28% 89%;
+    --sidebar-border: 280 50% 20%;
+    --sidebar-ring: 38 64% 63%;
   }
 }
 
@@ -96,6 +98,20 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-accent to-amber-400 bg-clip-text text-transparent;
+  }
+
+  .bg-brand-gradient {
+    @apply bg-gradient-to-br from-primary to-purple-900;
   }
 }
