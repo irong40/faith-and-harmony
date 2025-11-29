@@ -9,12 +9,12 @@ const ChurchTech = () => {
       <div className="max-w-6xl mx-auto px-8">
         {/* Hero Section */}
         <section className="py-16 text-center">
-          <div className="text-6xl mb-6">🎷</div>
+          <div className="text-6xl mb-6">🎚️</div>
           <h1 className="text-5xl font-bold mb-6 text-primary font-display">
-            Church Tech & Gospel Saxophone Programs
+            Church Technology Services
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
-            Enhance your worship experience through professional audio/visual solutions and gospel saxophone instruction.
+            Enhance your worship experience through professional audio/visual solutions tailored for ministry.
           </p>
           <div className="inline-block bg-accent/20 border border-accent rounded-full px-6 py-3">
             <span className="text-accent font-bold text-lg">Starting at $199</span>
@@ -23,7 +23,7 @@ const ChurchTech = () => {
 
         {/* Church Tech */}
         <section className="mb-16 bg-card rounded-3xl p-10 shadow-xl border border-border">
-          <h2 className="text-4xl font-bold mb-8 text-primary text-center font-display">Church Technology Services</h2>
+          <h2 className="text-4xl font-bold mb-8 text-primary text-center font-display">Our Services</h2>
           <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div>
@@ -48,30 +48,6 @@ const ChurchTech = () => {
           </div>
         </section>
 
-        {/* Gospel Saxophone */}
-        <section className="mb-16 bg-card rounded-3xl p-10 shadow-xl border border-border">
-          <h2 className="text-4xl font-bold mb-8 text-primary text-center font-display">Gospel Saxophone Instruction</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="text-xl font-bold text-primary mb-3">Beginner Lessons</h3>
-              <p className="text-card-foreground">Learn the fundamentals of saxophone with a focus on gospel music styles.</p>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-primary mb-3">Intermediate Training</h3>
-              <p className="text-card-foreground">Develop your skills in improvisation, worship leading, and ensemble playing.</p>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-primary mb-3">Advanced Coaching</h3>
-              <p className="text-card-foreground">Refine your technique and develop your unique voice as a gospel saxophonist.</p>
-            </div>
-          </div>
-          <div className="mt-8 p-6 bg-accent/10 rounded-xl border border-accent/20">
-            <p className="text-center text-card-foreground">
-              <strong>Available for:</strong> Tenor and Alto Saxophone | In-person, Online, or Hybrid sessions
-            </p>
-          </div>
-        </section>
-
         {/* Why Choose Us */}
         <section className="mb-16 bg-primary rounded-3xl p-10 shadow-2xl">
           <h2 className="text-4xl font-bold mb-8 text-center font-display text-primary-foreground">Why Faith & Harmony?</h2>
@@ -83,8 +59,8 @@ const ChurchTech = () => {
               <p className="opacity-90">Years of hands-on experience in church audio, video, and music ministry.</p>
             </div>
             <div>
-              <h3 className="text-xl font-bold mb-4 text-accent">Gospel Music Heritage</h3>
-              <p className="mb-6 opacity-90">Deep roots in gospel music tradition with modern technical expertise.</p>
+              <h3 className="text-xl font-bold mb-4 text-accent">Budget-Conscious Solutions</h3>
+              <p className="mb-6 opacity-90">We work within your church's budget to find the best solutions for your needs.</p>
               <h3 className="text-xl font-bold mb-4 text-accent">Flexible Options</h3>
               <p className="opacity-90">Services tailored to your church's size, budget, and specific needs.</p>
             </div>
@@ -94,7 +70,7 @@ const ChurchTech = () => {
         {/* Call to Action */}
         <section className="mb-20 text-center">
           <h2 className="text-4xl font-bold mb-6 text-primary font-display">Ready to Enhance Your Worship?</h2>
-          <p className="text-xl text-muted-foreground mb-8">Let's discuss how we can support your church's tech needs or start your saxophone journey.</p>
+          <p className="text-xl text-muted-foreground mb-8">Let's discuss how we can support your church's technology needs.</p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Link 
               to="/request-service?service=CHURCH_TECH" 
