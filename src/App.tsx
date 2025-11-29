@@ -25,6 +25,7 @@ import AerialPhotography from "./pages/services/AerialPhotography";
 import WebsiteHosting from "./pages/services/WebsiteHosting";
 import RequestService from "./pages/RequestService";
 import ServiceRequests from "./pages/admin/ServiceRequests";
+import Contact from "./pages/Contact";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="/services/aerial-photography" element={<AerialPhotography />} />
               <Route path="/services/website-hosting" element={<WebsiteHosting />} />
               <Route path="/request-service" element={<RequestService />} />
+              <Route path="/contact" element={<Contact />} />
               <Route
                 path="/admin/service-requests"
                 element={

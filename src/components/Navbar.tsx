@@ -46,6 +46,12 @@ export default function Navbar() {
             >
               Request Service
             </Link>
+            <Link
+              to="/contact"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Contact
+            </Link>
             {isAdmin && (
               <Link
                 to="/admin/service-requests"
@@ -119,6 +125,9 @@ export default function Navbar() {
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/request-service">Request Service</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/contact">Contact</Link>
                 </DropdownMenuItem>
                 {isAdmin && (
                   <>
