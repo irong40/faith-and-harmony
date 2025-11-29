@@ -20,7 +20,7 @@ import BlackHistoryStorytelling from "./pages/services/BlackHistoryStorytelling"
 import CybersecurityAI from "./pages/services/CybersecurityAI";
 import VendorAssistant from "./pages/services/VendorAssistant";
 import ChurchTech from "./pages/services/ChurchTech";
-import FinancialCoaching from "./pages/services/FinancialCoaching";
+
 import AerialPhotography from "./pages/services/AerialPhotography";
 import WebsiteHosting from "./pages/services/WebsiteHosting";
 import RequestService from "./pages/RequestService";
@@ -51,7 +51,6 @@ const App = () => (
               <Route path="/services/cybersecurity-ai" element={<CybersecurityAI />} />
               <Route path="/services/vendor-assistant" element={<VendorAssistant />} />
               <Route path="/services/church-tech" element={<ChurchTech />} />
-              <Route path="/services/financial-coaching" element={<FinancialCoaching />} />
               <Route path="/services/aerial-photography" element={<AerialPhotography />} />
               <Route path="/services/website-hosting" element={<WebsiteHosting />} />
               <Route path="/request-service" element={<RequestService />} />

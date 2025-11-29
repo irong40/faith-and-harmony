@@ -5,7 +5,6 @@ import { BlackHistoryFields } from "./fields/BlackHistoryFields";
 import { CybersecurityFields } from "./fields/CybersecurityFields";
 import { VendorAssistantFields } from "./fields/VendorAssistantFields";
 import { ChurchTechFields } from "./fields/ChurchTechFields";
-import { FinancialFields } from "./fields/FinancialFields";
 import { AerialFields } from "./fields/AerialFields";
 import { WebsiteFields } from "./fields/WebsiteFields";
 
@@ -33,8 +32,6 @@ export function ConditionalFields({ serviceCode, metadata, onMetadataChange }: C
       return <VendorAssistantFields {...fieldProps} />;
     case 'CHURCH_TECH':
       return <ChurchTechFields {...fieldProps} />;
-    case 'FINANCIAL':
-      return <FinancialFields {...fieldProps} />;
     case 'AERIAL':
       return <AerialFields {...fieldProps} />;
     case 'WEBSITE':

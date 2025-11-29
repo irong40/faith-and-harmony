@@ -10,7 +10,7 @@ const CybersecurityAI = () => {
         <section className="py-16 text-center">
           <div className="text-6xl mb-6">🛡️</div>
           <h1 className="text-5xl font-bold mb-6 text-primary font-display">
-            Cybersecurity AI Tools (Sentinel AI)
+            Cybersecurity Services
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
             Protect your organization with AI-powered security assessments and tools. Built by a cybersecurity professional for real-world protection.
@@ -22,7 +22,7 @@ const CybersecurityAI = () => {
 
         {/* What is Sentinel AI */}
         <section className="mb-16 bg-card rounded-3xl p-10 shadow-xl border border-border">
-          <h2 className="text-4xl font-bold mb-8 text-primary text-center font-display">What is Sentinel AI?</h2>
+          <h2 className="text-4xl font-bold mb-8 text-primary text-center font-display">What We Offer</h2>
           <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div>

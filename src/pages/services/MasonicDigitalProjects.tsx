@@ -29,19 +29,11 @@ const MasonicDigitalProjects = () => {
                 <h3 className="text-xl font-bold text-primary mb-3">Digital Preservation</h3>
                 <p className="text-card-foreground">Archive and digitize historical documents, photographs, and records for future generations.</p>
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-primary mb-3">Virtual Meeting Platforms</h3>
-                <p className="text-card-foreground">Secure platforms for virtual lodge meetings, study groups, and educational sessions.</p>
-              </div>
             </div>
             <div className="space-y-6">
               <div>
                 <h3 className="text-xl font-bold text-primary mb-3">Lecture Series Production</h3>
                 <p className="text-card-foreground">Professional video lectures for education and instruction within your organization.</p>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-primary mb-3">Membership Management</h3>
-                <p className="text-card-foreground">Digital tools to track membership, dues, and communications.</p>
               </div>
             </div>
           </div>
