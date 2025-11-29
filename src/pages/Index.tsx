@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
+import Navbar from "@/components/Navbar";
 import logoIcon from "@/assets/logo-icon.png";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
+      <Navbar />
       <div className="max-w-6xl mx-auto px-8">
         {/* Hero Section */}
         <section className="py-20 text-center">
