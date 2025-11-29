@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import logoIcon from "@/assets/logo-icon.png";
 
 const Index = () => {
@@ -114,49 +115,8 @@ const Index = () => {
             Request a Service
           </Link>
         </section>
-
-        {/* Contact Section */}
-        <section className="mb-20 bg-card backdrop-blur-sm rounded-3xl p-10 shadow-xl text-center">
-          <h2 className="text-4xl font-bold mb-8 text-primary font-display">Contact Us</h2>
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <div className="space-y-4">
-              <div className="flex items-center justify-center space-x-3">
-                <span className="text-2xl">📞</span>
-                <a href="tel:760-575-4876" className="text-xl text-accent hover:text-primary-foreground font-semibold transition-colors">
-                  760-575-4876
-                </a>
-              </div>
-              <div className="flex items-center justify-center space-x-3">
-                <span className="text-2xl">📧</span>
-                <a href="mailto:dradamopierce@gmail.com" className="text-xl text-accent hover:text-primary-foreground font-semibold transition-colors">
-                  dradamopierce@gmail.com
-                </a>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-center justify-center space-x-3">
-                <span className="text-2xl">🌐</span>
-                <span className="text-xl text-card-foreground">faithandharmonyllc.com</span>
-              </div>
-              <div className="flex justify-center space-x-6">
-                <span className="text-2xl cursor-pointer hover:scale-110 transition-transform">📺</span>
-                <span className="text-2xl cursor-pointer hover:scale-110 transition-transform">📱</span>
-                <span className="text-2xl cursor-pointer hover:scale-110 transition-transform">🎵</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="text-center py-8 border-t border-border">
-          <p className="text-muted-foreground text-lg">
-            &copy; 2025 Faith & Harmony LLC. All rights reserved.
-          </p>
-          <p className="text-accent text-sm mt-2 font-semibold">
-            Dr. Adam Pierce - Rooted in Purpose, Driven by Service
-          </p>
-        </footer>
       </div>
+      <Footer />
     </div>
   );
 };

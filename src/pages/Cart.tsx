@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ShoppingCart, Minus, Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 const Cart = () => {
   const { items, updateQuantity, removeFromCart, totalItems, totalPrice } = useCart();
@@ -103,13 +104,8 @@ const Cart = () => {
             </div>
           </div>
         )}
-
-        {/* Footer */}
-        <footer className="text-center py-8 border-t border-border">
-          <p className="text-muted-foreground text-lg">&copy; 2025 Faith & Harmony LLC. All rights reserved.</p>
-          <p className="text-accent text-sm mt-2 font-semibold">Dr. Adam Pierce - Rooted in Purpose, Driven by Service</p>
-        </footer>
       </div>
+      <Footer />
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 const Checkout = () => {
   const { items, totalItems, totalPrice, clearCart } = useCart();
@@ -255,13 +256,8 @@ const Checkout = () => {
             </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <footer className="text-center py-8 border-t border-border">
-          <p className="text-muted-foreground text-lg">&copy; 2025 Faith & Harmony LLC. All rights reserved.</p>
-          <p className="text-accent text-sm mt-2 font-semibold">Dr. Adam Pierce - Rooted in Purpose, Driven by Service</p>
-        </footer>
       </div>
+      <Footer />
     </div>
   );
 };

@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SERVICES, BUDGET_RANGES, CONTACT_METHODS, HOW_HEARD_OPTIONS, ServiceCode, getServiceByCode } from "@/data/services";
 import { ConditionalFields } from "@/components/service-request/ConditionalFields";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 export default function RequestService() {
   const [searchParams] = useSearchParams();
@@ -397,15 +398,7 @@ export default function RequestService() {
           </div>
         </form>
       </main>
-
-      {/* Footer */}
-      <footer className="bg-primary py-8 mt-12">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <p className="text-primary-foreground/80">
-            &copy; 2025 Faith & Harmony LLC. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

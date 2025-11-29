@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { SERVICES } from "@/data/services";
 
 const serviceDetails: Record<string, { icon: string; description: string; highlights: string[] }> = {
@@ -202,6 +203,7 @@ const Services = () => {
           </div>
         </section>
       </div>
+      <Footer />
     </div>
   );
 };

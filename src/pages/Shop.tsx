@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { products } from '@/data/products';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 const Shop = () => {
   return (
@@ -72,13 +73,8 @@ const Shop = () => {
             </div>
           </div>
         </section>
-
-        {/* Footer */}
-        <footer className="text-center py-8 border-t border-border">
-          <p className="text-muted-foreground text-lg">&copy; 2025 Faith & Harmony LLC. All rights reserved.</p>
-          <p className="text-accent text-sm mt-2 font-semibold">Dr. Adam Pierce - Rooted in Purpose, Driven by Service</p>
-        </footer>
       </div>
+      <Footer />
     </div>
   );
 };
