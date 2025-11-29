@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
-import { ShoppingCart, ArrowLeft, DollarSign, CreditCard } from 'lucide-react';
+import { ArrowLeft, DollarSign, CreditCard } from 'lucide-react';
 import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
-import logoIcon from '@/assets/logo-icon.png';
+import Navbar from '@/components/Navbar';
 
 const Checkout = () => {
   const { items, totalItems, totalPrice, clearCart } = useCart();
@@ -85,28 +85,8 @@ const Checkout = () => {
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
+      <Navbar />
       <div className="max-w-6xl mx-auto px-8">
-        {/* Header */}
-        <header className="py-6 flex justify-between items-center border-b border-border">
-          <Link to="/" className="flex items-center gap-3">
-            <img src={logoIcon} alt="Faith & Harmony" className="w-10 h-10" />
-            <span className="text-2xl font-bold text-primary font-display">Faith & Harmony</span>
-          </Link>
-          <nav className="flex items-center gap-6">
-            <Link to="/" className="text-foreground hover:text-accent transition-colors">Home</Link>
-            <Link to="/services" className="text-foreground hover:text-accent transition-colors">Services</Link>
-            <Link to="/shop" className="text-foreground hover:text-accent transition-colors">Shop</Link>
-            <Link to="/cart" className="relative p-2 hover:bg-secondary rounded-full transition-colors">
-              <ShoppingCart className="w-6 h-6 text-primary" />
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-accent text-primary text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
-                  {totalItems}
-                </span>
-              )}
-            </Link>
-          </nav>
-        </header>
-
         {/* Back Link */}
         <Link to="/cart" className="inline-flex items-center gap-2 text-accent hover:text-primary-foreground mt-8 mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4" />
