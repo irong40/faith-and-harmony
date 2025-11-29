@@ -5,6 +5,7 @@ import { useCart } from '@/contexts/CartContext';
 import { products } from '@/data/products';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -125,13 +126,8 @@ const ProductDetail = () => {
             </button>
           </div>
         </div>
-
-        {/* Footer */}
-        <footer className="text-center py-8 border-t border-border">
-          <p className="text-muted-foreground text-lg">&copy; 2025 Faith & Harmony LLC. All rights reserved.</p>
-          <p className="text-accent text-sm mt-2 font-semibold">Dr. Adam Pierce - Rooted in Purpose, Driven by Service</p>
-        </footer>
       </div>
+      <Footer />
     </div>
   );
 };

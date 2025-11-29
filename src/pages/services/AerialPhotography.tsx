@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const AerialPhotography = () => {
   return (
@@ -105,6 +106,7 @@ const AerialPhotography = () => {
           </div>
         </section>
       </div>
+      <Footer />
     </div>
   );
 };

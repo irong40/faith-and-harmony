@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const AIVideoCreation = () => {
   return (
@@ -103,6 +104,7 @@ const AIVideoCreation = () => {
           </div>
         </section>
       </div>
+      <Footer />
     </div>
   );
 };
