@@ -63,13 +63,13 @@ const Footer = () => {
             
             {/* Social Links */}
             <div className="flex gap-4 mt-4">
-              <a href="https://www.youtube.com/@TheyNeverToldUs" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors" aria-label="YouTube">
+              <a href="https://www.youtube.com/@TheyNeverToldUs" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-all duration-200 hover:scale-110" aria-label="YouTube">
                 <Youtube size={24} />
               </a>
-              <a href="https://www.facebook.com/profile.php?id=100095381376731" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors" aria-label="Facebook">
+              <a href="https://www.facebook.com/profile.php?id=100095381376731" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-all duration-200 hover:scale-110" aria-label="Facebook">
                 <Facebook size={24} />
               </a>
-              <a href="https://www.instagram.com/faithharmony4045/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors" aria-label="Instagram">
+              <a href="https://www.instagram.com/faithharmony4045/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-all duration-200 hover:scale-110" aria-label="Instagram">
                 <Instagram size={24} />
               </a>
             </div>
