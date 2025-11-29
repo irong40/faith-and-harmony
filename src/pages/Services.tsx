@@ -11,7 +11,7 @@ const serviceDetails: Record<string, { icon: string; description: string; highli
   MASONIC: {
     icon: "🏛️",
     description: "Preserve and modernize fraternal organization traditions through secure digital platforms.",
-    highlights: ["Digital ritual preservation", "Virtual meeting platforms", "Secure communications"]
+    highlights: ["Digital ritual preservation", "Lecture series production", "Secure communications"]
   },
   BLACK_HISTORY: {
     icon: "📚",
@@ -32,11 +32,6 @@ const serviceDetails: Record<string, { icon: string; description: string; highli
     icon: "🎷",
     description: "Enhance worship through technology and musical excellence, bridging tradition with innovation.",
     highlights: ["Audio/visual consulting", "Gospel music education", "Live streaming setup"]
-  },
-  FINANCIAL: {
-    icon: "🌱",
-    description: "Build generational wealth through strategic planning, property investment, and financial education.",
-    highlights: ["Personal financial planning", "Real estate guidance", "Generational wealth building"]
   },
   AERIAL: {
     icon: "🚁",

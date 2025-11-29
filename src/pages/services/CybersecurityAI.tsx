@@ -20,7 +20,7 @@ const CybersecurityAI = () => {
           </div>
         </section>
 
-        {/* What is Sentinel AI */}
+        {/* What We Offer */}
         <section className="mb-16 bg-card rounded-3xl p-10 shadow-xl border border-border">
           <h2 className="text-4xl font-bold mb-8 text-primary text-center font-display">What We Offer</h2>
           <div className="grid md:grid-cols-2 gap-8">

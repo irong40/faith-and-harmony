@@ -51,10 +51,9 @@ const Index = () => {
               { icon: "🎥", title: "AI Video Creation & Content Automation", description: "Streamline your content creation with cutting-edge AI tools", link: "/services/ai-video-creation" },
               { icon: "🏛️", title: "Masonic & OES Digital Projects", description: "Preserve and modernize fraternal organization traditions", link: "/services/masonic-digital-projects" },
               { icon: "📚", title: "Black History Storytelling Packages", description: "Craft compelling narratives that honor our heritage", link: "/services/black-history-storytelling" },
-              { icon: "🛡️", title: "Cybersecurity AI Tools (Sentinel AI)", description: "Protect your digital assets with intelligent security solutions", link: "/services/cybersecurity-ai" },
+              { icon: "🛡️", title: "Cybersecurity Services", description: "Protect your digital assets with intelligent security solutions", link: "/services/cybersecurity-ai" },
               { icon: "🧾", title: "Vendor Assistant Systems for Events", description: "Automate your event management and vendor operations", link: "/services/vendor-assistant" },
               { icon: "🎷", title: "Church Tech & Gospel Saxophone Programs", description: "Enhance worship through technology and musical excellence", link: "/services/church-tech" },
-              { icon: "🌱", title: "Financial Freedom & Land Ownership Coaching", description: "Build generational wealth through strategic planning", link: "/services/financial-coaching" },
               { icon: "🚁", title: "Aerial Photography & Inspections", description: "FAA Part 107 certified drone services for land and sea", link: "/services/aerial-photography" },
               { icon: "🌐", title: "Website Hosting & Development", description: "Professional web design, development, and hosting services", link: "/services/website-hosting" }
             ].map((service, index) => (
@@ -87,11 +86,11 @@ const Index = () => {
                 description: "Educational content series uncovering untold stories and hidden history for community empowerment."
               },
               { 
-                title: "Sentinel AI Cybersecurity Platform", 
+                title: "Cybersecurity Platform", 
                 description: "AI-powered security assessment tools protecting organizations from digital threats."
               },
               { 
-                title: "Virtual Lodge Lecture Series", 
+                title: "Lodge Lecture Series", 
                 description: "Digital preservation and modernization of fraternal organization teachings and ceremonies."
               },
               { 

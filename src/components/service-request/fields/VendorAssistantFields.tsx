@@ -10,7 +10,7 @@ interface FieldProps {
 
 const EVENT_TYPES = ['Conference', 'Church event', 'Festival', 'Pop-up market', 'Private event', 'Other'];
 const ATTENDEE_SIZES = ['Under 50', '50-100', '100-250', '250-500', '500+'];
-const SERVICES = ['Intake forms', 'QR codes', 'Photo delivery', 'Payment links', 'Inventory tracking', 'Other'];
+const SERVICES = ['Intake forms', 'QR codes', 'Payment links', 'Inventory tracking', 'Reporting & analytics', 'Other'];
 
 export function VendorAssistantFields({ metadata, onMetadataChange }: FieldProps) {
   const selectedServices = metadata.servicesNeeded || [];
