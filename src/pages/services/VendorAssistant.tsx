@@ -13,7 +13,7 @@ const VendorAssistant = () => {
             Vendor Assistant Systems for Events
           </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
-            Automate your event operations with smart tools for intake, payments, photo delivery, and inventory tracking.
+            Automate your event operations with smart tools for intake, payments, and inventory tracking.
           </p>
           <div className="inline-block bg-accent/20 border border-accent rounded-full px-6 py-3">
             <span className="text-accent font-bold text-lg">Starting at $450 per event</span>
@@ -32,10 +32,6 @@ const VendorAssistant = () => {
               <div>
                 <h3 className="text-xl font-bold text-primary mb-3">QR Code Systems</h3>
                 <p className="text-card-foreground">Generate and manage QR codes for check-in, payments, and information sharing.</p>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-primary mb-3">Photo Delivery</h3>
-                <p className="text-card-foreground">Automated systems to capture, organize, and deliver event photos to attendees.</p>
               </div>
             </div>
             <div className="space-y-6">

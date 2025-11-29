@@ -5,7 +5,6 @@ export const SERVICE_CODES = {
   CYBERSECURITY: 'CYBERSECURITY',
   VENDOR_ASSISTANT: 'VENDOR_ASSISTANT',
   CHURCH_TECH: 'CHURCH_TECH',
-  FINANCIAL: 'FINANCIAL',
   AERIAL: 'AERIAL',
   WEBSITE: 'WEBSITE',
 } as const;
@@ -48,7 +47,7 @@ export const SERVICES: ServiceOption[] = [
   },
   {
     code: 'CYBERSECURITY',
-    name: 'Cybersecurity AI Tools (Sentinel AI)',
+    name: 'Cybersecurity Services',
     category: 'Technology',
     startingPrice: 500,
     pricingUnit: 'per project',
@@ -69,14 +68,6 @@ export const SERVICES: ServiceOption[] = [
     startingPrice: 199,
     pricingUnit: 'starting at',
     route: '/services/church-tech',
-  },
-  {
-    code: 'FINANCIAL',
-    name: 'Financial Freedom & Land Ownership Coaching',
-    category: 'Coaching',
-    startingPrice: 150,
-    pricingUnit: 'per session',
-    route: '/services/financial-coaching',
   },
   {
     code: 'AERIAL',
