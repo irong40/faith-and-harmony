@@ -62,14 +62,14 @@ const Footer = () => {
             
             {/* Social Links */}
             <div className="flex gap-4 mt-4">
-              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-2xl hover:scale-110 transition-transform" aria-label="YouTube">
+              <a href="https://www.youtube.com/@TheyNeverToldUs" target="_blank" rel="noopener noreferrer" className="text-2xl hover:scale-110 transition-transform" aria-label="YouTube">
                 📺
               </a>
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-2xl hover:scale-110 transition-transform" aria-label="Facebook">
+              <a href="https://www.facebook.com/profile.php?id=100095381376731" target="_blank" rel="noopener noreferrer" className="text-2xl hover:scale-110 transition-transform" aria-label="Facebook">
                 📱
               </a>
-              <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" className="text-2xl hover:scale-110 transition-transform" aria-label="TikTok">
-                🎵
+              <a href="https://www.instagram.com/faithharmony4045/" target="_blank" rel="noopener noreferrer" className="text-2xl hover:scale-110 transition-transform" aria-label="Instagram">
+                📷
               </a>
             </div>
           </div>
