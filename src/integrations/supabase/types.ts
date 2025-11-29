@@ -14,16 +14,180 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      service_requests: {
+        Row: {
+          admin_notes: string | null
+          budget_range: string | null
+          client_email: string
+          client_name: string
+          client_phone: string
+          company_name: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          preferred_contact_method:
+            | Database["public"]["Enums"]["contact_method"]
+            | null
+          project_description: string
+          project_title: string | null
+          service_id: string | null
+          source: string | null
+          status: Database["public"]["Enums"]["request_status"] | null
+          target_end_date: string | null
+          target_start_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          budget_range?: string | null
+          client_email: string
+          client_name: string
+          client_phone: string
+          company_name?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          preferred_contact_method?:
+            | Database["public"]["Enums"]["contact_method"]
+            | null
+          project_description: string
+          project_title?: string | null
+          service_id?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["request_status"] | null
+          target_end_date?: string | null
+          target_start_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          budget_range?: string | null
+          client_email?: string
+          client_name?: string
+          client_phone?: string
+          company_name?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          preferred_contact_method?:
+            | Database["public"]["Enums"]["contact_method"]
+            | null
+          project_description?: string
+          project_title?: string | null
+          service_id?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["request_status"] | null
+          target_end_date?: string | null
+          target_start_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_requests_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          active: boolean | null
+          category: string
+          code: string
+          created_at: string | null
+          detailed_description: string | null
+          id: string
+          name: string
+          packages: Json | null
+          page_route: string | null
+          pricing_unit: Database["public"]["Enums"]["pricing_unit"] | null
+          short_description: string | null
+          starting_price: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          category: string
+          code: string
+          created_at?: string | null
+          detailed_description?: string | null
+          id?: string
+          name: string
+          packages?: Json | null
+          page_route?: string | null
+          pricing_unit?: Database["public"]["Enums"]["pricing_unit"] | null
+          short_description?: string | null
+          starting_price?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          category?: string
+          code?: string
+          created_at?: string | null
+          detailed_description?: string | null
+          id?: string
+          name?: string
+          packages?: Json | null
+          page_route?: string | null
+          pricing_unit?: Database["public"]["Enums"]["pricing_unit"] | null
+          short_description?: string | null
+          starting_price?: number | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      contact_method: "email" | "phone" | "text"
+      pricing_unit:
+        | "per_project"
+        | "per_hour"
+        | "per_session"
+        | "per_month"
+        | "per_video"
+        | "per_event"
+        | "starting_at"
+      request_status:
+        | "new"
+        | "contacted"
+        | "scoping"
+        | "quoted"
+        | "closed"
+        | "declined"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +314,26 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      contact_method: ["email", "phone", "text"],
+      pricing_unit: [
+        "per_project",
+        "per_hour",
+        "per_session",
+        "per_month",
+        "per_video",
+        "per_event",
+        "starting_at",
+      ],
+      request_status: [
+        "new",
+        "contacted",
+        "scoping",
+        "quoted",
+        "closed",
+        "declined",
+      ],
+    },
   },
 } as const

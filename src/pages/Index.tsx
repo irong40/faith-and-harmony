@@ -23,9 +23,9 @@ const Index = () => {
               <Link to="/services" className="px-10 py-4 bg-primary text-primary-foreground font-semibold text-lg rounded-full hover:opacity-90 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
                 Explore Our Services
               </Link>
-              <button className="px-10 py-4 bg-gradient-to-r from-accent to-amber-400 text-primary font-semibold text-lg rounded-full hover:opacity-90 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
-                Book a Free Consultation
-              </button>
+              <Link to="/request-service" className="px-10 py-4 bg-gradient-to-r from-accent to-amber-400 text-primary font-semibold text-lg rounded-full hover:opacity-90 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+                Request a Service
+              </Link>
               <Link to="/shop" className="px-10 py-4 bg-brand-purple-light text-secondary font-semibold text-lg rounded-full hover:opacity-90 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
                 Shop at Our Store
               </Link>
@@ -109,9 +109,9 @@ const Index = () => {
         <section className="mb-20 bg-primary rounded-3xl p-12 shadow-2xl text-center">
           <h2 className="text-4xl font-bold mb-6 font-display text-primary-foreground">Let's Build Your Legacy</h2>
           <p className="text-xl mb-8 text-secondary opacity-90">Ready to transform your vision into reality?</p>
-          <button className="px-12 py-5 bg-gradient-to-r from-accent to-amber-400 text-primary font-bold text-xl rounded-full hover:opacity-90 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
-            Book a Discovery Call
-          </button>
+          <Link to="/request-service" className="inline-block px-12 py-5 bg-gradient-to-r from-accent to-amber-400 text-primary font-bold text-xl rounded-full hover:opacity-90 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
+            Request a Service
+          </Link>
         </section>
 
         {/* Contact Section */}
