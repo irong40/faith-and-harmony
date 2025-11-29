@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Youtube, Facebook, Instagram } from "lucide-react";
 import logoIcon from "@/assets/logo-icon.png";
 
 const Footer = () => {
@@ -62,14 +63,14 @@ const Footer = () => {
             
             {/* Social Links */}
             <div className="flex gap-4 mt-4">
-              <a href="https://www.youtube.com/@TheyNeverToldUs" target="_blank" rel="noopener noreferrer" className="text-2xl hover:scale-110 transition-transform" aria-label="YouTube">
-                📺
+              <a href="https://www.youtube.com/@TheyNeverToldUs" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors" aria-label="YouTube">
+                <Youtube size={24} />
               </a>
-              <a href="https://www.facebook.com/profile.php?id=100095381376731" target="_blank" rel="noopener noreferrer" className="text-2xl hover:scale-110 transition-transform" aria-label="Facebook">
-                📱
+              <a href="https://www.facebook.com/profile.php?id=100095381376731" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors" aria-label="Facebook">
+                <Facebook size={24} />
               </a>
-              <a href="https://www.instagram.com/faithharmony4045/" target="_blank" rel="noopener noreferrer" className="text-2xl hover:scale-110 transition-transform" aria-label="Instagram">
-                📷
+              <a href="https://www.instagram.com/faithharmony4045/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors" aria-label="Instagram">
+                <Instagram size={24} />
               </a>
             </div>
           </div>
