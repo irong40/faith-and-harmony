@@ -13,7 +13,7 @@ const PRIMARY_CONCERNS = ['Compliance', 'Risk assessment', 'Documentation', 'Inc
 export function CybersecurityFields({ metadata, onMetadataChange }: FieldProps) {
   return (
     <div className="space-y-6 p-6 bg-card/50 rounded-xl border border-border">
-      <h3 className="text-lg font-semibold text-primary font-display">Cybersecurity & Sentinel AI Details</h3>
+      <h3 className="text-lg font-semibold text-primary font-display">Cybersecurity Service Details</h3>
       
       <div className="space-y-2">
         <Label>Organization type</Label>
