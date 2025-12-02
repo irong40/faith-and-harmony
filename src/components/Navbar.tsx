@@ -35,6 +35,12 @@ export default function Navbar() {
               Services
             </Link>
             <Link
+              to="/pricing"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Pricing
+            </Link>
+            <Link
               to="/shop"
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
@@ -119,6 +125,9 @@ export default function Navbar() {
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem asChild>
                   <Link to="/services">Services</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/pricing">Pricing</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/shop">Shop</Link>
