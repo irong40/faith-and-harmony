@@ -26,6 +26,7 @@ import WebsiteHosting from "./pages/services/WebsiteHosting";
 import RequestService from "./pages/RequestService";
 import ServiceRequests from "./pages/admin/ServiceRequests";
 import Contact from "./pages/Contact";
+import Pricing from "./pages/Pricing";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="/services/website-hosting" element={<WebsiteHosting />} />
               <Route path="/request-service" element={<RequestService />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route
                 path="/admin/service-requests"
                 element={
