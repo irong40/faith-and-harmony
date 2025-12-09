@@ -1,13 +1,15 @@
 import { Link } from 'react-router-dom';
-import { products } from '@/data/products';
+import { useProducts, ProductSize } from '@/hooks/useProducts';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WaitlistForm from '@/components/WaitlistForm';
-import { Clock } from 'lucide-react';
+import { Clock, Loader2 } from 'lucide-react';
 
 const Shop = () => {
-  const merchandiseProducts = products.filter(p => p.category !== 'aerial-art');
-  const aerialArtProducts = products.filter(p => p.category === 'aerial-art');
+  const { data: products, isLoading, error } = useProducts();
+
+  const merchandiseProducts = products?.filter(p => p.category !== 'aerial-art') || [];
+  const aerialArtProducts = products?.filter(p => p.category === 'aerial-art') || [];
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
@@ -26,43 +28,59 @@ const Shop = () => {
           </p>
         </section>
 
-        {/* Merchandise Products */}
-        <section className="pb-16">
-          <h2 className="text-3xl font-bold mb-8 text-primary font-display text-center">Featured Products</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {merchandiseProducts.map((product) => (
-              <Link 
-                key={product.id} 
-                to={`/shop/product/${product.id}`}
-                className="group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-              >
-                <div className="aspect-square overflow-hidden bg-secondary">
-                  <img 
-                    src={product.image} 
-                    alt={`${product.name} - ${product.color}`}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-lg font-bold text-primary mb-1">{product.name}</h3>
-                  <p className="text-muted-foreground mb-3">Color: {product.color}</p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl font-bold text-accent">${product.price.toFixed(2)}</span>
-                    {product.originalPrice && (
-                      <span className="text-muted line-through">${product.originalPrice.toFixed(2)}</span>
-                    )}
-                    {product.originalPrice && (
-                      <span className="bg-accent text-primary text-xs px-2 py-1 rounded-full font-semibold">SALE</span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            ))}
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-accent" />
           </div>
-        </section>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-20 text-destructive">
+            <p>Failed to load products. Please try again later.</p>
+          </div>
+        )}
+
+        {/* Merchandise Products */}
+        {!isLoading && merchandiseProducts.length > 0 && (
+          <section className="pb-16">
+            <h2 className="text-3xl font-bold mb-8 text-primary font-display text-center">Featured Products</h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {merchandiseProducts.map((product) => (
+                <Link 
+                  key={product.id} 
+                  to={`/shop/product/${product.id}`}
+                  className="group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                >
+                  <div className="aspect-square overflow-hidden bg-secondary">
+                    <img 
+                      src={product.image} 
+                      alt={`${product.name} - ${product.color}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-primary mb-1">{product.name}</h3>
+                    <p className="text-muted-foreground mb-3">Color: {product.color}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl font-bold text-accent">${product.price.toFixed(2)}</span>
+                      {product.original_price && (
+                        <span className="text-muted line-through">${product.original_price.toFixed(2)}</span>
+                      )}
+                      {product.original_price && (
+                        <span className="bg-accent text-primary text-xs px-2 py-1 rounded-full font-semibold">SALE</span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Aerial Art Prints - Coming Soon */}
-        {aerialArtProducts.length > 0 && (
+        {!isLoading && aerialArtProducts.length > 0 && (
           <section className="pb-16">
             <div className="flex items-center justify-center gap-3 mb-8">
               <h2 className="text-3xl font-bold text-primary font-display text-center">Aerial Art Prints</h2>
@@ -76,40 +94,43 @@ const Shop = () => {
               Available soon in multiple sizes and finishes.
             </p>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {aerialArtProducts.map((product) => (
-                <div 
-                  key={product.id}
-                  className="group bg-card rounded-2xl overflow-hidden shadow-lg"
-                >
-                  <div className="aspect-square overflow-hidden bg-secondary relative">
-                    <img 
-                      src={product.image} 
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-3 right-3 bg-accent text-primary px-3 py-1.5 rounded-full font-bold text-sm shadow-lg">
-                      Coming Soon
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-lg font-bold text-primary mb-1">{product.name}</h3>
-                    <p className="text-muted-foreground mb-3">{product.color}</p>
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="text-xl font-bold text-accent">From ${product.sizes?.[0]?.price.toFixed(2) || product.price.toFixed(2)}</span>
-                    </div>
-                    {product.sizes && (
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {product.sizes.map((size) => (
-                          <span key={size.label} className="text-xs bg-secondary px-2 py-1 rounded text-muted-foreground">
-                            {size.label}
-                          </span>
-                        ))}
+              {aerialArtProducts.map((product) => {
+                const sizes = product.sizes as ProductSize[] | null;
+                return (
+                  <div 
+                    key={product.id}
+                    className="group bg-card rounded-2xl overflow-hidden shadow-lg"
+                  >
+                    <div className="aspect-square overflow-hidden bg-secondary relative">
+                      <img 
+                        src={product.image} 
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-3 right-3 bg-accent text-primary px-3 py-1.5 rounded-full font-bold text-sm shadow-lg">
+                        Coming Soon
                       </div>
-                    )}
-                    <WaitlistForm productId={product.id} productName={product.name} />
+                    </div>
+                    <div className="p-6">
+                      <h3 className="text-lg font-bold text-primary mb-1">{product.name}</h3>
+                      <p className="text-muted-foreground mb-3">{product.color}</p>
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-xl font-bold text-accent">From ${sizes?.[0]?.price.toFixed(2) || product.price.toFixed(2)}</span>
+                      </div>
+                      {sizes && (
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {sizes.map((size) => (
+                            <span key={size.label} className="text-xs bg-secondary px-2 py-1 rounded text-muted-foreground">
+                              {size.label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <WaitlistForm productId={product.id} productName={product.name} />
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}
