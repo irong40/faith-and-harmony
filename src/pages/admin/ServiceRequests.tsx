@@ -25,12 +25,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Search, RefreshCw, Eye, Edit } from "lucide-react";
+import { Search, RefreshCw, Eye, Edit, Plus } from "lucide-react";
 import { format } from "date-fns";
 import type { Tables, Enums } from "@/integrations/supabase/types";
 import AdminNav from "./components/AdminNav";
+import ServiceRequestForm from "./components/ServiceRequestForm";
 
 type ServiceRequest = Tables<"service_requests"> & {
   services?: { name: string; code: string } | null;
@@ -54,8 +54,7 @@ export default function ServiceRequests() {
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editStatus, setEditStatus] = useState<Enums<"request_status">>("new");
-  const [editNotes, setEditNotes] = useState("");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -99,36 +98,14 @@ export default function ServiceRequests() {
 
   const openEdit = (request: ServiceRequest) => {
     setSelectedRequest(request);
-    setEditStatus(request.status || "new");
-    setEditNotes(request.admin_notes || "");
     setIsEditOpen(true);
   };
 
-  const handleUpdate = async () => {
-    if (!selectedRequest) return;
-
-    const { error } = await supabase
-      .from("service_requests")
-      .update({
-        status: editStatus,
-        admin_notes: editNotes,
-      })
-      .eq("id", selectedRequest.id);
-
-    if (error) {
-      toast({
-        title: "Update failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Request updated",
-        description: "Status and notes have been saved.",
-      });
-      setIsEditOpen(false);
-      fetchRequests();
-    }
+  const handleFormSuccess = () => {
+    setIsCreateOpen(false);
+    setIsEditOpen(false);
+    setSelectedRequest(null);
+    fetchRequests();
   };
 
   const getStatusBadge = (status: string | null) => {
@@ -162,16 +139,22 @@ export default function ServiceRequests() {
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Service Requests</h1>
-            <p className="text-sm text-muted-foreground">
-              Manage and track all service requests
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Service Requests</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage and track all service requests
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={() => setIsCreateOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Request
+          </Button>
           <Button onClick={fetchRequests} variant="outline" disabled={loading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
+        </div>
         </div>
         {/* Filters */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -375,45 +358,32 @@ export default function ServiceRequests() {
         </DialogContent>
       </Dialog>
 
+      {/* Create Dialog */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Add Service Request</DialogTitle>
+          </DialogHeader>
+          <ServiceRequestForm
+            onSuccess={handleFormSuccess}
+            onCancel={() => setIsCreateOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Update Service Request</DialogTitle>
+            <DialogTitle>Edit Service Request</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Status</Label>
-              <Select value={editStatus} onValueChange={(v) => setEditStatus(v as Enums<"request_status">)}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Admin Notes</Label>
-              <Textarea
-                value={editNotes}
-                onChange={(e) => setEditNotes(e.target.value)}
-                placeholder="Add internal notes about this request..."
-                className="mt-1"
-                rows={4}
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsEditOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleUpdate}>Save Changes</Button>
-            </div>
-          </div>
+          {selectedRequest && (
+            <ServiceRequestForm
+              initialData={selectedRequest}
+              onSuccess={handleFormSuccess}
+              onCancel={() => setIsEditOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
