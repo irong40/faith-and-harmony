@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.send-waitlist-confirmation]
 verify_jwt = false
+
+[functions.sso-generate-token]
+verify_jwt = false
