@@ -26,6 +26,7 @@ import WebsiteHosting from "./pages/services/WebsiteHosting";
 import AerialGallery from "./pages/AerialGallery";
 import RequestService from "./pages/RequestService";
 import ServiceRequests from "./pages/admin/ServiceRequests";
+import Proposals from "./pages/admin/Proposals";
 import Customers from "./pages/admin/Customers";
 import Orders from "./pages/admin/Orders";
 import Products from "./pages/admin/Products";
@@ -68,6 +69,14 @@ const App = () => (
                 element={
                   <ProtectedRoute requireAdmin>
                     <ServiceRequests />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/proposals"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <Proposals />
                   </ProtectedRoute>
                 }
               />
