@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
-import { ArrowLeft, DollarSign, CreditCard } from 'lucide-react';
+import { ArrowLeft, DollarSign, CreditCard, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -20,18 +21,64 @@ const Checkout = () => {
     notes: ''
   });
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    toast({
-      title: "Order Submitted!",
-      description: "We'll contact you shortly to complete your order.",
-    });
+    setSubmitting(true);
+
+    try {
+      const checkoutData = {
+        customer: {
+          name: formData.name.trim(),
+          email: formData.email.trim().toLowerCase(),
+          phone: formData.phone.trim(),
+          address: formData.address.trim(),
+          city: formData.city.trim(),
+          state: formData.state.trim(),
+          zip: formData.zip.trim(),
+        },
+        items: items.map((item) => ({
+          product_id: item.id,
+          product_name: item.name,
+          product_color: item.color,
+          quantity: item.quantity,
+          unit_price: item.price,
+          total_price: item.price * item.quantity,
+        })),
+        subtotal: totalPrice,
+        notes: formData.notes.trim() || undefined,
+      };
+
+      const { data, error } = await supabase.functions.invoke('process-checkout', {
+        body: checkoutData,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setOrderId(data.orderId);
+      setSubmitted(true);
+      toast({
+        title: "Order Submitted!",
+        description: "Check your email for confirmation and payment instructions.",
+      });
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+      toast({
+        title: "Order Failed",
+        description: error.message || "There was an error submitting your order. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (items.length === 0 && !submitted) {
@@ -54,8 +101,13 @@ const Checkout = () => {
               <DollarSign className="w-10 h-10 text-green-600" />
             </div>
             <h1 className="text-3xl font-bold text-primary font-display mb-4">Order Submitted!</h1>
+            {orderId && (
+              <p className="text-sm text-muted-foreground mb-4 font-mono">
+                Order #{orderId.slice(0, 8).toUpperCase()}
+              </p>
+            )}
             <p className="text-lg text-card-foreground mb-6">
-              Thank you for your order! We've received your request and will contact you shortly at <strong>{formData.email}</strong> with payment instructions.
+              Thank you for your order! We've sent a confirmation email to <strong>{formData.email}</strong> with your order details and payment instructions.
             </p>
             <div className="bg-secondary rounded-xl p-6 mb-6 text-left">
               <h3 className="font-bold text-primary mb-3">Payment Options:</h3>
@@ -109,7 +161,8 @@ const Checkout = () => {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-background"
+                  disabled={submitting}
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-background disabled:opacity-50"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -121,7 +174,8 @@ const Checkout = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-background"
+                    disabled={submitting}
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-background disabled:opacity-50"
                   />
                 </div>
                 <div>
@@ -132,7 +186,8 @@ const Checkout = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-background"
+                    disabled={submitting}
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-background disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -144,7 +199,8 @@ const Checkout = () => {
                   value={formData.address}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-background"
+                  disabled={submitting}
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-background disabled:opacity-50"
                 />
               </div>
               <div className="grid grid-cols-3 gap-4">
@@ -156,7 +212,8 @@ const Checkout = () => {
                     value={formData.city}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-background"
+                    disabled={submitting}
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-background disabled:opacity-50"
                   />
                 </div>
                 <div>
@@ -167,7 +224,8 @@ const Checkout = () => {
                     value={formData.state}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-background"
+                    disabled={submitting}
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-background disabled:opacity-50"
                   />
                 </div>
                 <div>
@@ -178,7 +236,8 @@ const Checkout = () => {
                     value={formData.zip}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-background"
+                    disabled={submitting}
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-background disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -189,7 +248,8 @@ const Checkout = () => {
                   value={formData.notes}
                   onChange={handleChange}
                   rows={3}
-                  className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-background"
+                  disabled={submitting}
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-background disabled:opacity-50"
                   placeholder="Special instructions for your order..."
                 />
               </div>
@@ -218,9 +278,17 @@ const Checkout = () => {
 
               <button 
                 type="submit"
-                className="w-full py-4 bg-primary text-primary-foreground font-bold text-lg rounded-full hover:opacity-90 transition-all shadow-lg mt-6"
+                disabled={submitting}
+                className="w-full py-4 bg-primary text-primary-foreground font-bold text-lg rounded-full hover:opacity-90 transition-all shadow-lg mt-6 disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                Submit Order
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  'Submit Order'
+                )}
               </button>
             </form>
           </div>
