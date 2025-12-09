@@ -94,7 +94,7 @@ const AerialArtistrySection = () => {
             Commission Your Aerial Art
           </Link>
           <Link
-            to="#aerial-gallery"
+            to="/gallery/aerial-art"
             className="px-8 py-4 border-2 border-primary text-primary font-semibold text-lg rounded-full hover:bg-primary hover:text-primary-foreground transition-all duration-300 text-center"
           >
             View Gallery

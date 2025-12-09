@@ -23,6 +23,7 @@ import ChurchTech from "./pages/services/ChurchTech";
 
 import AerialPhotography from "./pages/services/AerialPhotography";
 import WebsiteHosting from "./pages/services/WebsiteHosting";
+import AerialGallery from "./pages/AerialGallery";
 import RequestService from "./pages/RequestService";
 import ServiceRequests from "./pages/admin/ServiceRequests";
 import Customers from "./pages/admin/Customers";
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="/services/church-tech" element={<ChurchTech />} />
               <Route path="/services/aerial-photography" element={<AerialPhotography />} />
               <Route path="/services/website-hosting" element={<WebsiteHosting />} />
+              <Route path="/gallery/aerial-art" element={<AerialGallery />} />
               <Route path="/request-service" element={<RequestService />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/pricing" element={<Pricing />} />
