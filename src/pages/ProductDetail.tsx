@@ -1,8 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
-import { ShoppingCart, Minus, Plus, ArrowLeft, Check } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
-import { products } from '@/data/products';
+import { useProduct } from '@/hooks/useProducts';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -13,9 +13,17 @@ const ProductDetail = () => {
   const { toast } = useToast();
   const [quantity, setQuantity] = useState(1);
 
-  const product = products.find(p => p.id === id);
+  const { data: product, isLoading, error } = useProduct(id);
 
-  if (!product) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    );
+  }
+
+  if (error || !product) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -32,7 +40,7 @@ const ProductDetail = () => {
         id: product.id,
         name: product.name,
         price: product.price,
-        originalPrice: product.originalPrice,
+        originalPrice: product.original_price ?? undefined,
         image: product.image,
         color: product.color
       });
@@ -74,9 +82,9 @@ const ProductDetail = () => {
 
             <div className="flex items-center gap-3">
               <span className="text-4xl font-bold text-accent">${product.price.toFixed(2)}</span>
-              {product.originalPrice && (
+              {product.original_price && (
                 <>
-                  <span className="text-xl text-muted line-through">${product.originalPrice.toFixed(2)}</span>
+                  <span className="text-xl text-muted line-through">${product.original_price.toFixed(2)}</span>
                   <span className="bg-accent text-primary px-3 py-1 rounded-full font-semibold">SALE</span>
                 </>
               )}

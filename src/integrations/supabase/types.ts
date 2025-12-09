@@ -189,6 +189,57 @@ export type Database = {
         }
         Relationships: []
       }
+      products: {
+        Row: {
+          active: boolean
+          category: string
+          color: string
+          coming_soon: boolean
+          created_at: string
+          description: string
+          features: string[]
+          id: string
+          image: string
+          name: string
+          original_price: number | null
+          price: number
+          sizes: Json | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string
+          color: string
+          coming_soon?: boolean
+          created_at?: string
+          description: string
+          features?: string[]
+          id?: string
+          image: string
+          name: string
+          original_price?: number | null
+          price: number
+          sizes?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          color?: string
+          coming_soon?: boolean
+          created_at?: string
+          description?: string
+          features?: string[]
+          id?: string
+          image?: string
+          name?: string
+          original_price?: number | null
+          price?: number
+          sizes?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_requests: {
         Row: {
           admin_notes: string | null
