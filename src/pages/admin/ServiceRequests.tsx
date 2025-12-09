@@ -25,8 +25,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Search, RefreshCw, Eye, Edit, Plus } from "lucide-react";
+import { Search, RefreshCw, Eye, Edit, Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import type { Tables, Enums } from "@/integrations/supabase/types";
 import AdminNav from "./components/AdminNav";
@@ -55,6 +65,8 @@ export default function ServiceRequests() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -106,6 +118,36 @@ export default function ServiceRequests() {
     setIsEditOpen(false);
     setSelectedRequest(null);
     fetchRequests();
+  };
+
+  const openDelete = (request: ServiceRequest) => {
+    setSelectedRequest(request);
+    setIsDeleteOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!selectedRequest) return;
+    setDeleteLoading(true);
+
+    const { error } = await supabase
+      .from("service_requests")
+      .delete()
+      .eq("id", selectedRequest.id);
+
+    if (error) {
+      toast({
+        title: "Delete failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({ title: "Service request deleted" });
+      fetchRequests();
+    }
+
+    setDeleteLoading(false);
+    setIsDeleteOpen(false);
+    setSelectedRequest(null);
   };
 
   const getStatusBadge = (status: string | null) => {
@@ -244,11 +286,12 @@ export default function ServiceRequests() {
                     </TableCell>
                     <TableCell>{getStatusBadge(request.status)}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => openDetail(request)}
+                          title="View details"
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -256,8 +299,18 @@ export default function ServiceRequests() {
                           variant="ghost"
                           size="icon"
                           onClick={() => openEdit(request)}
+                          title="Edit"
                         >
                           <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openDelete(request)}
+                          title="Delete"
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -386,6 +439,29 @@ export default function ServiceRequests() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Service Request</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the service request from{" "}
+              <strong>{selectedRequest?.client_name}</strong>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteLoading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteLoading ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
