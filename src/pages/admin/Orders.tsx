@@ -193,8 +193,55 @@ export default function Orders() {
     }
   };
 
+  const sendStatusNotification = async (order: Order, newStatus: OrderStatus) => {
+    // Only send if status actually changed and customer has email
+    if (!order.customers?.email || order.status === newStatus) return;
+    
+    // Skip notification for "pending" status as it's the default
+    if (newStatus === "pending") return;
+
+    try {
+      const { error } = await supabase.functions.invoke("send-order-status-email", {
+        body: {
+          customer_email: order.customers.email,
+          customer_name: order.customers.name,
+          order_id: order.id,
+          new_status: newStatus,
+          order_total: order.total,
+          order_items: order.order_items?.map((item) => ({
+            product_name: item.product_name,
+            quantity: item.quantity,
+            total_price: item.total_price,
+          })) || [],
+          shipping_address: order.shipping_address
+            ? `${order.shipping_address}, ${order.shipping_city || ""}, ${order.shipping_state || ""} ${order.shipping_zip || ""}`
+            : undefined,
+        },
+      });
+
+      if (error) {
+        console.error("Failed to send status notification:", error);
+        toast({
+          title: "Order updated",
+          description: "Status updated but email notification failed to send.",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Order updated",
+          description: `Customer notified about "${newStatus}" status.`,
+        });
+      }
+    } catch (err) {
+      console.error("Error sending notification:", err);
+    }
+  };
+
   const handleUpdate = async () => {
     if (!selectedOrder) return;
+
+    const previousStatus = selectedOrder.status;
+    const statusChanged = previousStatus !== editStatus;
 
     const { error } = await supabase
       .from("orders")
@@ -211,7 +258,12 @@ export default function Orders() {
         variant: "destructive",
       });
     } else {
-      toast({ title: "Order updated successfully" });
+      // Send notification if status changed
+      if (statusChanged) {
+        await sendStatusNotification(selectedOrder, editStatus);
+      } else {
+        toast({ title: "Order updated successfully" });
+      }
       setIsEditOpen(false);
       fetchOrders();
     }
