@@ -1,11 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, ShoppingCart, FileText } from "lucide-react";
+import { ArrowLeft, Users, ShoppingCart, FileText, Package } from "lucide-react";
 
 const navItems = [
   { href: "/admin/service-requests", label: "Service Requests", icon: FileText },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
+  { href: "/admin/products", label: "Products", icon: Package },
 ];
 
 export default function AdminNav() {
