@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { products } from '@/data/products';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import WaitlistForm from '@/components/WaitlistForm';
 import { Clock } from 'lucide-react';
 
 const Shop = () => {
@@ -78,33 +79,26 @@ const Shop = () => {
               {aerialArtProducts.map((product) => (
                 <div 
                   key={product.id}
-                  className="group bg-card rounded-2xl overflow-hidden shadow-lg relative"
+                  className="group bg-card rounded-2xl overflow-hidden shadow-lg"
                 >
-                  {/* Coming Soon Overlay */}
-                  <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-10 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="bg-accent text-primary px-6 py-3 rounded-full font-bold text-lg shadow-lg">
-                        Coming Soon
-                      </div>
-                      <p className="text-muted-foreground mt-3 text-sm">Join waitlist for early access</p>
-                    </div>
-                  </div>
-                  
-                  <div className="aspect-square overflow-hidden bg-secondary">
+                  <div className="aspect-square overflow-hidden bg-secondary relative">
                     <img 
                       src={product.image} 
                       alt={product.name}
                       className="w-full h-full object-cover"
                     />
+                    <div className="absolute top-3 right-3 bg-accent text-primary px-3 py-1.5 rounded-full font-bold text-sm shadow-lg">
+                      Coming Soon
+                    </div>
                   </div>
                   <div className="p-6">
                     <h3 className="text-lg font-bold text-primary mb-1">{product.name}</h3>
                     <p className="text-muted-foreground mb-3">{product.color}</p>
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-2 mb-4">
                       <span className="text-xl font-bold text-accent">From ${product.sizes?.[0]?.price.toFixed(2) || product.price.toFixed(2)}</span>
                     </div>
                     {product.sizes && (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 mb-4">
                         {product.sizes.map((size) => (
                           <span key={size.label} className="text-xs bg-secondary px-2 py-1 rounded text-muted-foreground">
                             {size.label}
@@ -112,6 +106,7 @@ const Shop = () => {
                         ))}
                       </div>
                     )}
+                    <WaitlistForm productId={product.id} productName={product.name} />
                   </div>
                 </div>
               ))}

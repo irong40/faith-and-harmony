@@ -162,6 +162,33 @@ export type Database = {
           },
         ]
       }
+      product_waitlist: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          notified_at: string | null
+          product_id: string
+          product_name: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          notified_at?: string | null
+          product_id: string
+          product_name: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          notified_at?: string | null
+          product_id?: string
+          product_name?: string
+        }
+        Relationships: []
+      }
       service_requests: {
         Row: {
           admin_notes: string | null
