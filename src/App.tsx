@@ -31,6 +31,7 @@ import Orders from "./pages/admin/Orders";
 import Products from "./pages/admin/Products";
 import Contact from "./pages/Contact";
 import Pricing from "./pages/Pricing";
+import CustomerProposal from "./pages/CustomerProposal";
 
 const queryClient = new QueryClient();
 
@@ -94,6 +95,7 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route path="/proposal/:token" element={<CustomerProposal />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

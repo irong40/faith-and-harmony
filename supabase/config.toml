@@ -20,3 +20,9 @@ verify_jwt = false
 
 [functions.sso-generate-token]
 verify_jwt = false
+
+[functions.generate-proposal]
+verify_jwt = false
+
+[functions.send-proposal-email]
+verify_jwt = false

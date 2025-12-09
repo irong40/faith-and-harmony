@@ -240,6 +240,89 @@ export type Database = {
         }
         Relationships: []
       }
+      proposals: {
+        Row: {
+          admin_notes: string | null
+          approval_token: string
+          approved_at: string | null
+          created_at: string | null
+          customer_notes: string | null
+          declined_at: string | null
+          deliverables: Json | null
+          discount: number | null
+          id: string
+          pricing_items: Json | null
+          proposal_number: string
+          scope_of_work: string
+          sent_at: string | null
+          service_request_id: string
+          status: Database["public"]["Enums"]["proposal_status"] | null
+          subtotal: number
+          terms_and_conditions: string | null
+          title: string
+          total: number
+          updated_at: string | null
+          valid_until: string
+          viewed_at: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          approval_token: string
+          approved_at?: string | null
+          created_at?: string | null
+          customer_notes?: string | null
+          declined_at?: string | null
+          deliverables?: Json | null
+          discount?: number | null
+          id?: string
+          pricing_items?: Json | null
+          proposal_number: string
+          scope_of_work: string
+          sent_at?: string | null
+          service_request_id: string
+          status?: Database["public"]["Enums"]["proposal_status"] | null
+          subtotal?: number
+          terms_and_conditions?: string | null
+          title: string
+          total?: number
+          updated_at?: string | null
+          valid_until: string
+          viewed_at?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          approval_token?: string
+          approved_at?: string | null
+          created_at?: string | null
+          customer_notes?: string | null
+          declined_at?: string | null
+          deliverables?: Json | null
+          discount?: number | null
+          id?: string
+          pricing_items?: Json | null
+          proposal_number?: string
+          scope_of_work?: string
+          sent_at?: string | null
+          service_request_id?: string
+          status?: Database["public"]["Enums"]["proposal_status"] | null
+          subtotal?: number
+          terms_and_conditions?: string | null
+          title?: string
+          total?: number
+          updated_at?: string | null
+          valid_until?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposals_service_request_id_fkey"
+            columns: ["service_request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_requests: {
         Row: {
           admin_notes: string | null
@@ -388,6 +471,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_proposal_number: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -414,6 +498,14 @@ export type Database = {
         | "per_video"
         | "per_event"
         | "starting_at"
+      proposal_status:
+        | "draft"
+        | "sent"
+        | "viewed"
+        | "approved"
+        | "declined"
+        | "expired"
+        | "revision_requested"
       request_status:
         | "new"
         | "contacted"
@@ -566,6 +658,15 @@ export const Constants = {
         "per_video",
         "per_event",
         "starting_at",
+      ],
+      proposal_status: [
+        "draft",
+        "sent",
+        "viewed",
+        "approved",
+        "declined",
+        "expired",
+        "revision_requested",
       ],
       request_status: [
         "new",

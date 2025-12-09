@@ -36,8 +36,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Search, RefreshCw, Eye, Edit, Plus, Trash2 } from "lucide-react";
+import { Search, RefreshCw, Eye, Edit, Plus, Trash2, FileText } from "lucide-react";
 import { format } from "date-fns";
+import ProposalForm from "./components/ProposalForm";
 import type { Tables, Enums } from "@/integrations/supabase/types";
 import AdminNav from "./components/AdminNav";
 import ServiceRequestForm from "./components/ServiceRequestForm";
@@ -66,6 +67,7 @@ export default function ServiceRequests() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isProposalOpen, setIsProposalOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchRequests = async () => {
@@ -123,6 +125,11 @@ export default function ServiceRequests() {
   const openDelete = (request: ServiceRequest) => {
     setSelectedRequest(request);
     setIsDeleteOpen(true);
+  };
+
+  const openProposal = (request: ServiceRequest) => {
+    setSelectedRequest(request);
+    setIsProposalOpen(true);
   };
 
   const handleDelete = async () => {
@@ -306,6 +313,13 @@ export default function ServiceRequests() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => openProposal(request)}
+                          title="Create Proposal"
+                          className="text-primary hover:text-primary"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                        <Button
                           onClick={() => openDelete(request)}
                           title="Delete"
                           className="text-destructive hover:text-destructive"
@@ -462,6 +476,27 @@ export default function ServiceRequests() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Proposal Dialog */}
+      <Dialog open={isProposalOpen} onOpenChange={setIsProposalOpen}>
+        <DialogContent className="max-w-4xl max-h-[95vh]">
+          <DialogHeader>
+            <DialogTitle>Create Proposal</DialogTitle>
+          </DialogHeader>
+          {selectedRequest && (
+            <ProposalForm
+              serviceRequest={selectedRequest}
+              serviceName={selectedRequest.services?.name || "Service"}
+              onSuccess={() => {
+                setIsProposalOpen(false);
+                setSelectedRequest(null);
+                fetchRequests();
+              }}
+              onCancel={() => setIsProposalOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
