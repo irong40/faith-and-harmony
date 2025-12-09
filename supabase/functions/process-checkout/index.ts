@@ -162,125 +162,50 @@ const handler = async (req: Request): Promise<Response> => {
     }
     console.log("Created order items");
 
-    // 4. Send confirmation email to customer
-    const customerEmailHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Order Confirmation</title>
-      </head>
-      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f5;">
-        <table cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-          <!-- Header -->
-          <tr>
-            <td style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); padding: 40px 30px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">
-                Faith & Harmony LLC
-              </h1>
-            </td>
-          </tr>
-          
-          <!-- Main Content -->
-          <tr>
-            <td style="padding: 40px 30px;">
-              <h2 style="color: #1e3a5f; margin: 0 0 20px 0; font-size: 22px;">
-                Thank You for Your Order! 🎉
-              </h2>
-              
-              <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                Hi ${data.customer.name},
-              </p>
-              
-              <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
-                We've received your order and are excited to get it ready for you! We'll be in touch shortly with payment details.
-              </p>
-              
-              <!-- Order Info Box -->
-              <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
-                <p style="color: #64748b; font-size: 14px; margin: 0 0 5px 0;">Order ID</p>
-                <p style="color: #1e3a5f; font-size: 16px; font-weight: 600; margin: 0; font-family: monospace;">
-                  ${order.id.slice(0, 8).toUpperCase()}
-                </p>
-              </div>
-              
-              <!-- Shipping Address -->
-              <div style="background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 15px; margin-bottom: 30px;">
-                <p style="color: #166534; font-size: 14px; font-weight: 600; margin: 0 0 5px 0;">
-                  Shipping To:
-                </p>
-                <p style="color: #166534; font-size: 14px; margin: 0;">
-                  ${data.customer.address}<br>
-                  ${data.customer.city}, ${data.customer.state} ${data.customer.zip}
-                </p>
-              </div>
-              
-              <!-- Order Items -->
-              <h3 style="color: #1e3a5f; font-size: 16px; margin: 0 0 15px 0;">Order Summary</h3>
-              <table cellpadding="0" cellspacing="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-                <thead>
-                  <tr style="background-color: #f8fafc;">
-                    <th style="padding: 12px; text-align: left; color: #64748b; font-size: 14px; font-weight: 600;">Item</th>
-                    <th style="padding: 12px; text-align: center; color: #64748b; font-size: 14px; font-weight: 600;">Qty</th>
-                    <th style="padding: 12px; text-align: right; color: #64748b; font-size: 14px; font-weight: 600;">Price</th>
-                    <th style="padding: 12px; text-align: right; color: #64748b; font-size: 14px; font-weight: 600;">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${formatOrderItems(data.items)}
-                </tbody>
-                <tfoot>
-                  <tr style="background-color: #1e3a5f;">
-                    <td colspan="3" style="padding: 15px; color: #ffffff; font-weight: 600;">Subtotal</td>
-                    <td style="padding: 15px; text-align: right; color: #ffffff; font-weight: 600; font-size: 18px;">
-                      $${Number(data.subtotal).toFixed(2)}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-              
-              <p style="color: #64748b; font-size: 14px; margin: 20px 0; font-style: italic;">
-                * Shipping will be calculated and added to your total
-              </p>
-              
-              <!-- Payment Options -->
-              <div style="background-color: #fef3c7; border-radius: 8px; padding: 20px; margin-top: 30px;">
-                <h3 style="color: #92400e; font-size: 16px; margin: 0 0 15px 0;">Payment Options</h3>
-                <p style="color: #92400e; font-size: 14px; margin: 0 0 10px 0;">
-                  <strong>PayPal:</strong> faithandharmonyllc@gmail.com
-                </p>
-                <p style="color: #92400e; font-size: 14px; margin: 0;">
-                  <strong>Cash App:</strong> $FaithandHarmony
-                </p>
-              </div>
-            </td>
-          </tr>
-          
-          <!-- Footer -->
-          <tr>
-            <td style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
-              <p style="color: #64748b; font-size: 14px; margin: 0 0 10px 0;">
-                Thank you for choosing Faith & Harmony LLC
-              </p>
-              <p style="color: #94a3b8; font-size: 12px; margin: 0;">
-                If you have questions about your order, please contact us.
-              </p>
-            </td>
-          </tr>
-        </table>
-      </body>
-      </html>
-    `;
-
-    // Send customer confirmation
-    const customerEmailResult = await resend.emails.send({
-      from: "Faith & Harmony <onboarding@resend.dev>",
-      to: [data.customer.email],
-      subject: "Order Confirmation - Faith & Harmony LLC",
-      html: customerEmailHtml,
-    });
-    console.log("Customer email sent:", customerEmailResult);
+    // 4. Send invoice email to customer with PDF attachment
+    console.log("Sending invoice email with PDF...");
+    try {
+      const invoiceResponse = await fetch(
+        `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-order-invoice-email`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`,
+          },
+          body: JSON.stringify({
+            type: "invoice",
+            order_id: order.id,
+            customer_name: data.customer.name,
+            customer_email: data.customer.email,
+            customer_address: data.customer.address,
+            customer_city: data.customer.city,
+            customer_state: data.customer.state,
+            customer_zip: data.customer.zip,
+            items: data.items.map((item) => ({
+              product_name: item.product_name,
+              product_color: item.product_color,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              total_price: item.total_price,
+            })),
+            subtotal: data.subtotal,
+            shipping: 0,
+            total: data.subtotal,
+            created_at: new Date().toISOString(),
+          }),
+        }
+      );
+      
+      if (!invoiceResponse.ok) {
+        const errorText = await invoiceResponse.text();
+        console.error("Invoice email failed:", errorText);
+      } else {
+        console.log("Invoice email sent successfully");
+      }
+    } catch (invoiceError) {
+      console.error("Error sending invoice email:", invoiceError);
+    }
 
     // 5. Send notification email to admin
     const adminEmailHtml = `
