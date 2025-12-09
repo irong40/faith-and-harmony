@@ -1,225 +1,165 @@
-import { useState, useEffect } from "react";
-import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Mail, Lock, Loader2 } from "lucide-react";
-import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
-const authSchema = z.object({
-  email: z.string().trim().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-export default function Auth() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { toast } = useToast();
-  const { user, loading: authLoading, signIn, signUp } = useAuth();
+const Auth = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  
+  // Get SSO callback URL if present
+  const ssoCallback = searchParams.get('sso_callback');
 
-  const handleSSORedirect = async () => {
-    const ssoCallback = searchParams.get('sso_callback');
+  // Handle SSO redirect for already logged-in users
+  const handleSSORedirect = async (userId: string, userEmail: string) => {
     if (!ssoCallback) return;
-
+    
     try {
-      const { data, error } = await supabase.functions.invoke('sso-generate-token');
+      // Generate SSO token
+      const { data, error } = await supabase.functions.invoke('sso-generate-token', {
+        body: {
+          user_id: userId,
+          email: userEmail,
+          display_name: userEmail.split('@')[0]
+        }
+      });
+
       if (error) throw error;
 
-      const callbackUrl = new URL(ssoCallback);
-      callbackUrl.searchParams.set('sso_token', data.sso_token);
-      callbackUrl.searchParams.set('user_data', encodeURIComponent(JSON.stringify(data.user_data)));
+      // Redirect back to the requesting app with token
+      const redirectUrl = new URL(ssoCallback);
+      redirectUrl.searchParams.set('sso_token', data.sso_token);
+      redirectUrl.searchParams.set('user_data', JSON.stringify(data.user_data));
       
-      window.location.href = callbackUrl.toString();
-    } catch (err) {
-      console.error('SSO redirect failed:', err);
+      window.location.href = redirectUrl.toString();
+    } catch (error: unknown) {
+      console.error('SSO redirect error:', error);
       toast({
-        title: "SSO redirect failed",
-        description: "Unable to complete single sign-on. Please try again.",
-        variant: "destructive",
+        title: 'SSO Error',
+        description: 'Failed to complete single sign-on',
+        variant: 'destructive',
       });
     }
   };
 
   useEffect(() => {
-    if (!authLoading && user) {
-      const ssoCallback = searchParams.get('sso_callback');
-      if (ssoCallback) {
-        handleSSORedirect();
-      } else {
-        navigate("/");
+    // Check if user is already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        if (ssoCallback) {
+          // User is logged in and there's an SSO callback - redirect them
+          handleSSORedirect(session.user.id, session.user.email || '');
+        } else {
+          // Normal login - go to dashboard
+          navigate('/');
+        }
       }
-    }
-  }, [user, authLoading, navigate, searchParams]);
+    });
 
-  const validateForm = () => {
-    const result = authSchema.safeParse({ email, password });
-    if (!result.success) {
-      const fieldErrors: { email?: string; password?: string } = {};
-      result.error.errors.forEach((err) => {
-        if (err.path[0] === "email") fieldErrors.email = err.message;
-        if (err.path[0] === "password") fieldErrors.password = err.message;
-      });
-      setErrors(fieldErrors);
-      return false;
-    }
-    setErrors({});
-    return true;
-  };
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        if (ssoCallback) {
+          handleSSORedirect(session.user.id, session.user.email || '');
+        } else {
+          navigate('/');
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, ssoCallback]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
-
     setLoading(true);
 
-    if (isLogin) {
-      const { error } = await signIn(email, password);
-      if (error) {
-        toast({
-          title: "Login failed",
-          description: error.message === "Invalid login credentials" 
-            ? "Invalid email or password. Please try again." 
-            : error.message,
-          variant: "destructive",
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
         });
+        if (error) throw error;
       } else {
-        toast({ title: "Welcome back!" });
-        // SSO redirect will be handled by useEffect
-        if (!searchParams.get('sso_callback')) {
-          navigate("/");
-        }
-      }
-    } else {
-      const { error } = await signUp(email, password);
-      if (error) {
-        const message = error.message.includes("already registered")
-          ? "This email is already registered. Please sign in instead."
-          : error.message;
-        toast({
-          title: "Sign up failed",
-          description: message,
-          variant: "destructive",
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+          },
         });
-      } else {
-        toast({ title: "Account created!", description: "You are now signed in." });
-        // SSO redirect will be handled by useEffect
-        if (!searchParams.get('sso_callback')) {
-          navigate("/");
-        }
+        if (error) throw error;
+        
+        toast({
+          title: 'Success',
+          description: 'Account created successfully',
+        });
       }
+    } catch (error: unknown) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <header className="border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <Link to="/" className="inline-flex items-center text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
-          </Link>
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="w-full max-w-md space-y-8">
+        <div>
+          <h2 className="text-4xl font-normal text-foreground tracking-[-0.02em]">
+            {isLogin ? 'Sign In' : 'Sign Up'}
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {ssoCallback 
+              ? 'Sign in to continue to Event Tracking'
+              : isLogin 
+                ? 'Welcome back to Faith & Harmony' 
+                : 'Create your Faith & Harmony account'
+            }
+          </p>
         </div>
-      </header>
-
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">{isLogin ? "Sign In" : "Create Account"}</CardTitle>
-            <CardDescription>
-              {isLogin
-                ? "Enter your credentials to access your account"
-                : "Create an account to get started"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    disabled={loading}
-                  />
-                </div>
-                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
-                    disabled={loading}
-                  />
-                </div>
-                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-              </div>
-
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLogin ? "Sign In" : "Create Account"}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center text-sm">
-              {isLogin ? (
-                <p className="text-muted-foreground">
-                  Don't have an account?{" "}
-                  <button
-                    type="button"
-                    onClick={() => setIsLogin(false)}
-                    className="text-primary underline-offset-4 hover:underline"
-                  >
-                    Sign up
-                  </button>
-                </p>
-              ) : (
-                <p className="text-muted-foreground">
-                  Already have an account?{" "}
-                  <button
-                    type="button"
-                    onClick={() => setIsLogin(true)}
-                    className="text-primary underline-offset-4 hover:underline"
-                  >
-                    Sign in
-                  </button>
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </main>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <Input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? 'Loading...' : isLogin ? 'Sign In' : 'Sign Up'}
+          </Button>
+        </form>
+        
+        <button
+          onClick={() => setIsLogin(!isLogin)}
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+        </button>
+      </div>
     </div>
   );
-}
+};
+
+export default Auth;
