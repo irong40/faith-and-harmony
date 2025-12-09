@@ -186,11 +186,67 @@ export default function Orders() {
         description: itemsError.message,
         variant: "destructive",
       });
+      return;
+    }
+
+    // Get customer info for invoice email
+    const customer = customers.find((c) => c.id === data.customer_id);
+    
+    if (customer?.email) {
+      // Send invoice email with PDF
+      try {
+        const { error: invoiceError } = await supabase.functions.invoke(
+          "send-order-invoice-email",
+          {
+            body: {
+              type: "invoice",
+              order_id: order.id,
+              customer_name: customer.name,
+              customer_email: customer.email,
+              customer_address: data.shipping_address || customer.address,
+              customer_city: data.shipping_city || customer.city,
+              customer_state: data.shipping_state || customer.state,
+              customer_zip: data.shipping_zip || customer.zip,
+              items: data.items.map((item) => ({
+                product_name: item.product_name,
+                product_color: item.product_color,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                total_price: item.total_price,
+              })),
+              subtotal: data.subtotal,
+              shipping: data.shipping,
+              total: data.total,
+              created_at: new Date().toISOString(),
+            },
+          }
+        );
+
+        if (invoiceError) {
+          console.error("Failed to send invoice:", invoiceError);
+          toast({
+            title: "Order created",
+            description: "Order saved but invoice email failed to send.",
+          });
+        } else {
+          toast({
+            title: "Order created successfully",
+            description: "Invoice email sent to customer.",
+          });
+        }
+      } catch (err) {
+        console.error("Error sending invoice:", err);
+        toast({
+          title: "Order created",
+          description: "Order saved but invoice email failed to send.",
+        });
+      }
     } else {
       toast({ title: "Order created successfully" });
-      setIsFormOpen(false);
-      fetchOrders();
     }
+
+    setIsFormOpen(false);
+    fetchOrders();
   };
 
   const sendStatusNotification = async (order: Order, newStatus: OrderStatus) => {
