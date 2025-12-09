@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Mail, Lock, Loader2 } from "lucide-react";
 import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
 
 const authSchema = z.object({
   email: z.string().trim().email("Please enter a valid email address"),
@@ -16,6 +17,7 @@ const authSchema = z.object({
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { user, loading: authLoading, signIn, signUp } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
@@ -24,11 +26,39 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
+  const handleSSORedirect = async () => {
+    const ssoCallback = searchParams.get('sso_callback');
+    if (!ssoCallback) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('sso-generate-token');
+      if (error) throw error;
+
+      const callbackUrl = new URL(ssoCallback);
+      callbackUrl.searchParams.set('sso_token', data.sso_token);
+      callbackUrl.searchParams.set('user_data', encodeURIComponent(JSON.stringify(data.user_data)));
+      
+      window.location.href = callbackUrl.toString();
+    } catch (err) {
+      console.error('SSO redirect failed:', err);
+      toast({
+        title: "SSO redirect failed",
+        description: "Unable to complete single sign-on. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     if (!authLoading && user) {
-      navigate("/");
+      const ssoCallback = searchParams.get('sso_callback');
+      if (ssoCallback) {
+        handleSSORedirect();
+      } else {
+        navigate("/");
+      }
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, searchParams]);
 
   const validateForm = () => {
     const result = authSchema.safeParse({ email, password });
@@ -63,7 +93,10 @@ export default function Auth() {
         });
       } else {
         toast({ title: "Welcome back!" });
-        navigate("/");
+        // SSO redirect will be handled by useEffect
+        if (!searchParams.get('sso_callback')) {
+          navigate("/");
+        }
       }
     } else {
       const { error } = await signUp(email, password);
@@ -78,7 +111,10 @@ export default function Auth() {
         });
       } else {
         toast({ title: "Account created!", description: "You are now signed in." });
-        navigate("/");
+        // SSO redirect will be handled by useEffect
+        if (!searchParams.get('sso_callback')) {
+          navigate("/");
+        }
       }
     }
 
