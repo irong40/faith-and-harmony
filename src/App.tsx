@@ -28,6 +28,7 @@ import RequestService from "./pages/RequestService";
 import ServiceRequests from "./pages/admin/ServiceRequests";
 import Customers from "./pages/admin/Customers";
 import Orders from "./pages/admin/Orders";
+import Products from "./pages/admin/Products";
 import Contact from "./pages/Contact";
 import Pricing from "./pages/Pricing";
 
@@ -82,6 +83,14 @@ const App = () => (
                 element={
                   <ProtectedRoute requireAdmin>
                     <Orders />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/products"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <Products />
                   </ProtectedRoute>
                 }
               />
