@@ -14,6 +14,154 @@ export type Database = {
   }
   public: {
     Tables: {
+      customers: {
+        Row: {
+          address: string | null
+          city: string | null
+          company_name: string | null
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          state: string | null
+          updated_at: string | null
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string | null
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string | null
+          zip?: string | null
+        }
+        Relationships: []
+      }
+      order_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          order_id: string
+          product_color: string | null
+          product_id: string
+          product_name: string
+          quantity: number
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          order_id: string
+          product_color?: string | null
+          product_id: string
+          product_name: string
+          quantity?: number
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          order_id?: string
+          product_color?: string | null
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          admin_notes: string | null
+          created_at: string | null
+          customer_id: string | null
+          id: string
+          notes: string | null
+          shipping: number | null
+          shipping_address: string | null
+          shipping_city: string | null
+          shipping_state: string | null
+          shipping_zip: string | null
+          status: Database["public"]["Enums"]["order_status"] | null
+          subtotal: number
+          total: number
+          updated_at: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          notes?: string | null
+          shipping?: number | null
+          shipping_address?: string | null
+          shipping_city?: string | null
+          shipping_state?: string | null
+          shipping_zip?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          subtotal?: number
+          total?: number
+          updated_at?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          notes?: string | null
+          shipping?: number | null
+          shipping_address?: string | null
+          shipping_city?: string | null
+          shipping_state?: string | null
+          shipping_zip?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          subtotal?: number
+          total?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_requests: {
         Row: {
           admin_notes: string | null
@@ -173,6 +321,13 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user"
       contact_method: "email" | "phone" | "text"
+      order_status:
+        | "pending"
+        | "confirmed"
+        | "processing"
+        | "shipped"
+        | "delivered"
+        | "cancelled"
       pricing_unit:
         | "per_project"
         | "per_hour"
@@ -317,6 +472,14 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user"],
       contact_method: ["email", "phone", "text"],
+      order_status: [
+        "pending",
+        "confirmed",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled",
+      ],
       pricing_unit: [
         "per_project",
         "per_hour",
