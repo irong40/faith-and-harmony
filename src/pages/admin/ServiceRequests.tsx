@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -28,9 +27,10 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Search, RefreshCw, Eye, Edit } from "lucide-react";
+import { Search, RefreshCw, Eye, Edit } from "lucide-react";
 import { format } from "date-fns";
 import type { Tables, Enums } from "@/integrations/supabase/types";
+import AdminNav from "./components/AdminNav";
 
 type ServiceRequest = Tables<"service_requests"> & {
   services?: { name: string; code: string } | null;
@@ -158,31 +158,21 @@ export default function ServiceRequests() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link to="/">
-                <Button variant="ghost" size="icon">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Service Requests</h1>
-                <p className="text-sm text-muted-foreground">
-                  Manage and track all service requests
-                </p>
-              </div>
-            </div>
-            <Button onClick={fetchRequests} variant="outline" disabled={loading}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
-          </div>
-        </div>
-      </header>
+      <AdminNav />
 
       <main className="container mx-auto px-4 py-8">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Service Requests</h1>
+            <p className="text-sm text-muted-foreground">
+              Manage and track all service requests
+            </p>
+          </div>
+          <Button onClick={fetchRequests} variant="outline" disabled={loading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
         {/* Filters */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="relative flex-1">
