@@ -2,8 +2,12 @@ import { Link } from 'react-router-dom';
 import { products } from '@/data/products';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { Clock } from 'lucide-react';
 
 const Shop = () => {
+  const merchandiseProducts = products.filter(p => p.category !== 'aerial-art');
+  const aerialArtProducts = products.filter(p => p.category === 'aerial-art');
+
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
       <Navbar />
@@ -21,11 +25,11 @@ const Shop = () => {
           </p>
         </section>
 
-        {/* Product Grid */}
-        <section className="pb-20">
+        {/* Merchandise Products */}
+        <section className="pb-16">
           <h2 className="text-3xl font-bold mb-8 text-primary font-display text-center">Featured Products</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {products.map((product) => (
+            {merchandiseProducts.map((product) => (
               <Link 
                 key={product.id} 
                 to={`/shop/product/${product.id}`}
@@ -55,6 +59,65 @@ const Shop = () => {
             ))}
           </div>
         </section>
+
+        {/* Aerial Art Prints - Coming Soon */}
+        {aerialArtProducts.length > 0 && (
+          <section className="pb-16">
+            <div className="flex items-center justify-center gap-3 mb-8">
+              <h2 className="text-3xl font-bold text-primary font-display text-center">Aerial Art Prints</h2>
+              <span className="flex items-center gap-1.5 bg-accent/20 text-accent px-3 py-1.5 rounded-full text-sm font-semibold">
+                <Clock className="w-4 h-4" />
+                Coming Soon
+              </span>
+            </div>
+            <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Transform your space with stunning aerial photography turned into timeless art. 
+              Available soon in multiple sizes and finishes.
+            </p>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {aerialArtProducts.map((product) => (
+                <div 
+                  key={product.id}
+                  className="group bg-card rounded-2xl overflow-hidden shadow-lg relative"
+                >
+                  {/* Coming Soon Overlay */}
+                  <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-10 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="bg-accent text-primary px-6 py-3 rounded-full font-bold text-lg shadow-lg">
+                        Coming Soon
+                      </div>
+                      <p className="text-muted-foreground mt-3 text-sm">Join waitlist for early access</p>
+                    </div>
+                  </div>
+                  
+                  <div className="aspect-square overflow-hidden bg-secondary">
+                    <img 
+                      src={product.image} 
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-primary mb-1">{product.name}</h3>
+                    <p className="text-muted-foreground mb-3">{product.color}</p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xl font-bold text-accent">From ${product.sizes?.[0]?.price.toFixed(2) || product.price.toFixed(2)}</span>
+                    </div>
+                    {product.sizes && (
+                      <div className="flex flex-wrap gap-2">
+                        {product.sizes.map((size) => (
+                          <span key={size.label} className="text-xs bg-secondary px-2 py-1 rounded text-muted-foreground">
+                            {size.label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Newsletter Section */}
         <section className="pb-20">
