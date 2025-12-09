@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import AerialArtistrySection from "@/components/AerialArtistrySection";
 
 const AIVideoCreation = () => {
   return (
@@ -86,6 +87,9 @@ const AIVideoCreation = () => {
             </div>
           </div>
         </section>
+
+        {/* Aerial Artistry Section */}
+        <AerialArtistrySection />
 
         {/* Call to Action */}
         <section className="mb-20 text-center">
