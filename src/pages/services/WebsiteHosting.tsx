@@ -17,8 +17,11 @@ const WebsiteHosting = () => {
             Professional web design, development, and hosting services. From simple landing pages to full e-commerce solutions.
           </p>
           <div className="inline-block bg-accent/20 border border-accent rounded-full px-6 py-3">
-            <span className="text-accent font-bold text-lg">Starting at $750 per project</span>
+            <span className="text-accent font-bold text-lg">Starting at $350</span>
           </div>
+          <p className="text-sm text-muted-foreground mt-3">
+            <Link to="/pricing" className="text-accent hover:underline">See our pricing page</Link> for detailed tier information
+          </p>
         </section>
 
         {/* Services */}
