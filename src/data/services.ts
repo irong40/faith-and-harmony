@@ -81,7 +81,7 @@ export const SERVICES: ServiceOption[] = [
     code: 'WEBSITE',
     name: 'Website Hosting & Development',
     category: 'Web Services',
-    startingPrice: 750,
+    startingPrice: 350,
     pricingUnit: 'per project',
     route: '/services/website-hosting',
   },
