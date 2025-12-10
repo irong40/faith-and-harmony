@@ -32,6 +32,7 @@ import Orders from "./pages/admin/Orders";
 import Products from "./pages/admin/Products";
 import Contact from "./pages/Contact";
 import Pricing from "./pages/Pricing";
+import Licensing from "./pages/Licensing";
 import CustomerProposal from "./pages/CustomerProposal";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,7 @@ const App = () => (
               <Route path="/request-service" element={<RequestService />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/licensing" element={<Licensing />} />
               <Route
                 path="/admin/service-requests"
                 element={
