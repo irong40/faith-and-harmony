@@ -420,6 +420,12 @@ export default function Pricing() {
                 </Button>
               </Link>
             </div>
+            <p className="text-sm opacity-70 mt-6">
+              By accepting services, you agree to our{" "}
+              <Link to="/licensing" className="underline hover:opacity-100">
+                Platform Licensing Agreement
+              </Link>
+            </p>
           </div>
         </section>
       </main>
