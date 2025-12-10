@@ -120,7 +120,7 @@ serve(async (req) => {
           <tr>
             <td style="background-color: #2b0a3d; padding: 30px 40px; text-align: center;">
               <p style="color: #dfae62; margin: 0 0 10px; font-size: 14px; font-weight: 600;">Faith & Harmony LLC</p>
-              <p style="color: #ffffff; margin: 0 0 5px; font-size: 12px; opacity: 0.8;">dradamopierce@gmail.com</p>
+              <p style="color: #ffffff; margin: 0 0 5px; font-size: 12px; opacity: 0.8;">info@faithandharmonyllc.com</p>
               <p style="color: #ffffff; margin: 0; font-size: 12px; opacity: 0.6;">© ${new Date().getFullYear()} Faith & Harmony LLC. All rights reserved.</p>
             </td>
           </tr>
@@ -144,7 +144,7 @@ serve(async (req) => {
     // Also send notification to admin
     await resend.emails.send({
       from: "Faith & Harmony <onboarding@resend.dev>",
-      to: ["dradamopierce@gmail.com"],
+      to: ["info@faithandharmonyllc.com"],
       subject: `Proposal Sent: ${proposal.proposal_number} - ${client.name}`,
       html: `
         <h2>Proposal Sent</h2>

@@ -265,7 +265,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const adminEmailResult = await resend.emails.send({
       from: "Faith & Harmony Orders <onboarding@resend.dev>",
-      to: ["faithandharmonyllc@gmail.com"],
+      to: ["info@faithandharmonyllc.com"],
       subject: `New Order #${order.id.slice(0, 8).toUpperCase()} - $${Number(data.subtotal).toFixed(2)}`,
       html: adminEmailHtml,
     });

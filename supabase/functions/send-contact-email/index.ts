@@ -32,7 +32,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send notification to admin
     const adminEmailResponse = await resend.emails.send({
       from: "Faith & Harmony <onboarding@resend.dev>",
-      to: ["contact@faithandharmony.com"],
+      to: ["info@faithandharmonyllc.com"],
       subject: `New Contact Form: ${subject}`,
       html: `
         <h2>New Contact Form Submission</h2>
