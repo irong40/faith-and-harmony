@@ -56,6 +56,9 @@ interface Proposal {
   declined_at: string | null;
   customer_notes: string | null;
   created_at: string;
+  approval_token: string;
+  client_name?: string;
+  client_email?: string;
 }
 
 export default function CustomerProposal() {
@@ -78,7 +81,10 @@ export default function CustomerProposal() {
 
     const { data, error } = await supabase
       .from("proposals")
-      .select("*")
+      .select(`
+        *,
+        service_requests!inner(client_name, client_email)
+      `)
       .eq("approval_token", token)
       .single();
 
@@ -97,10 +103,14 @@ export default function CustomerProposal() {
         ? (data.pricing_items as unknown as PricingItem[])
         : [];
 
+      const serviceRequest = data.service_requests as { client_name: string; client_email: string };
+
       setProposal({
         ...data,
         deliverables,
         pricing_items: pricingItems,
+        client_name: serviceRequest?.client_name,
+        client_email: serviceRequest?.client_email,
       });
 
       // Mark as viewed if not already
@@ -113,6 +123,43 @@ export default function CustomerProposal() {
     }
 
     setLoading(false);
+  };
+
+  const sendResponseEmail = async (
+    action: 'approved' | 'declined' | 'revision_requested',
+    customerNotes?: string
+  ) => {
+    if (!proposal || !proposal.client_name || !proposal.client_email) {
+      console.error("Missing client info for email");
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('send-proposal-response-email', {
+        body: {
+          action,
+          proposal: {
+            proposal_number: proposal.proposal_number,
+            title: proposal.title,
+            total: proposal.total,
+            approval_token: proposal.approval_token,
+          },
+          client: {
+            name: proposal.client_name,
+            email: proposal.client_email,
+          },
+          customerNotes,
+        },
+      });
+
+      if (error) {
+        console.error("Failed to send response email:", error);
+      } else {
+        console.log("Response email sent successfully");
+      }
+    } catch (err) {
+      console.error("Error sending response email:", err);
+    }
   };
 
   const handleApprove = async () => {
@@ -139,6 +186,9 @@ export default function CustomerProposal() {
         title: "Proposal Approved!",
         description: "Thank you! We'll be in touch soon to get started.",
       });
+      
+      // Send notification emails
+      await sendResponseEmail('approved');
     }
 
     setActionLoading(false);
@@ -169,6 +219,9 @@ export default function CustomerProposal() {
         title: "Proposal Declined",
         description: "Thank you for your feedback.",
       });
+      
+      // Send notification emails
+      await sendResponseEmail('declined', declineReason || undefined);
     }
 
     setShowDeclineDialog(false);
@@ -199,6 +252,9 @@ export default function CustomerProposal() {
         title: "Revision Requested",
         description: "We'll review your feedback and send an updated proposal.",
       });
+      
+      // Send notification emails
+      await sendResponseEmail('revision_requested', revisionNotes);
     }
 
     setShowRevisionDialog(false);
@@ -335,9 +391,9 @@ export default function CustomerProposal() {
                         <td className="px-4 py-3">{item.description}</td>
                         <td className="text-center px-4 py-3">{item.quantity}</td>
                         <td className="text-center px-4 py-3 capitalize">{item.unit}</td>
-                        <td className="text-right px-4 py-3">${item.rate.toLocaleString()}</td>
+                        <td className="text-right px-4 py-3">${(item.rate ?? 0).toLocaleString()}</td>
                         <td className="text-right px-4 py-3">
-                          ${(item.quantity * item.rate).toLocaleString()}
+                          ${((item.quantity ?? 0) * (item.rate ?? 0)).toLocaleString()}
                         </td>
                       </tr>
                     ))}
@@ -348,16 +404,16 @@ export default function CustomerProposal() {
                         Subtotal:
                       </td>
                       <td className="text-right px-4 py-2">
-                        ${proposal.subtotal.toLocaleString()}
+                        ${(proposal.subtotal ?? 0).toLocaleString()}
                       </td>
                     </tr>
-                    {proposal.discount > 0 && (
+                    {(proposal.discount ?? 0) > 0 && (
                       <tr>
                         <td colSpan={4} className="text-right px-4 py-2 font-medium">
                           Discount:
                         </td>
                         <td className="text-right px-4 py-2 text-green-600">
-                          -${proposal.discount.toLocaleString()}
+                          -${(proposal.discount ?? 0).toLocaleString()}
                         </td>
                       </tr>
                     )}
@@ -366,7 +422,7 @@ export default function CustomerProposal() {
                         Total:
                       </td>
                       <td className="text-right px-4 py-3 font-bold text-lg text-primary">
-                        ${proposal.total.toLocaleString()}
+                        ${(proposal.total ?? 0).toLocaleString()}
                       </td>
                     </tr>
                   </tfoot>
