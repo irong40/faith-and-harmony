@@ -3,44 +3,54 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { SERVICES } from "@/data/services";
 
-const serviceDetails: Record<string, { icon: string; description: string; highlights: string[] }> = {
+// Service images
+import aiVideoImg from "@/assets/services/ai-video.png";
+import masonicImg from "@/assets/services/masonic.png";
+import blackHistoryImg from "@/assets/services/black-history.png";
+import cybersecurityImg from "@/assets/services/cybersecurity.png";
+import vendorAssistantImg from "@/assets/services/vendor-assistant.png";
+import churchTechImg from "@/assets/services/church-tech.png";
+import aerialImg from "@/assets/services/aerial.png";
+import websiteImg from "@/assets/services/website.png";
+
+const serviceDetails: Record<string, { image: string; description: string; highlights: string[] }> = {
   AI_VIDEO: {
-    icon: "🎥",
+    image: aiVideoImg,
     description: "Streamline your content creation with cutting-edge AI tools that help amplify Black voices and stories.",
     highlights: ["AI-powered video production", "Automated content workflows", "Brand storytelling"]
   },
   MASONIC: {
-    icon: "🏛️",
+    image: masonicImg,
     description: "Preserve and modernize fraternal organization traditions through secure digital platforms.",
     highlights: ["Digital ritual preservation", "Lecture series production", "Secure communications"]
   },
   BLACK_HISTORY: {
-    icon: "📚",
+    image: blackHistoryImg,
     description: "Craft compelling narratives that honor our heritage and educate future generations.",
     highlights: ["Custom historical narratives", "Educational content packages", "Community documentaries"]
   },
   CYBERSECURITY: {
-    icon: "🛡️",
+    image: cybersecurityImg,
     description: "Protect your digital assets with intelligent security solutions designed for community organizations.",
     highlights: ["AI-powered threat detection", "24/7 security monitoring", "Community-focused protection"]
   },
   VENDOR_ASSISTANT: {
-    icon: "🧾",
+    image: vendorAssistantImg,
     description: "Automate your event management and vendor operations for maximum efficiency and profit.",
     highlights: ["Smart inventory management", "Automated payments", "Real-time analytics"]
   },
   CHURCH_TECH: {
-    icon: "🎷",
+    image: churchTechImg,
     description: "Enhance worship through technology and musical excellence, bridging tradition with innovation.",
     highlights: ["Audio/visual consulting", "Gospel music education", "Live streaming setup"]
   },
   AERIAL: {
-    icon: "🚁",
+    image: aerialImg,
     description: "FAA Part 107 certified drone services for stunning aerial photography and detailed property inspections.",
     highlights: ["Land and sea coverage", "Property inspections", "4K video and photography"]
   },
   WEBSITE: {
-    icon: "🌐",
+    image: websiteImg,
     description: "Professional web design, development, and reliable hosting services for businesses and organizations.",
     highlights: ["Custom web design", "Reliable hosting", "Ongoing support"]
   }
@@ -79,9 +89,11 @@ const Services = () => {
                   <div className="bg-card backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group border border-border h-full flex flex-col">
                     <div className="mb-4">
                       <div className="flex items-start justify-between mb-4">
-                        <span className="text-5xl group-hover:scale-110 transition-transform duration-300">
-                          {details.icon}
-                        </span>
+                        <img 
+                          src={details.image} 
+                          alt={service.name} 
+                          className="w-16 h-16 rounded-xl object-cover group-hover:scale-110 transition-transform duration-300"
+                        />
                         <span className="text-xs font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
                           {service.category}
                         </span>

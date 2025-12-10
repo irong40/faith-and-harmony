@@ -3,6 +3,16 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import logoIcon from "@/assets/logo-icon.png";
 
+// Service images
+import aiVideoImg from "@/assets/services/ai-video.png";
+import masonicImg from "@/assets/services/masonic.png";
+import blackHistoryImg from "@/assets/services/black-history.png";
+import cybersecurityImg from "@/assets/services/cybersecurity.png";
+import vendorAssistantImg from "@/assets/services/vendor-assistant.png";
+import churchTechImg from "@/assets/services/church-tech.png";
+import aerialImg from "@/assets/services/aerial.png";
+import websiteImg from "@/assets/services/website.png";
+
 const Index = () => {
   return (
     <div className="min-h-screen bg-background font-sans text-foreground">
@@ -49,21 +59,23 @@ const Index = () => {
           <h2 className="text-5xl font-bold mb-12 text-primary text-center font-display">Our Services</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { icon: "🎥", title: "AI Video Creation & Content Automation", description: "Streamline your content creation with cutting-edge AI tools", link: "/services/ai-video-creation" },
-              { icon: "🏛️", title: "Masonic & OES Digital Projects", description: "Preserve and modernize fraternal organization traditions", link: "/services/masonic-digital-projects" },
-              { icon: "📚", title: "Black History Storytelling Packages", description: "Craft compelling narratives that honor our heritage", link: "/services/black-history-storytelling" },
-              { icon: "🛡️", title: "Cybersecurity Services", description: "Protect your digital assets with intelligent security solutions", link: "/services/cybersecurity-ai" },
-              { icon: "🧾", title: "Vendor Assistant Systems for Events", description: "Automate your event management and vendor operations", link: "/services/vendor-assistant" },
-              { icon: "🎷", title: "Church Tech & Gospel Saxophone Programs", description: "Enhance worship through technology and musical excellence", link: "/services/church-tech" },
-              { icon: "🚁", title: "Aerial Photography & Inspections", description: "FAA Part 107 certified drone services for land and sea", link: "/services/aerial-photography" },
-              { icon: "🌐", title: "Website Hosting & Development", description: "Professional web design, development, and hosting services", link: "/services/website-hosting" }
+              { image: aiVideoImg, title: "AI Video Creation & Content Automation", description: "Streamline your content creation with cutting-edge AI tools", link: "/services/ai-video-creation" },
+              { image: masonicImg, title: "Masonic & OES Digital Projects", description: "Preserve and modernize fraternal organization traditions", link: "/services/masonic-digital-projects" },
+              { image: blackHistoryImg, title: "Black History Storytelling Packages", description: "Craft compelling narratives that honor our heritage", link: "/services/black-history-storytelling" },
+              { image: cybersecurityImg, title: "Cybersecurity Services", description: "Protect your digital assets with intelligent security solutions", link: "/services/cybersecurity-ai" },
+              { image: vendorAssistantImg, title: "Vendor Assistant Systems for Events", description: "Automate your event management and vendor operations", link: "/services/vendor-assistant" },
+              { image: churchTechImg, title: "Church Tech & Gospel Saxophone Programs", description: "Enhance worship through technology and musical excellence", link: "/services/church-tech" },
+              { image: aerialImg, title: "Aerial Photography & Inspections", description: "FAA Part 107 certified drone services for land and sea", link: "/services/aerial-photography" },
+              { image: websiteImg, title: "Website Hosting & Development", description: "Professional web design, development, and hosting services", link: "/services/website-hosting" }
             ].map((service, index) => (
               <Link key={index} to={service.link} className="group">
                 <div className="bg-card backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group border border-border">
                   <div className="text-center mb-6">
-                    <span className="text-5xl mb-4 block group-hover:scale-110 transition-transform duration-300">
-                      {service.icon}
-                    </span>
+                    <img 
+                      src={service.image} 
+                      alt={service.title} 
+                      className="w-20 h-20 mx-auto mb-4 rounded-xl object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
                     <h3 className="text-xl font-bold text-primary mb-3 font-display">
                       {service.title}
                     </h3>
