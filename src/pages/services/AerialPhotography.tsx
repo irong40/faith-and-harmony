@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import aerialImage from "@/assets/services/aerial.png";
 
 const AerialPhotography = () => {
   return (
@@ -9,7 +10,7 @@ const AerialPhotography = () => {
       <div className="max-w-6xl mx-auto px-8">
         {/* Hero Section */}
         <section className="py-16 text-center">
-          <div className="text-6xl mb-6">🚁</div>
+          <img src={aerialImage} alt="Aerial Photography" className="w-24 h-24 rounded-2xl object-cover mx-auto mb-6 shadow-lg" />
           <h1 className="text-5xl font-bold mb-6 text-primary font-display">
             Aerial Photography & Inspections
           </h1>
