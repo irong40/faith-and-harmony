@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import blackHistoryImage from "@/assets/services/black-history.png";
 
 const BlackHistoryStorytelling = () => {
   return (
@@ -9,7 +10,7 @@ const BlackHistoryStorytelling = () => {
       <div className="max-w-6xl mx-auto px-8">
         {/* Hero Section */}
         <section className="py-16 text-center">
-          <div className="text-6xl mb-6">📚</div>
+          <img src={blackHistoryImage} alt="Black History Storytelling" className="w-24 h-24 rounded-2xl object-cover mx-auto mb-6 shadow-lg" />
           <h1 className="text-5xl font-bold mb-6 text-primary font-display">
             Black History Storytelling Packages
           </h1>
