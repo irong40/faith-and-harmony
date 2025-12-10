@@ -179,7 +179,7 @@ const handler = async (req: Request): Promise<Response> => {
             
             <div style="text-align: center; padding: 20px;">
               <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-                Faith & Harmony LLC | dradamopierce@gmail.com
+                Faith & Harmony LLC | info@faithandharmonyllc.com
               </p>
               <p style="color: #d1d5db; font-size: 11px; margin: 8px 0 0 0;">
                 © ${new Date().getFullYear()} Faith & Harmony LLC. All rights reserved.
@@ -193,7 +193,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send admin notification
     const adminEmailResponse = await resend.emails.send({
       from: "Faith & Harmony <onboarding@resend.dev>",
-      to: ["dradamopierce@gmail.com"],
+      to: ["info@faithandharmonyllc.com"],
       subject: `${actionDetails.emoji} ${actionDetails.adminSubject} - ${proposal.proposal_number}`,
       html: adminHtml,
     });

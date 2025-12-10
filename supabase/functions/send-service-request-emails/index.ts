@@ -92,13 +92,13 @@ const handler = async (req: Request): Promise<Response> => {
                 ${data.targetStartDate ? `<li><strong>Target Start:</strong> ${data.targetStartDate}</li>` : ''}
               </ul>
 
-              <p>If you have any questions before we reach out, feel free to reply to this email or call us at <strong>(760) 575-4876</strong>.</p>
+              <p>If you have any questions before we reach out, feel free to reply to this email.</p>
               
-              <p>Best regards,<br><strong>Dr. Adam Pierce</strong><br>Faith & Harmony LLC</p>
+              <p>Best regards,<br><strong>The Faith & Harmony Team</strong></p>
             </div>
             <div class="footer">
               <p>&copy; 2025 Faith & Harmony LLC. All rights reserved.</p>
-              <p>dradamopierce@gmail.com | (760) 575-4876</p>
+              <p>info@faithandharmonyllc.com</p>
             </div>
           </div>
         </body>
@@ -111,7 +111,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send notification to admin
     const adminEmailResult = await resend.emails.send({
       from: "Faith & Harmony <onboarding@resend.dev>",
-      to: ["dradamopierce@gmail.com"],
+      to: ["info@faithandharmonyllc.com"],
       subject: `🔔 New Service Request: ${data.serviceName} from ${data.clientName}`,
       html: `
         <!DOCTYPE html>
