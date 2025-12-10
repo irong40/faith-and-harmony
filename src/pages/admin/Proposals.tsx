@@ -316,7 +316,7 @@ export default function Proposals() {
                       </TableCell>
                       <TableCell className="max-w-[200px] truncate">{proposal.title}</TableCell>
                       <TableCell className="text-right font-medium">
-                        ${proposal.total.toLocaleString()}
+                        ${(proposal.total ?? 0).toLocaleString()}
                       </TableCell>
                       <TableCell>{format(new Date(proposal.valid_until), "MMM d, yyyy")}</TableCell>
                       <TableCell>
@@ -427,18 +427,18 @@ export default function Proposals() {
                         <TableCell>{item.description}</TableCell>
                         <TableCell className="text-right">{item.quantity}</TableCell>
                         <TableCell>{item.unit}</TableCell>
-                        <TableCell className="text-right">${item.rate.toLocaleString()}</TableCell>
-                        <TableCell className="text-right">${item.total.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">${(item.rate ?? 0).toLocaleString()}</TableCell>
+                        <TableCell className="text-right">${(item.total ?? 0).toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
                 <div className="mt-4 space-y-1 text-right">
-                  <p className="text-sm">Subtotal: ${selectedProposal.subtotal.toLocaleString()}</p>
-                  {selectedProposal.discount > 0 && (
-                    <p className="text-sm text-green-500">Discount: -${selectedProposal.discount.toLocaleString()}</p>
+                  <p className="text-sm">Subtotal: ${(selectedProposal.subtotal ?? 0).toLocaleString()}</p>
+                  {(selectedProposal.discount ?? 0) > 0 && (
+                    <p className="text-sm text-green-500">Discount: -${(selectedProposal.discount ?? 0).toLocaleString()}</p>
                   )}
-                  <p className="text-lg font-bold">Total: ${selectedProposal.total.toLocaleString()}</p>
+                  <p className="text-lg font-bold">Total: ${(selectedProposal.total ?? 0).toLocaleString()}</p>
                 </div>
               </div>
 
