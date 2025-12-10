@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.send-proposal-email]
 verify_jwt = false
+
+[functions.send-proposal-response-email]
+verify_jwt = false
