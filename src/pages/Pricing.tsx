@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, X, Minus } from "lucide-react";
+import PricingCalculator from "@/components/PricingCalculator";
 
 const tiers = [
   {
@@ -295,8 +296,21 @@ export default function Pricing() {
           </div>
         </section>
 
-        {/* Add-On Modules Section */}
+        {/* Interactive Pricing Calculator */}
         <section className="py-16 md:py-24">
+          <div className="max-w-4xl mx-auto px-4 sm:px-8">
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-4 text-foreground">
+              Build Your Solution
+            </h2>
+            <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+              Use our interactive calculator to estimate your investment.
+            </p>
+            <PricingCalculator />
+          </div>
+        </section>
+
+        {/* Add-On Modules Section */}
+        <section className="py-16 md:py-24 bg-secondary">
           <div className="max-w-6xl mx-auto px-4 sm:px-8">
             <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-12 text-foreground">
               Add-On Modules
