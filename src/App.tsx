@@ -30,6 +30,7 @@ import Proposals from "./pages/admin/Proposals";
 import Customers from "./pages/admin/Customers";
 import Orders from "./pages/admin/Orders";
 import Products from "./pages/admin/Products";
+import Messages from "./pages/admin/Messages";
 import Contact from "./pages/Contact";
 import Pricing from "./pages/Pricing";
 import Licensing from "./pages/Licensing";
@@ -107,6 +108,14 @@ const App = () => (
                 }
               />
               <Route path="/proposal/:token" element={<CustomerProposal />} />
+              <Route
+                path="/admin/messages"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <Messages />
+                  </ProtectedRoute>
+                }
+              />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
