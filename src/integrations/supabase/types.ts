@@ -14,6 +14,99 @@ export type Database = {
   }
   public: {
     Tables: {
+      apps: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          id: string
+          last_health_check: string | null
+          name: string
+          status: string
+          updated_at: string
+          url: string | null
+          version: string | null
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          last_health_check?: string | null
+          name: string
+          status?: string
+          updated_at?: string
+          url?: string | null
+          version?: string | null
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          last_health_check?: string | null
+          name?: string
+          status?: string
+          updated_at?: string
+          url?: string | null
+          version?: string | null
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          app_id: string | null
+          created_at: string
+          customer_email: string
+          customer_name: string
+          id: string
+          last_message_at: string | null
+          status: string
+          subject: string
+          ticket_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          app_id?: string | null
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          id?: string
+          last_message_at?: string | null
+          status?: string
+          subject: string
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          app_id?: string | null
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          id?: string
+          last_message_at?: string | null
+          status?: string
+          subject?: string
+          ticket_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "apps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -58,6 +151,243 @@ export type Database = {
           zip?: string | null
         }
         Relationships: []
+      }
+      maintenance_logs: {
+        Row: {
+          affected_features: string[] | null
+          app_id: string | null
+          created_at: string
+          description: string
+          hours: number
+          id: string
+          module: string | null
+          ticket_id: string | null
+          type: string
+        }
+        Insert: {
+          affected_features?: string[] | null
+          app_id?: string | null
+          created_at?: string
+          description: string
+          hours: number
+          id?: string
+          module?: string | null
+          ticket_id?: string | null
+          type: string
+        }
+        Update: {
+          affected_features?: string[] | null
+          app_id?: string | null
+          created_at?: string
+          description?: string
+          hours?: number
+          id?: string
+          module?: string | null
+          ticket_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_logs_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "apps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_logs_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_tickets: {
+        Row: {
+          actual_behavior: string | null
+          app_id: string | null
+          assigned_to: string | null
+          category: string | null
+          created_at: string
+          description: string
+          error_stack: string | null
+          expected_behavior: string | null
+          id: string
+          priority: string
+          reporter_email: string | null
+          reporter_name: string | null
+          resolution: string | null
+          resolved_at: string | null
+          screenshot_url: string | null
+          source: string | null
+          status: string
+          steps_to_reproduce: string | null
+          tags: string[] | null
+          ticket_number: string
+          time_spent_hours: number | null
+          title: string
+          type: string
+          updated_at: string
+          url: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          actual_behavior?: string | null
+          app_id?: string | null
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          description: string
+          error_stack?: string | null
+          expected_behavior?: string | null
+          id?: string
+          priority?: string
+          reporter_email?: string | null
+          reporter_name?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          screenshot_url?: string | null
+          source?: string | null
+          status?: string
+          steps_to_reproduce?: string | null
+          tags?: string[] | null
+          ticket_number: string
+          time_spent_hours?: number | null
+          title: string
+          type: string
+          updated_at?: string
+          url?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          actual_behavior?: string | null
+          app_id?: string | null
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string
+          error_stack?: string | null
+          expected_behavior?: string | null
+          id?: string
+          priority?: string
+          reporter_email?: string | null
+          reporter_name?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          screenshot_url?: string | null
+          source?: string | null
+          status?: string
+          steps_to_reproduce?: string | null
+          tags?: string[] | null
+          ticket_number?: string
+          time_spent_hours?: number | null
+          title?: string
+          type?: string
+          updated_at?: string
+          url?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_tickets_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "apps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          attachments: Json | null
+          content: string
+          conversation_id: string
+          created_at: string
+          email_sent_at: string | null
+          id: string
+          read_at: string | null
+          sender_id: string | null
+          sender_name: string
+          sender_type: string
+        }
+        Insert: {
+          attachments?: Json | null
+          content: string
+          conversation_id: string
+          created_at?: string
+          email_sent_at?: string | null
+          id?: string
+          read_at?: string | null
+          sender_id?: string | null
+          sender_name: string
+          sender_type: string
+        }
+        Update: {
+          attachments?: Json | null
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          email_sent_at?: string | null
+          id?: string
+          read_at?: string | null
+          sender_id?: string | null
+          sender_name?: string
+          sender_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          app_id: string | null
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read_at: string | null
+          title: string
+          type: string
+          user_email: string
+        }
+        Insert: {
+          app_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_email: string
+        }
+        Update: {
+          app_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_email?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "apps"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_items: {
         Row: {
@@ -472,6 +802,7 @@ export type Database = {
     }
     Functions: {
       generate_proposal_number: { Args: never; Returns: string }
+      generate_ticket_number: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -1,10 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, ShoppingCart, FileText, Package, ClipboardList } from "lucide-react";
+import { ArrowLeft, Users, ShoppingCart, FileText, Package, ClipboardList, MessageSquare } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 
 const navItems = [
   { href: "/admin/service-requests", label: "Service Requests", icon: FileText },
   { href: "/admin/proposals", label: "Proposals", icon: ClipboardList },
+  { href: "/admin/messages", label: "Messages", icon: MessageSquare },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/products", label: "Products", icon: Package },
@@ -38,6 +40,7 @@ export default function AdminNav() {
               ))}
             </nav>
           </div>
+          <NotificationBell />
         </div>
       </div>
     </header>

@@ -29,3 +29,9 @@ verify_jwt = false
 
 [functions.send-proposal-response-email]
 verify_jwt = false
+
+[functions.message-api]
+verify_jwt = false
+
+[functions.send-message-notification]
+verify_jwt = false
