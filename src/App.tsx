@@ -25,6 +25,7 @@ import AerialPhotography from "./pages/services/AerialPhotography";
 import WebsiteHosting from "./pages/services/WebsiteHosting";
 import AerialGallery from "./pages/AerialGallery";
 import RequestService from "./pages/RequestService";
+import Dashboard from "./pages/admin/Dashboard";
 import ServiceRequests from "./pages/admin/ServiceRequests";
 import Proposals from "./pages/admin/Proposals";
 import Customers from "./pages/admin/Customers";
@@ -67,6 +68,14 @@ const App = () => (
               <Route path="/contact" element={<Contact />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/licensing" element={<Licensing />} />
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/admin/service-requests"
                 element={
