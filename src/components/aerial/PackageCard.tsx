@@ -55,6 +55,7 @@ export function PackageCard({
         {/* Header */}
         <div className="text-center mb-6">
           <h3 className="text-xl font-bold text-primary font-display mb-2">{name}</h3>
+          <p className="text-sm text-muted-foreground">Starting at</p>
           <div className="flex items-baseline justify-center gap-1">
             <span className="text-4xl font-bold text-primary">${price.toLocaleString()}</span>
           </div>

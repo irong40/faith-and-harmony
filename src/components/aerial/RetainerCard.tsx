@@ -42,6 +42,7 @@ export function RetainerCard({
           </p>
         </div>
         <div className="text-right">
+          <p className="text-xs text-muted-foreground">Starting at</p>
           <span className="text-2xl font-bold text-primary">${price.toLocaleString()}</span>
           <span className="text-muted-foreground text-sm">/mo</span>
           {savings > 0 && (
