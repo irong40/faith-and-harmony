@@ -73,7 +73,7 @@ export const SERVICES: ServiceOption[] = [
     code: 'AERIAL',
     name: 'Aerial Photography & Inspections',
     category: 'Photography',
-    startingPrice: 250,
+    startingPrice: 299,
     pricingUnit: 'per project',
     route: '/services/aerial-photography',
   },
