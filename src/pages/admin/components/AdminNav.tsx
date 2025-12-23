@@ -7,6 +7,7 @@ const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/service-requests", label: "Service Requests", icon: FileText },
   { href: "/admin/proposals", label: "Proposals", icon: ClipboardList },
+  { href: "/admin/drone-jobs", label: "Drone Jobs", icon: ClipboardList },
   { href: "/admin/messages", label: "Messages", icon: MessageSquare },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
