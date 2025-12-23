@@ -28,6 +28,8 @@ import RequestService from "./pages/RequestService";
 import Dashboard from "./pages/admin/Dashboard";
 import ServiceRequests from "./pages/admin/ServiceRequests";
 import Proposals from "./pages/admin/Proposals";
+import DroneJobs from "./pages/admin/DroneJobs";
+import DroneJobDetail from "./pages/admin/DroneJobDetail";
 import Customers from "./pages/admin/Customers";
 import Orders from "./pages/admin/Orders";
 import Products from "./pages/admin/Products";
@@ -89,6 +91,22 @@ const App = () => (
                 element={
                   <ProtectedRoute requireAdmin>
                     <Proposals />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/drone-jobs"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <DroneJobs />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/drone-jobs/:id"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <DroneJobDetail />
                   </ProtectedRoute>
                 }
               />
