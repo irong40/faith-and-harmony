@@ -30,6 +30,7 @@ import ServiceRequests from "./pages/admin/ServiceRequests";
 import Proposals from "./pages/admin/Proposals";
 import DroneJobs from "./pages/admin/DroneJobs";
 import DroneJobDetail from "./pages/admin/DroneJobDetail";
+import DronePackages from "./pages/admin/DronePackages";
 import Customers from "./pages/admin/Customers";
 import Orders from "./pages/admin/Orders";
 import Products from "./pages/admin/Products";
@@ -107,6 +108,14 @@ const App = () => (
                 element={
                   <ProtectedRoute requireAdmin>
                     <DroneJobDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/drone-packages"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <DronePackages />
                   </ProtectedRoute>
                 }
               />
