@@ -114,10 +114,13 @@ export type Database = {
           company_name: string | null
           created_at: string | null
           email: string
+          historical_qa_overrides: number | null
           id: string
           name: string
           notes: string | null
           phone: string | null
+          qa_specific_requirements: string[] | null
+          qa_threshold_adjustment: number | null
           state: string | null
           updated_at: string | null
           zip: string | null
@@ -128,10 +131,13 @@ export type Database = {
           company_name?: string | null
           created_at?: string | null
           email: string
+          historical_qa_overrides?: number | null
           id?: string
           name: string
           notes?: string | null
           phone?: string | null
+          qa_specific_requirements?: string[] | null
+          qa_threshold_adjustment?: number | null
           state?: string | null
           updated_at?: string | null
           zip?: string | null
@@ -142,13 +148,321 @@ export type Database = {
           company_name?: string | null
           created_at?: string | null
           email?: string
+          historical_qa_overrides?: number | null
           id?: string
           name?: string
           notes?: string | null
           phone?: string | null
+          qa_specific_requirements?: string[] | null
+          qa_threshold_adjustment?: number | null
           state?: string | null
           updated_at?: string | null
           zip?: string | null
+        }
+        Relationships: []
+      }
+      drone_assets: {
+        Row: {
+          camera_model: string | null
+          capture_date: string | null
+          created_at: string
+          exif_data: Json | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          gps_altitude: number | null
+          gps_latitude: number | null
+          gps_longitude: number | null
+          id: string
+          job_id: string
+          mime_type: string | null
+          processed_path: string | null
+          processing_status: string | null
+          qa_analyzed_at: string | null
+          qa_override: boolean | null
+          qa_override_by: string | null
+          qa_override_reason: string | null
+          qa_results: Json | null
+          qa_score: number | null
+          qa_status: Database["public"]["Enums"]["qa_status"] | null
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          camera_model?: string | null
+          capture_date?: string | null
+          created_at?: string
+          exif_data?: Json | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          gps_altitude?: number | null
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          id?: string
+          job_id: string
+          mime_type?: string | null
+          processed_path?: string | null
+          processing_status?: string | null
+          qa_analyzed_at?: string | null
+          qa_override?: boolean | null
+          qa_override_by?: string | null
+          qa_override_reason?: string | null
+          qa_results?: Json | null
+          qa_score?: number | null
+          qa_status?: Database["public"]["Enums"]["qa_status"] | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          camera_model?: string | null
+          capture_date?: string | null
+          created_at?: string
+          exif_data?: Json | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          gps_altitude?: number | null
+          gps_latitude?: number | null
+          gps_longitude?: number | null
+          id?: string
+          job_id?: string
+          mime_type?: string | null
+          processed_path?: string | null
+          processing_status?: string | null
+          qa_analyzed_at?: string | null
+          qa_override?: boolean | null
+          qa_override_by?: string | null
+          qa_override_reason?: string | null
+          qa_results?: Json | null
+          qa_score?: number | null
+          qa_status?: Database["public"]["Enums"]["qa_status"] | null
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drone_assets_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "drone_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drone_deliverables: {
+        Row: {
+          created_at: string
+          description: string | null
+          download_count: number | null
+          download_expires_at: string | null
+          download_url: string | null
+          file_count: number | null
+          file_paths: string[] | null
+          id: string
+          job_id: string
+          last_downloaded_at: string | null
+          name: string
+          total_size_bytes: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          download_count?: number | null
+          download_expires_at?: string | null
+          download_url?: string | null
+          file_count?: number | null
+          file_paths?: string[] | null
+          id?: string
+          job_id: string
+          last_downloaded_at?: string | null
+          name: string
+          total_size_bytes?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          download_count?: number | null
+          download_expires_at?: string | null
+          download_url?: string | null
+          file_count?: number | null
+          file_paths?: string[] | null
+          id?: string
+          job_id?: string
+          last_downloaded_at?: string | null
+          name?: string
+          total_size_bytes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drone_deliverables_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "drone_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drone_jobs: {
+        Row: {
+          admin_notes: string | null
+          construction_context: Json | null
+          created_at: string
+          customer_id: string | null
+          delivered_at: string | null
+          delivery_notes: string | null
+          id: string
+          job_number: string
+          package_id: string | null
+          pilot_notes: string | null
+          property_address: string
+          property_city: string | null
+          property_state: string | null
+          property_type: string
+          property_zip: string | null
+          qa_batch_context: Json | null
+          qa_score: number | null
+          qa_summary: Json | null
+          scheduled_date: string | null
+          scheduled_time: string | null
+          service_request_id: string | null
+          status: Database["public"]["Enums"]["drone_job_status"]
+          updated_at: string
+          upload_token: string | null
+          upload_token_expires_at: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          construction_context?: Json | null
+          created_at?: string
+          customer_id?: string | null
+          delivered_at?: string | null
+          delivery_notes?: string | null
+          id?: string
+          job_number: string
+          package_id?: string | null
+          pilot_notes?: string | null
+          property_address: string
+          property_city?: string | null
+          property_state?: string | null
+          property_type?: string
+          property_zip?: string | null
+          qa_batch_context?: Json | null
+          qa_score?: number | null
+          qa_summary?: Json | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          service_request_id?: string | null
+          status?: Database["public"]["Enums"]["drone_job_status"]
+          updated_at?: string
+          upload_token?: string | null
+          upload_token_expires_at?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          construction_context?: Json | null
+          created_at?: string
+          customer_id?: string | null
+          delivered_at?: string | null
+          delivery_notes?: string | null
+          id?: string
+          job_number?: string
+          package_id?: string | null
+          pilot_notes?: string | null
+          property_address?: string
+          property_city?: string | null
+          property_state?: string | null
+          property_type?: string
+          property_zip?: string | null
+          qa_batch_context?: Json | null
+          qa_score?: number | null
+          qa_summary?: Json | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          service_request_id?: string | null
+          status?: Database["public"]["Enums"]["drone_job_status"]
+          updated_at?: string
+          upload_token?: string | null
+          upload_token_expires_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drone_jobs_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drone_jobs_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "drone_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drone_jobs_service_request_id_fkey"
+            columns: ["service_request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drone_packages: {
+        Row: {
+          active: boolean
+          category: string
+          code: string
+          created_at: string
+          description: string | null
+          edit_budget_minutes: number
+          features: string[] | null
+          id: string
+          name: string
+          price: number
+          processing_profile: Json | null
+          requirements: Json | null
+          reshoot_tolerance: string
+          shot_manifest: Json | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          code: string
+          created_at?: string
+          description?: string | null
+          edit_budget_minutes?: number
+          features?: string[] | null
+          id?: string
+          name: string
+          price: number
+          processing_profile?: Json | null
+          requirements?: Json | null
+          reshoot_tolerance?: string
+          shot_manifest?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          edit_budget_minutes?: number
+          features?: string[] | null
+          id?: string
+          name?: string
+          price?: number
+          processing_profile?: Json | null
+          requirements?: Json | null
+          reshoot_tolerance?: string
+          shot_manifest?: Json | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -801,6 +1115,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_drone_job_number: { Args: never; Returns: string }
       generate_proposal_number: { Args: never; Returns: string }
       generate_ticket_number: { Args: never; Returns: string }
       has_role: {
@@ -813,7 +1128,23 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      batch_recommendation:
+        | "deliver_as_planned"
+        | "extended_processing"
+        | "partial_reshoot"
+        | "full_reshoot"
+        | "incomplete_package"
       contact_method: "email" | "phone" | "text"
+      drone_job_status:
+        | "intake"
+        | "scheduled"
+        | "captured"
+        | "uploaded"
+        | "processing"
+        | "qa"
+        | "revision"
+        | "delivered"
+        | "cancelled"
       order_status:
         | "pending"
         | "confirmed"
@@ -837,6 +1168,15 @@ export type Database = {
         | "declined"
         | "expired"
         | "revision_requested"
+      qa_recommendation: "pass" | "warning" | "fail"
+      qa_status:
+        | "pending"
+        | "analyzing"
+        | "passed"
+        | "warning"
+        | "failed"
+        | "approved"
+        | "rejected"
       request_status:
         | "new"
         | "contacted"
@@ -972,7 +1312,25 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      batch_recommendation: [
+        "deliver_as_planned",
+        "extended_processing",
+        "partial_reshoot",
+        "full_reshoot",
+        "incomplete_package",
+      ],
       contact_method: ["email", "phone", "text"],
+      drone_job_status: [
+        "intake",
+        "scheduled",
+        "captured",
+        "uploaded",
+        "processing",
+        "qa",
+        "revision",
+        "delivered",
+        "cancelled",
+      ],
       order_status: [
         "pending",
         "confirmed",
@@ -998,6 +1356,16 @@ export const Constants = {
         "declined",
         "expired",
         "revision_requested",
+      ],
+      qa_recommendation: ["pass", "warning", "fail"],
+      qa_status: [
+        "pending",
+        "analyzing",
+        "passed",
+        "warning",
+        "failed",
+        "approved",
+        "rejected",
       ],
       request_status: [
         "new",
