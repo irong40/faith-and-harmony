@@ -35,3 +35,15 @@ verify_jwt = false
 
 [functions.send-message-notification]
 verify_jwt = false
+
+[functions.drone-qa-analyze]
+verify_jwt = false
+
+[functions.drone-job-token]
+verify_jwt = false
+
+[functions.drone-batch-qa]
+verify_jwt = false
+
+[functions.drone-delivery-email]
+verify_jwt = false
