@@ -8,6 +8,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Faith & Harmony Branding - consistent with all emails
+const BRAND = {
+  purple: "#2b0a3d",
+  gold: "#dfae62",
+  cream: "#eae3d9",
+  companyName: "Faith & Harmony LLC",
+  tagline: "Rooted in Purpose. Driven by Service.",
+  email: "info@faithandharmonyllc.com",
+  website: "faithandharmony.com",
+};
+
 interface ContactRequest {
   name: string;
   email: string;
@@ -19,7 +30,6 @@ interface ContactRequest {
 const handler = async (req: Request): Promise<Response> => {
   console.log("Contact email function invoked");
 
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -32,32 +42,51 @@ const handler = async (req: Request): Promise<Response> => {
     // Send notification to admin
     const adminEmailResponse = await resend.emails.send({
       from: "Faith & Harmony <onboarding@resend.dev>",
-      to: ["info@faithandharmonyllc.com"],
+      to: [BRAND.email],
       subject: `New Contact Form: ${subject}`,
       html: `
-        <h2>New Contact Form Submission</h2>
-        <table style="border-collapse: collapse; width: 100%; max-width: 600px;">
-          <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Name:</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">${name}</td>
-          </tr>
-          <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Email:</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;"><a href="mailto:${email}">${email}</a></td>
-          </tr>
-          ${phone ? `
-          <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Phone:</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">${phone}</td>
-          </tr>
-          ` : ''}
-          <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">Subject:</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">${subject}</td>
-          </tr>
-        </table>
-        <h3 style="margin-top: 20px;">Message:</h3>
-        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; white-space: pre-wrap;">${message}</div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: white;">
+            <tr>
+              <td style="background: linear-gradient(135deg, ${BRAND.purple} 0%, #4a1259 100%); padding: 24px; text-align: center;">
+                <h1 style="color: ${BRAND.gold}; margin: 0; font-size: 22px;">New Contact Form Submission</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 30px;">
+                <table style="border-collapse: collapse; width: 100%;">
+                  <tr>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; color: ${BRAND.purple};">Name:</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee;">${name}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; color: ${BRAND.purple};">Email:</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee;"><a href="mailto:${email}" style="color: ${BRAND.purple};">${email}</a></td>
+                  </tr>
+                  ${phone ? `
+                  <tr>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; color: ${BRAND.purple};">Phone:</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee;">${phone}</td>
+                  </tr>
+                  ` : ''}
+                  <tr>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; color: ${BRAND.purple};">Subject:</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee;">${subject}</td>
+                  </tr>
+                </table>
+                <h3 style="margin-top: 24px; color: ${BRAND.purple};">Message:</h3>
+                <div style="background: ${BRAND.cream}; padding: 20px; border-radius: 8px; border-left: 4px solid ${BRAND.gold}; white-space: pre-wrap; color: #333;">${message}</div>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
       `,
     });
 
@@ -69,21 +98,62 @@ const handler = async (req: Request): Promise<Response> => {
       to: [email],
       subject: "We received your message!",
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #1a365d;">Thank you for reaching out, ${name}!</h1>
-          <p>We've received your message and will get back to you as soon as possible.</p>
-          <div style="background: #f7f7f7; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="margin-top: 0;">Your message:</h3>
-            <p><strong>Subject:</strong> ${subject}</p>
-            <p style="white-space: pre-wrap;">${message}</p>
-          </div>
-          <p>In the meantime, feel free to explore our <a href="https://faithandharmony.com/services">services</a>.</p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
-          <p style="color: #666; font-size: 14px;">
-            Best regards,<br>
-            <strong>Faith & Harmony LLC</strong>
-          </p>
-        </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f5f5f5;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: white;">
+            <!-- Header -->
+            <tr>
+              <td style="background: linear-gradient(135deg, ${BRAND.purple} 0%, #4a1259 100%); padding: 32px; text-align: center;">
+                <h1 style="color: ${BRAND.gold}; margin: 0; font-size: 26px; font-weight: 700;">${BRAND.companyName}</h1>
+                <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 13px; font-style: italic;">${BRAND.tagline}</p>
+              </td>
+            </tr>
+            
+            <!-- Content -->
+            <tr>
+              <td style="padding: 32px;">
+                <h2 style="color: ${BRAND.purple}; margin: 0 0 20px 0;">Thank you for reaching out, ${name}!</h2>
+                <p style="color: #333; line-height: 1.6;">We've received your message and will get back to you as soon as possible.</p>
+                
+                <div style="background: ${BRAND.cream}; padding: 20px; border-radius: 8px; margin: 24px 0; border-left: 4px solid ${BRAND.gold};">
+                  <h3 style="margin: 0 0 12px 0; color: ${BRAND.purple};">Your message:</h3>
+                  <p style="color: #666; margin: 0 0 8px 0;"><strong>Subject:</strong> ${subject}</p>
+                  <p style="white-space: pre-wrap; color: #333; margin: 0;">${message}</p>
+                </div>
+                
+                <p style="color: #333; line-height: 1.6;">
+                  In the meantime, feel free to explore our <a href="https://${BRAND.website}/services" style="color: ${BRAND.gold}; font-weight: 600;">services</a>.
+                </p>
+                
+                <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+                
+                <p style="color: #666; font-size: 14px;">
+                  Best regards,<br>
+                  <strong style="color: ${BRAND.purple};">The Faith & Harmony Team</strong>
+                </p>
+              </td>
+            </tr>
+            
+            <!-- Footer -->
+            <tr>
+              <td style="background-color: ${BRAND.purple}; padding: 24px; text-align: center;">
+                <p style="color: ${BRAND.gold}; font-size: 14px; font-weight: 600; margin: 0;">${BRAND.companyName}</p>
+                <p style="color: rgba(255,255,255,0.7); font-size: 12px; margin: 8px 0 0 0;">
+                  <a href="https://${BRAND.website}" style="color: ${BRAND.gold}; text-decoration: none;">${BRAND.website}</a>
+                </p>
+                <p style="color: rgba(255,255,255,0.5); font-size: 11px; margin: 12px 0 0 0;">
+                  © ${new Date().getFullYear()} ${BRAND.companyName}. All rights reserved.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
       `,
     });
 
