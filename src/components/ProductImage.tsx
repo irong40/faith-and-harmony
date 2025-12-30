@@ -7,13 +7,15 @@ interface ProductImageProps {
   alt: string;
   className?: string;
   aspectRatio?: 'square' | 'video' | 'auto';
+  priority?: boolean;
 }
 
 export function ProductImage({ 
   src, 
   alt, 
   className,
-  aspectRatio = 'square' 
+  aspectRatio = 'square',
+  priority = false
 }: ProductImageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -52,6 +54,8 @@ export function ProductImage({
         <img
           src={src}
           alt={alt}
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
           className={cn(
             "w-full h-full object-cover transition-opacity duration-300",
             isLoading ? "opacity-0" : "opacity-100"
