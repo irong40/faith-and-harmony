@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useProduct } from '@/hooks/useProducts';
 import { useToast } from '@/hooks/use-toast';
+import { getProductImage } from '@/lib/productImages';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -67,7 +68,7 @@ const ProductDetail = () => {
           {/* Image */}
           <div className="bg-card rounded-2xl overflow-hidden shadow-lg">
             <img 
-              src={product.image} 
+              src={getProductImage(product.image)} 
               alt={`${product.name} - ${product.color}`}
               className="w-full h-full object-cover"
             />
