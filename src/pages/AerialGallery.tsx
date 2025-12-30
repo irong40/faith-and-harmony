@@ -5,14 +5,6 @@ import Footer from "@/components/Footer";
 import ImageCompareSlider from "@/components/ImageCompareSlider";
 import { Paintbrush, Droplets, Shapes, Filter } from "lucide-react";
 
-// Import images
-import dockBefore from "@/assets/aerial/dock-before.jpg";
-import dockAfter from "@/assets/aerial/dock-after.png";
-import treesBefore from "@/assets/aerial/trees-before.jpg";
-import treesAfter from "@/assets/aerial/trees-after.png";
-import creekBefore from "@/assets/aerial/creek-before.jpg";
-import creekAfter from "@/assets/aerial/creek-after.png";
-
 type StyleFilter = "all" | "oil" | "watercolor" | "abstract";
 
 interface GalleryItem {
@@ -27,24 +19,24 @@ interface GalleryItem {
 const galleryItems: GalleryItem[] = [
   {
     id: "dock-sunset",
-    before: dockBefore,
-    after: dockAfter,
+    before: "/assets/aerial/dock-before.jpg",
+    after: "/assets/aerial/dock-after.png",
     title: "Lakeside Dock at Sunset",
     location: "Private Estate, Georgia",
     style: "oil",
   },
   {
     id: "forest-canopy",
-    before: treesBefore,
-    after: treesAfter,
+    before: "/assets/aerial/trees-before.jpg",
+    after: "/assets/aerial/trees-after.png",
     title: "Autumn Forest Canopy",
     location: "North Georgia Mountains",
     style: "oil",
   },
   {
     id: "autumn-creek",
-    before: creekBefore,
-    after: creekAfter,
+    before: "/assets/aerial/creek-before.jpg",
+    after: "/assets/aerial/creek-after.png",
     title: "Carrollon Creek",
     location: "Carrollton, Georgia",
     style: "oil",

@@ -2,14 +2,6 @@ import { Link } from "react-router-dom";
 import { Plane, Sparkles, Package, ShieldCheck } from "lucide-react";
 import ImageCompareSlider from "./ImageCompareSlider";
 
-// Import images
-import dockBefore from "@/assets/aerial/dock-before.jpg";
-import dockAfter from "@/assets/aerial/dock-after.png";
-import treesBefore from "@/assets/aerial/trees-before.jpg";
-import treesAfter from "@/assets/aerial/trees-after.png";
-import creekBefore from "@/assets/aerial/creek-before.jpg";
-import creekAfter from "@/assets/aerial/creek-after.png";
-
 const features = [
   {
     icon: Plane,
@@ -29,8 +21,8 @@ const features = [
 ];
 
 const galleryItems = [
-  { before: treesBefore, after: treesAfter, label: "Forest Canopy" },
-  { before: creekBefore, after: creekAfter, label: "Autumn Creek" },
+  { before: "/assets/aerial/trees-before.jpg", after: "/assets/aerial/trees-after.png", label: "Forest Canopy" },
+  { before: "/assets/aerial/creek-before.jpg", after: "/assets/aerial/creek-after.png", label: "Autumn Creek" },
 ];
 
 const AerialArtistrySection = () => {
@@ -50,8 +42,8 @@ const AerialArtistrySection = () => {
       {/* Hero Before/After Slider */}
       <div className="mb-10">
         <ImageCompareSlider
-          beforeImage={dockBefore}
-          afterImage={dockAfter}
+          beforeImage="/assets/aerial/dock-before.jpg"
+          afterImage="/assets/aerial/dock-after.png"
           beforeLabel="Drone Capture"
           afterLabel="AI Artistry"
         />
