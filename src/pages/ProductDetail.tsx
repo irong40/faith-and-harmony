@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useProduct } from '@/hooks/useProducts';
 import { useToast } from '@/hooks/use-toast';
+import { ProductImage } from '@/components/ProductImage';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -64,12 +65,10 @@ const ProductDetail = () => {
 
         {/* Product Detail */}
         <div className="grid md:grid-cols-2 gap-12 pb-20">
-          {/* Image */}
           <div className="bg-card rounded-2xl overflow-hidden shadow-lg">
-            <img 
+            <ProductImage 
               src={product.image}
               alt={`${product.name} - ${product.color}`}
-              className="w-full h-full object-cover"
             />
           </div>
 
