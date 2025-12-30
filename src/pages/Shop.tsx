@@ -3,6 +3,7 @@ import { useProducts, ProductSize } from '@/hooks/useProducts';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WaitlistForm from '@/components/WaitlistForm';
+import { ProductImage } from '@/components/ProductImage';
 import { Clock, Loader2 } from 'lucide-react';
 
 const Shop = () => {
@@ -53,13 +54,11 @@ const Shop = () => {
                   to={`/shop/product/${product.id}`}
                   className="group bg-card rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                 >
-                  <div className="aspect-square overflow-hidden bg-secondary">
-                    <img 
-                      src={product.image}
-                      alt={`${product.name} - ${product.color}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
+                  <ProductImage 
+                    src={product.image}
+                    alt={`${product.name} - ${product.color}`}
+                    className="group-hover:scale-105 transition-transform duration-300"
+                  />
                   <div className="p-6">
                     <h3 className="text-lg font-bold text-primary mb-1">{product.name}</h3>
                     <p className="text-muted-foreground mb-3">Color: {product.color}</p>
@@ -101,11 +100,10 @@ const Shop = () => {
                     key={product.id}
                     className="group bg-card rounded-2xl overflow-hidden shadow-lg"
                   >
-                    <div className="aspect-square overflow-hidden bg-secondary relative">
-                      <img 
+                    <div className="relative">
+                      <ProductImage 
                         src={product.image}
                         alt={product.name}
-                        className="w-full h-full object-cover"
                       />
                       <div className="absolute top-3 right-3 bg-accent text-primary px-3 py-1.5 rounded-full font-bold text-sm shadow-lg">
                         Coming Soon
