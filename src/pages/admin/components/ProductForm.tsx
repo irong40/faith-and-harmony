@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
+import ImageUpload from "@/components/admin/ImageUpload";
 
 export interface ProductSize {
   label: string;
@@ -189,16 +190,10 @@ export default function ProductForm({
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="image">Image URL *</Label>
-        <Input
-          id="image"
-          value={formData.image}
-          onChange={(e) => updateField("image", e.target.value)}
-          placeholder="/assets/products/my-image.jpg"
-          required
-        />
-      </div>
+      <ImageUpload
+        value={formData.image}
+        onChange={(url) => updateField("image", url)}
+      />
 
       <div className="space-y-2">
         <Label htmlFor="description">Description *</Label>
