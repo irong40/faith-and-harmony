@@ -4,7 +4,6 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WaitlistForm from '@/components/WaitlistForm';
 import { Clock, Loader2 } from 'lucide-react';
-import { getProductImage } from '@/lib/productImages';
 
 const Shop = () => {
   const { data: products, isLoading, error } = useProducts();
@@ -56,7 +55,7 @@ const Shop = () => {
                 >
                   <div className="aspect-square overflow-hidden bg-secondary">
                     <img 
-                      src={getProductImage(product.image)} 
+                      src={product.image}
                       alt={`${product.name} - ${product.color}`}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -104,7 +103,7 @@ const Shop = () => {
                   >
                     <div className="aspect-square overflow-hidden bg-secondary relative">
                       <img 
-                        src={getProductImage(product.image)} 
+                        src={product.image}
                         alt={product.name}
                         className="w-full h-full object-cover"
                       />
