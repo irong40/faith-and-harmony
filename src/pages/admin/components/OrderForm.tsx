@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
-import { products, type Product } from "@/data/products";
+import { useProducts, type Product } from "@/hooks/useProducts";
 
 interface Customer {
   id: string;
@@ -78,6 +78,7 @@ export default function OrderForm({
   onSubmit,
   customers,
 }: OrderFormProps) {
+  const { data: products = [] } = useProducts();
   const [items, setItems] = useState<OrderItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string>("");
   const [quantity, setQuantity] = useState<number>(1);
