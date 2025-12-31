@@ -619,6 +619,72 @@ export type Database = {
         }
         Relationships: []
       }
+      email_tracking: {
+        Row: {
+          body: string
+          click_count: number | null
+          clicked_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          lead_id: string
+          open_count: number | null
+          opened_at: string | null
+          recipient_email: string
+          sent_at: string
+          status: string
+          subject: string
+          tracking_id: string
+        }
+        Insert: {
+          body: string
+          click_count?: number | null
+          clicked_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          lead_id: string
+          open_count?: number | null
+          opened_at?: string | null
+          recipient_email: string
+          sent_at?: string
+          status?: string
+          subject: string
+          tracking_id?: string
+        }
+        Update: {
+          body?: string
+          click_count?: number | null
+          clicked_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          lead_id?: string
+          open_count?: number | null
+          opened_at?: string | null
+          recipient_email?: string
+          sent_at?: string
+          status?: string
+          subject?: string
+          tracking_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_tracking_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "drone_client_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_tracking_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "drone_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_gen_jobs: {
         Row: {
           ai_drafts_generated: number | null

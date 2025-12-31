@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Mail, Phone, Globe, MapPin, Star, Copy, Check, 
-  ExternalLink, Plus, Building2, Clock 
+  ExternalLink, Plus, Building2, Clock, Send, Eye, MousePointer
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -58,6 +58,18 @@ interface OutreachLog {
   created_at: string;
 }
 
+interface EmailTracking {
+  id: string;
+  tracking_id: string;
+  subject: string;
+  sent_at: string;
+  opened_at: string | null;
+  open_count: number;
+  clicked_at: string | null;
+  click_count: number;
+  status: string;
+}
+
 interface LeadDetailModalProps {
   lead: Lead;
   open: boolean;
@@ -75,6 +87,7 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
   const [outreachMethod, setOutreachMethod] = useState('email');
   const [outreachOutcome, setOutreachOutcome] = useState('email_sent');
   const [outreachNotes, setOutreachNotes] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   const { data: outreachLogs = [] } = useQuery({
     queryKey: ['outreach-logs', lead.id],
@@ -86,6 +99,19 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data as OutreachLog[];
+    },
+  });
+
+  const { data: emailTracking = [], refetch: refetchTracking } = useQuery({
+    queryKey: ['email-tracking', lead.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('email_tracking')
+        .select('*')
+        .eq('lead_id', lead.id)
+        .order('sent_at', { ascending: false });
+      if (error) throw error;
+      return data as EmailTracking[];
     },
   });
 
@@ -130,6 +156,45 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const sendTrackedEmail = async () => {
+    if (!lead.email || !lead.ai_email_subject || !lead.ai_email_body) {
+      toast({ title: "Missing email data", variant: "destructive" });
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-tracked-email', {
+        body: {
+          leadId: lead.id,
+          recipientEmail: lead.email,
+          subject: lead.ai_email_subject,
+          body: lead.ai_email_body,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({ title: "Email sent successfully!" });
+      refetchTracking();
+      queryClient.invalidateQueries({ queryKey: ['outreach-logs', lead.id] });
+      
+      // Update lead status if still new
+      if (lead.status === 'new') {
+        updateLeadMutation.mutate({ status: 'contacted' });
+      }
+    } catch (error: any) {
+      console.error('Failed to send email:', error);
+      toast({ 
+        title: "Failed to send email", 
+        description: error.message,
+        variant: "destructive" 
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   const handleSave = () => {
     updateLeadMutation.mutate({ status, priority, notes });
   };
@@ -137,6 +202,17 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
   const handleConvertToClient = () => {
     updateLeadMutation.mutate({ status: 'client' });
     onClose();
+  };
+
+  // Calculate email stats
+  const emailStats = {
+    totalSent: emailTracking.length,
+    totalOpens: emailTracking.reduce((sum, e) => sum + e.open_count, 0),
+    uniqueOpens: emailTracking.filter(e => e.opened_at).length,
+    totalClicks: emailTracking.reduce((sum, e) => sum + e.click_count, 0),
+    openRate: emailTracking.length > 0 
+      ? Math.round((emailTracking.filter(e => e.opened_at).length / emailTracking.length) * 100) 
+      : 0,
   };
 
   return (
@@ -150,10 +226,11 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
         </DialogHeader>
 
         <Tabs defaultValue="details" className="mt-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="email">AI Email</TabsTrigger>
-            <TabsTrigger value="outreach">Outreach Log</TabsTrigger>
+            <TabsTrigger value="tracking">Tracking</TabsTrigger>
+            <TabsTrigger value="outreach">Outreach</TabsTrigger>
           </TabsList>
 
           <TabsContent value="details" className="space-y-4 mt-4">
@@ -290,10 +367,25 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
                     className="bg-muted font-mono text-sm"
                   />
                 </div>
-                <Button onClick={copyEmail} className="gap-2">
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  {copied ? 'Copied!' : 'Copy Email'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={copyEmail} variant="outline" className="gap-2">
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    {copied ? 'Copied!' : 'Copy Email'}
+                  </Button>
+                  <Button 
+                    onClick={sendTrackedEmail} 
+                    disabled={isSending || !lead.email}
+                    className="gap-2"
+                  >
+                    <Send className="h-4 w-4" />
+                    {isSending ? 'Sending...' : 'Send with Tracking'}
+                  </Button>
+                </div>
+                {!lead.email && (
+                  <p className="text-sm text-amber-600">
+                    No email address available. Cannot send tracked email.
+                  </p>
+                )}
               </>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
@@ -302,6 +394,74 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
                 <p className="text-sm">Email drafts are generated when a valid email is found.</p>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="tracking" className="space-y-4 mt-4">
+            {/* Email Stats Summary */}
+            <div className="grid grid-cols-4 gap-3">
+              <div className="bg-muted rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold">{emailStats.totalSent}</div>
+                <div className="text-xs text-muted-foreground">Emails Sent</div>
+              </div>
+              <div className="bg-muted rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-green-600">{emailStats.uniqueOpens}</div>
+                <div className="text-xs text-muted-foreground">Unique Opens</div>
+              </div>
+              <div className="bg-muted rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-blue-600">{emailStats.openRate}%</div>
+                <div className="text-xs text-muted-foreground">Open Rate</div>
+              </div>
+              <div className="bg-muted rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-purple-600">{emailStats.totalClicks}</div>
+                <div className="text-xs text-muted-foreground">Link Clicks</div>
+              </div>
+            </div>
+
+            {/* Email History */}
+            <div className="space-y-2">
+              <h4 className="font-medium">Email History</h4>
+              {emailTracking.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Send className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p>No tracked emails sent yet.</p>
+                  <p className="text-sm">Send an email from the AI Email tab to start tracking.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {emailTracking.map((email) => (
+                    <div key={email.id} className="border rounded-lg p-3 text-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium truncate flex-1 mr-2">{email.subject}</span>
+                        <Badge 
+                          variant={email.opened_at ? "default" : "secondary"}
+                          className={email.opened_at ? "bg-green-600" : ""}
+                        >
+                          {email.opened_at ? 'Opened' : 'Sent'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Send className="h-3 w-3" />
+                          {format(new Date(email.sent_at), 'MMM d, h:mm a')}
+                        </span>
+                        {email.opened_at && (
+                          <span className="flex items-center gap-1 text-green-600">
+                            <Eye className="h-3 w-3" />
+                            {email.open_count}x ({format(new Date(email.opened_at), 'MMM d, h:mm a')})
+                          </span>
+                        )}
+                        {email.clicked_at && (
+                          <span className="flex items-center gap-1 text-purple-600">
+                            <MousePointer className="h-3 w-3" />
+                            {email.click_count}x
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="outreach" className="space-y-4 mt-4">

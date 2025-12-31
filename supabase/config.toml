@@ -50,3 +50,9 @@ verify_jwt = false
 
 [functions.generate-leads]
 verify_jwt = false
+
+[functions.send-tracked-email]
+verify_jwt = false
+
+[functions.track-email]
+verify_jwt = false
