@@ -33,6 +33,7 @@ import DroneJobDetail from "./pages/admin/DroneJobDetail";
 import DronePackages from "./pages/admin/DronePackages";
 import DroneLeads from "./pages/admin/DroneLeads";
 import DroneClients from "./pages/admin/DroneClients";
+import DroneCRMDashboard from "./pages/admin/DroneCRMDashboard";
 import Customers from "./pages/admin/Customers";
 import Orders from "./pages/admin/Orders";
 import Products from "./pages/admin/Products";
@@ -134,6 +135,14 @@ const App = () => (
                 element={
                   <ProtectedRoute requireAdmin>
                     <DroneClients />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/drone-crm"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <DroneCRMDashboard />
                   </ProtectedRoute>
                 }
               />
