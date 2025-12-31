@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, ShoppingCart, FileText, Package, ClipboardList, MessageSquare, LayoutDashboard, Target, Building2, BarChart3 } from "lucide-react";
+import { ArrowLeft, Users, ShoppingCart, FileText, Package, ClipboardList, MessageSquare, LayoutDashboard, Target, BarChart3 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
 const navItems = [
@@ -8,14 +8,12 @@ const navItems = [
   { href: "/admin/service-requests", label: "Requests", icon: FileText },
   { href: "/admin/proposals", label: "Proposals", icon: ClipboardList },
   { href: "/admin/drone-jobs", label: "Drone Jobs", icon: ClipboardList },
-  { href: "/admin/drone-packages", label: "Packages", icon: Package },
   { href: "/admin/drone-crm", label: "CRM", icon: BarChart3 },
   { href: "/admin/drone-leads", label: "Leads", icon: Target },
-  { href: "/admin/drone-clients", label: "Clients", icon: Building2 },
-  { href: "/admin/messages", label: "Messages", icon: MessageSquare },
-  { href: "/admin/customers", label: "Customers", icon: Users },
+  { href: "/admin/people", label: "People", icon: Users },
+  { href: "/admin/offerings", label: "Offerings", icon: Package },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
-  { href: "/admin/products", label: "Products", icon: Package },
+  { href: "/admin/messages", label: "Messages", icon: MessageSquare },
 ];
 
 export default function AdminNav() {
