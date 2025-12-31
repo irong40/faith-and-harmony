@@ -306,6 +306,81 @@ export type Database = {
           },
         ]
       }
+      drone_engagements: {
+        Row: {
+          actual_revenue: number | null
+          cost: number | null
+          created_at: string
+          delivery_date: string | null
+          engagement_date: string
+          engagement_type: Database["public"]["Enums"]["engagement_type"]
+          id: string
+          internal_notes: string | null
+          lead_id: string
+          notes: string | null
+          photo_count: number | null
+          property_address: string | null
+          quoted_price: number | null
+          satisfaction_score: number | null
+          status: Database["public"]["Enums"]["engagement_status"]
+          updated_at: string
+          video_count: number | null
+        }
+        Insert: {
+          actual_revenue?: number | null
+          cost?: number | null
+          created_at?: string
+          delivery_date?: string | null
+          engagement_date: string
+          engagement_type: Database["public"]["Enums"]["engagement_type"]
+          id?: string
+          internal_notes?: string | null
+          lead_id: string
+          notes?: string | null
+          photo_count?: number | null
+          property_address?: string | null
+          quoted_price?: number | null
+          satisfaction_score?: number | null
+          status?: Database["public"]["Enums"]["engagement_status"]
+          updated_at?: string
+          video_count?: number | null
+        }
+        Update: {
+          actual_revenue?: number | null
+          cost?: number | null
+          created_at?: string
+          delivery_date?: string | null
+          engagement_date?: string
+          engagement_type?: Database["public"]["Enums"]["engagement_type"]
+          id?: string
+          internal_notes?: string | null
+          lead_id?: string
+          notes?: string | null
+          photo_count?: number | null
+          property_address?: string | null
+          quoted_price?: number | null
+          satisfaction_score?: number | null
+          status?: Database["public"]["Enums"]["engagement_status"]
+          updated_at?: string
+          video_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drone_engagements_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "drone_client_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drone_engagements_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "drone_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drone_jobs: {
         Row: {
           admin_notes: string | null
@@ -412,6 +487,84 @@ export type Database = {
           },
         ]
       }
+      drone_leads: {
+        Row: {
+          address: string | null
+          ai_email_body: string | null
+          ai_email_subject: string | null
+          city: string | null
+          company_name: string
+          created_at: string
+          email: string | null
+          email_status: string | null
+          estimated_portfolio_size: number | null
+          google_rating: number | null
+          hunter_io_score: number | null
+          id: string
+          internal_notes: string | null
+          notes: string | null
+          phone: string | null
+          portfolio_type: string | null
+          priority: string | null
+          review_count: number | null
+          serper_place_id: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["lead_status"]
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          ai_email_body?: string | null
+          ai_email_subject?: string | null
+          city?: string | null
+          company_name: string
+          created_at?: string
+          email?: string | null
+          email_status?: string | null
+          estimated_portfolio_size?: number | null
+          google_rating?: number | null
+          hunter_io_score?: number | null
+          id?: string
+          internal_notes?: string | null
+          notes?: string | null
+          phone?: string | null
+          portfolio_type?: string | null
+          priority?: string | null
+          review_count?: number | null
+          serper_place_id?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          ai_email_body?: string | null
+          ai_email_subject?: string | null
+          city?: string | null
+          company_name?: string
+          created_at?: string
+          email?: string | null
+          email_status?: string | null
+          estimated_portfolio_size?: number | null
+          google_rating?: number | null
+          hunter_io_score?: number | null
+          id?: string
+          internal_notes?: string | null
+          notes?: string | null
+          phone?: string | null
+          portfolio_type?: string | null
+          priority?: string | null
+          review_count?: number | null
+          serper_place_id?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       drone_packages: {
         Row: {
           active: boolean
@@ -463,6 +616,69 @@ export type Database = {
           reshoot_tolerance?: string
           shot_manifest?: Json | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      lead_gen_jobs: {
+        Row: {
+          ai_drafts_generated: number | null
+          completed_at: string | null
+          created_at: string
+          duplicates_filtered: number | null
+          emails_found: number | null
+          error_details: Json | null
+          error_message: string | null
+          hunter_io_cost: number | null
+          id: string
+          job_type: string
+          leads_created: number | null
+          openai_cost: number | null
+          raw_results_found: number | null
+          search_config: Json | null
+          searches_performed: number | null
+          serper_cost: number | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["lead_gen_job_status"]
+        }
+        Insert: {
+          ai_drafts_generated?: number | null
+          completed_at?: string | null
+          created_at?: string
+          duplicates_filtered?: number | null
+          emails_found?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          hunter_io_cost?: number | null
+          id?: string
+          job_type?: string
+          leads_created?: number | null
+          openai_cost?: number | null
+          raw_results_found?: number | null
+          search_config?: Json | null
+          searches_performed?: number | null
+          serper_cost?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["lead_gen_job_status"]
+        }
+        Update: {
+          ai_drafts_generated?: number | null
+          completed_at?: string | null
+          created_at?: string
+          duplicates_filtered?: number | null
+          emails_found?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          hunter_io_cost?: number | null
+          id?: string
+          job_type?: string
+          leads_created?: number | null
+          openai_cost?: number | null
+          raw_results_found?: number | null
+          search_config?: Json | null
+          searches_performed?: number | null
+          serper_cost?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["lead_gen_job_status"]
         }
         Relationships: []
       }
@@ -806,6 +1022,48 @@ export type Database = {
           },
         ]
       }
+      outreach_log: {
+        Row: {
+          contact_method: Database["public"]["Enums"]["outreach_contact_method"]
+          created_at: string
+          id: string
+          lead_id: string
+          notes: string | null
+          outcome: Database["public"]["Enums"]["outreach_outcome"] | null
+        }
+        Insert: {
+          contact_method: Database["public"]["Enums"]["outreach_contact_method"]
+          created_at?: string
+          id?: string
+          lead_id: string
+          notes?: string | null
+          outcome?: Database["public"]["Enums"]["outreach_outcome"] | null
+        }
+        Update: {
+          contact_method?: Database["public"]["Enums"]["outreach_contact_method"]
+          created_at?: string
+          id?: string
+          lead_id?: string
+          notes?: string | null
+          outcome?: Database["public"]["Enums"]["outreach_outcome"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_log_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "drone_client_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_log_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "drone_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_waitlist: {
         Row: {
           created_at: string
@@ -1112,7 +1370,30 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      drone_client_summary: {
+        Row: {
+          avg_satisfaction: number | null
+          city: string | null
+          company_name: string | null
+          engagements_this_month: number | null
+          id: string | null
+          last_engagement: string | null
+          next_scheduled: string | null
+          portfolio_type: string | null
+          total_engagements: number | null
+          total_revenue: number | null
+        }
+        Relationships: []
+      }
+      drone_pipeline_summary: {
+        Row: {
+          count: number | null
+          new_this_week: number | null
+          status: Database["public"]["Enums"]["lead_status"] | null
+          with_email: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generate_drone_job_number: { Args: never; Returns: string }
@@ -1145,6 +1426,16 @@ export type Database = {
         | "revision"
         | "delivered"
         | "cancelled"
+      engagement_status: "scheduled" | "in_progress" | "completed" | "cancelled"
+      engagement_type:
+        | "turnover"
+        | "inspection"
+        | "quarterly"
+        | "project"
+        | "storm"
+        | "marketing"
+      lead_gen_job_status: "pending" | "running" | "completed" | "failed"
+      lead_status: "new" | "contacted" | "responded" | "qualified" | "client"
       order_status:
         | "pending"
         | "confirmed"
@@ -1152,6 +1443,19 @@ export type Database = {
         | "shipped"
         | "delivered"
         | "cancelled"
+      outreach_contact_method:
+        | "email"
+        | "call"
+        | "linkedin"
+        | "meeting"
+        | "other"
+      outreach_outcome:
+        | "no_answer"
+        | "voicemail"
+        | "spoke"
+        | "email_sent"
+        | "meeting_scheduled"
+        | "not_interested"
       pricing_unit:
         | "per_project"
         | "per_hour"
@@ -1331,6 +1635,17 @@ export const Constants = {
         "delivered",
         "cancelled",
       ],
+      engagement_status: ["scheduled", "in_progress", "completed", "cancelled"],
+      engagement_type: [
+        "turnover",
+        "inspection",
+        "quarterly",
+        "project",
+        "storm",
+        "marketing",
+      ],
+      lead_gen_job_status: ["pending", "running", "completed", "failed"],
+      lead_status: ["new", "contacted", "responded", "qualified", "client"],
       order_status: [
         "pending",
         "confirmed",
@@ -1338,6 +1653,21 @@ export const Constants = {
         "shipped",
         "delivered",
         "cancelled",
+      ],
+      outreach_contact_method: [
+        "email",
+        "call",
+        "linkedin",
+        "meeting",
+        "other",
+      ],
+      outreach_outcome: [
+        "no_answer",
+        "voicemail",
+        "spoke",
+        "email_sent",
+        "meeting_scheduled",
+        "not_interested",
       ],
       pricing_unit: [
         "per_project",
