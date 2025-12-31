@@ -86,7 +86,7 @@ export default function CustomerProposal() {
         service_requests!inner(client_name, client_email)
       `)
       .eq("approval_token", token)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Fetch error:", error);
