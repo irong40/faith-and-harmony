@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,11 +9,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, Settings, ShieldCheck, Menu } from "lucide-react";
+import { User, LogOut, Settings, ShieldCheck, Menu, ShoppingCart } from "lucide-react";
 import logoIcon from "@/assets/logo-icon.png";
 
 export default function Navbar() {
   const { user, isAdmin, signOut } = useAuth();
+  const { totalItems } = useCart();
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -69,8 +71,16 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Auth Section */}
+          {/* Cart & Auth Section */}
           <div className="flex items-center gap-4">
+            <Link to="/cart" className="relative">
+              <ShoppingCart className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
+              {totalItems > 0 && (
+                <span className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  {totalItems}
+                </span>
+              )}
+            </Link>
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -123,6 +133,13 @@ export default function Navbar() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link to="/cart" className="flex items-center gap-2">
+                    <ShoppingCart className="h-4 w-4" />
+                    Cart {totalItems > 0 && `(${totalItems})`}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link to="/services">Services</Link>
                 </DropdownMenuItem>
