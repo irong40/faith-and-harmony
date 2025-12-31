@@ -30,13 +30,11 @@ import ServiceRequests from "./pages/admin/ServiceRequests";
 import Proposals from "./pages/admin/Proposals";
 import DroneJobs from "./pages/admin/DroneJobs";
 import DroneJobDetail from "./pages/admin/DroneJobDetail";
-import DronePackages from "./pages/admin/DronePackages";
 import DroneLeads from "./pages/admin/DroneLeads";
-import DroneClients from "./pages/admin/DroneClients";
 import DroneCRMDashboard from "./pages/admin/DroneCRMDashboard";
-import Customers from "./pages/admin/Customers";
 import Orders from "./pages/admin/Orders";
-import Products from "./pages/admin/Products";
+import People from "./pages/admin/People";
+import Offerings from "./pages/admin/Offerings";
 import Messages from "./pages/admin/Messages";
 import Contact from "./pages/Contact";
 import Pricing from "./pages/Pricing";
@@ -115,26 +113,10 @@ const App = () => (
                 }
               />
               <Route
-                path="/admin/drone-packages"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <DronePackages />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/admin/drone-leads"
                 element={
                   <ProtectedRoute requireAdmin>
                     <DroneLeads />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/drone-clients"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <DroneClients />
                   </ProtectedRoute>
                 }
               />
@@ -147,10 +129,18 @@ const App = () => (
                 }
               />
               <Route
-                path="/admin/customers"
+                path="/admin/people"
                 element={
                   <ProtectedRoute requireAdmin>
-                    <Customers />
+                    <People />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/offerings"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <Offerings />
                   </ProtectedRoute>
                 }
               />
@@ -159,14 +149,6 @@ const App = () => (
                 element={
                   <ProtectedRoute requireAdmin>
                     <Orders />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/products"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <Products />
                   </ProtectedRoute>
                 }
               />
