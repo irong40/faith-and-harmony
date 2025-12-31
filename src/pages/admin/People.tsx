@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import AdminNav from "./components/AdminNav";
@@ -21,12 +21,21 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Search, RefreshCw, Plus, Eye, Edit, Trash2,
-  Users, DollarSign, Calendar, Star, Building2, MapPin
+  Users, DollarSign, Calendar, Star, Building2, MapPin, ArrowRightLeft, UserPlus
 } from "lucide-react";
 import { format } from "date-fns";
 import CustomerForm, { type CustomerFormData } from "./components/CustomerForm";
@@ -62,6 +71,7 @@ interface ClientSummary {
 
 export default function People() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Customer state
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -75,6 +85,14 @@ export default function People() {
   // Client state
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [showEngagementForm, setShowEngagementForm] = useState(false);
+
+  // Conversion state
+  const [showConvertToDroneClient, setShowConvertToDroneClient] = useState(false);
+  const [showConvertToCustomer, setShowConvertToCustomer] = useState(false);
+  const [selectedClientForConversion, setSelectedClientForConversion] = useState<ClientSummary | null>(null);
+  const [conversionLoading, setConversionLoading] = useState(false);
+  const [portfolioType, setPortfolioType] = useState("residential");
+  const [priority, setPriority] = useState("medium");
 
   const fetchCustomers = async () => {
     setCustomersLoading(true);
@@ -170,6 +188,111 @@ export default function People() {
       toast({ title: "Error deleting customer", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Customer deleted successfully" });
+      fetchCustomers();
+    }
+  };
+
+  // Convert Customer to Drone Client
+  const handleConvertToDroneClient = async () => {
+    if (!selectedCustomer) return;
+    setConversionLoading(true);
+
+    // Check for duplicate
+    const { data: existing } = await supabase
+      .from("drone_leads")
+      .select("id, company_name")
+      .or(`email.eq.${selectedCustomer.email},company_name.eq.${selectedCustomer.company_name || selectedCustomer.name}`)
+      .maybeSingle();
+
+    if (existing) {
+      toast({
+        title: "Drone client already exists",
+        description: `A drone client with matching email or company name already exists: ${existing.company_name}`,
+        variant: "destructive",
+      });
+      setConversionLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.from("drone_leads").insert({
+      company_name: selectedCustomer.company_name || selectedCustomer.name,
+      email: selectedCustomer.email,
+      phone: selectedCustomer.phone,
+      address: selectedCustomer.address,
+      city: selectedCustomer.city,
+      state: selectedCustomer.state || "VA",
+      notes: selectedCustomer.notes,
+      portfolio_type: portfolioType,
+      priority: priority,
+      status: "client",
+    });
+
+    setConversionLoading(false);
+    if (error) {
+      toast({ title: "Error creating drone client", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Drone client created", description: "Customer has been converted to a drone client." });
+      setShowConvertToDroneClient(false);
+      setIsDetailOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["drone-clients"] });
+    }
+  };
+
+  // Convert Drone Client to Customer
+  const handleConvertToCustomer = async () => {
+    if (!selectedClientForConversion) return;
+    setConversionLoading(true);
+
+    // Get full lead data
+    const { data: lead } = await supabase
+      .from("drone_leads")
+      .select("*")
+      .eq("id", selectedClientForConversion.id)
+      .single();
+
+    if (!lead) {
+      toast({ title: "Error", description: "Could not find client data", variant: "destructive" });
+      setConversionLoading(false);
+      return;
+    }
+
+    // Check for duplicate customer
+    if (lead.email) {
+      const { data: existing } = await supabase
+        .from("customers")
+        .select("id, name")
+        .eq("email", lead.email)
+        .maybeSingle();
+
+      if (existing) {
+        toast({
+          title: "Customer already exists",
+          description: `A customer with this email already exists: ${existing.name}`,
+          variant: "destructive",
+        });
+        setConversionLoading(false);
+        return;
+      }
+    }
+
+    const { error } = await supabase.from("customers").insert({
+      name: lead.company_name,
+      email: lead.email || "",
+      phone: lead.phone,
+      company_name: lead.company_name,
+      address: lead.address,
+      city: lead.city,
+      state: lead.state,
+      notes: lead.notes,
+    });
+
+    setConversionLoading(false);
+    if (error) {
+      toast({ title: "Error creating customer", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Customer created", description: "Drone client has been added as a customer." });
+      setShowConvertToCustomer(false);
+      setSelectedClientForConversion(null);
       fetchCustomers();
     }
   };
@@ -284,7 +407,12 @@ export default function People() {
                           <TableCell className="text-right font-medium">${(client.total_revenue || 0).toLocaleString()}</TableCell>
                           <TableCell className="text-center">{client.avg_satisfaction ? <div className="flex items-center justify-center gap-1"><Star className="h-3 w-3 text-amber-500" />{client.avg_satisfaction.toFixed(1)}</div> : '-'}</TableCell>
                           <TableCell>{client.last_engagement ? <span className="text-sm text-muted-foreground">{format(new Date(client.last_engagement), 'MMM d, yyyy')}</span> : '-'}</TableCell>
-                          <TableCell><Button variant="outline" size="sm" onClick={() => { setSelectedClientId(client.id); setShowEngagementForm(true); }}><Plus className="h-3 w-3 mr-1" />Add</Button></TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button variant="outline" size="sm" onClick={() => { setSelectedClientId(client.id); setShowEngagementForm(true); }}><Plus className="h-3 w-3 mr-1" />Add</Button>
+                              <Button variant="ghost" size="sm" onClick={() => { setSelectedClientForConversion(client); setShowConvertToCustomer(true); }} title="Create Customer Record"><UserPlus className="h-3 w-3" /></Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -315,8 +443,94 @@ export default function People() {
                 <div><Label className="text-muted-foreground">Notes</Label><p className="mt-1 whitespace-pre-wrap rounded-md bg-muted p-3 text-sm">{selectedCustomer.notes}</p></div>
               )}
               <div className="text-sm text-muted-foreground">Created: {selectedCustomer.created_at ? format(new Date(selectedCustomer.created_at), "MMMM d, yyyy 'at' h:mm a") : "N/A"}</div>
+              <div className="pt-2 border-t">
+                <Button variant="outline" onClick={() => setShowConvertToDroneClient(true)} className="w-full">
+                  <ArrowRightLeft className="h-4 w-4 mr-2" /> Convert to Drone Client
+                </Button>
+              </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Convert Customer to Drone Client Dialog */}
+      <Dialog open={showConvertToDroneClient} onOpenChange={setShowConvertToDroneClient}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Convert to Drone Client</DialogTitle>
+            <DialogDescription>
+              Create a drone client record from this customer. The following data will be copied:
+            </DialogDescription>
+          </DialogHeader>
+          {selectedCustomer && (
+            <div className="space-y-4">
+              <div className="rounded-md bg-muted p-4 text-sm space-y-1">
+                <p><strong>Company:</strong> {selectedCustomer.company_name || selectedCustomer.name}</p>
+                <p><strong>Email:</strong> {selectedCustomer.email}</p>
+                <p><strong>Phone:</strong> {selectedCustomer.phone || "—"}</p>
+                <p><strong>Location:</strong> {selectedCustomer.city || "—"}, {selectedCustomer.state || "VA"}</p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Portfolio Type</Label>
+                  <Select value={portfolioType} onValueChange={setPortfolioType}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="residential">Residential</SelectItem>
+                      <SelectItem value="commercial">Commercial</SelectItem>
+                      <SelectItem value="industrial">Industrial</SelectItem>
+                      <SelectItem value="mixed">Mixed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Priority</Label>
+                  <Select value={priority} onValueChange={setPriority}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowConvertToDroneClient(false)}>Cancel</Button>
+            <Button onClick={handleConvertToDroneClient} disabled={conversionLoading}>
+              {conversionLoading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <ArrowRightLeft className="h-4 w-4 mr-2" />}
+              Create Drone Client
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Convert Drone Client to Customer Dialog */}
+      <Dialog open={showConvertToCustomer} onOpenChange={(open) => { setShowConvertToCustomer(open); if (!open) setSelectedClientForConversion(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Customer Record</DialogTitle>
+            <DialogDescription>
+              Create a customer record from this drone client for unified order and service request tracking.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedClientForConversion && (
+            <div className="rounded-md bg-muted p-4 text-sm space-y-1">
+              <p><strong>Company:</strong> {selectedClientForConversion.company_name}</p>
+              <p><strong>Location:</strong> {selectedClientForConversion.city || "—"}</p>
+              <p><strong>Type:</strong> {selectedClientForConversion.portfolio_type || "—"}</p>
+              <p><strong>Total Revenue:</strong> ${(selectedClientForConversion.total_revenue || 0).toLocaleString()}</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowConvertToCustomer(false); setSelectedClientForConversion(null); }}>Cancel</Button>
+            <Button onClick={handleConvertToCustomer} disabled={conversionLoading}>
+              {conversionLoading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <UserPlus className="h-4 w-4 mr-2" />}
+              Create Customer
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
