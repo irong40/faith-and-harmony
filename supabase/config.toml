@@ -59,3 +59,6 @@ verify_jwt = false
 
 [functions.drone-extract-exif]
 verify_jwt = false
+
+[functions.drone-upload-processed]
+verify_jwt = false

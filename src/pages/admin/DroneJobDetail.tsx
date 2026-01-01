@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle, ScanSearch } from "lucide-react";
+import { ArrowLeft, RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle, ScanSearch, Zap, Settings2, Image as ImageIcon, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import AdminNav from "./components/AdminNav";
 import DroneJobForm from "./components/DroneJobForm";
@@ -71,7 +71,7 @@ interface DroneJob {
   created_at: string;
   updated_at: string;
   customers?: { id: string; name: string; email: string; phone: string | null } | null;
-  drone_packages?: { id: string; name: string; code: string; price: number; edit_budget_minutes: number } | null;
+  drone_packages?: { id: string; name: string; code: string; price: number; edit_budget_minutes: number; processing_profile: Json | null } | null;
   service_requests?: { id: string; project_title: string | null } | null;
 }
 
@@ -105,6 +105,7 @@ export default function DroneJobDetail() {
   const [runningQA, setRunningQA] = useState(false);
   const [tokenCopied, setTokenCopied] = useState(false);
   const [extractingExif, setExtractingExif] = useState(false);
+  const [triggeringProcessing, setTriggeringProcessing] = useState(false);
 
   const fetchJob = async () => {
     if (!id) return;
@@ -113,7 +114,7 @@ export default function DroneJobDetail() {
     const [jobRes, assetsRes] = await Promise.all([
       supabase
         .from("drone_jobs")
-        .select("*, customers(id, name, email, phone), drone_packages(id, name, code, price, edit_budget_minutes), service_requests(id, project_title)")
+        .select("*, customers(id, name, email, phone), drone_packages(id, name, code, price, edit_budget_minutes, processing_profile), service_requests(id, project_title)")
         .eq("id", id)
         .single(),
       supabase
@@ -227,6 +228,24 @@ export default function DroneJobDetail() {
       fetchJob();
     }
     setExtractingExif(false);
+  };
+
+  const triggerProcessingWebhook = async () => {
+    if (!job) return;
+    setTriggeringProcessing(true);
+
+    // Manually trigger batch-qa which will send the webhook if configured
+    const { error } = await supabase.functions.invoke("drone-batch-qa", {
+      body: { job_id: job.id },
+    });
+
+    if (error) {
+      toast({ title: "Failed to trigger processing", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Processing triggered", description: "Job sent to n8n processing workflow" });
+      fetchJob();
+    }
+    setTriggeringProcessing(false);
   };
 
   const sendDelivery = async () => {
@@ -546,32 +565,206 @@ export default function DroneJobDetail() {
 
           {/* Processing Tab */}
           <TabsContent value="processing">
-            <Card>
-              <CardHeader>
-                <CardTitle>Processing Status</CardTitle>
-                <CardDescription>Track post-processing progress</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {job.drone_packages && (
-                    <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-                      <div>
-                        <p className="font-medium">Edit Budget</p>
-                        <p className="text-sm text-muted-foreground">
-                          {job.drone_packages.edit_budget_minutes} minutes allocated
-                        </p>
-                      </div>
-                      <Clock className="h-8 w-8 text-muted-foreground" />
+            <div className="space-y-6">
+              {/* Processing Profile Card */}
+              {job.drone_packages?.processing_profile && (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Settings2 className="h-5 w-5" />
+                        Processing Profile
+                      </CardTitle>
+                      <CardDescription>
+                        {(job.drone_packages.processing_profile as any)?.lightroom_preset || "Default preset"}
+                      </CardDescription>
                     </div>
-                  )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={triggerProcessingWebhook}
+                      disabled={triggeringProcessing || assets.length === 0}
+                    >
+                      {triggeringProcessing ? (
+                        <>
+                          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="mr-2 h-4 w-4" />
+                          Send to Processing
+                        </>
+                      )}
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    {(() => {
+                      const profile = job.drone_packages?.processing_profile as any;
+                      if (!profile) return null;
+                      
+                      return (
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                          {/* Lightroom Settings */}
+                          <div className="space-y-2 p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm font-medium text-muted-foreground">Lightroom Preset</p>
+                            <p className="font-mono text-sm">{profile.lightroom_preset}</p>
+                          </div>
+                          
+                          {/* Corrections */}
+                          <div className="space-y-2 p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm font-medium text-muted-foreground">Auto Corrections</p>
+                            <div className="flex flex-wrap gap-1">
+                              {profile.lens_correction && (
+                                <Badge variant="secondary" className="text-xs">Lens</Badge>
+                              )}
+                              {profile.horizon_straighten && (
+                                <Badge variant="secondary" className="text-xs">Horizon</Badge>
+                              )}
+                              {profile.sky_enhance && (
+                                <Badge variant="secondary" className="text-xs">Sky Enhance</Badge>
+                              )}
+                            </div>
+                          </div>
 
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>Processing workflow coming soon</p>
-                    <p className="text-sm">Track edit time, add processing notes, manage deliverables</p>
+                          {/* Exposure Balance */}
+                          {profile.exposure_balance && (
+                            <div className="space-y-2 p-4 rounded-lg bg-muted/50">
+                              <p className="text-sm font-medium text-muted-foreground">Exposure Balance</p>
+                              <div className="text-sm space-y-1">
+                                <p>Shadows: {profile.exposure_balance.shadows > 0 ? '+' : ''}{profile.exposure_balance.shadows}</p>
+                                <p>Highlights: {profile.exposure_balance.highlights > 0 ? '+' : ''}{profile.exposure_balance.highlights}</p>
+                                {profile.exposure_balance.whites && (
+                                  <p>Whites: {profile.exposure_balance.whites > 0 ? '+' : ''}{profile.exposure_balance.whites}</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Output Settings */}
+                          <div className="space-y-2 p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm font-medium text-muted-foreground">Output Formats</p>
+                            <div className="flex flex-wrap gap-1">
+                              {profile.output_formats?.map((fmt: string) => (
+                                <Badge key={fmt} variant="outline" className="text-xs">{fmt}</Badge>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Quality Settings */}
+                          <div className="space-y-2 p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm font-medium text-muted-foreground">Quality</p>
+                            <p className="text-sm">
+                              {profile.jpg_quality}% JPEG
+                              {profile.resize_max_px && ` • ${profile.resize_max_px}px max`}
+                            </p>
+                          </div>
+
+                          {/* Vibrance */}
+                          <div className="space-y-2 p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm font-medium text-muted-foreground">Vibrance Boost</p>
+                            <p className="text-sm">+{profile.vibrance_boost || 0}</p>
+                          </div>
+
+                          {/* Sky Replacement (Premium) */}
+                          {profile.sky_replace && profile.sky_replace !== false && (
+                            <div className="space-y-2 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                              <p className="text-sm font-medium text-amber-600 flex items-center gap-2">
+                                <AlertTriangle className="h-4 w-4" />
+                                Sky Replacement
+                              </p>
+                              <p className="text-sm">
+                                {profile.sky_replace === "manual_review" 
+                                  ? "Manual review required" 
+                                  : "Auto-replace enabled"}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Labeling (Construction) */}
+                          {profile.labeling?.enabled && (
+                            <div className="space-y-2 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                              <p className="text-sm font-medium text-blue-600 flex items-center gap-2">
+                                <ImageIcon className="h-4 w-4" />
+                                Photo Labeling
+                              </p>
+                              <div className="flex flex-wrap gap-1 text-xs">
+                                {profile.labeling.include_compass && <Badge variant="secondary">Compass</Badge>}
+                                {profile.labeling.include_date && <Badge variant="secondary">Date</Badge>}
+                                {profile.labeling.include_address && <Badge variant="secondary">Address</Badge>}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Review Gate (Premium) */}
+                          {profile.review_gate && (
+                            <div className="md:col-span-2 lg:col-span-3 p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                              <p className="text-sm font-medium text-purple-600">
+                                Premium Review Gate Active
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                This job requires manual approval before delivery
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Edit Budget Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Processing Status</CardTitle>
+                  <CardDescription>Track post-processing progress</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {job.drone_packages && (
+                      <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                        <div>
+                          <p className="font-medium">Edit Budget</p>
+                          <p className="text-sm text-muted-foreground">
+                            {job.drone_packages.edit_budget_minutes} minutes allocated
+                          </p>
+                        </div>
+                        <Clock className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+
+                    {/* Asset Processing Status */}
+                    {assets.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">Asset Processing Status</Label>
+                        <div className="grid gap-2">
+                          {assets.map((asset) => (
+                            <div 
+                              key={asset.id} 
+                              className="flex items-center justify-between p-2 rounded border bg-card"
+                            >
+                              <span className="text-sm font-mono truncate max-w-[200px]">
+                                {asset.file_name}
+                              </span>
+                              <Badge 
+                                variant={
+                                  (asset as any).processing_status === "processed" 
+                                    ? "default" 
+                                    : "secondary"
+                                }
+                              >
+                                {(asset as any).processing_status || "raw"}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Delivery Tab */}

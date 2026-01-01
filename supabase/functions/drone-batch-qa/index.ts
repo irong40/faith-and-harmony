@@ -218,6 +218,49 @@ serve(async (req) => {
 
     console.log("Batch QA complete for job:", job_id, "Score:", avgScore, "Recommendation:", overallRecommendation);
 
+    // Trigger n8n processing webhook if configured and QA passes
+    const n8nWebhookUrl = Deno.env.get("N8N_PROCESSING_WEBHOOK_URL");
+    
+    if (n8nWebhookUrl && overallRecommendation === "deliver_as_planned") {
+      console.log("Triggering n8n processing webhook for job:", job_id);
+      
+      // Fetch customer info for the webhook
+      const { data: customer } = await supabase
+        .from("customers")
+        .select("email, name")
+        .eq("id", job.customer_id)
+        .single();
+
+      // Non-blocking webhook call
+      fetch(n8nWebhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          job_id: job_id,
+          job_number: job.job_number,
+          package_code: pkg?.code,
+          package_name: pkg?.name,
+          processing_profile: pkg?.processing_profile,
+          edit_budget_minutes: pkg?.edit_budget_minutes,
+          property_address: job.property_address,
+          property_city: job.property_city,
+          scheduled_date: job.scheduled_date,
+          total_photos: assets.length,
+          asset_paths: assets.map((a: any) => a.file_path),
+          customer_email: customer?.email,
+          customer_name: customer?.name,
+          qa_score: avgScore,
+          supabase_url: SUPABASE_URL
+        })
+      }).then(() => {
+        console.log("n8n webhook triggered successfully");
+      }).catch(err => {
+        console.error("n8n webhook failed:", err);
+      });
+    } else if (!n8nWebhookUrl) {
+      console.log("N8N_PROCESSING_WEBHOOK_URL not configured - skipping processing webhook");
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
