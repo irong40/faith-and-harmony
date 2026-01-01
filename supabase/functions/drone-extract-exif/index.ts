@@ -11,6 +11,16 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 /**
+ * Convert bearing degrees to cardinal direction
+ */
+function bearingToCardinal(bearing: number): string {
+  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  const normalized = ((bearing % 360) + 360) % 360; // Handle negative values
+  const index = Math.round(normalized / 45) % 8;
+  return directions[index];
+}
+
+/**
  * Convert EXIF GPS coordinates to decimal degrees
  * EXIF stores GPS as "degrees, minutes, seconds" format
  */
@@ -106,6 +116,75 @@ function parseAltitude(altTag: unknown, refTag: unknown): number | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Parse GPS image direction (bearing/heading) from EXIF
+ */
+function parseGPSDirection(dirTag: unknown): number | null {
+  try {
+    if (!dirTag) return null;
+    
+    const dir = dirTag as { value?: number | number[]; description?: string };
+    
+    if (dir.description) {
+      const bearing = parseFloat(dir.description);
+      if (!isNaN(bearing)) return bearing;
+    }
+    
+    if (typeof dir.value === 'number') {
+      return dir.value;
+    }
+    
+    if (Array.isArray(dir.value) && dir.value.length >= 2) {
+      return dir.value[0] / (dir.value[1] || 1);
+    }
+    
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extract DJI-specific metadata from XMP
+ */
+function extractDJIMetadata(xmp: Record<string, unknown> | undefined): {
+  relativeAltitude: number | null;
+  flightYaw: number | null;
+  gimbalYaw: number | null;
+} {
+  if (!xmp) return { relativeAltitude: null, flightYaw: null, gimbalYaw: null };
+  
+  const result = { relativeAltitude: null as number | null, flightYaw: null as number | null, gimbalYaw: null as number | null };
+  
+  try {
+    // DJI stores these in XMP namespace
+    const relAlt = xmp['drone-dji:RelativeAltitude'] || xmp['RelativeAltitude'];
+    if (relAlt) {
+      const val = typeof relAlt === 'object' && 'value' in relAlt ? (relAlt as {value: unknown}).value : relAlt;
+      result.relativeAltitude = typeof val === 'number' ? val : parseFloat(String(val));
+      if (isNaN(result.relativeAltitude)) result.relativeAltitude = null;
+    }
+    
+    const flightYaw = xmp['drone-dji:FlightYawDegree'] || xmp['FlightYawDegree'];
+    if (flightYaw) {
+      const val = typeof flightYaw === 'object' && 'value' in flightYaw ? (flightYaw as {value: unknown}).value : flightYaw;
+      result.flightYaw = typeof val === 'number' ? val : parseFloat(String(val));
+      if (isNaN(result.flightYaw)) result.flightYaw = null;
+    }
+    
+    const gimbalYaw = xmp['drone-dji:GimbalYawDegree'] || xmp['GimbalYawDegree'];
+    if (gimbalYaw) {
+      const val = typeof gimbalYaw === 'object' && 'value' in gimbalYaw ? (gimbalYaw as {value: unknown}).value : gimbalYaw;
+      result.gimbalYaw = typeof val === 'number' ? val : parseFloat(String(val));
+      if (isNaN(result.gimbalYaw)) result.gimbalYaw = null;
+    }
+  } catch (e) {
+    console.error("DJI metadata extraction error:", e);
+  }
+  
+  return result;
 }
 
 serve(async (req) => {
@@ -225,13 +304,14 @@ async function processAsset(
     const arrayBuffer = await response.arrayBuffer();
     console.log(`Downloaded ${arrayBuffer.byteLength} bytes`);
 
-    // Parse EXIF data
+    // Parse EXIF data with expanded XMP
     const exifData = ExifReader.load(arrayBuffer, { expanded: true });
     console.log("EXIF parsed successfully");
 
     // Extract key fields
     const exif = exifData.exif || {};
     const gps = exifData.gps || {};
+    const xmp = exifData.xmp as Record<string, unknown> | undefined;
     
     // Camera model
     const make = (exifData.Make as { description?: string })?.description || 
@@ -249,6 +329,19 @@ async function processAsset(
     const gpsLatitude = parseGPSCoordinate(gps.Latitude || exif.GPSLatitude, gps.LatitudeRef || exif.GPSLatitudeRef);
     const gpsLongitude = parseGPSCoordinate(gps.Longitude || exif.GPSLongitude, gps.LongitudeRef || exif.GPSLongitudeRef);
     const gpsAltitude = parseAltitude(gps.Altitude || exif.GPSAltitude, gps.AltitudeRef || exif.GPSAltitudeRef);
+    
+    // GPS Image Direction (camera heading/bearing)
+    const gpsBearing = parseGPSDirection(gps.ImgDirection || exif.GPSImgDirection);
+    
+    // Extract DJI-specific metadata
+    const djiMeta = extractDJIMetadata(xmp);
+    
+    // Determine compass direction - prefer GPS heading, fall back to DJI flight yaw
+    let compassDirection: string | null = null;
+    const headingBearing = gpsBearing ?? djiMeta.flightYaw ?? djiMeta.gimbalYaw;
+    if (headingBearing !== null) {
+      compassDirection = bearingToCardinal(headingBearing);
+    }
 
     // Build full EXIF JSON for storage (filtered to useful fields)
     const exifJson: Record<string, unknown> = {
@@ -269,6 +362,13 @@ async function processAsset(
         latitude: gpsLatitude,
         longitude: gpsLongitude,
         altitude: gpsAltitude,
+        bearing: gpsBearing,
+        compassDirection,
+      } : null,
+      dji: (djiMeta.relativeAltitude !== null || djiMeta.flightYaw !== null) ? {
+        relativeAltitude: djiMeta.relativeAltitude,
+        flightYaw: djiMeta.flightYaw,
+        gimbalYaw: djiMeta.gimbalYaw,
       } : null,
       image: {
         width: (exifData.file?.ImageWidth as { value?: number })?.value || 
@@ -279,7 +379,7 @@ async function processAsset(
       },
     };
 
-    // Update the asset record
+    // Update the asset record including compass_direction
     const { error: updateError } = await supabase
       .from("drone_assets")
       .update({
@@ -289,6 +389,7 @@ async function processAsset(
         gps_latitude: gpsLatitude,
         gps_longitude: gpsLongitude,
         gps_altitude: gpsAltitude,
+        compass_direction: compassDirection,
       })
       .eq("id", assetId);
 
@@ -302,6 +403,9 @@ async function processAsset(
       date: captureDate,
       gps: gpsLatitude !== null ? `${gpsLatitude}, ${gpsLongitude}` : null,
       altitude: gpsAltitude,
+      bearing: gpsBearing,
+      compass: compassDirection,
+      dji: djiMeta,
     });
 
     return {
@@ -312,6 +416,7 @@ async function processAsset(
         gps_latitude: gpsLatitude,
         gps_longitude: gpsLongitude,
         gps_altitude: gpsAltitude,
+        compass_direction: compassDirection,
         exif_data: exifJson,
       },
     };

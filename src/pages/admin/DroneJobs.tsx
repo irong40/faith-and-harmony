@@ -58,6 +58,7 @@ const STATUS_CONFIG: Record<DroneJobStatus, { label: string; color: string }> = 
   captured: { label: "Captured", color: "bg-indigo-500" },
   uploaded: { label: "Uploaded", color: "bg-purple-500" },
   processing: { label: "Processing", color: "bg-amber-500" },
+  review_pending: { label: "Review Pending", color: "bg-violet-500" },
   qa: { label: "QA Review", color: "bg-orange-500" },
   revision: { label: "Revision", color: "bg-red-500" },
   delivered: { label: "Delivered", color: "bg-green-500" },

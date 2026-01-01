@@ -27,6 +27,7 @@ interface DeliveryEmailRequest {
   job_id: string;
   deliverable_ids?: string[];
   custom_message?: string;
+  download_url?: string; // Direct ZIP download URL from n8n
 }
 
 serve(async (req) => {
@@ -35,7 +36,7 @@ serve(async (req) => {
   }
 
   try {
-    const { job_id, deliverable_ids, custom_message } = await req.json() as DeliveryEmailRequest;
+    const { job_id, deliverable_ids, custom_message, download_url } = await req.json() as DeliveryEmailRequest;
 
     if (!job_id) {
       return new Response(
@@ -81,7 +82,21 @@ serve(async (req) => {
       );
     }
 
-    // Fetch deliverables
+    // Fetch assets to get counts and first photo for hero thumbnail
+    const { data: assets } = await supabase
+      .from("drone_assets")
+      .select("id, file_path, file_type, file_size")
+      .eq("job_id", job_id)
+      .order("sort_order")
+      .limit(100);
+
+    const photoCount = assets?.filter(a => a.file_type?.startsWith('image/')).length || 0;
+    const videoCount = assets?.filter(a => a.file_type?.startsWith('video/')).length || 0;
+    const totalSizeBytes = assets?.reduce((sum, a) => sum + (a.file_size || 0), 0) || 0;
+    const totalSizeMB = Math.round(totalSizeBytes / (1024 * 1024));
+    const heroThumbnailUrl = assets?.[0]?.file_path || null;
+
+    // Fetch deliverables if provided
     let deliverables;
     if (deliverable_ids && deliverable_ids.length > 0) {
       const { data } = await supabase
@@ -98,39 +113,25 @@ serve(async (req) => {
       deliverables = data;
     }
 
-    if (!deliverables || deliverables.length === 0) {
+    // Use provided download_url or fallback to deliverables
+    const primaryDownloadUrl = download_url || job.download_url || deliverables?.[0]?.download_url;
+
+    if (!primaryDownloadUrl && (!deliverables || deliverables.length === 0)) {
       return new Response(
-        JSON.stringify({ error: "No deliverables found for this job" }),
+        JSON.stringify({ error: "No download URL or deliverables found for this job" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Build download links HTML with branded button
-    const downloadLinksHtml = deliverables.map(d => `
-      <tr>
-        <td style="padding: 12px; border-bottom: 1px solid #e5e5e5;">
-          <strong style="color: ${BRAND.purple};">${d.name}</strong>
-          ${d.description ? `<br><span style="color: #666; font-size: 14px;">${d.description}</span>` : ""}
-        </td>
-        <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: center; color: #666;">
-          ${d.file_count} files
-        </td>
-        <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: right;">
-          <a href="${d.download_url}" style="background: linear-gradient(135deg, ${BRAND.gold} 0%, #c9973e 100%); color: ${BRAND.purple}; padding: 10px 20px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">
-            Download
-          </a>
-        </td>
-      </tr>
-    `).join("");
-
     const pkg = job.drone_packages;
     const propertyAddress = `${job.property_address}${job.property_city ? `, ${job.property_city}` : ""}${job.property_state ? `, ${job.property_state}` : ""}`;
+    const clientFirstName = customer.name.split(' ')[0];
 
-    // Send the email with consistent branding
+    // Send the email with enhanced template matching the documentation
     const emailResponse = await resend.emails.send({
       from: "Faith & Harmony <onboarding@resend.dev>",
       to: [customer.email],
-      subject: `Your Aerial Photos Are Ready - ${job.job_number}`,
+      subject: `Your ${pkg?.name || 'aerial'} photos are ready - ${propertyAddress}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -145,22 +146,56 @@ serve(async (req) => {
               <td style="background: linear-gradient(135deg, ${BRAND.purple} 0%, #4a1259 100%); padding: 32px; text-align: center;">
                 <h1 style="color: ${BRAND.gold}; margin: 0; font-size: 26px; font-weight: 700;">${BRAND.companyName}</h1>
                 <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 13px; font-style: italic;">${BRAND.tagline}</p>
-                <p style="color: rgba(255,255,255,0.7); margin: 8px 0 0 0; font-size: 12px;">Aerial Photography</p>
+              </td>
+            </tr>
+
+            <!-- Hero Thumbnail -->
+            ${heroThumbnailUrl ? `
+            <tr>
+              <td style="padding: 0;">
+                <img src="${heroThumbnailUrl}" alt="Your aerial photos" style="width: 100%; height: 200px; object-fit: cover;"/>
+              </td>
+            </tr>
+            ` : ''}
+
+            <!-- Title Banner -->
+            <tr>
+              <td style="background: linear-gradient(135deg, ${BRAND.gold} 0%, #c9973e 100%); padding: 24px; text-align: center;">
+                <h2 style="color: ${BRAND.purple}; margin: 0; font-size: 24px; font-weight: 700;">Your Photos Are Ready</h2>
+                <p style="color: ${BRAND.purple}; margin: 8px 0 0 0; font-size: 14px; opacity: 0.8;">${propertyAddress}</p>
               </td>
             </tr>
 
             <!-- Content -->
             <tr>
               <td style="padding: 32px;">
-                <h2 style="color: ${BRAND.purple}; margin: 0 0 16px 0; font-size: 22px;">Your Photos Are Ready! 🎉</h2>
-                
-                <p style="color: #333; line-height: 1.6;">
-                  Dear ${customer.name},
+                <p style="color: #333; line-height: 1.6; margin: 0 0 24px 0;">
+                  Hi ${clientFirstName},
                 </p>
                 
-                <p style="color: #333; line-height: 1.6;">
-                  Great news! Your ${pkg?.name || "aerial photography"} package for <strong>${propertyAddress}</strong> is complete and ready for download.
+                <p style="color: #333; line-height: 1.6; margin: 0 0 24px 0;">
+                  Your <strong>${pkg?.name || "aerial photography"}</strong> photos for <strong>${propertyAddress}</strong> are ready for download.
                 </p>
+
+                <!-- Stats Row -->
+                <table style="width: 100%; margin: 24px 0; border-collapse: collapse;">
+                  <tr>
+                    <td style="text-align: center; padding: 16px; background-color: ${BRAND.cream}; border-radius: 8px 0 0 8px;">
+                      <div style="font-size: 28px; font-weight: 700; color: ${BRAND.purple};">${photoCount}</div>
+                      <div style="font-size: 12px; color: #666; text-transform: uppercase;">Photos</div>
+                    </td>
+                    ${videoCount > 0 ? `
+                    <td style="text-align: center; padding: 16px; background-color: ${BRAND.cream};">
+                      <div style="font-size: 28px; font-weight: 700; color: ${BRAND.purple};">${videoCount}</div>
+                      <div style="font-size: 12px; color: #666; text-transform: uppercase;">Videos</div>
+                    </td>
+                    ` : ''}
+                    <td style="text-align: center; padding: 16px; background-color: ${BRAND.cream}; border-radius: 0 8px 8px 0;">
+                      <div style="font-size: 28px; font-weight: 700; color: ${BRAND.purple};">${totalSizeMB}MB</div>
+                      <div style="font-size: 12px; color: #666; text-transform: uppercase;">Total Size</div>
+                    </td>
+                  </tr>
+                </table>
 
                 ${custom_message ? `
                   <div style="background-color: #f8f4fc; border-left: 4px solid ${BRAND.gold}; padding: 16px; margin: 24px 0; border-radius: 0 8px 8px 0;">
@@ -168,48 +203,40 @@ serve(async (req) => {
                   </div>
                 ` : ""}
 
-                <!-- Job Details -->
-                <div style="background-color: ${BRAND.cream}; border-radius: 8px; padding: 20px; margin: 24px 0;">
-                  <h3 style="color: ${BRAND.purple}; margin: 0 0 12px 0; font-size: 16px;">Order Details</h3>
-                  <table style="width: 100%; font-size: 14px;">
-                    <tr>
-                      <td style="color: #666; padding: 4px 0;">Job Number:</td>
-                      <td style="color: ${BRAND.purple}; font-weight: 600;">${job.job_number}</td>
-                    </tr>
-                    <tr>
-                      <td style="color: #666; padding: 4px 0;">Package:</td>
-                      <td style="color: ${BRAND.purple}; font-weight: 600;">${pkg?.name || "Standard"}</td>
-                    </tr>
-                    <tr>
-                      <td style="color: #666; padding: 4px 0;">Property:</td>
-                      <td style="color: ${BRAND.purple}; font-weight: 600;">${propertyAddress}</td>
-                    </tr>
-                  </table>
+                <!-- CTA Button -->
+                <div style="text-align: center; margin: 32px 0;">
+                  <a href="${primaryDownloadUrl}" style="background: linear-gradient(135deg, ${BRAND.gold} 0%, #c9973e 100%); color: ${BRAND.purple}; padding: 16px 40px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 700; font-size: 18px;">
+                    Download All Photos
+                  </a>
+                  <p style="color: #666; font-size: 12px; margin: 12px 0 0 0;">
+                    Link expires in 7 days
+                  </p>
                 </div>
 
-                <!-- Download Links -->
-                <h3 style="color: ${BRAND.purple}; margin: 24px 0 16px 0;">Download Your Files</h3>
-                <table style="width: 100%; border-collapse: collapse; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden;">
-                  <thead>
-                    <tr style="background-color: ${BRAND.purple};">
-                      <th style="padding: 12px; text-align: left; font-size: 14px; color: white;">Package</th>
-                      <th style="padding: 12px; text-align: center; font-size: 14px; color: white;">Files</th>
-                      <th style="padding: 12px; text-align: right; font-size: 14px; color: white;">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${downloadLinksHtml}
-                  </tbody>
-                </table>
+                ${deliverables && deliverables.length > 1 ? `
+                  <!-- Additional Deliverables -->
+                  <h3 style="color: ${BRAND.purple}; margin: 24px 0 16px 0; font-size: 16px;">Additional Downloads</h3>
+                  <table style="width: 100%; border-collapse: collapse; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden;">
+                    ${deliverables.slice(1).map((d: any) => `
+                      <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #e5e5e5;">
+                          <strong style="color: ${BRAND.purple};">${d.name}</strong>
+                          ${d.description ? `<br><span style="color: #666; font-size: 14px;">${d.description}</span>` : ""}
+                        </td>
+                        <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: right;">
+                          <a href="${d.download_url}" style="color: ${BRAND.gold}; font-weight: 600; text-decoration: none;">
+                            Download
+                          </a>
+                        </td>
+                      </tr>
+                    `).join("")}
+                  </table>
+                ` : ''}
 
-                <p style="color: #666; font-size: 12px; margin-top: 16px;">
-                  ⏰ Download links expire in 7 days. Please download your files before then.
-                </p>
-
-                <!-- CTA -->
-                <div style="text-align: center; margin: 32px 0;">
-                  <p style="color: #333; line-height: 1.6;">
-                    We hope you love your photos! If you have any questions or need any adjustments, please don't hesitate to reach out.
+                <!-- Support Text -->
+                <div style="text-align: center; margin: 32px 0; padding: 24px; background-color: #f9f9f9; border-radius: 8px;">
+                  <p style="color: #666; line-height: 1.6; margin: 0;">
+                    Questions about your photos? Reply to this email and we'll help you out.
                   </p>
                 </div>
               </td>
@@ -239,21 +266,28 @@ serve(async (req) => {
 
     console.log("Delivery email sent:", emailResponse);
 
-    // Update job status to delivered
+    // Update job status to delivered and store download_url if provided
+    const updateData: Record<string, unknown> = {
+      status: "delivered",
+      delivered_at: new Date().toISOString(),
+      delivery_notes: custom_message || null
+    };
+    
+    if (download_url) {
+      updateData.download_url = download_url;
+    }
+
     await supabase
       .from("drone_jobs")
-      .update({
-        status: "delivered",
-        delivered_at: new Date().toISOString(),
-        delivery_notes: custom_message || null
-      })
+      .update(updateData)
       .eq("id", job_id);
 
     return new Response(
       JSON.stringify({
         success: true,
         email_id: emailResponse.id,
-        sent_to: customer.email
+        sent_to: customer.email,
+        stats: { photo_count: photoCount, video_count: videoCount, total_size_mb: totalSizeMB }
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

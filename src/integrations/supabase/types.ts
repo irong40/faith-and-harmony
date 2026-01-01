@@ -165,6 +165,7 @@ export type Database = {
         Row: {
           camera_model: string | null
           capture_date: string | null
+          compass_direction: string | null
           created_at: string
           exif_data: Json | null
           file_name: string
@@ -192,6 +193,7 @@ export type Database = {
         Insert: {
           camera_model?: string | null
           capture_date?: string | null
+          compass_direction?: string | null
           created_at?: string
           exif_data?: Json | null
           file_name: string
@@ -219,6 +221,7 @@ export type Database = {
         Update: {
           camera_model?: string | null
           capture_date?: string | null
+          compass_direction?: string | null
           created_at?: string
           exif_data?: Json | null
           file_name?: string
@@ -249,6 +252,13 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "drone_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drone_assets_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
         ]
@@ -302,6 +312,13 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "drone_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drone_deliverables_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
             referencedColumns: ["id"]
           },
         ]
@@ -389,6 +406,7 @@ export type Database = {
           customer_id: string | null
           delivered_at: string | null
           delivery_notes: string | null
+          download_url: string | null
           id: string
           job_number: string
           package_id: string | null
@@ -416,6 +434,7 @@ export type Database = {
           customer_id?: string | null
           delivered_at?: string | null
           delivery_notes?: string | null
+          download_url?: string | null
           id?: string
           job_number: string
           package_id?: string | null
@@ -443,6 +462,7 @@ export type Database = {
           customer_id?: string | null
           delivered_at?: string | null
           delivery_notes?: string | null
+          download_url?: string | null
           id?: string
           job_number?: string
           package_id?: string | null
@@ -476,6 +496,13 @@ export type Database = {
             columns: ["package_id"]
             isOneToOne: false
             referencedRelation: "drone_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drone_jobs_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
             referencedColumns: ["id"]
           },
           {
@@ -1460,6 +1487,82 @@ export type Database = {
         }
         Relationships: []
       }
+      jobs: {
+        Row: {
+          client_email: string | null
+          client_name: string | null
+          client_phone: string | null
+          created_at: string | null
+          delivered_at: string | null
+          download_url: string | null
+          id: string | null
+          job_number: string | null
+          package_id: string | null
+          project_name: string | null
+          qa_score: number | null
+          scheduled_date: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drone_jobs_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "drone_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drone_jobs_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      packages: {
+        Row: {
+          active: boolean | null
+          category: string | null
+          code: string | null
+          description: string | null
+          edit_budget_minutes: number | null
+          features: string[] | null
+          id: string | null
+          name: string | null
+          price: number | null
+          processing_profile: Json | null
+          shot_manifest: Json | null
+        }
+        Insert: {
+          active?: boolean | null
+          category?: string | null
+          code?: string | null
+          description?: string | null
+          edit_budget_minutes?: number | null
+          features?: string[] | null
+          id?: string | null
+          name?: string | null
+          price?: number | null
+          processing_profile?: Json | null
+          shot_manifest?: Json | null
+        }
+        Update: {
+          active?: boolean | null
+          category?: string | null
+          code?: string | null
+          description?: string | null
+          edit_budget_minutes?: number | null
+          features?: string[] | null
+          id?: string | null
+          name?: string | null
+          price?: number | null
+          processing_profile?: Json | null
+          shot_manifest?: Json | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generate_drone_job_number: { Args: never; Returns: string }
@@ -1488,6 +1591,7 @@ export type Database = {
         | "captured"
         | "uploaded"
         | "processing"
+        | "review_pending"
         | "qa"
         | "revision"
         | "delivered"
@@ -1696,6 +1800,7 @@ export const Constants = {
         "captured",
         "uploaded",
         "processing",
+        "review_pending",
         "qa",
         "revision",
         "delivered",

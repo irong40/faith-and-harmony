@@ -30,12 +30,13 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch job with package info
+    // Fetch job with package and customer info
     const { data: job, error: jobError } = await supabase
       .from("drone_jobs")
       .select(`
         *,
-        drone_packages (*)
+        drone_packages (*),
+        customers (*)
       `)
       .eq("id", job_id)
       .single();
@@ -47,7 +48,7 @@ serve(async (req) => {
       );
     }
 
-    // Fetch all analyzed assets for this job
+    // Fetch all analyzed assets for this job (including compass_direction for construction labeling)
     const { data: assets, error: assetsError } = await supabase
       .from("drone_assets")
       .select("*")
@@ -71,6 +72,7 @@ serve(async (req) => {
     }
 
     const pkg = job.drone_packages;
+    const customer = job.customers;
     const expectedShots = pkg?.shot_manifest || [];
 
     // Calculate batch summary
@@ -150,6 +152,10 @@ serve(async (req) => {
     const hasCriticalFailures = failCount > 0;
     const needsReshoot = reshootShots.length > 0;
     const packageIncomplete = missingShots.length > 0;
+    
+    // Check if this is a Premium package requiring sky replacement review
+    const processingProfile = pkg?.processing_profile as { sky_replacement?: { enabled: boolean; review_gate: boolean } } | null;
+    const needsSkyReview = processingProfile?.sky_replacement?.enabled && processingProfile?.sky_replacement?.review_gate;
 
     let overallRecommendation: string;
     let recommendationDetails: string;
@@ -199,8 +205,20 @@ serve(async (req) => {
         : undefined,
       overall_recommendation: overallRecommendation,
       recommendation_details: recommendationDetails,
-      ready_for_delivery: overallRecommendation === "deliver_as_planned"
+      ready_for_delivery: overallRecommendation === "deliver_as_planned",
+      needs_sky_review: needsSkyReview,
     };
+
+    // Determine job status based on results
+    let newStatus: string;
+    if (hasCriticalFailures) {
+      newStatus = "revision";
+    } else if (needsSkyReview && overallRecommendation === "deliver_as_planned") {
+      // Premium packages go to review_pending for sky replacement review
+      newStatus = "review_pending";
+    } else {
+      newStatus = "qa";
+    }
 
     // Update the job with batch summary
     const { error: updateError } = await supabase
@@ -208,7 +226,7 @@ serve(async (req) => {
       .update({
         qa_score: avgScore,
         qa_summary: batchSummary,
-        status: hasCriticalFailures ? "revision" : "qa"
+        status: newStatus
       })
       .eq("id", job_id);
 
@@ -216,39 +234,47 @@ serve(async (req) => {
       console.error("Failed to update job:", updateError);
     }
 
-    console.log("Batch QA complete for job:", job_id, "Score:", avgScore, "Recommendation:", overallRecommendation);
+    console.log("Batch QA complete for job:", job_id, "Score:", avgScore, "Recommendation:", overallRecommendation, "Status:", newStatus);
 
-    // Trigger n8n processing webhook if configured and QA passes
+    // Trigger n8n processing webhook if configured and QA passes (not review_pending)
     const n8nWebhookUrl = Deno.env.get("N8N_PROCESSING_WEBHOOK_URL");
     
-    if (n8nWebhookUrl && overallRecommendation === "deliver_as_planned") {
+    if (n8nWebhookUrl && overallRecommendation === "deliver_as_planned" && newStatus !== "review_pending") {
       console.log("Triggering n8n processing webhook for job:", job_id);
-      
-      // Fetch customer info for the webhook
-      const { data: customer } = await supabase
-        .from("customers")
-        .select("email, name")
-        .eq("id", job.customer_id)
-        .single();
 
-      // Non-blocking webhook call
+      // Build asset data with compass directions for construction labeling
+      const assetData = assets.map((a: any) => ({
+        id: a.id,
+        file_name: a.file_name,
+        file_path: a.file_path,
+        compass_direction: a.compass_direction,
+        capture_date: a.capture_date,
+        qa_score: a.qa_score,
+      }));
+
+      // Non-blocking webhook call with full project/client info
       fetch(n8nWebhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           job_id: job_id,
           job_number: job.job_number,
+          project_name: job.property_address, // n8n expects project_name
+          property_address: job.property_address,
+          property_city: job.property_city,
+          property_state: job.property_state,
           package_code: pkg?.code,
           package_name: pkg?.name,
           processing_profile: pkg?.processing_profile,
           edit_budget_minutes: pkg?.edit_budget_minutes,
-          property_address: job.property_address,
-          property_city: job.property_city,
           scheduled_date: job.scheduled_date,
           total_photos: assets.length,
+          assets: assetData,
           asset_paths: assets.map((a: any) => a.file_path),
-          customer_email: customer?.email,
-          customer_name: customer?.name,
+          compass_directions: assets.map((a: any) => a.compass_direction), // For construction labeling
+          client_email: customer?.email,
+          client_name: customer?.name,
+          client_phone: customer?.phone,
           qa_score: avgScore,
           supabase_url: SUPABASE_URL
         })
@@ -257,6 +283,25 @@ serve(async (req) => {
       }).catch(err => {
         console.error("n8n webhook failed:", err);
       });
+    } else if (newStatus === "review_pending") {
+      console.log("Job set to review_pending - awaiting admin approval before processing");
+      
+      // Optionally trigger a review notification
+      const reviewNotificationUrl = Deno.env.get("REVIEW_NOTIFICATION_WEBHOOK_URL");
+      if (reviewNotificationUrl) {
+        fetch(reviewNotificationUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            job_id: job_id,
+            job_number: job.job_number,
+            project_name: job.property_address,
+            package_name: pkg?.name,
+            total_photos: assets.length,
+            qa_score: avgScore,
+          })
+        }).catch(err => console.error("Review notification failed:", err));
+      }
     } else if (!n8nWebhookUrl) {
       console.log("N8N_PROCESSING_WEBHOOK_URL not configured - skipping processing webhook");
     }
@@ -266,6 +311,7 @@ serve(async (req) => {
         success: true,
         job_id,
         qa_score: avgScore,
+        status: newStatus,
         summary: batchSummary
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
