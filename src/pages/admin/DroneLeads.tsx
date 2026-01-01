@@ -1,16 +1,19 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { supabase } from "@/integrations/supabase/client";
 import AdminNav from "./components/AdminNav";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Users, Mail, Phone, Zap, Plus, Building2, MapPin, Star } from "lucide-react";
+import { Users, Mail, Phone, Zap, Plus } from "lucide-react";
 import LeadDetailModal from "./components/LeadDetailModal";
 import LeadGenModal from "./components/LeadGenModal";
+import LeadCard from "./components/LeadCard";
+import LeadFilters from "./components/LeadFilters";
+import ManualLeadForm from "./components/ManualLeadForm";
 
 type LeadStatus = 'new' | 'contacted' | 'responded' | 'qualified' | 'client';
 
@@ -50,6 +53,8 @@ export default function DroneLeads() {
   const queryClient = useQueryClient();
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showLeadGen, setShowLeadGen] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: leads = [], isLoading } = useQuery({
     queryKey: ['drone-leads'],
@@ -105,8 +110,26 @@ export default function DroneLeads() {
     updateStatusMutation.mutate({ id: leadId, status: newStatus });
   };
 
-  const getLeadsByStatus = (status: LeadStatus) => 
-    leads.filter(lead => lead.status === status);
+  // Filter leads by search query
+  const filteredLeads = useMemo(() => {
+    if (!searchQuery.trim()) return leads;
+    
+    const query = searchQuery.toLowerCase();
+    return leads.filter(lead => 
+      lead.company_name.toLowerCase().includes(query) ||
+      (lead.email && lead.email.toLowerCase().includes(query)) ||
+      (lead.city && lead.city.toLowerCase().includes(query)) ||
+      (lead.portfolio_type && lead.portfolio_type.toLowerCase().includes(query))
+    );
+  }, [leads, searchQuery]);
+
+  const getLeadsByStatus = useCallback((status: LeadStatus) => 
+    filteredLeads.filter(lead => lead.status === status),
+  [filteredLeads]);
+
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+  }, []);
 
   const totalLeads = leads.length;
   const withEmail = leads.filter(l => l.email).length;
@@ -121,15 +144,31 @@ export default function DroneLeads() {
     <div className="min-h-screen bg-background">
       <AdminNav />
       <main className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold">Drone Leads Pipeline</h1>
             <p className="text-muted-foreground">Manage and track your drone service leads</p>
           </div>
-          <Button onClick={() => setShowLeadGen(true)} className="gap-2">
-            <Zap className="h-4 w-4" />
-            Run Lead Gen
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setShowManualForm(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Add Lead
+            </Button>
+            <Button onClick={() => setShowLeadGen(true)} className="gap-2">
+              <Zap className="h-4 w-4" />
+              Run Lead Gen
+            </Button>
+          </div>
+        </div>
+
+        {/* Search & Filters */}
+        <div className="mb-6">
+          <LeadFilters onSearchChange={handleSearchChange} />
+          {searchQuery && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Showing {filteredLeads.length} of {leads.length} leads
+            </p>
+          )}
         </div>
 
         {/* Stats Row */}
@@ -219,67 +258,17 @@ export default function DroneLeads() {
                         {getLeadsByStatus(column.id).map((lead, index) => (
                           <Draggable key={lead.id} draggableId={lead.id} index={index}>
                             {(provided, snapshot) => (
-                              <Card
+                              <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className={`cursor-pointer hover:shadow-md transition-shadow ${
-                                  snapshot.isDragging ? 'shadow-lg rotate-2' : ''
-                                }`}
-                                onClick={() => setSelectedLead(lead)}
                               >
-                                <CardContent className="p-3">
-                                  <div className="flex items-start justify-between gap-2 mb-2">
-                                    <h4 className="font-medium text-sm line-clamp-2">
-                                      {lead.company_name}
-                                    </h4>
-                                    {lead.priority === 'high' && (
-                                      <Badge variant="destructive" className="shrink-0 text-xs">
-                                        High
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  
-                                  {lead.portfolio_type && (
-                                    <Badge variant="outline" className="mb-2 text-xs">
-                                      {lead.portfolio_type}
-                                    </Badge>
-                                  )}
-                                  
-                                  <div className="space-y-1 text-xs text-muted-foreground">
-                                    {lead.city && (
-                                      <div className="flex items-center gap-1">
-                                        <MapPin className="h-3 w-3" />
-                                        <span>{lead.city}, {lead.state}</span>
-                                      </div>
-                                    )}
-                                    {lead.email && (
-                                      <div className="flex items-center gap-1">
-                                        <Mail className="h-3 w-3 text-green-500" />
-                                        <span className="truncate">{lead.email}</span>
-                                      </div>
-                                    )}
-                                    {lead.google_rating && (
-                                      <div className="flex items-center gap-1">
-                                        <Star className="h-3 w-3 text-amber-500" />
-                                        <span>{lead.google_rating} ({lead.review_count} reviews)</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                  
-                                  {lead.hunter_io_score && (
-                                    <div className="mt-2 flex items-center gap-1">
-                                      <div className="text-xs text-muted-foreground">Hunter:</div>
-                                      <Badge 
-                                        variant={lead.hunter_io_score >= 80 ? "default" : "secondary"}
-                                        className="text-xs"
-                                      >
-                                        {lead.hunter_io_score}%
-                                      </Badge>
-                                    </div>
-                                  )}
-                                </CardContent>
-                              </Card>
+                                <LeadCard
+                                  lead={lead}
+                                  isDragging={snapshot.isDragging}
+                                  onClick={() => setSelectedLead(lead)}
+                                />
+                              </div>
                             )}
                           </Draggable>
                         ))}
@@ -304,6 +293,11 @@ export default function DroneLeads() {
         <LeadGenModal 
           open={showLeadGen} 
           onClose={() => setShowLeadGen(false)} 
+        />
+
+        <ManualLeadForm
+          open={showManualForm}
+          onClose={() => setShowManualForm(false)}
         />
       </main>
     </div>
