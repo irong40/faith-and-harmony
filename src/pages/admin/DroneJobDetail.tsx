@@ -567,6 +567,115 @@ export default function DroneJobDetail() {
           {/* Processing Tab */}
           <TabsContent value="processing">
             <div className="space-y-6">
+              {/* Premium Review Approval UI */}
+              {job.status === "review_pending" && (
+                <Card className="border-violet-500/50 bg-violet-500/5">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-violet-600">
+                      <AlertTriangle className="h-5 w-5" />
+                      Premium Package Review Required
+                    </CardTitle>
+                    <CardDescription>
+                      Sky replacement candidates require your approval before delivery
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Sky Replacement Candidates */}
+                    {(() => {
+                      const candidates = assets.filter(asset => {
+                        const qaResults = asset.qa_results as any;
+                        return qaResults?.issues?.some((issue: any) => 
+                          issue.type === "sky_quality" || 
+                          issue.recommended_action?.includes("sky") ||
+                          issue.category === "sky"
+                        ) || qaResults?.recommendation === "warning";
+                      });
+                      
+                      if (candidates.length === 0) {
+                        return (
+                          <p className="text-sm text-muted-foreground">
+                            No specific sky replacement candidates flagged. Review all assets if needed.
+                          </p>
+                        );
+                      }
+                      
+                      return (
+                        <div className="space-y-3">
+                          <Label className="text-muted-foreground">
+                            {candidates.length} asset{candidates.length !== 1 ? "s" : ""} flagged for sky replacement review
+                          </Label>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {candidates.slice(0, 8).map((asset) => {
+                              const { data } = supabase.storage
+                                .from("drone-uploads")
+                                .getPublicUrl(asset.file_path);
+                              return (
+                                <div key={asset.id} className="relative group">
+                                  <img
+                                    src={data.publicUrl}
+                                    alt={asset.file_name}
+                                    className="w-full h-24 object-cover rounded-lg border"
+                                  />
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                                    <span className="text-white text-xs text-center px-1 truncate">
+                                      {asset.file_name}
+                                    </span>
+                                  </div>
+                                  {asset.qa_score && (
+                                    <Badge 
+                                      variant="secondary" 
+                                      className="absolute top-1 right-1 text-xs"
+                                    >
+                                      {asset.qa_score}
+                                    </Badge>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {candidates.length > 8 && (
+                            <p className="text-xs text-muted-foreground">
+                              +{candidates.length - 8} more candidates
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })()}
+                    
+                    {/* Approval Actions */}
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+                      <Button
+                        onClick={async () => {
+                          await handleStatusChange("processing");
+                          toast({ 
+                            title: "Approved", 
+                            description: "Job will continue to delivery processing" 
+                          });
+                        }}
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Approve & Continue Delivery
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={async () => {
+                          await handleStatusChange("revision");
+                          toast({ 
+                            title: "Revision requested", 
+                            description: "Job marked for revision" 
+                          });
+                        }}
+                        className="flex-1"
+                      >
+                        <AlertTriangle className="mr-2 h-4 w-4" />
+                        Request Revision
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Processing Profile Card */}
               {job.drone_packages?.processing_profile && (
                 <Card>
