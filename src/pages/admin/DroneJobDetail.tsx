@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle } from "lucide-react";
+import { ArrowLeft, RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle, ScanSearch } from "lucide-react";
 import { format } from "date-fns";
 import AdminNav from "./components/AdminNav";
 import DroneJobForm from "./components/DroneJobForm";
@@ -41,6 +41,12 @@ interface DroneAsset {
   qa_results: Json | null;
   sort_order: number | null;
   created_at: string;
+  exif_data?: Json | null;
+  camera_model?: string | null;
+  capture_date?: string | null;
+  gps_latitude?: number | null;
+  gps_longitude?: number | null;
+  gps_altitude?: number | null;
 }
 
 interface DroneJob {
@@ -98,6 +104,7 @@ export default function DroneJobDetail() {
   const [generatingToken, setGeneratingToken] = useState(false);
   const [runningQA, setRunningQA] = useState(false);
   const [tokenCopied, setTokenCopied] = useState(false);
+  const [extractingExif, setExtractingExif] = useState(false);
 
   const fetchJob = async () => {
     if (!id) return;
@@ -200,6 +207,26 @@ export default function DroneJobDetail() {
     toast({ title: "QA analysis complete" });
     fetchJob();
     setRunningQA(false);
+  };
+
+  const extractExifData = async () => {
+    if (!job || assets.length === 0) return;
+    setExtractingExif(true);
+
+    const { data, error } = await supabase.functions.invoke("drone-extract-exif", {
+      body: { job_id: job.id },
+    });
+
+    if (error) {
+      toast({ title: "EXIF extraction failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ 
+        title: "EXIF extraction complete", 
+        description: `Processed ${data?.processed || 0} assets` 
+      });
+      fetchJob();
+    }
+    setExtractingExif(false);
   };
 
   const sendDelivery = async () => {
@@ -441,6 +468,15 @@ export default function DroneJobDetail() {
                       {generatingToken ? "Generating..." : "Generate Upload Link"}
                     </Button>
                   )}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={extractExifData} 
+                    disabled={extractingExif || assets.length === 0}
+                  >
+                    <ScanSearch className="mr-2 h-4 w-4" />
+                    {extractingExif ? "Extracting..." : "Extract EXIF"}
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
