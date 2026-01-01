@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.drone-upload-processed]
 verify_jwt = false
+
+[functions.drone-review-notification]
+verify_jwt = false
