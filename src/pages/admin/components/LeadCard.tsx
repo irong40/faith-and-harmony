@@ -1,6 +1,24 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Mail, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { MapPin, Mail, Star, Copy, Send, UserCheck } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+type LeadStatus = 'new' | 'contacted' | 'responded' | 'qualified' | 'client';
 
 interface Lead {
   id: string;
@@ -14,12 +32,15 @@ interface Lead {
   review_count: number | null;
   hunter_io_score: number | null;
   priority: string | null;
+  status: LeadStatus;
 }
 
 interface LeadCardProps {
   lead: Lead;
   isDragging?: boolean;
   onClick: () => void;
+  onStatusChange?: (id: string, status: LeadStatus) => void;
+  onQuickAction?: (action: 'copy' | 'email' | 'contacted', lead: Lead) => void;
 }
 
 const priorityColors: Record<string, string> = {
@@ -28,8 +49,47 @@ const priorityColors: Record<string, string> = {
   low: 'border-l-4 border-l-muted-foreground/30',
 };
 
-export default function LeadCard({ lead, isDragging, onClick }: LeadCardProps) {
+const statusOptions: { value: LeadStatus; label: string }[] = [
+  { value: 'new', label: 'New' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'responded', label: 'Responded' },
+  { value: 'qualified', label: 'Qualified' },
+  { value: 'client', label: 'Client' },
+];
+
+export default function LeadCard({ lead, isDragging, onClick, onStatusChange, onQuickAction }: LeadCardProps) {
+  const { toast } = useToast();
+  const [isHovered, setIsHovered] = useState(false);
   const priorityClass = priorityColors[lead.priority || 'medium'] || priorityColors.medium;
+
+  const handleCopyEmail = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (lead.email) {
+      navigator.clipboard.writeText(lead.email);
+      toast({ title: "Email copied", description: lead.email });
+      onQuickAction?.('copy', lead);
+    }
+  };
+
+  const handleSendEmail = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (lead.email) {
+      window.open(`mailto:${lead.email}?subject=Aerial Photography Services`, '_blank');
+      onQuickAction?.('email', lead);
+    }
+  };
+
+  const handleMarkContacted = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (lead.status === 'new') {
+      onStatusChange?.(lead.id, 'contacted');
+      onQuickAction?.('contacted', lead);
+    }
+  };
+
+  const handleStatusSelect = (value: LeadStatus) => {
+    onStatusChange?.(lead.id, value);
+  };
 
   return (
     <Card
@@ -37,6 +97,8 @@ export default function LeadCard({ lead, isDragging, onClick }: LeadCardProps) {
         isDragging ? 'shadow-lg rotate-2' : ''
       }`}
       onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <CardContent className="p-3">
         <div className="flex items-start justify-between gap-2 mb-2">
@@ -86,6 +148,81 @@ export default function LeadCard({ lead, isDragging, onClick }: LeadCardProps) {
             >
               {lead.hunter_io_score}%
             </Badge>
+          </div>
+        )}
+
+        {/* Quick Actions - visible on hover */}
+        {isHovered && !isDragging && (
+          <div className="mt-3 pt-2 border-t flex items-center justify-between gap-1">
+            <TooltipProvider delayDuration={0}>
+              <div className="flex gap-1">
+                {lead.email && (
+                  <>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={handleCopyEmail}
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Copy email</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={handleSendEmail}
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Send email</TooltipContent>
+                    </Tooltip>
+                  </>
+                )}
+                {lead.status === 'new' && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={handleMarkContacted}
+                      >
+                        <UserCheck className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Mark contacted</TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            </TooltipProvider>
+
+            {/* Keyboard-accessible status dropdown */}
+            <Select
+              value={lead.status}
+              onValueChange={handleStatusSelect}
+            >
+              <SelectTrigger 
+                className="h-7 w-[90px] text-xs"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
       </CardContent>

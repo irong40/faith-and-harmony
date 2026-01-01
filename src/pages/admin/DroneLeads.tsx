@@ -12,7 +12,7 @@ import { Users, Mail, Phone, Zap, Plus } from "lucide-react";
 import LeadDetailModal from "./components/LeadDetailModal";
 import LeadGenModal from "./components/LeadGenModal";
 import LeadCard from "./components/LeadCard";
-import LeadFilters from "./components/LeadFilters";
+import LeadFilters, { type FilterValues } from "./components/LeadFilters";
 import ManualLeadForm from "./components/ManualLeadForm";
 
 type LeadStatus = 'new' | 'contacted' | 'responded' | 'qualified' | 'client';
@@ -55,6 +55,11 @@ export default function DroneLeads() {
   const [showLeadGen, setShowLeadGen] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState<FilterValues>({
+    priority: "all",
+    portfolioType: "all",
+    hasEmail: "all",
+  });
 
   const { data: leads = [], isLoading } = useQuery({
     queryKey: ['drone-leads'],
@@ -110,18 +115,46 @@ export default function DroneLeads() {
     updateStatusMutation.mutate({ id: leadId, status: newStatus });
   };
 
-  // Filter leads by search query
+  // Get unique portfolio types for filter dropdown
+  const portfolioTypes = useMemo(() => {
+    const types = new Set(leads.map(l => l.portfolio_type).filter(Boolean) as string[]);
+    return Array.from(types).sort();
+  }, [leads]);
+
+  // Filter leads by search query and filters
   const filteredLeads = useMemo(() => {
-    if (!searchQuery.trim()) return leads;
-    
-    const query = searchQuery.toLowerCase();
-    return leads.filter(lead => 
-      lead.company_name.toLowerCase().includes(query) ||
-      (lead.email && lead.email.toLowerCase().includes(query)) ||
-      (lead.city && lead.city.toLowerCase().includes(query)) ||
-      (lead.portfolio_type && lead.portfolio_type.toLowerCase().includes(query))
-    );
-  }, [leads, searchQuery]);
+    let result = leads;
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(lead => 
+        lead.company_name.toLowerCase().includes(query) ||
+        (lead.email && lead.email.toLowerCase().includes(query)) ||
+        (lead.city && lead.city.toLowerCase().includes(query)) ||
+        (lead.portfolio_type && lead.portfolio_type.toLowerCase().includes(query))
+      );
+    }
+
+    // Priority filter
+    if (filters.priority !== "all") {
+      result = result.filter(lead => lead.priority === filters.priority);
+    }
+
+    // Portfolio type filter
+    if (filters.portfolioType !== "all") {
+      result = result.filter(lead => lead.portfolio_type === filters.portfolioType);
+    }
+
+    // Has email filter
+    if (filters.hasEmail === "yes") {
+      result = result.filter(lead => lead.email);
+    } else if (filters.hasEmail === "no") {
+      result = result.filter(lead => !lead.email);
+    }
+
+    return result;
+  }, [leads, searchQuery, filters]);
 
   const getLeadsByStatus = useCallback((status: LeadStatus) => 
     filteredLeads.filter(lead => lead.status === status),
@@ -130,6 +163,14 @@ export default function DroneLeads() {
   const handleSearchChange = useCallback((query: string) => {
     setSearchQuery(query);
   }, []);
+
+  const handleFiltersChange = useCallback((newFilters: FilterValues) => {
+    setFilters(newFilters);
+  }, []);
+
+  const handleStatusChange = useCallback((id: string, status: LeadStatus) => {
+    updateStatusMutation.mutate({ id, status });
+  }, [updateStatusMutation]);
 
   const totalLeads = leads.length;
   const withEmail = leads.filter(l => l.email).length;
@@ -163,8 +204,12 @@ export default function DroneLeads() {
 
         {/* Search & Filters */}
         <div className="mb-6">
-          <LeadFilters onSearchChange={handleSearchChange} />
-          {searchQuery && (
+          <LeadFilters 
+            onSearchChange={handleSearchChange} 
+            onFiltersChange={handleFiltersChange}
+            portfolioTypes={portfolioTypes}
+          />
+          {(searchQuery || filters.priority !== "all" || filters.portfolioType !== "all" || filters.hasEmail !== "all") && (
             <p className="text-sm text-muted-foreground mt-2">
               Showing {filteredLeads.length} of {leads.length} leads
             </p>
@@ -267,6 +312,7 @@ export default function DroneLeads() {
                                   lead={lead}
                                   isDragging={snapshot.isDragging}
                                   onClick={() => setSelectedLead(lead)}
+                                  onStatusChange={handleStatusChange}
                                 />
                               </div>
                             )}
