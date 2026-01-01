@@ -180,6 +180,13 @@ serve(async (req) => {
 
       console.log("Asset recorded:", asset.id, file_name);
 
+      // Trigger EXIF extraction asynchronously (non-blocking)
+      EdgeRuntime.waitUntil(
+        supabase.functions.invoke("drone-extract-exif", {
+          body: { asset_id: asset.id },
+        }).catch((err: Error) => console.error("EXIF extraction trigger failed:", err))
+      );
+
       return new Response(
         JSON.stringify({
           success: true,

@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle, AlertTriangle, XCircle, Clock, ThumbsUp, ThumbsDown } from "lucide-react";
+import { CheckCircle, AlertTriangle, XCircle, Clock, ThumbsUp, ThumbsDown, MapPin, Camera, Calendar } from "lucide-react";
 import type { Database, Json } from "@/integrations/supabase/types";
 
 type QAStatus = Database["public"]["Enums"]["qa_status"];
@@ -27,6 +27,12 @@ interface DroneAsset {
   qa_results: Json | null;
   sort_order: number | null;
   created_at: string;
+  exif_data?: Json | null;
+  camera_model?: string | null;
+  capture_date?: string | null;
+  gps_latitude?: number | null;
+  gps_longitude?: number | null;
+  gps_altitude?: number | null;
 }
 
 interface QADetailModalProps {
@@ -163,6 +169,39 @@ export default function QADetailModal({ asset, onClose, onRefresh }: QADetailMod
                     {Math.round(qaResults.shot_classification.confidence * 100)}% confidence
                   </Badge>
                 </div>
+              </div>
+            )}
+
+            {/* EXIF Data */}
+            {(asset.camera_model || asset.capture_date || asset.gps_latitude) && (
+              <div className="mt-4 p-3 rounded-lg bg-muted/50 space-y-2">
+                <Label className="text-muted-foreground text-xs">EXIF Data</Label>
+                {asset.camera_model && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Camera className="h-4 w-4 text-muted-foreground" />
+                    <span>{asset.camera_model}</span>
+                  </div>
+                )}
+                {asset.capture_date && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>{new Date(asset.capture_date).toLocaleString()}</span>
+                  </div>
+                )}
+                {asset.gps_latitude && asset.gps_longitude && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <a 
+                      href={`https://www.google.com/maps?q=${asset.gps_latitude},${asset.gps_longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      {asset.gps_latitude.toFixed(6)}, {asset.gps_longitude.toFixed(6)}
+                      {asset.gps_altitude && ` (${Math.round(asset.gps_altitude)}m alt)`}
+                    </a>
+                  </div>
+                )}
               </div>
             )}
           </div>

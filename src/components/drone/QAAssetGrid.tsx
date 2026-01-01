@@ -17,6 +17,12 @@ interface DroneAsset {
   qa_results: Json | null;
   sort_order: number | null;
   created_at: string;
+  exif_data?: Json | null;
+  camera_model?: string | null;
+  capture_date?: string | null;
+  gps_latitude?: number | null;
+  gps_longitude?: number | null;
+  gps_altitude?: number | null;
 }
 
 interface QAAssetGridProps {

@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.track-email]
 verify_jwt = false
+
+[functions.drone-extract-exif]
+verify_jwt = false
