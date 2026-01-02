@@ -48,7 +48,6 @@ const navCategories: NavCategory[] = [
     items: [
       { href: "/admin/drone-jobs", label: "Drone Jobs", icon: ClipboardList },
       { href: "/admin/drone-crm", label: "CRM", icon: BarChart3 },
-      { href: "/admin/drone-leads", label: "Leads", icon: Target },
     ],
   },
   {
@@ -59,6 +58,7 @@ const navCategories: NavCategory[] = [
       { href: "/admin/proposals", label: "Proposals", icon: ClipboardList },
       { href: "/admin/offerings", label: "Offerings", icon: Package },
       { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
+      { href: "/admin/drone-leads", label: "Leads", icon: Target },
     ],
   },
   {
