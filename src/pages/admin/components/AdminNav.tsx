@@ -1,10 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, ShoppingCart, FileText, Package, ClipboardList, MessageSquare, LayoutDashboard, Target, BarChart3 } from "lucide-react";
+import { ArrowLeft, Users, ShoppingCart, FileText, Package, ClipboardList, MessageSquare, LayoutDashboard, Target, BarChart3, Server, Megaphone } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/apps", label: "Apps", icon: Server },
+  { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
   { href: "/admin/service-requests", label: "Requests", icon: FileText },
   { href: "/admin/proposals", label: "Proposals", icon: ClipboardList },
   { href: "/admin/drone-jobs", label: "Drone Jobs", icon: ClipboardList },

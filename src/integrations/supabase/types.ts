@@ -14,14 +14,72 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_health_history: {
+        Row: {
+          app_id: string
+          checked_at: string | null
+          id: string
+          metrics: Json | null
+          response_time_ms: number | null
+          source: string
+          status: string
+          version: string | null
+        }
+        Insert: {
+          app_id: string
+          checked_at?: string | null
+          id?: string
+          metrics?: Json | null
+          response_time_ms?: number | null
+          source?: string
+          status: string
+          version?: string | null
+        }
+        Update: {
+          app_id?: string
+          checked_at?: string | null
+          id?: string
+          metrics?: Json | null
+          response_time_ms?: number | null
+          source?: string
+          status?: string
+          version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_health_history_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "app_status_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_health_history_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "apps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       apps: {
         Row: {
           active: boolean
+          alert_on_failure: boolean | null
+          api_key_created_at: string | null
+          api_key_hash: string | null
+          api_key_prefix: string | null
           code: string
+          consecutive_failures: number | null
           created_at: string
+          health_check_url: string | null
+          heartbeat_interval_seconds: number | null
           id: string
           last_health_check: string | null
+          last_heartbeat_at: string | null
           name: string
+          owner_email: string | null
+          owner_name: string | null
           status: string
           updated_at: string
           url: string | null
@@ -29,11 +87,21 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          alert_on_failure?: boolean | null
+          api_key_created_at?: string | null
+          api_key_hash?: string | null
+          api_key_prefix?: string | null
           code: string
+          consecutive_failures?: number | null
           created_at?: string
+          health_check_url?: string | null
+          heartbeat_interval_seconds?: number | null
           id?: string
           last_health_check?: string | null
+          last_heartbeat_at?: string | null
           name: string
+          owner_email?: string | null
+          owner_name?: string | null
           status?: string
           updated_at?: string
           url?: string | null
@@ -41,11 +109,21 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          alert_on_failure?: boolean | null
+          api_key_created_at?: string | null
+          api_key_hash?: string | null
+          api_key_prefix?: string | null
           code?: string
+          consecutive_failures?: number | null
           created_at?: string
+          health_check_url?: string | null
+          heartbeat_interval_seconds?: number | null
           id?: string
           last_health_check?: string | null
+          last_heartbeat_at?: string | null
           name?: string
+          owner_email?: string | null
+          owner_name?: string | null
           status?: string
           updated_at?: string
           url?: string | null
@@ -91,6 +169,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "conversations_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "app_status_overview"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "conversations_app_id_fkey"
             columns: ["app_id"]
@@ -781,6 +866,54 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_announcements: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          ends_at: string | null
+          id: string
+          is_active: boolean | null
+          message: string
+          priority: number | null
+          starts_at: string
+          target_all_apps: boolean | null
+          target_app_ids: string[] | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          message: string
+          priority?: number | null
+          starts_at?: string
+          target_all_apps?: boolean | null
+          target_app_ids?: string[] | null
+          title: string
+          type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          message?: string
+          priority?: number | null
+          starts_at?: string
+          target_all_apps?: boolean | null
+          target_app_ids?: string[] | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       maintenance_logs: {
         Row: {
           affected_features: string[] | null
@@ -820,6 +953,13 @@ export type Database = {
             foreignKeyName: "maintenance_logs_app_id_fkey"
             columns: ["app_id"]
             isOneToOne: false
+            referencedRelation: "app_status_overview"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_logs_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
             referencedRelation: "apps"
             referencedColumns: ["id"]
           },
@@ -837,12 +977,15 @@ export type Database = {
           actual_behavior: string | null
           app_id: string | null
           assigned_to: string | null
+          browser_info: Json | null
           category: string | null
           created_at: string
           description: string
           error_stack: string | null
           expected_behavior: string | null
+          external_reference: string | null
           id: string
+          page_url: string | null
           priority: string
           reporter_email: string | null
           reporter_name: string | null
@@ -852,6 +995,7 @@ export type Database = {
           source: string | null
           status: string
           steps_to_reproduce: string | null
+          submitted_via: string | null
           tags: string[] | null
           ticket_number: string
           time_spent_hours: number | null
@@ -865,12 +1009,15 @@ export type Database = {
           actual_behavior?: string | null
           app_id?: string | null
           assigned_to?: string | null
+          browser_info?: Json | null
           category?: string | null
           created_at?: string
           description: string
           error_stack?: string | null
           expected_behavior?: string | null
+          external_reference?: string | null
           id?: string
+          page_url?: string | null
           priority?: string
           reporter_email?: string | null
           reporter_name?: string | null
@@ -880,6 +1027,7 @@ export type Database = {
           source?: string | null
           status?: string
           steps_to_reproduce?: string | null
+          submitted_via?: string | null
           tags?: string[] | null
           ticket_number: string
           time_spent_hours?: number | null
@@ -893,12 +1041,15 @@ export type Database = {
           actual_behavior?: string | null
           app_id?: string | null
           assigned_to?: string | null
+          browser_info?: Json | null
           category?: string | null
           created_at?: string
           description?: string
           error_stack?: string | null
           expected_behavior?: string | null
+          external_reference?: string | null
           id?: string
+          page_url?: string | null
           priority?: string
           reporter_email?: string | null
           reporter_name?: string | null
@@ -908,6 +1059,7 @@ export type Database = {
           source?: string | null
           status?: string
           steps_to_reproduce?: string | null
+          submitted_via?: string | null
           tags?: string[] | null
           ticket_number?: string
           time_spent_hours?: number | null
@@ -918,6 +1070,13 @@ export type Database = {
           user_agent?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "maintenance_tickets_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "app_status_overview"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "maintenance_tickets_app_id_fkey"
             columns: ["app_id"]
@@ -1009,6 +1168,13 @@ export type Database = {
           user_email?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "notifications_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "app_status_overview"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notifications_app_id_fkey"
             columns: ["app_id"]
@@ -1469,6 +1635,105 @@ export type Database = {
       }
     }
     Views: {
+      active_announcements: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          display_status: string | null
+          ends_at: string | null
+          id: string | null
+          is_active: boolean | null
+          message: string | null
+          priority: number | null
+          starts_at: string | null
+          target_all_apps: boolean | null
+          target_app_ids: string[] | null
+          title: string | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          display_status?: never
+          ends_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          message?: string | null
+          priority?: number | null
+          starts_at?: string | null
+          target_all_apps?: boolean | null
+          target_app_ids?: string[] | null
+          title?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          display_status?: never
+          ends_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          message?: string | null
+          priority?: number | null
+          starts_at?: string | null
+          target_all_apps?: boolean | null
+          target_app_ids?: string[] | null
+          title?: string | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      app_status_overview: {
+        Row: {
+          active: boolean | null
+          api_key_created_at: string | null
+          code: string | null
+          consecutive_failures: number | null
+          has_api_key: boolean | null
+          heartbeat_status: string | null
+          id: string | null
+          last_heartbeat_at: string | null
+          name: string | null
+          open_ticket_count: number | null
+          status: string | null
+          url: string | null
+          version: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          api_key_created_at?: string | null
+          code?: string | null
+          consecutive_failures?: number | null
+          has_api_key?: never
+          heartbeat_status?: never
+          id?: string | null
+          last_heartbeat_at?: string | null
+          name?: string | null
+          open_ticket_count?: never
+          status?: string | null
+          url?: string | null
+          version?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          api_key_created_at?: string | null
+          code?: string | null
+          consecutive_failures?: number | null
+          has_api_key?: never
+          heartbeat_status?: never
+          id?: string | null
+          last_heartbeat_at?: string | null
+          name?: string | null
+          open_ticket_count?: never
+          status?: string | null
+          url?: string | null
+          version?: string | null
+        }
+        Relationships: []
+      }
       drone_client_summary: {
         Row: {
           avg_satisfaction: number | null
@@ -1571,15 +1836,48 @@ export type Database = {
       }
     }
     Functions: {
+      generate_app_api_key: { Args: { p_app_id: string }; Returns: string }
       generate_drone_job_number: { Args: never; Returns: string }
       generate_proposal_number: { Args: never; Returns: string }
       generate_ticket_number: { Args: never; Returns: string }
+      get_app_announcements: {
+        Args: { p_app_id: string }
+        Returns: {
+          ends_at: string
+          id: string
+          message: string
+          priority: number
+          starts_at: string
+          title: string
+          type: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      record_app_heartbeat: {
+        Args: {
+          p_app_id: string
+          p_metrics?: Json
+          p_response_time_ms?: number
+          p_status?: string
+          p_version?: string
+        }
+        Returns: boolean
+      }
+      revoke_app_api_key: { Args: { p_app_id: string }; Returns: boolean }
+      validate_api_key: {
+        Args: { p_api_key: string }
+        Returns: {
+          app_code: string
+          app_id: string
+          app_name: string
+          is_valid: boolean
+        }[]
       }
     }
     Enums: {
