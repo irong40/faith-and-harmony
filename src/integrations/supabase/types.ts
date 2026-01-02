@@ -406,6 +406,8 @@ export type Database = {
           customer_id: string | null
           delivered_at: string | null
           delivery_notes: string | null
+          delivery_token: string | null
+          delivery_token_created_at: string | null
           download_url: string | null
           id: string
           job_number: string
@@ -434,6 +436,8 @@ export type Database = {
           customer_id?: string | null
           delivered_at?: string | null
           delivery_notes?: string | null
+          delivery_token?: string | null
+          delivery_token_created_at?: string | null
           download_url?: string | null
           id?: string
           job_number: string
@@ -462,6 +466,8 @@ export type Database = {
           customer_id?: string | null
           delivered_at?: string | null
           delivery_notes?: string | null
+          delivery_token?: string | null
+          delivery_token_created_at?: string | null
           download_url?: string | null
           id?: string
           job_number?: string

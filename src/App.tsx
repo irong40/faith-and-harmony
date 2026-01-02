@@ -41,6 +41,7 @@ import Pricing from "./pages/Pricing";
 import Licensing from "./pages/Licensing";
 import CustomerProposal from "./pages/CustomerProposal";
 import DroneUpload from "./pages/DroneUpload";
+import ClientJobPortal from "./pages/ClientJobPortal";
 
 const queryClient = new QueryClient();
 
@@ -155,6 +156,7 @@ const App = () => (
               />
               <Route path="/proposal/:token" element={<CustomerProposal />} />
               <Route path="/drone-upload/:token" element={<DroneUpload />} />
+              <Route path="/my-jobs/:token" element={<ClientJobPortal />} />
               <Route
                 path="/admin/messages"
                 element={

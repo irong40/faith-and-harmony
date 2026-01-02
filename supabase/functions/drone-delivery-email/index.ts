@@ -203,7 +203,7 @@ serve(async (req) => {
                   </div>
                 ` : ""}
 
-                <!-- CTA Button -->
+                <!-- CTA Buttons -->
                 <div style="text-align: center; margin: 32px 0;">
                   <a href="${primaryDownloadUrl}" style="background: linear-gradient(135deg, ${BRAND.gold} 0%, #c9973e 100%); color: ${BRAND.purple}; padding: 16px 40px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 700; font-size: 18px;">
                     Download All Photos
@@ -266,11 +266,16 @@ serve(async (req) => {
 
     console.log("Delivery email sent:", emailResponse);
 
-    // Update job status to delivered and store download_url if provided
+    // Generate delivery token for customer portal
+    const deliveryToken = crypto.randomUUID().replace(/-/g, '');
+    
+    // Update job status to delivered and store download_url + delivery token
     const updateData: Record<string, unknown> = {
       status: "delivered",
       delivered_at: new Date().toISOString(),
-      delivery_notes: custom_message || null
+      delivery_notes: custom_message || null,
+      delivery_token: deliveryToken,
+      delivery_token_created_at: new Date().toISOString()
     };
     
     if (download_url) {
