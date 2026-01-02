@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle, ScanSearch, Zap, Settings2, Image as ImageIcon, AlertTriangle } from "lucide-react";
+import { ArrowLeft, RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle, ScanSearch, Zap, Settings2, Image as ImageIcon, AlertTriangle, ExternalLink, Link2 } from "lucide-react";
 import { format } from "date-fns";
 import AdminNav from "./components/AdminNav";
 import DroneJobForm from "./components/DroneJobForm";
@@ -68,6 +68,9 @@ interface DroneJob {
   upload_token_expires_at: string | null;
   delivered_at: string | null;
   delivery_notes: string | null;
+  delivery_token: string | null;
+  delivery_token_created_at: string | null;
+  download_url: string | null;
   created_at: string;
   updated_at: string;
   customers?: { id: string; name: string; email: string; phone: string | null } | null;
@@ -878,10 +881,55 @@ export default function DroneJobDetail() {
           </TabsContent>
 
           {/* Delivery Tab */}
-          <TabsContent value="delivery">
+          <TabsContent value="delivery" className="space-y-4">
+            {/* Customer Portal Link Card - show if delivered */}
+            {job.delivery_token && (
+              <Card className="border-primary/20 bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Link2 className="h-5 w-5" />
+                    Customer Portal
+                  </CardTitle>
+                  <CardDescription>
+                    Customers can view and download their photos anytime
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 p-2 bg-muted rounded-lg font-mono text-sm truncate">
+                      {window.location.origin}/my-jobs/{job.delivery_token}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/my-jobs/${job.delivery_token}`);
+                        toast({ title: "Portal link copied!" });
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => window.open(`/my-jobs/${job.delivery_token}`, '_blank')}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {job.delivery_token_created_at && (
+                    <p className="text-xs text-muted-foreground">
+                      Created {format(new Date(job.delivery_token_created_at), "MMMM d, yyyy 'at' h:mm a")}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Send Delivery Card */}
             <Card>
               <CardHeader>
-                <CardTitle>Delivery</CardTitle>
+                <CardTitle>Send Delivery Email</CardTitle>
                 <CardDescription>
                   {job.delivered_at
                     ? `Delivered on ${format(new Date(job.delivered_at), "MMMM d, yyyy 'at' h:mm a")}`
@@ -912,6 +960,11 @@ export default function DroneJobDetail() {
                           <>
                             <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                             Sending...
+                          </>
+                        ) : job.delivered_at ? (
+                          <>
+                            <Send className="mr-2 h-4 w-4" />
+                            Resend Delivery
                           </>
                         ) : (
                           <>
