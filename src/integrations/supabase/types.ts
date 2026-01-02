@@ -246,6 +246,51 @@ export type Database = {
         }
         Relationships: []
       }
+      document_templates: {
+        Row: {
+          active: boolean
+          category: string
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_system: boolean
+          name: string
+          output_format: string
+          schema: Json
+          template_config: Json
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          output_format?: string
+          schema?: Json
+          template_config?: Json
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          output_format?: string
+          schema?: Json
+          template_config?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       drone_assets: {
         Row: {
           camera_model: string | null
@@ -799,6 +844,62 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "drone_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generated_documents: {
+        Row: {
+          created_at: string
+          download_count: number | null
+          downloaded_at: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          input_data: Json | null
+          metadata: Json | null
+          output_format: string
+          template_code: string
+          template_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          download_count?: number | null
+          downloaded_at?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          input_data?: Json | null
+          metadata?: Json | null
+          output_format: string
+          template_code: string
+          template_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          download_count?: number | null
+          downloaded_at?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          input_data?: Json | null
+          metadata?: Json | null
+          output_format?: string
+          template_code?: string
+          template_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_documents_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "document_templates"
             referencedColumns: ["id"]
           },
         ]
