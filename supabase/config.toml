@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.mission-control-api]
 verify_jwt = false
+
+[functions.document-generator]
+verify_jwt = false
