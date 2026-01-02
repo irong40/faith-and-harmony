@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.drone-customer-portal]
 verify_jwt = false
+
+[functions.mission-control-api]
+verify_jwt = false
