@@ -36,6 +36,8 @@ import Orders from "./pages/admin/Orders";
 import People from "./pages/admin/People";
 import Offerings from "./pages/admin/Offerings";
 import Messages from "./pages/admin/Messages";
+import Apps from "./pages/admin/Apps";
+import Announcements from "./pages/admin/Announcements";
 import Contact from "./pages/Contact";
 import Pricing from "./pages/Pricing";
 import Licensing from "./pages/Licensing";
@@ -162,6 +164,22 @@ const App = () => (
                 element={
                   <ProtectedRoute requireAdmin>
                     <Messages />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/apps"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <Apps />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/announcements"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <Announcements />
                   </ProtectedRoute>
                 }
               />
