@@ -30,12 +30,15 @@ serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
   
   const url = new URL(req.url);
-  const action = url.searchParams.get("action") || "validate";
-
+  
   try {
+    // Parse body once at the start to extract action and other params
+    const body = await req.json().catch(() => ({}));
+    const action = body.action || "validate";
+    
     if (action === "validate") {
       // Validate token and return job info
-      const { token } = await req.json() as ValidateRequest;
+      const { token } = body as ValidateRequest;
 
       if (!token) {
         return new Response(
@@ -104,8 +107,7 @@ serve(async (req) => {
 
     } else if (action === "upload-complete") {
       // Record a completed upload
-      const body = await req.json() as UploadCompleteRequest;
-      const { token, file_name, file_path, file_size, file_type, mime_type } = body;
+      const { token, file_name, file_path, file_size, file_type, mime_type } = body as UploadCompleteRequest;
 
       if (!token || !file_name || !file_path) {
         return new Response(
@@ -206,7 +208,7 @@ serve(async (req) => {
         );
       }
 
-      const { job_id, expires_in_hours = 72 } = await req.json();
+      const { job_id, expires_in_hours = 72 } = body;
 
       if (!job_id) {
         return new Response(
