@@ -539,6 +539,7 @@ export type Database = {
           delivery_token: string | null
           delivery_token_created_at: string | null
           download_url: string | null
+          google_event_id: string | null
           id: string
           job_number: string
           package_id: string | null
@@ -569,6 +570,7 @@ export type Database = {
           delivery_token?: string | null
           delivery_token_created_at?: string | null
           download_url?: string | null
+          google_event_id?: string | null
           id?: string
           job_number: string
           package_id?: string | null
@@ -599,6 +601,7 @@ export type Database = {
           delivery_token?: string | null
           delivery_token_created_at?: string | null
           download_url?: string | null
+          google_event_id?: string | null
           id?: string
           job_number?: string
           package_id?: string | null
@@ -903,6 +906,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      google_calendar_tokens: {
+        Row: {
+          access_token: string
+          calendar_id: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          refresh_token: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          access_token: string
+          calendar_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          refresh_token?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          access_token?: string
+          calendar_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          refresh_token?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       lead_gen_jobs: {
         Row: {

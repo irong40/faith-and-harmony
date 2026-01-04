@@ -21,7 +21,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle, ScanSearch, Zap, Settings2, Image as ImageIcon, AlertTriangle, ExternalLink, Link2 } from "lucide-react";
+import { ArrowLeft, RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle, ScanSearch, Zap, Settings2, Image as ImageIcon, AlertTriangle, ExternalLink, Link2, Calendar } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import AdminNav from "./components/AdminNav";
 import DroneJobForm from "./components/DroneJobForm";
@@ -98,6 +99,7 @@ const STATUS_ORDER: DroneJobStatus[] = [
 export default function DroneJobDetail() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [job, setJob] = useState<DroneJob | null>(null);
   const [assets, setAssets] = useState<DroneAsset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +112,8 @@ export default function DroneJobDetail() {
   const [tokenCopied, setTokenCopied] = useState(false);
   const [extractingExif, setExtractingExif] = useState(false);
   const [triggeringProcessing, setTriggeringProcessing] = useState(false);
+  const [syncingCalendar, setSyncingCalendar] = useState(false);
+  const [calendarConnected, setCalendarConnected] = useState(false);
 
   const fetchJob = async () => {
     if (!id) return;
@@ -145,7 +149,50 @@ export default function DroneJobDetail() {
 
   useEffect(() => {
     fetchJob();
-  }, [id]);
+    checkCalendarConnection();
+  }, [id, user]);
+
+  const checkCalendarConnection = async () => {
+    if (!user) return;
+    const { data } = await supabase.functions.invoke("google-calendar-auth", {
+      body: { action: "check-connection", user_id: user.id },
+    });
+    if (data) {
+      setCalendarConnected(data.connected && !data.expired);
+    }
+  };
+
+  const syncToCalendar = async () => {
+    if (!job || !user) return;
+    setSyncingCalendar(true);
+
+    const { data, error } = await supabase.functions.invoke("google-calendar-sync", {
+      body: { action: "sync", job_id: job.id, user_id: user.id },
+    });
+
+    if (error) {
+      toast({ 
+        title: "Calendar sync failed", 
+        description: error.message,
+        variant: "destructive",
+      });
+    } else if (data?.error) {
+      toast({
+        title: "Calendar sync failed",
+        description: data.error === "Not connected to Google Calendar" 
+          ? "Connect Google Calendar in Settings first"
+          : data.error,
+        variant: "destructive",
+      });
+    } else {
+      toast({ 
+        title: "Synced to Google Calendar", 
+        description: data?.event_link ? "Event created successfully" : undefined,
+      });
+      fetchJob();
+    }
+    setSyncingCalendar(false);
+  };
 
   const handleStatusChange = async (status: DroneJobStatus) => {
     if (!job) return;
@@ -396,10 +443,39 @@ export default function DroneJobDetail() {
                   {job.scheduled_date && (
                     <div>
                       <Label className="text-muted-foreground">Scheduled</Label>
-                      <p>
-                        {format(new Date(job.scheduled_date), "MMMM d, yyyy")}
-                        {job.scheduled_time && ` at ${job.scheduled_time}`}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p>
+                          {format(new Date(job.scheduled_date), "MMMM d, yyyy")}
+                          {job.scheduled_time && ` at ${job.scheduled_time}`}
+                        </p>
+                        {(job as any).google_event_id && (
+                          <span title="Synced to calendar">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={syncToCalendar}
+                        disabled={syncingCalendar || !calendarConnected}
+                        title={!calendarConnected ? "Connect Google Calendar in Settings" : undefined}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {syncingCalendar 
+                          ? "Syncing..." 
+                          : (job as any).google_event_id 
+                            ? "Update Calendar" 
+                            : "Add to Calendar"}
+                      </Button>
+                      {!calendarConnected && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          <Link to="/admin/settings" className="text-primary hover:underline">
+                            Connect Google Calendar
+                          </Link> to sync events
+                        </p>
+                      )}
                     </div>
                   )}
                 </CardContent>
