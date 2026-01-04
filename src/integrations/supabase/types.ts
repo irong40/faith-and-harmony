@@ -1971,6 +1971,14 @@ export type Database = {
         Returns: boolean
       }
       revoke_app_api_key: { Args: { p_app_id: string }; Returns: boolean }
+      select_drone_package_for_proposal: {
+        Args: { p_proposal_total: number; p_work_category: string }
+        Returns: string
+      }
+      upsert_customer_from_service_request: {
+        Args: { p_sr_id: string }
+        Returns: string
+      }
       validate_api_key: {
         Args: { p_api_key: string }
         Returns: {
