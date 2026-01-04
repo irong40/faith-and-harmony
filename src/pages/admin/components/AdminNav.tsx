@@ -22,6 +22,7 @@ import {
   Users,
   MessageSquare,
   FileOutput,
+  Settings,
   ChevronDown
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
@@ -71,8 +72,9 @@ const navCategories: NavCategory[] = [
   },
 ];
 
-// Standalone link (not a dropdown)
+// Standalone links (not dropdowns)
 const documentsLink = { href: "/admin/documents", label: "Documents", icon: FileOutput };
+const settingsLink = { href: "/admin/settings", label: "Settings", icon: Settings };
 
 export default function AdminNav() {
   const location = useLocation();
@@ -134,6 +136,18 @@ export default function AdminNav() {
                 >
                   <documentsLink.icon className="h-4 w-4" />
                   <span className="hidden sm:inline">{documentsLink.label}</span>
+                </Button>
+              </Link>
+
+              {/* Settings - standalone link */}
+              <Link to={settingsLink.href}>
+                <Button
+                  variant={isItemActive(settingsLink.href) ? "default" : "ghost"}
+                  size="sm"
+                  className="gap-1.5"
+                >
+                  <settingsLink.icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{settingsLink.label}</span>
                 </Button>
               </Link>
             </nav>
