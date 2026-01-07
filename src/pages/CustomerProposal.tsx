@@ -189,6 +189,22 @@ export default function CustomerProposal() {
       
       // Send notification emails
       await sendResponseEmail('approved');
+      
+      // Auto-send the invoice that was created by the database trigger
+      // Wait a moment for the trigger to complete, then fetch and send
+      setTimeout(async () => {
+        const { data: invoice } = await supabase
+          .from("invoices")
+          .select("id")
+          .eq("proposal_id", proposal.id)
+          .single();
+        
+        if (invoice) {
+          await supabase.functions.invoke("send-service-invoice-email", {
+            body: { invoiceId: invoice.id },
+          });
+        }
+      }, 500);
     }
 
     setActionLoading(false);
