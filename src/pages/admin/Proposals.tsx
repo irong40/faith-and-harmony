@@ -436,6 +436,7 @@ export default function Proposals() {
                   <TableHead>Proposal #</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Title</TableHead>
+                  <TableHead>Discount</TableHead>
                   <TableHead className="text-right">Total</TableHead>
                   <TableHead>Valid Until</TableHead>
                   <TableHead>Status</TableHead>
@@ -446,13 +447,13 @@ export default function Proposals() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       Loading proposals...
                     </TableCell>
                   </TableRow>
                 ) : filteredProposals?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       No proposals found
                     </TableCell>
                   </TableRow>
@@ -469,6 +470,22 @@ export default function Proposals() {
                         </div>
                       </TableCell>
                       <TableCell className="max-w-[200px] truncate">{proposal.title}</TableCell>
+                      <TableCell>
+                        {(() => {
+                          const { isNonprofit, discountPercent } = getDiscountInfo(proposal);
+                          return (
+                            <Badge 
+                              variant="outline" 
+                              className={isNonprofit 
+                                ? "bg-green-500/10 text-green-400 border-green-500/30" 
+                                : "bg-blue-500/10 text-blue-400 border-blue-500/30"
+                              }
+                            >
+                              {discountPercent}% off{isNonprofit && " (Nonprofit)"}
+                            </Badge>
+                          );
+                        })()}
+                      </TableCell>
                       <TableCell className="text-right font-medium">
                         ${(proposal.total ?? 0).toLocaleString()}
                       </TableCell>
