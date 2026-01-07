@@ -83,3 +83,6 @@ verify_jwt = false
 
 [functions.send-service-invoice-email]
 verify_jwt = false
+
+[functions.invoice-payment-claim]
+verify_jwt = false
