@@ -940,6 +940,99 @@ export type Database = {
         }
         Relationships: []
       }
+      invoices: {
+        Row: {
+          admin_notes: string | null
+          amount_paid: number | null
+          balance_due: number | null
+          created_at: string | null
+          customer_id: string | null
+          customer_payment_claim: Json | null
+          discount: number | null
+          due_date: string
+          id: string
+          invoice_number: string
+          issue_date: string
+          line_items: Json | null
+          notes: string | null
+          paid_at: string | null
+          payment_terms: string | null
+          proposal_id: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["invoice_status"]
+          subtotal: number
+          total: number
+          updated_at: string | null
+          view_token: string
+          viewed_at: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount_paid?: number | null
+          balance_due?: number | null
+          created_at?: string | null
+          customer_id?: string | null
+          customer_payment_claim?: Json | null
+          discount?: number | null
+          due_date: string
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          line_items?: Json | null
+          notes?: string | null
+          paid_at?: string | null
+          payment_terms?: string | null
+          proposal_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal?: number
+          total?: number
+          updated_at?: string | null
+          view_token?: string
+          viewed_at?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          amount_paid?: number | null
+          balance_due?: number | null
+          created_at?: string | null
+          customer_id?: string | null
+          customer_payment_claim?: Json | null
+          discount?: number | null
+          due_date?: string
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          line_items?: Json | null
+          notes?: string | null
+          paid_at?: string | null
+          payment_terms?: string | null
+          proposal_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal?: number
+          total?: number
+          updated_at?: string | null
+          view_token?: string
+          viewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_gen_jobs: {
         Row: {
           ai_drafts_generated: number | null
@@ -1975,6 +2068,7 @@ export type Database = {
     Functions: {
       generate_app_api_key: { Args: { p_app_id: string }; Returns: string }
       generate_drone_job_number: { Args: never; Returns: string }
+      generate_invoice_number: { Args: never; Returns: string }
       generate_proposal_number: { Args: never; Returns: string }
       generate_ticket_number: { Args: never; Returns: string }
       get_app_announcements: {
@@ -2053,6 +2147,7 @@ export type Database = {
         | "project"
         | "storm"
         | "marketing"
+      invoice_status: "draft" | "sent" | "paid" | "overdue" | "cancelled"
       lead_gen_job_status: "pending" | "running" | "completed" | "failed"
       lead_status: "new" | "contacted" | "responded" | "qualified" | "client"
       order_status:
@@ -2264,6 +2359,7 @@ export const Constants = {
         "storm",
         "marketing",
       ],
+      invoice_status: ["draft", "sent", "paid", "overdue", "cancelled"],
       lead_gen_job_status: ["pending", "running", "completed", "failed"],
       lead_status: ["new", "contacted", "responded", "qualified", "client"],
       order_status: [

@@ -57,6 +57,7 @@ const navCategories: NavCategory[] = [
     items: [
       { href: "/admin/service-requests", label: "Requests", icon: FileText },
       { href: "/admin/proposals", label: "Proposals", icon: ClipboardList },
+      { href: "/admin/invoices", label: "Invoices", icon: FileText },
       { href: "/admin/offerings", label: "Offerings", icon: Package },
       { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
       { href: "/admin/drone-leads", label: "Leads", icon: Target },

@@ -44,8 +44,10 @@ import Contact from "./pages/Contact";
 import Pricing from "./pages/Pricing";
 import Licensing from "./pages/Licensing";
 import CustomerProposal from "./pages/CustomerProposal";
+import CustomerInvoice from "./pages/CustomerInvoice";
 import DroneUpload from "./pages/DroneUpload";
 import ClientJobPortal from "./pages/ClientJobPortal";
+import Invoices from "./pages/admin/Invoices";
 
 const queryClient = new QueryClient();
 
@@ -159,8 +161,17 @@ const App = () => (
                 }
               />
               <Route path="/proposal/:token" element={<CustomerProposal />} />
+              <Route path="/invoice/:token" element={<CustomerInvoice />} />
               <Route path="/drone-upload/:token" element={<DroneUpload />} />
               <Route path="/my-jobs/:token" element={<ClientJobPortal />} />
+              <Route
+                path="/admin/invoices"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <Invoices />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/admin/messages"
                 element={

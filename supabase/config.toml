@@ -80,3 +80,6 @@ verify_jwt = false
 
 [functions.google-calendar-sync]
 verify_jwt = false
+
+[functions.send-service-invoice-email]
+verify_jwt = false
