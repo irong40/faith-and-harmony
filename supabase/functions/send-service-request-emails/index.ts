@@ -47,7 +47,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send confirmation to client
     const clientEmailResult = await resend.emails.send({
-      from: "Faith & Harmony <onboarding@resend.dev>",
+      from: "Faith & Harmony <info@faithandharmonyllc.com>",
       to: [data.clientEmail],
       subject: `We Received Your Service Request - ${data.serviceName}`,
       html: `
@@ -110,7 +110,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send notification to admin
     const adminEmailResult = await resend.emails.send({
-      from: "Faith & Harmony <onboarding@resend.dev>",
+      from: "Faith & Harmony <info@faithandharmonyllc.com>",
       to: ["info@faithandharmonyllc.com"],
       subject: `🔔 New Service Request: ${data.serviceName} from ${data.clientName}`,
       html: `

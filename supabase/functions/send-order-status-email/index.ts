@@ -258,7 +258,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Sending order status email to:", data.customer_email);
 
     const emailResponse = await resend.emails.send({
-      from: "Faith & Harmony <onboarding@resend.dev>",
+      from: "Faith & Harmony <orders@faithandharmonyllc.com>",
       to: [data.customer_email],
       subject: statusInfo.subject,
       html: emailHtml,

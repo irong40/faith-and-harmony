@@ -129,7 +129,7 @@ serve(async (req) => {
 
     // Send the email with enhanced template matching the documentation
     const emailResponse = await resend.emails.send({
-      from: "Faith & Harmony <onboarding@resend.dev>",
+      from: "Faith & Harmony <info@faithandharmonyllc.com>",
       to: [customer.email],
       subject: `Your ${pkg?.name || 'aerial'} photos are ready - ${propertyAddress}`,
       html: `

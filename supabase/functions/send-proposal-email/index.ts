@@ -133,7 +133,7 @@ serve(async (req) => {
     `;
 
     const emailResponse = await resend.emails.send({
-      from: "Faith & Harmony <onboarding@resend.dev>",
+      from: "Faith & Harmony <info@faithandharmonyllc.com>",
       to: [client.email],
       subject: `Your Proposal: ${proposal.title} (${proposal.proposal_number})`,
       html: emailHtml,
@@ -143,7 +143,7 @@ serve(async (req) => {
 
     // Also send notification to admin
     await resend.emails.send({
-      from: "Faith & Harmony <onboarding@resend.dev>",
+      from: "Faith & Harmony <info@faithandharmonyllc.com>",
       to: ["info@faithandharmonyllc.com"],
       subject: `Proposal Sent: ${proposal.proposal_number} - ${client.name}`,
       html: `

@@ -106,7 +106,7 @@ serve(async (req) => {
 
     // Send the notification email to admin
     const emailResponse = await resend.emails.send({
-      from: "Faith & Harmony <onboarding@resend.dev>",
+      from: "Faith & Harmony <info@faithandharmonyllc.com>",
       to: [BRAND.adminEmail],
       subject: `⏸️ Review needed: Sky replacement for ${job.job_number}`,
       html: `

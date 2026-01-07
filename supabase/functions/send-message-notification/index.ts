@@ -146,7 +146,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "Faith & Harmony <onboarding@resend.dev>",
+      from: "Faith & Harmony <info@faithandharmonyllc.com>",
       to: [emailTo],
       subject: emailSubject,
       html: emailHtml,
