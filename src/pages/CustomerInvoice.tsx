@@ -139,17 +139,15 @@ export default function CustomerInvoice() {
     setSubmittingPayment(true);
 
     try {
-      const paymentClaim = {
-        method: paymentMethod,
-        amount: paymentAmount || invoice.total,
-        reference: paymentReference,
-        claimed_at: new Date().toISOString(),
-      };
-
-      const { error } = await supabase
-        .from("invoices")
-        .update({ customer_payment_claim: paymentClaim })
-        .eq("id", invoice.id);
+      // Use secure edge function with token validation
+      const { error } = await supabase.functions.invoke("invoice-payment-claim", {
+        body: {
+          view_token: token,
+          payment_method: paymentMethod,
+          amount: paymentAmount ? parseFloat(paymentAmount) : invoice.total,
+          reference: paymentReference || null,
+        },
+      });
 
       if (error) throw error;
 
