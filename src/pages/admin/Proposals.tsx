@@ -50,8 +50,12 @@ import {
   XCircle,
   AlertCircle,
   RefreshCw,
+  Printer,
+  TrendingDown,
 } from "lucide-react";
 import AdminNav from "./components/AdminNav";
+import { ProposalPDFView } from "@/components/proposal/ProposalPDFView";
+import { getMarketRateFromDiscounted } from "@/data/market-rates";
 import type { Database } from "@/integrations/supabase/types";
 
 type ProposalStatus = Database["public"]["Enums"]["proposal_status"];
@@ -93,6 +97,7 @@ interface Proposal {
     client_name: string;
     client_email: string;
     company_name: string | null;
+    metadata?: Record<string, unknown>;
     services: { name: string } | null;
   } | null;
 }
@@ -120,13 +125,162 @@ export default function Proposals() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("proposals")
-        .select("*, service_requests(client_name, client_email, company_name, services(name))")
+        .select("*, service_requests(client_name, client_email, company_name, metadata, services(name))")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data as unknown as Proposal[];
     },
   });
+
+  // Calculate market rate and discount info for a proposal
+  const getDiscountInfo = (proposal: Proposal) => {
+    const metadata = proposal.service_requests?.metadata || {};
+    const orgType = ((metadata as Record<string, unknown>).organizationType as string || '').toLowerCase();
+    const isNonprofit = orgType.includes('nonprofit') || 
+                        orgType.includes('church') || 
+                        orgType.includes('ministry') ||
+                        orgType.includes('501c');
+    
+    const discountPercent = isNonprofit ? 20 : 10;
+    const marketRate = getMarketRateFromDiscounted(proposal.subtotal, isNonprofit);
+    
+    return { isNonprofit, discountPercent, marketRate };
+  };
+
+  // Print proposal as PDF
+  const handlePrintProposal = (proposal: Proposal) => {
+    const discountInfo = getDiscountInfo(proposal);
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast({ title: "Popup blocked", description: "Please allow popups to print", variant: "destructive" });
+      return;
+    }
+
+    const deliverables = (proposal.deliverables || []).map(d => ({
+      name: d.description || '',
+      description: ''
+    }));
+
+    const pricingItems = (proposal.pricing_items || []).map(item => ({
+      description: item.description,
+      quantity: item.quantity,
+      unit: item.unit,
+      rate: item.rate
+    }));
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Proposal - ${proposal.proposal_number}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #333; }
+            .header { display: flex; justify-content: space-between; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 2px solid #e5e5e5; }
+            .logo { font-size: 24px; font-weight: bold; color: #7c3aed; }
+            .proposal-number { font-size: 14px; color: #666; }
+            .client-section { background: #f9f9f9; padding: 16px; border-radius: 8px; margin-bottom: 24px; }
+            .client-section h3 { font-size: 12px; color: #666; margin-bottom: 4px; }
+            .client-section p { font-size: 16px; font-weight: 500; }
+            h1 { font-size: 24px; margin-bottom: 16px; }
+            h2 { font-size: 16px; border-bottom: 1px solid #e5e5e5; padding-bottom: 8px; margin: 24px 0 12px; }
+            .scope { white-space: pre-wrap; line-height: 1.6; color: #555; }
+            .deliverables { list-style: disc; margin-left: 20px; }
+            .deliverables li { margin-bottom: 8px; }
+            table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+            th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e5e5e5; }
+            th { background: #f5f5f5; font-size: 12px; text-transform: uppercase; }
+            .text-right { text-align: right; }
+            .totals { margin-top: 16px; text-align: right; }
+            .totals p { margin-bottom: 4px; }
+            .totals .total { font-size: 20px; font-weight: bold; color: #7c3aed; }
+            .market-badge { background: #dcfce7; color: #166534; padding: 8px 16px; border-radius: 8px; display: inline-block; margin-bottom: 16px; font-size: 14px; }
+            .terms { font-size: 12px; color: #666; white-space: pre-wrap; line-height: 1.5; }
+            .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e5e5; text-align: center; font-size: 12px; color: #888; }
+            @media print { body { padding: 20px; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="logo">Faith & Harmony LLC</div>
+              <p style="font-size: 12px; color: #666;">Professional Services Proposal</p>
+            </div>
+            <div style="text-align: right;">
+              <div class="proposal-number">${proposal.proposal_number}</div>
+              <p style="font-size: 12px; color: #666;">${format(new Date(proposal.created_at), "MMMM d, yyyy")}</p>
+            </div>
+          </div>
+
+          <div class="client-section">
+            <h3>Prepared For</h3>
+            <p>${proposal.service_requests?.client_name || 'Client'}</p>
+            ${proposal.service_requests?.company_name ? `<p style="font-size: 14px; color: #666;">${proposal.service_requests.company_name}</p>` : ''}
+          </div>
+
+          <div class="market-badge">
+            ${discountInfo.discountPercent}% Below Market Rate${discountInfo.isNonprofit ? ' (Nonprofit)' : ''}
+          </div>
+
+          <h1>${proposal.title}</h1>
+
+          <h2>Scope of Work</h2>
+          <p class="scope">${proposal.scope_of_work}</p>
+
+          <h2>Deliverables</h2>
+          <ul class="deliverables">
+            ${deliverables.map(d => `<li>${d.name}</li>`).join('')}
+          </ul>
+
+          <h2>Investment</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th class="text-right">Qty</th>
+                <th>Unit</th>
+                <th class="text-right">Rate</th>
+                <th class="text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${pricingItems.map(item => `
+                <tr>
+                  <td>${item.description}</td>
+                  <td class="text-right">${item.quantity}</td>
+                  <td>${item.unit}</td>
+                  <td class="text-right">$${item.rate.toLocaleString()}</td>
+                  <td class="text-right">$${(item.quantity * item.rate).toLocaleString()}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="totals">
+            <p style="color: #888; text-decoration: line-through;">Market Rate: $${discountInfo.marketRate.toLocaleString()}</p>
+            <p>Subtotal: $${proposal.subtotal.toLocaleString()}</p>
+            ${proposal.discount > 0 ? `<p style="color: #16a34a;">Additional Discount: -$${proposal.discount.toLocaleString()}</p>` : ''}
+            <p class="total">Total: $${proposal.total.toLocaleString()}</p>
+          </div>
+
+          <p style="margin-top: 16px; font-size: 12px; color: #666;">Valid until ${format(new Date(proposal.valid_until), "MMMM d, yyyy")}</p>
+
+          ${proposal.terms_and_conditions ? `
+            <h2>Terms & Conditions</h2>
+            <p class="terms">${proposal.terms_and_conditions}</p>
+          ` : ''}
+
+          <div class="footer">
+            <p>Faith & Harmony LLC | faithandharmony.com</p>
+            <p>Thank you for considering us for your project.</p>
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+  };
 
   const resendMutation = useMutation({
     mutationFn: async (proposal: Proposal) => {
@@ -433,13 +587,37 @@ export default function Proposals() {
                     ))}
                   </TableBody>
                 </Table>
-                <div className="mt-4 space-y-1 text-right">
-                  <p className="text-sm">Subtotal: ${(selectedProposal.subtotal ?? 0).toLocaleString()}</p>
-                  {(selectedProposal.discount ?? 0) > 0 && (
-                    <p className="text-sm text-green-500">Discount: -${(selectedProposal.discount ?? 0).toLocaleString()}</p>
-                  )}
-                  <p className="text-lg font-bold">Total: ${(selectedProposal.total ?? 0).toLocaleString()}</p>
-                </div>
+                {(() => {
+                  const discountInfo = getDiscountInfo(selectedProposal);
+                  return (
+                    <div className="mt-4 space-y-2">
+                      {/* Market Rate Comparison */}
+                      <div className="bg-green-500/10 border border-green-500/20 p-3 rounded-lg mb-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <TrendingDown className="h-4 w-4 text-green-500" />
+                          <span className="text-sm font-medium text-green-500">
+                            {discountInfo.discountPercent}% Below Market Rate
+                            {discountInfo.isNonprofit && ' (Nonprofit)'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Market Rate:</span>
+                          <span className="line-through text-muted-foreground">
+                            ${discountInfo.marketRate.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="text-right space-y-1">
+                        <p className="text-sm">Subtotal: ${(selectedProposal.subtotal ?? 0).toLocaleString()}</p>
+                        {(selectedProposal.discount ?? 0) > 0 && (
+                          <p className="text-sm text-green-500">Additional Discount: -${(selectedProposal.discount ?? 0).toLocaleString()}</p>
+                        )}
+                        <p className="text-lg font-bold">Total: ${(selectedProposal.total ?? 0).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Terms */}
@@ -487,7 +665,14 @@ export default function Proposals() {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-2 pt-4 border-t">
+              <div className="flex flex-wrap gap-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => handlePrintProposal(selectedProposal)}
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print / PDF
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => window.open(`/proposal/${selectedProposal.approval_token}`, "_blank")}
