@@ -116,12 +116,11 @@ export default function CustomerInvoice() {
 
       setInvoice(data as Invoice);
 
-      // Mark as viewed if not already
+      // Mark as viewed via secure edge function
       if (!data.viewed_at) {
-        await supabase
-          .from("invoices")
-          .update({ viewed_at: new Date().toISOString() })
-          .eq("id", data.id);
+        supabase.functions.invoke("invoice-mark-viewed", {
+          body: { view_token: token },
+        }).catch(console.error);
       }
     } catch (error) {
       console.error("Error fetching invoice:", error);
