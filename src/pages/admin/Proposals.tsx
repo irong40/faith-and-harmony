@@ -105,6 +105,7 @@ interface Proposal {
     metadata?: Record<string, unknown>;
     services: { name: string } | null;
   } | null;
+  invoices: { status: string }[] | null;
 }
 
 interface LinkedRecords {
@@ -147,7 +148,7 @@ export default function Proposals() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("proposals")
-        .select("*, service_requests(client_name, client_email, company_name, metadata, services(name))")
+        .select("*, service_requests(client_name, client_email, company_name, metadata, services(name)), invoices(status)")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -490,6 +491,7 @@ export default function Proposals() {
                   <TableHead className="text-right">Total</TableHead>
                   <TableHead>Valid Until</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Invoice</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -497,13 +499,13 @@ export default function Proposals() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
+                    <TableCell colSpan={10} className="text-center py-8">
                       Loading proposals...
                     </TableCell>
                   </TableRow>
                 ) : filteredProposals?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                       No proposals found
                     </TableCell>
                   </TableRow>
@@ -544,6 +546,24 @@ export default function Proposals() {
                         <Badge className={getStatusBadgeClass(proposal.status)}>
                           {statusConfig[proposal.status].label}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                          const invoiceStatus = proposal.invoices?.[0]?.status;
+                          if (!invoiceStatus) return <span className="text-muted-foreground text-xs">—</span>;
+                          const statusClasses: Record<string, string> = {
+                            draft: "bg-muted text-muted-foreground",
+                            sent: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+                            paid: "bg-green-500/20 text-green-400 border-green-500/30",
+                            overdue: "bg-red-500/20 text-red-400 border-red-500/30",
+                            cancelled: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+                          };
+                          return (
+                            <Badge variant="outline" className={statusClasses[invoiceStatus] || ""}>
+                              {invoiceStatus.charAt(0).toUpperCase() + invoiceStatus.slice(1)}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>{format(new Date(proposal.created_at), "MMM d, yyyy")}</TableCell>
                       <TableCell>
