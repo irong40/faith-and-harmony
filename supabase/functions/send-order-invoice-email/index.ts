@@ -412,7 +412,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send email with PDF attachment
     console.log("Sending email with PDF attachment to:", data.customer_email);
     const emailResponse = await resend.emails.send({
-      from: "Faith & Harmony <onboarding@resend.dev>",
+      from: "Faith & Harmony <orders@faithandharmonyllc.com>",
       to: [data.customer_email],
       subject: `${documentType} #${invoiceNumber} - ${BRAND.companyName}`,
       html: emailHtml,

@@ -25,7 +25,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Processing waitlist signup for ${email} - Product: ${productName}`);
 
     const emailResponse = await resend.emails.send({
-      from: "Faith & Harmony <onboarding@resend.dev>",
+      from: "Faith & Harmony <info@faithandharmonyllc.com>",
       to: [email],
       subject: `You're on the waitlist for "${productName}"!`,
       html: `
