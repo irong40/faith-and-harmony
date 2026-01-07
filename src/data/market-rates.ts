@@ -194,14 +194,160 @@ export function getTaskEstimatesByCategory(category: TaskEstimate['category']): 
 }
 
 export const CATEGORY_LABELS: Record<string, string> = {
-  design: 'Design',
   development: 'Development',
-  content: 'Content & Marketing',
-  specialized: 'Specialized',
+  design: 'Design',
+  content: 'Content & Strategy',
+  specialist: 'Specialist',
   websites: 'Websites',
-  nonprofit: 'Nonprofit Websites',
-  mobile: 'Mobile Apps',
-  branding: 'Branding & Identity',
-  documents: 'Documents & Presentations',
-  automation: 'Automation & Integration',
+  automation: 'Automation',
+  branding: 'Branding',
+  documents: 'Documents'
 };
+
+// Service code to market rate category mapping
+export const SERVICE_RATE_MAPPINGS: Record<string, {
+  projectCategory: string;
+  defaultTasks: string[];
+  hourlyRoles: string[];
+}> = {
+  WEBSITE: {
+    projectCategory: 'websites',
+    defaultTasks: ['Responsive single page', 'Contact form with validation', 'CMS integration (basic)'],
+    hourlyRoles: ['Full-Stack Developer', 'UI Designer']
+  },
+  AI_VIDEO: {
+    projectCategory: 'automation',
+    defaultTasks: ['Email template', 'Performance optimization'],
+    hourlyRoles: ['Prompt Engineer', 'Motion Designer']
+  },
+  AERIAL: {
+    projectCategory: 'documents',
+    defaultTasks: [],
+    hourlyRoles: ['Photographer', 'Video Editor']
+  },
+  MASONIC: {
+    projectCategory: 'documents',
+    defaultTasks: ['SEO audit & report', 'Content calendar (monthly)'],
+    hourlyRoles: ['Content Strategist', 'UI Designer']
+  },
+  BLACK_HISTORY: {
+    projectCategory: 'content',
+    defaultTasks: ['Content calendar (monthly)', 'Video script (per minute)'],
+    hourlyRoles: ['Content Strategist', 'Copywriter']
+  },
+  CYBERSECURITY: {
+    projectCategory: 'automation',
+    defaultTasks: ['Performance optimization', 'API endpoint'],
+    hourlyRoles: ['Security Consultant', 'Full-Stack Developer']
+  },
+  VENDOR_ASSISTANT: {
+    projectCategory: 'automation',
+    defaultTasks: ['CRM workflow', 'Email template'],
+    hourlyRoles: ['Automation Specialist', 'Full-Stack Developer']
+  },
+  CHURCH_TECH: {
+    projectCategory: 'websites',
+    defaultTasks: ['Responsive single page', 'Contact form with validation'],
+    hourlyRoles: ['Full-Stack Developer', 'UI Designer']
+  }
+};
+
+// Calculate discounted rate based on client type
+export function calculateDiscountedRate(
+  rate: number,
+  isNonprofit: boolean,
+  baseDiscountPercent = 10
+): number {
+  const nonprofitDiscount = isNonprofit ? 10 : 0;
+  const totalDiscount = baseDiscountPercent + nonprofitDiscount;
+  return Math.round(rate * (1 - totalDiscount / 100));
+}
+
+// Get original market rate from discounted rate
+export function getMarketRateFromDiscounted(
+  discountedRate: number,
+  isNonprofit: boolean,
+  baseDiscountPercent = 10
+): number {
+  const nonprofitDiscount = isNonprofit ? 10 : 0;
+  const totalDiscount = baseDiscountPercent + nonprofitDiscount;
+  return Math.round(discountedRate / (1 - totalDiscount / 100));
+}
+
+// Suggest pricing items based on service code and scope
+export function suggestPricingFromScope(
+  serviceCode: string,
+  scopeText: string,
+  isNonprofit: boolean
+): { description: string; quantity: number; unit: string; rate: number; marketRate: number }[] {
+  const mapping = SERVICE_RATE_MAPPINGS[serviceCode];
+  if (!mapping) return [];
+
+  const items: { description: string; quantity: number; unit: string; rate: number; marketRate: number }[] = [];
+  const scopeLower = scopeText.toLowerCase();
+
+  // Determine complexity based on scope keywords
+  const isComplex = scopeLower.includes('custom') || scopeLower.includes('advanced') || 
+                    scopeLower.includes('enterprise') || scopeLower.includes('full');
+  const isSimple = scopeLower.includes('basic') || scopeLower.includes('simple') || 
+                   scopeLower.includes('starter') || scopeLower.includes('minimal');
+
+  // Get project rates for this category
+  const projectRates = PROJECT_RATES.filter(p => p.category === mapping.projectCategory);
+  
+  if (projectRates.length > 0) {
+    const project = projectRates[0];
+    const tier = isComplex ? 'premium' : isSimple ? 'budget' : 'standard';
+    const range = project[tier];
+    const marketRate = getMidRate(range);
+    const rate = calculateDiscountedRate(marketRate, isNonprofit);
+    
+    items.push({
+      description: `${project.type} - ${tier.charAt(0).toUpperCase() + tier.slice(1)} Tier`,
+      quantity: 1,
+      unit: 'project',
+      rate,
+      marketRate
+    });
+  }
+
+  // Add relevant task estimates
+  mapping.defaultTasks.forEach(taskName => {
+    const task = TASK_ESTIMATES.find(t => t.task === taskName);
+    if (task) {
+      const midHours = Math.round((task.hoursMin + task.hoursMax) / 2);
+      const hourlyRate = Math.round((task.rateMin + task.rateMax) / 2 / midHours);
+      const marketRate = hourlyRate;
+      const rate = calculateDiscountedRate(marketRate, isNonprofit);
+      
+      items.push({
+        description: task.task,
+        quantity: midHours,
+        unit: 'hour',
+        rate,
+        marketRate
+      });
+    }
+  });
+
+  // Add hourly roles if scope mentions ongoing work
+  if (scopeLower.includes('ongoing') || scopeLower.includes('retainer') || scopeLower.includes('monthly')) {
+    mapping.hourlyRoles.forEach(roleName => {
+      const role = HOURLY_RATES.find(r => r.role === roleName);
+      if (role) {
+        const marketRate = getMidRate(role.mid);
+        const rate = calculateDiscountedRate(marketRate, isNonprofit);
+        
+        items.push({
+          description: `${role.role} (Monthly Retainer)`,
+          quantity: 10,
+          unit: 'hour',
+          rate,
+          marketRate
+        });
+      }
+    });
+  }
+
+  return items;
+}
