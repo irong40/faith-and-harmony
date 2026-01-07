@@ -52,8 +52,12 @@ import {
   RefreshCw,
   Printer,
   TrendingDown,
+  Link2,
+  Camera,
+  Receipt,
 } from "lucide-react";
 import AdminNav from "./components/AdminNav";
+import { useNavigate } from "react-router-dom";
 import { ProposalPDFView } from "@/components/proposal/ProposalPDFView";
 import { getMarketRateFromDiscounted } from "@/data/market-rates";
 import type { Database } from "@/integrations/supabase/types";
@@ -93,12 +97,29 @@ interface Proposal {
   customer_notes: string | null;
   admin_notes: string | null;
   created_at: string;
+  service_request_id: string;
   service_requests: {
     client_name: string;
     client_email: string;
     company_name: string | null;
     metadata?: Record<string, unknown>;
     services: { name: string } | null;
+  } | null;
+}
+
+interface LinkedRecords {
+  invoice: {
+    id: string;
+    invoice_number: string;
+    status: string;
+    total: number;
+    view_token: string;
+  } | null;
+  droneJob: {
+    id: string;
+    job_number: string;
+    status: string;
+    scheduled_date: string | null;
   } | null;
 }
 
@@ -119,6 +140,7 @@ export default function Proposals() {
   const [deleteProposal, setDeleteProposal] = useState<Proposal | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: proposals, isLoading } = useQuery({
     queryKey: ["proposals"],
@@ -131,6 +153,34 @@ export default function Proposals() {
       if (error) throw error;
       return data as unknown as Proposal[];
     },
+  });
+
+  // Fetch linked invoice and drone job when a proposal is selected
+  const { data: linkedRecords } = useQuery({
+    queryKey: ["proposal-links", selectedProposal?.id, selectedProposal?.service_request_id],
+    queryFn: async (): Promise<LinkedRecords> => {
+      if (!selectedProposal) return { invoice: null, droneJob: null };
+
+      // Fetch linked invoice
+      const { data: invoice } = await supabase
+        .from("invoices")
+        .select("id, invoice_number, status, total, view_token")
+        .eq("proposal_id", selectedProposal.id)
+        .maybeSingle();
+
+      // Fetch linked drone job (via service_request_id)
+      const { data: droneJob } = await supabase
+        .from("drone_jobs")
+        .select("id, job_number, status, scheduled_date")
+        .eq("service_request_id", selectedProposal.service_request_id)
+        .maybeSingle();
+
+      return { 
+        invoice: invoice as LinkedRecords["invoice"], 
+        droneJob: droneJob as LinkedRecords["droneJob"] 
+      };
+    },
+    enabled: !!selectedProposal,
   });
 
   // Calculate market rate and discount info for a proposal
@@ -681,6 +731,87 @@ export default function Proposals() {
                 )}
               </div>
 
+              {/* Linked Records Section */}
+              {selectedProposal.status === 'approved' && (
+                <div className="space-y-3">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Link2 className="h-4 w-4" />
+                    Linked Records
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Invoice Card */}
+                    <Card className="bg-muted/50">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Invoice</p>
+                            {linkedRecords?.invoice ? (
+                              <>
+                                <p className="font-mono font-medium">
+                                  {linkedRecords.invoice.invoice_number}
+                                </p>
+                                <Badge variant="outline" className="mt-1 text-xs">
+                                  {linkedRecords.invoice.status}
+                                </Badge>
+                              </>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                Not yet created
+                              </p>
+                            )}
+                          </div>
+                          {linkedRecords?.invoice && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate("/admin/invoices")}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Drone Job Card (only for AERIAL services) */}
+                    {selectedProposal.service_requests?.services?.name === 'Aerial Photography' && (
+                      <Card className="bg-muted/50">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Drone Job</p>
+                              {linkedRecords?.droneJob ? (
+                                <>
+                                  <p className="font-mono font-medium">
+                                    {linkedRecords.droneJob.job_number}
+                                  </p>
+                                  <Badge variant="outline" className="mt-1 text-xs">
+                                    {linkedRecords.droneJob.status}
+                                  </Badge>
+                                </>
+                              ) : (
+                                <p className="text-sm text-muted-foreground">
+                                  Not yet created
+                                </p>
+                              )}
+                            </div>
+                            {linkedRecords?.droneJob && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate(`/admin/drone-jobs/${linkedRecords.droneJob!.id}`)}
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Actions */}
               <div className="flex flex-wrap gap-2 pt-4 border-t">
                 <Button
@@ -697,6 +828,24 @@ export default function Proposals() {
                   <ExternalLink className="h-4 w-4 mr-2" />
                   View Customer Page
                 </Button>
+                {linkedRecords?.invoice && (
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open(`/invoice/${linkedRecords.invoice!.view_token}`, "_blank")}
+                  >
+                    <Receipt className="h-4 w-4 mr-2" />
+                    View Invoice
+                  </Button>
+                )}
+                {linkedRecords?.droneJob && (
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(`/admin/drone-jobs/${linkedRecords.droneJob!.id}`)}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    View Drone Job
+                  </Button>
+                )}
                 <Button onClick={() => resendMutation.mutate(selectedProposal)} disabled={resendMutation.isPending}>
                   <Send className="h-4 w-4 mr-2" />
                   Resend Proposal
