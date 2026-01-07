@@ -190,21 +190,35 @@ export default function CustomerProposal() {
       // Send notification emails
       await sendResponseEmail('approved');
       
-      // Auto-send the invoice that was created by the database trigger
-      // Wait a moment for the trigger to complete, then fetch and send
-      setTimeout(async () => {
-        const { data: invoice } = await supabase
-          .from("invoices")
-          .select("id")
-          .eq("proposal_id", proposal.id)
-          .single();
-        
-        if (invoice) {
-          await supabase.functions.invoke("send-service-invoice-email", {
-            body: { invoiceId: invoice.id },
-          });
+      // Auto-send the invoice created by database trigger
+      // Poll for invoice creation with retry logic
+      const sendInvoiceEmail = async (retries = 5, delay = 300) => {
+        for (let i = 0; i < retries; i++) {
+          const { data: invoice, error } = await supabase
+            .from("invoices")
+            .select("id")
+            .eq("proposal_id", proposal.id)
+            .single();
+          
+          if (invoice) {
+            const { error: sendError } = await supabase.functions.invoke("send-service-invoice-email", {
+              body: { invoiceId: invoice.id },
+            });
+            if (sendError) {
+              console.error("Failed to send invoice email:", sendError);
+            }
+            return;
+          }
+          
+          if (i < retries - 1) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
         }
-      }, 500);
+        console.warn("Invoice not found after polling - email not sent");
+      };
+      
+      // Fire and forget - don't block the UI
+      sendInvoiceEmail().catch(err => console.error("Invoice email error:", err));
     }
 
     setActionLoading(false);
