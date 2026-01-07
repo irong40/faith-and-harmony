@@ -172,7 +172,7 @@ const handler = async (req: Request): Promise<Response> => {
             <p style="color: #6b7280; margin: 0; font-size: 14px;">
               Faith & Harmony, LLC<br>
               Virginia Beach, VA<br>
-              hello@faithharmony.com
+              info@faithandharmonyllc.com
             </p>
           </div>
         </div>
@@ -181,7 +181,7 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     const emailResponse = await resend.emails.send({
-      from: "Faith & Harmony <invoices@faithharmony.com>",
+      from: "Faith & Harmony <invoices@faithandharmonyllc.com>",
       to: [customerEmail],
       subject: `Invoice ${invoice.invoice_number} - ${formatCurrency(invoice.total)} Due`,
       html: emailHtml,
