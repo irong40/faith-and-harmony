@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import { Plus, Trash2, Wand2, Loader2, Send } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { MarketRatesPanel } from "@/components/proposal/MarketRatesPanel";
 
 type ServiceRequest = Tables<"service_requests">;
 
@@ -130,8 +131,16 @@ export default function ProposalForm({
     setDeliverables(updated);
   };
 
-  const addPricingItem = () => {
-    setPricingItems([...pricingItems, { description: "", quantity: 1, unit: "item", rate: 0 }]);
+  const addPricingItem = (newItem?: PricingItem) => {
+    if (newItem) {
+      setPricingItems([...pricingItems, newItem]);
+    } else {
+      setPricingItems([...pricingItems, { description: "", quantity: 1, unit: "item", rate: 0 }]);
+    }
+  };
+
+  const handleAddPricingItemClick = () => {
+    addPricingItem();
   };
 
   const removePricingItem = (index: number) => {
@@ -334,11 +343,14 @@ export default function ProposalForm({
         ))}
       </div>
 
+      {/* Market Rates Reference Panel */}
+      <MarketRatesPanel onAddPricingItem={addPricingItem} />
+
       {/* Pricing Items */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Label>Pricing Items *</Label>
-          <Button type="button" variant="outline" size="sm" onClick={addPricingItem}>
+          <Button type="button" variant="outline" size="sm" onClick={handleAddPricingItemClick}>
             <Plus className="h-4 w-4 mr-1" /> Add
           </Button>
         </div>
