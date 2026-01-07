@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -13,9 +14,15 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import { Plus, Trash2, Wand2, Loader2, Send } from "lucide-react";
+import { Plus, Trash2, Wand2, Loader2, Send, Calculator, Printer } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { MarketRatesPanel } from "@/components/proposal/MarketRatesPanel";
+import { ProposalPDFView } from "@/components/proposal/ProposalPDFView";
+import {
+  suggestPricingFromScope,
+  calculateDiscountedRate,
+  getMarketRateFromDiscounted,
+} from "@/data/market-rates";
 
 type ServiceRequest = Tables<"service_requests">;
 
@@ -34,6 +41,7 @@ interface PricingItem {
 interface ProposalFormProps {
   serviceRequest: ServiceRequest;
   serviceName: string;
+  serviceCode?: string;
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -58,13 +66,16 @@ Ownership:
 export default function ProposalForm({
   serviceRequest,
   serviceName,
+  serviceCode = "WEBSITE",
   onSuccess,
   onCancel,
 }: ProposalFormProps) {
   const { toast } = useToast();
+  const printRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [sending, setSending] = useState(false);
+  const [calculating, setCalculating] = useState(false);
 
   const [title, setTitle] = useState(
     `${serviceName} Proposal for ${serviceRequest.company_name || serviceRequest.client_name}`
@@ -83,11 +94,33 @@ export default function ProposalForm({
   const [terms, setTerms] = useState(DEFAULT_TERMS);
   const [adminNotes, setAdminNotes] = useState("");
 
+  // Client type and market rate tracking
+  const [clientType, setClientType] = useState<'standard' | 'nonprofit'>('standard');
+  const [marketRateSubtotal, setMarketRateSubtotal] = useState(0);
+
   const subtotal = pricingItems.reduce(
     (sum, item) => sum + item.quantity * item.rate,
     0
   );
   const total = subtotal - discount;
+  const discountPercent = clientType === 'nonprofit' ? 20 : 10;
+
+  // Auto-detect nonprofit status from metadata
+  useEffect(() => {
+    const metadata = serviceRequest.metadata as Record<string, unknown> | null;
+    if (metadata) {
+      const orgType = (metadata.organizationType as string || '').toLowerCase();
+      if (
+        orgType.includes('nonprofit') ||
+        orgType.includes('non-profit') ||
+        orgType.includes('church') ||
+        orgType.includes('ministry') ||
+        orgType.includes('501c')
+      ) {
+        setClientType('nonprofit');
+      }
+    }
+  }, [serviceRequest]);
 
   const generateProposal = async () => {
     setGenerating(true);
@@ -141,6 +174,236 @@ export default function ProposalForm({
 
   const handleAddPricingItemClick = () => {
     addPricingItem();
+  };
+
+  // Calculate from market rates
+  const calculateFromMarketRates = () => {
+    if (!scopeOfWork.trim()) {
+      toast({
+        title: "Missing scope",
+        description: "Please fill in the scope of work first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCalculating(true);
+
+    try {
+      const isNonprofit = clientType === 'nonprofit';
+      const suggestions = suggestPricingFromScope(serviceCode, scopeOfWork, isNonprofit);
+
+      if (suggestions.length === 0) {
+        toast({
+          title: "No rates found",
+          description: "Could not find matching market rates for this service type",
+          variant: "destructive",
+        });
+        setCalculating(false);
+        return;
+      }
+
+      // Convert to pricing items
+      const newPricingItems: PricingItem[] = suggestions.map(item => ({
+        description: item.description,
+        quantity: item.quantity,
+        unit: item.unit,
+        rate: item.rate,
+      }));
+
+      // Calculate market rate subtotal (before discount)
+      const marketTotal = suggestions.reduce(
+        (sum, item) => sum + item.quantity * item.marketRate,
+        0
+      );
+
+      setPricingItems(newPricingItems);
+      setMarketRateSubtotal(Math.round(marketTotal));
+
+      toast({
+        title: "Market rates applied",
+        description: `${discountPercent}% discount applied (${isNonprofit ? 'Nonprofit rate' : 'Standard rate'})`,
+      });
+    } catch (error) {
+      console.error("Calculate error:", error);
+      toast({
+        title: "Calculation failed",
+        description: "Could not calculate market rates",
+        variant: "destructive",
+      });
+    } finally {
+      setCalculating(false);
+    }
+  };
+
+  // Print / Export PDF
+  const handlePrint = () => {
+    const proposalData = {
+      title,
+      clientName: serviceRequest.client_name,
+      clientEmail: serviceRequest.client_email,
+      companyName: serviceRequest.company_name || undefined,
+      scopeOfWork,
+      deliverables: deliverables.filter(d => d.name),
+      pricingItems: pricingItems.filter(p => p.description),
+      subtotal,
+      discount,
+      total,
+      validUntil,
+      terms,
+      clientType,
+      marketRateSubtotal,
+    };
+
+    // Create print window
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast({
+        title: "Popup blocked",
+        description: "Please allow popups to print the proposal",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const pricingRows = proposalData.pricingItems
+      .map(item => `
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+          <td style="padding: 12px; color: #374151;">${item.description}</td>
+          <td style="padding: 12px; text-align: right; color: #6b7280;">${item.quantity}</td>
+          <td style="padding: 12px; text-align: center; color: #6b7280;">${item.unit}</td>
+          <td style="padding: 12px; text-align: right; color: #6b7280;">$${item.rate.toLocaleString()}</td>
+          <td style="padding: 12px; text-align: right; font-weight: 500;">$${(item.quantity * item.rate).toLocaleString()}</td>
+        </tr>
+      `).join('');
+
+    const deliverablesList = proposalData.deliverables
+      .map(d => `<li style="margin-bottom: 8px;"><span style="color: #16a34a; margin-right: 8px;">✓</span><strong>${d.name}</strong>${d.description ? ` — ${d.description}` : ''}</li>`)
+      .join('');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Proposal - ${proposalData.title}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 40px; color: #111827; line-height: 1.6; }
+            @media print { body { padding: 20px; } }
+          </style>
+        </head>
+        <body>
+          <!-- Header -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid #e5e7eb;">
+            <div>
+              <h1 style="font-size: 24px; font-weight: bold; color: #111827;">Faith & Harmony LLC</h1>
+              <p style="font-size: 14px; color: #6b7280; margin-top: 4px;">Professional Services Proposal</p>
+            </div>
+            <div style="text-align: right;">
+              <p style="font-size: 18px; font-weight: bold; color: #111827;">DRAFT</p>
+              <p style="font-size: 14px; color: #6b7280;">${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+          </div>
+
+          <!-- Client Info -->
+          <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+            <p style="font-weight: 600; color: #374151; margin-bottom: 8px;">Prepared For:</p>
+            <p style="font-size: 18px; font-weight: bold;">${proposalData.clientName}</p>
+            ${proposalData.companyName ? `<p style="color: #6b7280;">${proposalData.companyName}</p>` : ''}
+            ${proposalData.clientEmail ? `<p style="font-size: 14px; color: #9ca3af;">${proposalData.clientEmail}</p>` : ''}
+            ${proposalData.clientType === 'nonprofit' ? '<span style="display: inline-block; margin-top: 8px; padding: 4px 8px; background: #dcfce7; color: #166534; font-size: 12px; border-radius: 4px;">Nonprofit Discount Applied (20% off)</span>' : ''}
+          </div>
+
+          <!-- Title -->
+          <h2 style="font-size: 20px; font-weight: bold; margin-bottom: 16px; color: #111827;">${proposalData.title}</h2>
+
+          <!-- Scope -->
+          <div style="margin-bottom: 24px;">
+            <h3 style="font-size: 16px; font-weight: 600; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px; color: #374151;">Scope of Work</h3>
+            <p style="white-space: pre-wrap; color: #374151;">${proposalData.scopeOfWork}</p>
+          </div>
+
+          <!-- Deliverables -->
+          ${proposalData.deliverables.length > 0 ? `
+            <div style="margin-bottom: 24px;">
+              <h3 style="font-size: 16px; font-weight: 600; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px; color: #374151;">Deliverables</h3>
+              <ul style="list-style: none;">${deliverablesList}</ul>
+            </div>
+          ` : ''}
+
+          <!-- Pricing -->
+          <div style="margin-bottom: 24px;">
+            <h3 style="font-size: 16px; font-weight: 600; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px; color: #374151;">Investment</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+              <thead>
+                <tr style="background: #f3f4f6;">
+                  <th style="text-align: left; padding: 12px; font-weight: 600; color: #374151;">Description</th>
+                  <th style="text-align: right; padding: 12px; font-weight: 600; color: #374151; width: 60px;">Qty</th>
+                  <th style="text-align: center; padding: 12px; font-weight: 600; color: #374151; width: 60px;">Unit</th>
+                  <th style="text-align: right; padding: 12px; font-weight: 600; color: #374151; width: 80px;">Rate</th>
+                  <th style="text-align: right; padding: 12px; font-weight: 600; color: #374151; width: 100px;">Total</th>
+                </tr>
+              </thead>
+              <tbody>${pricingRows}</tbody>
+            </table>
+
+            <!-- Totals -->
+            <div style="display: flex; justify-content: flex-end;">
+              <div style="width: 250px;">
+                ${proposalData.marketRateSubtotal > 0 ? `
+                  <div style="display: flex; justify-content: space-between; font-size: 14px; color: #9ca3af; margin-bottom: 8px;">
+                    <span>Market Rate:</span>
+                    <span style="text-decoration: line-through;">$${proposalData.marketRateSubtotal.toLocaleString()}</span>
+                  </div>
+                ` : ''}
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                  <span style="color: #6b7280;">Subtotal:</span>
+                  <span>$${proposalData.subtotal.toLocaleString()}</span>
+                </div>
+                ${proposalData.discount > 0 ? `
+                  <div style="display: flex; justify-content: space-between; color: #16a34a; margin-bottom: 8px;">
+                    <span>Discount:</span>
+                    <span>-$${proposalData.discount.toLocaleString()}</span>
+                  </div>
+                ` : ''}
+                <div style="display: flex; justify-content: space-between; font-size: 20px; font-weight: bold; border-top: 2px solid #e5e7eb; padding-top: 8px;">
+                  <span>Total:</span>
+                  <span>$${proposalData.total.toLocaleString()}</span>
+                </div>
+                ${proposalData.marketRateSubtotal > 0 ? `<p style="font-size: 12px; color: #16a34a; text-align: right; margin-top: 4px;">${proposalData.clientType === 'nonprofit' ? '20%' : '10%'} below market rate</p>` : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- Valid Until -->
+          <p style="font-size: 14px; color: #6b7280; font-style: italic; margin-bottom: 24px;">
+            This proposal is valid until ${new Date(proposalData.validUntil).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
+
+          <!-- Terms -->
+          ${proposalData.terms ? `
+            <div style="margin-bottom: 32px;">
+              <h3 style="font-size: 16px; font-weight: 600; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px; color: #374151;">Terms & Conditions</h3>
+              <pre style="font-family: inherit; font-size: 14px; white-space: pre-wrap; color: #6b7280;">${proposalData.terms}</pre>
+            </div>
+          ` : ''}
+
+          <!-- Footer -->
+          <div style="margin-top: 48px; padding-top: 16px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 14px; color: #9ca3af;">
+            <p style="font-weight: 500;">Faith & Harmony LLC</p>
+            <p>faithandharmony.com</p>
+            <p style="margin-top: 8px; font-style: italic;">Thank you for considering us for your project.</p>
+          </div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    
+    // Wait for content to load then print
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
   };
 
   const removePricingItem = (index: number) => {
@@ -266,21 +529,54 @@ export default function ProposalForm({
 
   return (
     <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
-      {/* AI Generate Button */}
-      <div className="flex justify-end">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={generateProposal}
-          disabled={generating}
-        >
-          {generating ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Wand2 className="h-4 w-4 mr-2" />
+      {/* Top Actions Row */}
+      <div className="flex justify-between items-center gap-4">
+        {/* Client Type Selector */}
+        <div className="flex items-center gap-3">
+          <Label className="text-sm whitespace-nowrap">Client Type:</Label>
+          <Select value={clientType} onValueChange={(v: 'standard' | 'nonprofit') => setClientType(v)}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="standard">Standard (10% off market)</SelectItem>
+              <SelectItem value="nonprofit">Nonprofit (20% off market)</SelectItem>
+            </SelectContent>
+          </Select>
+          {clientType === 'nonprofit' && (
+            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+              Nonprofit Discount
+            </Badge>
           )}
-          {generating ? "Generating..." : "Generate with AI"}
-        </Button>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handlePrint}
+            title="Print / Save as PDF"
+          >
+            <Printer className="h-4 w-4 mr-2" />
+            Print
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={generateProposal}
+            disabled={generating}
+          >
+            {generating ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Wand2 className="h-4 w-4 mr-2" />
+            )}
+            {generating ? "Generating..." : "Generate with AI"}
+          </Button>
+        </div>
       </div>
 
       {/* Title */}
@@ -350,9 +646,26 @@ export default function ProposalForm({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Label>Pricing Items *</Label>
-          <Button type="button" variant="outline" size="sm" onClick={handleAddPricingItemClick}>
-            <Plus className="h-4 w-4 mr-1" /> Add
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={calculateFromMarketRates}
+              disabled={calculating || !scopeOfWork.trim()}
+              title="Auto-fill pricing based on scope and service type"
+            >
+              {calculating ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Calculator className="h-4 w-4 mr-1" />
+              )}
+              Calculate from Market Rates
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={handleAddPricingItemClick}>
+              <Plus className="h-4 w-4 mr-1" /> Add
+            </Button>
+          </div>
         </div>
         <div className="space-y-2">
           {pricingItems.map((item, index) => (
@@ -418,13 +731,37 @@ export default function ProposalForm({
         </div>
 
         {/* Totals */}
-        <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+        <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+          {/* Market Rate Comparison */}
+          {marketRateSubtotal > 0 && (
+            <div className="bg-primary/5 border border-primary/20 p-3 rounded-lg text-sm mb-2">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-muted-foreground">Market Rate:</span>
+                <span className="line-through text-muted-foreground">
+                  ${marketRateSubtotal.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-green-400">
+                  Your Quote ({discountPercent}% below market):
+                </span>
+                <span className="font-bold text-green-400">
+                  ${subtotal.toLocaleString()}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Savings: ${(marketRateSubtotal - subtotal).toLocaleString()} 
+                {clientType === 'nonprofit' && ' (includes nonprofit discount)'}
+              </p>
+            </div>
+          )}
+
           <div className="flex justify-between">
             <span>Subtotal:</span>
             <span>${subtotal.toLocaleString()}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span>Discount:</span>
+            <span>Additional Discount:</span>
             <Input
               type="number"
               value={discount}
