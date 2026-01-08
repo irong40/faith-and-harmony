@@ -1637,6 +1637,76 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          admin_notes: string | null
+          completed_at: string | null
+          created_at: string | null
+          customer_id: string | null
+          description: string | null
+          id: string
+          project_number: string
+          proposal_id: string | null
+          service_id: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["project_status"] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          description?: string | null
+          id?: string
+          project_number: string
+          proposal_id?: string | null
+          service_id?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["project_status"] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          customer_id?: string | null
+          description?: string | null
+          id?: string
+          project_number?: string
+          proposal_id?: string | null
+          service_id?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["project_status"] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposals: {
         Row: {
           admin_notes: string | null
@@ -2069,6 +2139,7 @@ export type Database = {
       generate_app_api_key: { Args: { p_app_id: string }; Returns: string }
       generate_drone_job_number: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
+      generate_project_number: { Args: never; Returns: string }
       generate_proposal_number: { Args: never; Returns: string }
       generate_ticket_number: { Args: never; Returns: string }
       get_app_announcements: {
@@ -2178,6 +2249,14 @@ export type Database = {
         | "per_video"
         | "per_event"
         | "starting_at"
+      project_status:
+        | "kickoff"
+        | "in_progress"
+        | "review"
+        | "revision"
+        | "complete"
+        | "on_hold"
+        | "cancelled"
       proposal_status:
         | "draft"
         | "sent"
@@ -2393,6 +2472,15 @@ export const Constants = {
         "per_video",
         "per_event",
         "starting_at",
+      ],
+      project_status: [
+        "kickoff",
+        "in_progress",
+        "review",
+        "revision",
+        "complete",
+        "on_hold",
+        "cancelled",
       ],
       proposal_status: [
         "draft",

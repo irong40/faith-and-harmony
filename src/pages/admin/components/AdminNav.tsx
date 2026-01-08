@@ -23,7 +23,8 @@ import {
   MessageSquare,
   FileOutput,
   Settings,
-  ChevronDown
+  ChevronDown,
+  FolderKanban
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -57,6 +58,7 @@ const navCategories: NavCategory[] = [
     items: [
       { href: "/admin/service-requests", label: "Requests", icon: FileText },
       { href: "/admin/proposals", label: "Proposals", icon: ClipboardList },
+      { href: "/admin/projects", label: "Projects", icon: FolderKanban },
       { href: "/admin/invoices", label: "Invoices", icon: FileText },
       { href: "/admin/offerings", label: "Offerings", icon: Package },
       { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
