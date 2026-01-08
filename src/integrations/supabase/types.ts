@@ -2137,6 +2137,15 @@ export type Database = {
     }
     Functions: {
       generate_app_api_key: { Args: { p_app_id: string }; Returns: string }
+      generate_document_number: {
+        Args: {
+          p_column_name: string
+          p_padding?: number
+          p_prefix: string
+          p_table_name: string
+        }
+        Returns: string
+      }
       generate_drone_job_number: { Args: never; Returns: string }
       generate_invoice_number: { Args: never; Returns: string }
       generate_project_number: { Args: never; Returns: string }
