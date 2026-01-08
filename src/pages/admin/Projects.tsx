@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import type { LucideIcon } from "lucide-react";
 import { 
   Search, 
   FolderKanban, 
@@ -70,7 +71,7 @@ interface Project {
   proposal: { proposal_number: string; total: number } | null;
 }
 
-const statusConfig: Record<ProjectStatus, { label: string; icon: React.ComponentType<{ className?: string }>; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+const statusConfig: Record<ProjectStatus, { label: string; icon: LucideIcon; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   kickoff: { label: "Kickoff", icon: Rocket, variant: "default" },
   in_progress: { label: "In Progress", icon: Wrench, variant: "secondary" },
   review: { label: "Review", icon: Eye, variant: "outline" },
