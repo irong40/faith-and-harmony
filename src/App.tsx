@@ -28,6 +28,7 @@ import RequestService from "./pages/RequestService";
 import Dashboard from "./pages/admin/Dashboard";
 import ServiceRequests from "./pages/admin/ServiceRequests";
 import Proposals from "./pages/admin/Proposals";
+import Projects from "./pages/admin/Projects";
 import DroneJobs from "./pages/admin/DroneJobs";
 import DroneJobDetail from "./pages/admin/DroneJobDetail";
 import DroneLeads from "./pages/admin/DroneLeads";
@@ -101,6 +102,14 @@ const App = () => (
                 element={
                   <ProtectedRoute requireAdmin>
                     <Proposals />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/projects"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <Projects />
                   </ProtectedRoute>
                 }
               />
