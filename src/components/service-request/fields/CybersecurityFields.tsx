@@ -1,9 +1,10 @@
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { MetadataValue } from "../ConditionalFields";
 
 interface FieldProps {
-  metadata: Record<string, any>;
-  onMetadataChange: (key: string, value: any) => void;
+  metadata: Record<string, MetadataValue>;
+  onMetadataChange: (key: string, value: MetadataValue) => void;
 }
 
 const ORG_TYPES = ['Software company', 'Small business', 'Nonprofit', 'Church or ministry', 'Other'];
@@ -14,7 +15,7 @@ export function CybersecurityFields({ metadata, onMetadataChange }: FieldProps) 
   return (
     <div className="space-y-6 p-6 bg-card/50 rounded-xl border border-border">
       <h3 className="text-lg font-semibold text-primary font-display">Cybersecurity Service Details</h3>
-      
+
       <div className="space-y-2">
         <Label>Organization type</Label>
         <Select value={metadata.organizationType || ''} onValueChange={(v) => onMetadataChange('organizationType', v)}>

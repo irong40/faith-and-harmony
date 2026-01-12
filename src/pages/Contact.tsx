@@ -58,7 +58,7 @@ export default function Contact() {
         description: "Thank you for reaching out. We'll get back to you soon.",
       });
       form.reset();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Contact form error:", error);
       toast({
         title: "Failed to send message",
@@ -81,7 +81,7 @@ export default function Contact() {
           </h1>
           <div className="w-32 h-1 bg-gradient-to-r from-accent to-amber-400 mx-auto mb-8 rounded-full"></div>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Have questions or ready to start a project? We'd love to hear from you. 
+            Have questions or ready to start a project? We'd love to hear from you.
             Reach out and let's discuss how we can help.
           </p>
         </section>
@@ -91,7 +91,7 @@ export default function Contact() {
           <div className="lg:col-span-1 space-y-8">
             <div className="bg-card rounded-2xl p-8 border border-border shadow-lg">
               <h2 className="text-2xl font-bold text-primary font-display mb-6">Get in Touch</h2>
-              
+
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
@@ -155,7 +155,7 @@ export default function Contact() {
           <div className="lg:col-span-2">
             <div className="bg-card rounded-2xl p-8 border border-border shadow-lg">
               <h2 className="text-2xl font-bold text-primary font-display mb-6">Send a Message</h2>
-              
+
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <div className="grid sm:grid-cols-2 gap-6">
@@ -225,10 +225,10 @@ export default function Contact() {
                       <FormItem>
                         <FormLabel>Message *</FormLabel>
                         <FormControl>
-                          <Textarea 
+                          <Textarea
                             placeholder="Tell us about your project or question..."
                             className="min-h-32 resize-none"
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -236,8 +236,8 @@ export default function Contact() {
                     )}
                   />
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     size="lg"
                     disabled={isSubmitting}
                     className="w-full sm:w-auto bg-gradient-to-r from-accent to-amber-400 text-primary font-semibold hover:opacity-90"

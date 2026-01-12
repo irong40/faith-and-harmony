@@ -69,11 +69,12 @@ const Checkout = () => {
         title: "Order Submitted!",
         description: "Check your email for confirmation and payment instructions.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Checkout error:', error);
+      const message = error instanceof Error ? error.message : "There was an error submitting your order. Please try again.";
       toast({
         title: "Order Failed",
-        description: error.message || "There was an error submitting your order. Please try again.",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -123,7 +124,7 @@ const Checkout = () => {
               </div>
             </div>
             <p className="text-muted-foreground mb-8">Order total: <strong className="text-accent">${totalPrice.toFixed(2)}</strong> (+ shipping)</p>
-            <Link 
+            <Link
               to="/shop"
               onClick={() => clearCart()}
               className="inline-block px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-full hover:opacity-90 transition-all"
@@ -155,9 +156,9 @@ const Checkout = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-foreground mb-1">Full Name *</label>
-                <input 
-                  type="text" 
-                  name="name" 
+                <input
+                  type="text"
+                  name="name"
                   value={formData.name}
                   onChange={handleChange}
                   required
@@ -168,9 +169,9 @@ const Checkout = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-1">Email *</label>
-                  <input 
-                    type="email" 
-                    name="email" 
+                  <input
+                    type="email"
+                    name="email"
                     value={formData.email}
                     onChange={handleChange}
                     required
@@ -180,9 +181,9 @@ const Checkout = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-1">Phone *</label>
-                  <input 
-                    type="tel" 
-                    name="phone" 
+                  <input
+                    type="tel"
+                    name="phone"
                     value={formData.phone}
                     onChange={handleChange}
                     required
@@ -193,9 +194,9 @@ const Checkout = () => {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-foreground mb-1">Street Address *</label>
-                <input 
-                  type="text" 
-                  name="address" 
+                <input
+                  type="text"
+                  name="address"
                   value={formData.address}
                   onChange={handleChange}
                   required
@@ -206,9 +207,9 @@ const Checkout = () => {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-1">City *</label>
-                  <input 
-                    type="text" 
-                    name="city" 
+                  <input
+                    type="text"
+                    name="city"
                     value={formData.city}
                     onChange={handleChange}
                     required
@@ -218,9 +219,9 @@ const Checkout = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-1">State *</label>
-                  <input 
-                    type="text" 
-                    name="state" 
+                  <input
+                    type="text"
+                    name="state"
                     value={formData.state}
                     onChange={handleChange}
                     required
@@ -230,9 +231,9 @@ const Checkout = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-1">ZIP *</label>
-                  <input 
-                    type="text" 
-                    name="zip" 
+                  <input
+                    type="text"
+                    name="zip"
                     value={formData.zip}
                     onChange={handleChange}
                     required
@@ -243,8 +244,8 @@ const Checkout = () => {
               </div>
               <div>
                 <label className="block text-sm font-semibold text-foreground mb-1">Order Notes (optional)</label>
-                <textarea 
-                  name="notes" 
+                <textarea
+                  name="notes"
                   value={formData.notes}
                   onChange={handleChange}
                   rows={3}
@@ -276,7 +277,7 @@ const Checkout = () => {
                 </div>
               </div>
 
-              <button 
+              <button
                 type="submit"
                 disabled={submitting}
                 className="w-full py-4 bg-primary text-primary-foreground font-bold text-lg rounded-full hover:opacity-90 transition-all shadow-lg mt-6 disabled:opacity-50 flex items-center justify-center gap-2"

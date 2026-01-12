@@ -5,13 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Download, 
-  Camera, 
-  Video, 
-  HardDrive, 
-  CheckCircle, 
-  MapPin, 
+import {
+  Download,
+  Camera,
+  Video,
+  HardDrive,
+  CheckCircle,
+  MapPin,
   Calendar,
   Package,
   Image,
@@ -83,12 +83,13 @@ export default function ClientJobPortal() {
 
       setJob(data.job);
       setDeliverables(data.deliverables || []);
-      
+
       // Load gallery in background
       loadGallery();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Validation error:', err);
-      setError(err.message || 'Unable to load your delivery');
+      const message = err instanceof Error ? err.message : 'Unable to load your delivery';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -115,10 +116,10 @@ export default function ClientJobPortal() {
     setDownloading(deliverableId || 'main');
     try {
       const { data, error } = await supabase.functions.invoke('drone-customer-portal', {
-        body: { 
-          action: 'get-download-url', 
+        body: {
+          action: 'get-download-url',
           token,
-          deliverable_id: deliverableId 
+          deliverable_id: deliverableId
         }
       });
 
@@ -128,9 +129,10 @@ export default function ClientJobPortal() {
       // Open download in new tab
       window.open(data.download_url, '_blank');
       toast.success('Download started');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Download error:', err);
-      toast.error(err.message || 'Unable to start download');
+      const message = err instanceof Error ? err.message : 'Unable to start download';
+      toast.error(message);
     } finally {
       setDownloading(null);
     }
@@ -251,8 +253,8 @@ export default function ClientJobPortal() {
           <CardContent className="space-y-4">
             {/* Primary Download */}
             {job.has_download_url && (
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="w-full gap-2"
                 onClick={() => handleDownload()}
                 disabled={downloading === 'main'}
@@ -267,7 +269,7 @@ export default function ClientJobPortal() {
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">Additional Downloads</p>
                 {deliverables.map((deliverable) => (
-                  <div 
+                  <div
                     key={deliverable.id}
                     className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
                   >
@@ -280,8 +282,8 @@ export default function ClientJobPortal() {
                         {deliverable.file_count} files • {Math.round(deliverable.total_size_bytes / (1024 * 1024))} MB
                       </p>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => handleDownload(deliverable.id)}
                       disabled={downloading === deliverable.id}
@@ -320,12 +322,12 @@ export default function ClientJobPortal() {
               ) : (
                 <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                   {gallery.slice(0, 12).map((item) => (
-                    <div 
+                    <div
                       key={item.id}
                       className="aspect-square rounded-lg overflow-hidden bg-muted"
                     >
-                      <img 
-                        src={item.thumbnail_url} 
+                      <img
+                        src={item.thumbnail_url}
                         alt={item.file_name}
                         className="w-full h-full object-cover hover:scale-105 transition-transform"
                       />
@@ -377,14 +379,14 @@ export default function ClientJobPortal() {
                 Have questions about your delivery or need the files resent?
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <a 
+                <a
                   href="mailto:hello@faithandharmony.com"
                   className="flex items-center gap-2 text-sm text-primary hover:underline"
                 >
                   <Mail className="h-4 w-4" />
                   hello@faithandharmony.com
                 </a>
-                <a 
+                <a
                   href="tel:+17576093268"
                   className="flex items-center gap-2 text-sm text-primary hover:underline"
                 >

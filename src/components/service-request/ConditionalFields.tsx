@@ -8,10 +8,12 @@ import { ChurchTechFields } from "./fields/ChurchTechFields";
 import { AerialFields } from "./fields/AerialFields";
 import { WebsiteFields } from "./fields/WebsiteFields";
 
+export type MetadataValue = string | number | boolean | string[];
+
 interface ConditionalFieldsProps {
   serviceCode: ServiceCode | null;
-  metadata: Record<string, any>;
-  onMetadataChange: (key: string, value: any) => void;
+  metadata: Record<string, MetadataValue>;
+  onMetadataChange: (key: string, value: MetadataValue) => void;
 }
 
 export function ConditionalFields({ serviceCode, metadata, onMetadataChange }: ConditionalFieldsProps) {

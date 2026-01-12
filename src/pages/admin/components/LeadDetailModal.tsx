@@ -21,8 +21,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Mail, Phone, Globe, MapPin, Star, Copy, Check, 
+import {
+  Mail, Phone, Globe, MapPin, Star, Copy, Check,
   ExternalLink, Plus, Building2, Clock, Send, Eye, MousePointer
 } from "lucide-react";
 import { format } from "date-fns";
@@ -178,17 +178,18 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
       toast({ title: "Email sent successfully!" });
       refetchTracking();
       queryClient.invalidateQueries({ queryKey: ['outreach-logs', lead.id] });
-      
+
       // Update lead status if still new
       if (lead.status === 'new') {
         updateLeadMutation.mutate({ status: 'contacted' });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to send email:', error);
-      toast({ 
-        title: "Failed to send email", 
-        description: error.message,
-        variant: "destructive" 
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast({
+        title: "Failed to send email",
+        description: message,
+        variant: "destructive"
       });
     } finally {
       setIsSending(false);
@@ -210,8 +211,8 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
     totalOpens: emailTracking.reduce((sum, e) => sum + e.open_count, 0),
     uniqueOpens: emailTracking.filter(e => e.opened_at).length,
     totalClicks: emailTracking.reduce((sum, e) => sum + e.click_count, 0),
-    openRate: emailTracking.length > 0 
-      ? Math.round((emailTracking.filter(e => e.opened_at).length / emailTracking.length) * 100) 
+    openRate: emailTracking.length > 0
+      ? Math.round((emailTracking.filter(e => e.opened_at).length / emailTracking.length) * 100)
       : 0,
   };
 
@@ -261,9 +262,9 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
                 {lead.website && (
                   <div className="flex items-center gap-2 text-sm">
                     <Globe className="h-4 w-4 text-muted-foreground" />
-                    <a 
-                      href={lead.website} 
-                      target="_blank" 
+                    <a
+                      href={lead.website}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="hover:underline flex items-center gap-1"
                     >
@@ -360,9 +361,9 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
                 </div>
                 <div className="space-y-2">
                   <Label>Body</Label>
-                  <Textarea 
-                    value={lead.ai_email_body} 
-                    readOnly 
+                  <Textarea
+                    value={lead.ai_email_body}
+                    readOnly
                     rows={10}
                     className="bg-muted font-mono text-sm"
                   />
@@ -372,8 +373,8 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
                     {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     {copied ? 'Copied!' : 'Copy Email'}
                   </Button>
-                  <Button 
-                    onClick={sendTrackedEmail} 
+                  <Button
+                    onClick={sendTrackedEmail}
                     disabled={isSending || !lead.email}
                     className="gap-2"
                   >
@@ -432,7 +433,7 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
                     <div key={email.id} className="border rounded-lg p-3 text-sm">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium truncate flex-1 mr-2">{email.subject}</span>
-                        <Badge 
+                        <Badge
                           variant={email.opened_at ? "default" : "secondary"}
                           className={email.opened_at ? "bg-green-600" : ""}
                         >
@@ -467,9 +468,9 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
           <TabsContent value="outreach" className="space-y-4 mt-4">
             <div className="flex items-center justify-between">
               <h4 className="font-medium">Outreach History</h4>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setShowOutreachForm(!showOutreachForm)}
               >
                 <Plus className="h-4 w-4 mr-1" />
@@ -521,7 +522,7 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
                     rows={3}
                   />
                 </div>
-                <Button 
+                <Button
                   onClick={() => addOutreachMutation.mutate()}
                   disabled={addOutreachMutation.isPending}
                 >

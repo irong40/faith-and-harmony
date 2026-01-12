@@ -17,12 +17,13 @@ export default function RequestService() {
   const [searchParams] = useSearchParams();
   const preselectedService = searchParams.get('service') as ServiceCode | null;
   const { toast } = useToast();
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceCode | null>(preselectedService);
-  const [metadata, setMetadata] = useState<Record<string, any>>({});
-  
+  type MetadataValue = string | number | boolean | string[];
+  const [metadata, setMetadata] = useState<Record<string, MetadataValue>>({});
+
   const [formData, setFormData] = useState({
     clientName: '',
     clientEmail: '',
@@ -48,13 +49,13 @@ export default function RequestService() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleMetadataChange = (key: string, value: any) => {
+  const handleMetadataChange = (key: string, value: MetadataValue) => {
     setMetadata(prev => ({ ...prev, [key]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedService) {
       toast({ title: "Please select a service", variant: "destructive" });
       return;
@@ -121,10 +122,10 @@ export default function RequestService() {
       toast({ title: "Request submitted successfully!" });
     } catch (error) {
       console.error('Error submitting request:', error);
-      toast({ 
-        title: "Error submitting request", 
+      toast({
+        title: "Error submitting request",
         description: "Please try again or contact us directly.",
-        variant: "destructive" 
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
@@ -171,7 +172,7 @@ export default function RequestService() {
           {/* Service Selection */}
           <section className="bg-card rounded-2xl p-6 md:p-8 shadow-lg border border-border">
             <h2 className="text-2xl font-bold text-primary font-display mb-6">Select Your Service</h2>
-            
+
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="service">Service Category *</Label>
@@ -205,7 +206,7 @@ export default function RequestService() {
           {/* Contact Information */}
           <section className="bg-card rounded-2xl p-6 md:p-8 shadow-lg border border-border">
             <h2 className="text-2xl font-bold text-primary font-display mb-6">Contact Information</h2>
-            
+
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="clientName">Full Name *</Label>
@@ -254,8 +255,8 @@ export default function RequestService() {
 
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="preferredContactMethod">Preferred Contact Method</Label>
-                <Select 
-                  value={formData.preferredContactMethod} 
+                <Select
+                  value={formData.preferredContactMethod}
                   onValueChange={(v) => handleInputChange('preferredContactMethod', v)}
                 >
                   <SelectTrigger id="preferredContactMethod">
@@ -274,7 +275,7 @@ export default function RequestService() {
           {/* Project Details */}
           <section className="bg-card rounded-2xl p-6 md:p-8 shadow-lg border border-border">
             <h2 className="text-2xl font-bold text-primary font-display mb-6">Project Details</h2>
-            
+
             <div className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="projectTitle">Project Title</Label>
@@ -326,7 +327,7 @@ export default function RequestService() {
           {/* Timeline & Budget */}
           <section className="bg-card rounded-2xl p-6 md:p-8 shadow-lg border border-border">
             <h2 className="text-2xl font-bold text-primary font-display mb-6">Timeline & Budget</h2>
-            
+
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="targetStartDate">Target Start Date</Label>
@@ -377,9 +378,9 @@ export default function RequestService() {
 
           {/* Submit */}
           <div className="text-center">
-            <Button 
-              type="submit" 
-              size="lg" 
+            <Button
+              type="submit"
+              size="lg"
               disabled={isSubmitting}
               className="px-12 py-6 text-lg"
             >

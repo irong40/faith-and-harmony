@@ -1,9 +1,10 @@
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { MetadataValue } from "../ConditionalFields";
 
 interface FieldProps {
-  metadata: Record<string, any>;
-  onMetadataChange: (key: string, value: any) => void;
+  metadata: Record<string, MetadataValue>;
+  onMetadataChange: (key: string, value: MetadataValue) => void;
 }
 
 const FOCUS_AREAS = ['Local Virginia history', 'Family genealogy', 'Church or community history', 'General African American history', 'Other'];
@@ -14,7 +15,7 @@ export function BlackHistoryFields({ metadata, onMetadataChange }: FieldProps) {
   return (
     <div className="space-y-6 p-6 bg-card/50 rounded-xl border border-border">
       <h3 className="text-lg font-semibold text-primary font-display">Black History Storytelling Details</h3>
-      
+
       <div className="space-y-2">
         <Label>Focus area</Label>
         <Select value={metadata.focusArea || ''} onValueChange={(v) => onMetadataChange('focusArea', v)}>

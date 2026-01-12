@@ -62,9 +62,10 @@ export default function ImageUpload({
 
       onChange(urlData.publicUrl);
       toast.success("Image uploaded successfully");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Upload error:", error);
-      toast.error(error.message || "Failed to upload image");
+      const message = error instanceof Error ? error.message : "Failed to upload image";
+      toast.error(message);
     } finally {
       setIsUploading(false);
     }
@@ -108,7 +109,7 @@ export default function ImageUpload({
   return (
     <div className="space-y-3">
       <Label>Product Image *</Label>
-      
+
       {value ? (
         <div className="relative group">
           <div className="aspect-square w-full max-w-xs rounded-lg overflow-hidden border border-border bg-muted">
@@ -155,7 +156,7 @@ export default function ImageUpload({
             onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
             disabled={isUploading}
           />
-          
+
           <div className="flex flex-col items-center gap-2">
             {isUploading ? (
               <>

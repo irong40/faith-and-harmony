@@ -66,10 +66,11 @@ export default function ServiceRequestForm({
   const [selectedServiceCode, setSelectedServiceCode] = useState<ServiceCode | null>(
     (initialData?.services?.code as ServiceCode) || null
   );
-  const [metadata, setMetadata] = useState<Record<string, any>>(() => {
+  type MetadataValue = string | number | boolean | string[];
+  const [metadata, setMetadata] = useState<Record<string, MetadataValue>>(() => {
     const md = initialData?.metadata;
     if (md && typeof md === "object" && !Array.isArray(md)) {
-      return md as Record<string, any>;
+      return md as Record<string, MetadataValue>;
     }
     return {};
   });
@@ -114,7 +115,7 @@ export default function ServiceRequestForm({
     setMetadata({});
   };
 
-  const handleMetadataChange = (key: string, value: any) => {
+  const handleMetadataChange = (key: string, value: MetadataValue) => {
     setMetadata((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -166,10 +167,11 @@ export default function ServiceRequestForm({
       }
 
       onSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
       toast({
         title: "Error saving request",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     } finally {

@@ -4,10 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Video, FileImage, Clock, Info } from "lucide-react";
+import type { MetadataValue } from "../ConditionalFields";
 
 interface FieldProps {
-  metadata: Record<string, any>;
-  onMetadataChange: (key: string, value: any) => void;
+  metadata: Record<string, MetadataValue>;
+  onMetadataChange: (key: string, value: MetadataValue) => void;
 }
 
 const WORK_CATEGORIES = [
@@ -100,12 +101,12 @@ export function AerialFields({ metadata, onMetadataChange }: FieldProps) {
   const workCategory = metadata.workCategory || '';
   const selectedPackageCode = metadata.selectedPackage || '';
   const selectedAddOns: string[] = metadata.addOns || [];
-  
-  const packages = workCategory === 'real_estate' ? REAL_ESTATE_PACKAGES : 
-                   workCategory === 'construction' ? CONSTRUCTION_PACKAGES : [];
-  
+
+  const packages = workCategory === 'real_estate' ? REAL_ESTATE_PACKAGES :
+    workCategory === 'construction' ? CONSTRUCTION_PACKAGES : [];
+
   const selectedPackage = packages.find(p => p.code === selectedPackageCode);
-  
+
   // Calculate estimated total
   const packagePrice = selectedPackage?.price || 0;
   const addOnsPrice = selectedAddOns.reduce((sum, code) => {
@@ -124,11 +125,11 @@ export function AerialFields({ metadata, onMetadataChange }: FieldProps) {
   };
 
   const handleAddOnToggle = (code: string, checked: boolean) => {
-    const newAddOns = checked 
+    const newAddOns = checked
       ? [...selectedAddOns, code]
       : selectedAddOns.filter(c => c !== code);
     onMetadataChange('addOns', newAddOns);
-    
+
     const newAddOnsPrice = newAddOns.reduce((sum, c) => {
       const addon = ADD_ONS.find(a => a.code === c);
       return sum + (addon?.price || 0);
@@ -147,7 +148,7 @@ export function AerialFields({ metadata, onMetadataChange }: FieldProps) {
   return (
     <div className="space-y-6 p-6 bg-card/50 rounded-xl border border-border">
       <h3 className="text-lg font-semibold text-primary font-display">Aerial Photography Details</h3>
-      
+
       {/* Work Category */}
       <div className="space-y-2">
         <Label>What type of project is this?</Label>
@@ -192,7 +193,7 @@ export function AerialFields({ metadata, onMetadataChange }: FieldProps) {
             </div>
             <span className="text-xl font-bold text-primary">${selectedPackage.price.toLocaleString()}</span>
           </div>
-          
+
           <div className="flex flex-wrap gap-3 pt-2 border-t border-border">
             <div className="flex items-center gap-1.5 text-sm">
               <Camera className="w-4 h-4 text-accent" />
@@ -225,7 +226,7 @@ export function AerialFields({ metadata, onMetadataChange }: FieldProps) {
           <div className="space-y-2">
             {ADD_ONS.map(addon => (
               <div key={addon.code} className="flex items-center gap-3 p-3 bg-background rounded-lg border border-border">
-                <Checkbox 
+                <Checkbox
                   id={addon.code}
                   checked={selectedAddOns.includes(addon.code)}
                   onCheckedChange={(checked) => handleAddOnToggle(addon.code, checked as boolean)}

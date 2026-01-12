@@ -2,10 +2,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import type { MetadataValue } from "../ConditionalFields";
 
 interface FieldProps {
-  metadata: Record<string, any>;
-  onMetadataChange: (key: string, value: any) => void;
+  metadata: Record<string, MetadataValue>;
+  onMetadataChange: (key: string, value: MetadataValue) => void;
 }
 
 const PLATFORMS = ['YouTube', 'TikTok', 'Instagram', 'Facebook', 'LinkedIn', 'Website', 'Other'];
@@ -24,7 +25,7 @@ export function AIVideoFields({ metadata, onMetadataChange }: FieldProps) {
   return (
     <div className="space-y-6 p-6 bg-card/50 rounded-xl border border-border">
       <h3 className="text-lg font-semibold text-primary font-display">AI Video Creation Details</h3>
-      
+
       <div className="space-y-2">
         <Label>Primary goal of the videos</Label>
         <Select value={metadata.primaryGoal || ''} onValueChange={(v) => onMetadataChange('primaryGoal', v)}>

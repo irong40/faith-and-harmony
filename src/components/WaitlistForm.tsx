@@ -15,7 +15,7 @@ const WaitlistForm = ({ productId, productName }: WaitlistFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email.trim()) {
       toast({
         title: "Email required",
@@ -70,7 +70,7 @@ const WaitlistForm = ({ productId, productName }: WaitlistFormProps) => {
         title: "You're on the list!",
         description: "We'll notify you when this artwork is available.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Waitlist signup error:", error);
       toast({
         title: "Something went wrong",

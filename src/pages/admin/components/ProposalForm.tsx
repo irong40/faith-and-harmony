@@ -138,11 +138,12 @@ export default function ProposalForm({
       if (data.terms_and_conditions) setTerms(data.terms_and_conditions);
 
       toast({ title: "Proposal generated", description: "Review and adjust pricing" });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Generate error:", error);
+      const message = error instanceof Error ? error.message : "Unknown error";
       toast({
         title: "Generation failed",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -399,7 +400,7 @@ export default function ProposalForm({
     `);
 
     printWindow.document.close();
-    
+
     // Wait for content to load then print
     setTimeout(() => {
       printWindow.print();
@@ -514,11 +515,12 @@ export default function ProposalForm({
       }
 
       onSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Save error:", error);
+      const message = error instanceof Error ? error.message : "Unknown error";
       toast({
         title: "Save failed",
-        description: error.message,
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -750,7 +752,7 @@ export default function ProposalForm({
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Savings: ${(marketRateSubtotal - subtotal).toLocaleString()} 
+                Savings: ${(marketRateSubtotal - subtotal).toLocaleString()}
                 {clientType === 'nonprofit' && ' (includes nonprofit discount)'}
               </p>
             </div>
