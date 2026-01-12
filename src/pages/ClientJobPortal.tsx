@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,13 +66,7 @@ export default function ClientJobPortal() {
   const [galleryLoading, setGalleryLoading] = useState(false);
   const [downloading, setDownloading] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (token) {
-      validateToken();
-    }
-  }, [token]);
-
-  const validateToken = async () => {
+  const validateToken = useCallback(async () => {
     try {
       const { data, error } = await supabase.functions.invoke('drone-customer-portal', {
         body: { action: 'validate', token }
@@ -93,7 +87,13 @@ export default function ClientJobPortal() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      validateToken();
+    }
+  }, [token, validateToken]);
 
   const loadGallery = async () => {
     setGalleryLoading(true);

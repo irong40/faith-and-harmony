@@ -63,6 +63,25 @@ interface Product {
   updated_at: string;
 }
 
+interface DronePackage {
+  id: string;
+  code: string;
+  name: string;
+  category: string;
+  price: number | string;
+  edit_budget_minutes: number;
+  active: boolean;
+  shot_manifest?: ShotManifestItem[] | null;
+}
+
+interface ShotManifestItem {
+  shot_type: string;
+  altitude_range: string;
+  weight: number;
+  required: boolean;
+  description: string;
+}
+
 const CATEGORY_OPTIONS = [
   { value: "all", label: "All Categories" },
   { value: "merchandise", label: "Merchandise" },
@@ -85,7 +104,7 @@ export default function Offerings() {
 
   // Packages state
   const [isPackageCreateOpen, setIsPackageCreateOpen] = useState(false);
-  const [editingPackage, setEditingPackage] = useState<any>(null);
+  const [editingPackage, setEditingPackage] = useState<DronePackage | null>(null);
 
   const fetchProducts = async () => {
     setProductsLoading(true);
@@ -191,7 +210,7 @@ export default function Offerings() {
   });
 
   const formatCurrency = (amount: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
-  const getShotCount = (manifest: any[] | null) => (!manifest || !Array.isArray(manifest)) ? 0 : manifest.length;
+  const getShotCount = (manifest: ShotManifestItem[] | null | undefined) => (!manifest || !Array.isArray(manifest)) ? 0 : manifest.length;
   const getCategoryColor = (category: string) => {
     switch (category) {
       case "real_estate": return "bg-blue-500/10 text-blue-600";

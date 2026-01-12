@@ -20,6 +20,19 @@ interface ShotDefinition {
   description: string;
 }
 
+interface DronePackage {
+  id: string;
+  code: string;
+  name: string;
+  category: string;
+  description?: string | null;
+  price: number | string;
+  edit_budget_minutes: number;
+  reshoot_tolerance?: string | null;
+  features?: string[] | null;
+  shot_manifest?: ShotDefinition[] | null;
+}
+
 interface PackageFormData {
   code: string;
   name: string;
@@ -33,7 +46,7 @@ interface PackageFormData {
 }
 
 interface DronePackageFormProps {
-  package?: any;
+  package?: DronePackage;
   onSuccess: () => void;
 }
 
@@ -127,17 +140,17 @@ export function DronePackageForm({ package: pkg, onSuccess }: DronePackageFormPr
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="code">Package Code</Label>
-          <Input 
-            id="code" 
-            {...register("code", { required: true })} 
+          <Input
+            id="code"
+            {...register("code", { required: true })}
             placeholder="PHOTO_495"
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="name">Display Name</Label>
-          <Input 
-            id="name" 
-            {...register("name", { required: true })} 
+          <Input
+            id="name"
+            {...register("name", { required: true })}
             placeholder="Aerial Photos"
           />
         </div>
@@ -146,8 +159,8 @@ export function DronePackageForm({ package: pkg, onSuccess }: DronePackageFormPr
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
-          <Select 
-            value={watch("category")} 
+          <Select
+            value={watch("category")}
             onValueChange={(v) => setValue("category", v)}
           >
             <SelectTrigger>
@@ -161,11 +174,11 @@ export function DronePackageForm({ package: pkg, onSuccess }: DronePackageFormPr
         </div>
         <div className="space-y-2">
           <Label htmlFor="price">Price ($)</Label>
-          <Input 
-            id="price" 
-            type="number" 
+          <Input
+            id="price"
+            type="number"
             step="0.01"
-            {...register("price", { required: true, valueAsNumber: true })} 
+            {...register("price", { required: true, valueAsNumber: true })}
           />
         </div>
       </div>
@@ -173,16 +186,16 @@ export function DronePackageForm({ package: pkg, onSuccess }: DronePackageFormPr
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="edit_budget_minutes">Edit Budget (minutes)</Label>
-          <Input 
-            id="edit_budget_minutes" 
-            type="number" 
-            {...register("edit_budget_minutes", { required: true, valueAsNumber: true })} 
+          <Input
+            id="edit_budget_minutes"
+            type="number"
+            {...register("edit_budget_minutes", { required: true, valueAsNumber: true })}
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="reshoot_tolerance">Reshoot Tolerance</Label>
-          <Select 
-            value={watch("reshoot_tolerance")} 
+          <Select
+            value={watch("reshoot_tolerance")}
             onValueChange={(v) => setValue("reshoot_tolerance", v)}
           >
             <SelectTrigger>
@@ -199,9 +212,9 @@ export function DronePackageForm({ package: pkg, onSuccess }: DronePackageFormPr
 
       <div className="space-y-2">
         <Label htmlFor="description">Description</Label>
-        <Textarea 
-          id="description" 
-          {...register("description")} 
+        <Textarea
+          id="description"
+          {...register("description")}
           rows={2}
           placeholder="Package description..."
         />
@@ -214,9 +227,9 @@ export function DronePackageForm({ package: pkg, onSuccess }: DronePackageFormPr
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Features</CardTitle>
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               size="sm"
               onClick={() => appendFeature("" as any)}
             >
@@ -230,13 +243,13 @@ export function DronePackageForm({ package: pkg, onSuccess }: DronePackageFormPr
           ) : (
             features.map((_, index) => (
               <div key={index} className="flex items-center gap-2">
-                <Input 
-                  {...register(`features.${index}` as const)} 
+                <Input
+                  {...register(`features.${index}` as const)}
                   placeholder="Feature description"
                 />
-                <Button 
-                  type="button" 
-                  variant="ghost" 
+                <Button
+                  type="button"
+                  variant="ghost"
                   size="icon"
                   onClick={() => removeFeature(index)}
                 >
@@ -255,9 +268,9 @@ export function DronePackageForm({ package: pkg, onSuccess }: DronePackageFormPr
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">Shot Manifest</CardTitle>
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               size="sm"
               onClick={() => appendShot(defaultShot)}
             >
@@ -278,38 +291,38 @@ export function DronePackageForm({ package: pkg, onSuccess }: DronePackageFormPr
                       <div className="grid grid-cols-3 gap-3">
                         <div className="space-y-1">
                           <Label className="text-xs">Shot Type</Label>
-                          <Input 
-                            {...register(`shot_manifest.${index}.shot_type` as const)} 
+                          <Input
+                            {...register(`shot_manifest.${index}.shot_type` as const)}
                             placeholder="hero_front"
                           />
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs">Altitude Range</Label>
-                          <Input 
-                            {...register(`shot_manifest.${index}.altitude_range` as const)} 
+                          <Input
+                            {...register(`shot_manifest.${index}.altitude_range` as const)}
                             placeholder="100-200ft"
                           />
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs">Weight</Label>
-                          <Input 
+                          <Input
                             type="number"
                             step="0.1"
-                            {...register(`shot_manifest.${index}.weight` as const, { valueAsNumber: true })} 
+                            {...register(`shot_manifest.${index}.weight` as const, { valueAsNumber: true })}
                           />
                         </div>
                       </div>
                       <div className="grid grid-cols-4 gap-3">
                         <div className="col-span-3 space-y-1">
                           <Label className="text-xs">Description</Label>
-                          <Input 
-                            {...register(`shot_manifest.${index}.description` as const)} 
+                          <Input
+                            {...register(`shot_manifest.${index}.description` as const)}
                             placeholder="Primary exterior shot from street level"
                           />
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs">Required</Label>
-                          <Select 
+                          <Select
                             value={watch(`shot_manifest.${index}.required`) ? "true" : "false"}
                             onValueChange={(v) => setValue(`shot_manifest.${index}.required`, v === "true")}
                           >
@@ -324,9 +337,9 @@ export function DronePackageForm({ package: pkg, onSuccess }: DronePackageFormPr
                         </div>
                       </div>
                     </div>
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
+                    <Button
+                      type="button"
+                      variant="ghost"
                       size="icon"
                       onClick={() => removeShot(index)}
                     >
