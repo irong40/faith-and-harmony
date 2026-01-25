@@ -49,6 +49,9 @@ import CustomerInvoice from "./pages/CustomerInvoice";
 import DroneUpload from "./pages/DroneUpload";
 import ClientJobPortal from "./pages/ClientJobPortal";
 import Invoices from "./pages/admin/Invoices";
+import PilotDashboard from "./pages/pilot/PilotDashboard";
+import PilotMissionDetail from "./pages/pilot/PilotMissionDetail";
+import PilotManagement from "./pages/admin/PilotManagement";
 
 const queryClient = new QueryClient();
 
@@ -146,6 +149,14 @@ const App = () => (
                 }
               />
               <Route
+                path="/admin/pilots"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <PilotManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/admin/people"
                 element={
                   <ProtectedRoute requireAdmin>
@@ -218,6 +229,23 @@ const App = () => (
                 element={
                   <ProtectedRoute requireAdmin>
                     <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              {/* Pilot Portal Routes */}
+              <Route
+                path="/pilot"
+                element={
+                  <ProtectedRoute requirePilot>
+                    <PilotDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pilot/mission/:id"
+                element={
+                  <ProtectedRoute requirePilot>
+                    <PilotMissionDetail />
                   </ProtectedRoute>
                 }
               />

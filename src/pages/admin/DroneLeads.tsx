@@ -108,10 +108,10 @@ export default function DroneLeads() {
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
-    
+
     const leadId = result.draggableId;
     const newStatus = result.destination.droppableId as LeadStatus;
-    
+
     updateStatusMutation.mutate({ id: leadId, status: newStatus });
   };
 
@@ -128,7 +128,7 @@ export default function DroneLeads() {
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(lead => 
+      result = result.filter(lead =>
         lead.company_name.toLowerCase().includes(query) ||
         (lead.email && lead.email.toLowerCase().includes(query)) ||
         (lead.city && lead.city.toLowerCase().includes(query)) ||
@@ -156,9 +156,9 @@ export default function DroneLeads() {
     return result;
   }, [leads, searchQuery, filters]);
 
-  const getLeadsByStatus = useCallback((status: LeadStatus) => 
+  const getLeadsByStatus = useCallback((status: LeadStatus) =>
     filteredLeads.filter(lead => lead.status === status),
-  [filteredLeads]);
+    [filteredLeads]);
 
   const handleSearchChange = useCallback((query: string) => {
     setSearchQuery(query);
@@ -186,9 +186,16 @@ export default function DroneLeads() {
       <AdminNav />
       <main className="container mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Drone Leads Pipeline</h1>
-            <p className="text-muted-foreground">Manage and track your drone service leads</p>
+          <div className="flex items-center gap-3">
+            <img
+              src="/assets/drone/drone-logo-original.jpg"
+              alt="Drone Services"
+              className="h-12 w-12 object-contain"
+            />
+            <div>
+              <h1 className="text-3xl font-bold">Drone Leads Pipeline</h1>
+              <p className="text-muted-foreground">Manage and track your drone service leads</p>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => setShowManualForm(true)} className="gap-2">
@@ -204,8 +211,8 @@ export default function DroneLeads() {
 
         {/* Search & Filters */}
         <div className="mb-6">
-          <LeadFilters 
-            onSearchChange={handleSearchChange} 
+          <LeadFilters
+            onSearchChange={handleSearchChange}
             onFiltersChange={handleFiltersChange}
             portfolioTypes={portfolioTypes}
           />
@@ -296,9 +303,8 @@ export default function DroneLeads() {
                       <div
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        className={`space-y-2 min-h-[400px] p-2 rounded-lg transition-colors ${
-                          snapshot.isDraggingOver ? 'bg-accent' : 'bg-muted/50'
-                        }`}
+                        className={`space-y-2 min-h-[400px] p-2 rounded-lg transition-colors ${snapshot.isDraggingOver ? 'bg-accent' : 'bg-muted/50'
+                          }`}
                       >
                         {getLeadsByStatus(column.id).map((lead, index) => (
                           <Draggable key={lead.id} draggableId={lead.id} index={index}>
@@ -336,9 +342,9 @@ export default function DroneLeads() {
           />
         )}
 
-        <LeadGenModal 
-          open={showLeadGen} 
-          onClose={() => setShowLeadGen(false)} 
+        <LeadGenModal
+          open={showLeadGen}
+          onClose={() => setShowLeadGen(false)}
         />
 
         <ManualLeadForm

@@ -28,27 +28,11 @@ import AdminNav from "./components/AdminNav";
 import DroneJobForm from "./components/DroneJobForm";
 import QASummaryCard from "@/components/drone/QASummaryCard";
 import QAAssetGrid from "@/components/drone/QAAssetGrid";
+import AdminAssetUpload from "@/components/drone/AdminAssetUpload";
 import type { Database, Json } from "@/integrations/supabase/types";
+import type { DroneAsset, QAResults, ProcessingProfile } from "@/types/drone";
 
 type DroneJobStatus = Database["public"]["Enums"]["drone_job_status"];
-
-interface DroneAsset {
-  id: string;
-  file_name: string;
-  file_path: string;
-  file_type: string | null;
-  qa_status: Database["public"]["Enums"]["qa_status"] | null;
-  qa_score: number | null;
-  qa_results: Json | null;
-  sort_order: number | null;
-  created_at: string;
-  exif_data?: Json | null;
-  camera_model?: string | null;
-  capture_date?: string | null;
-  gps_latitude?: number | null;
-  gps_longitude?: number | null;
-  gps_altitude?: number | null;
-}
 
 interface DroneJob {
   id: string;
@@ -72,6 +56,7 @@ interface DroneJob {
   delivery_token: string | null;
   delivery_token_created_at: string | null;
   download_url: string | null;
+  google_event_id: string | null;
   created_at: string;
   updated_at: string;
   customers?: { id: string; name: string; email: string; phone: string | null } | null;
@@ -171,22 +156,22 @@ export default function DroneJobDetail() {
     });
 
     if (error) {
-      toast({ 
-        title: "Calendar sync failed", 
+      toast({
+        title: "Calendar sync failed",
         description: error.message,
         variant: "destructive",
       });
     } else if (data?.error) {
       toast({
         title: "Calendar sync failed",
-        description: data.error === "Not connected to Google Calendar" 
+        description: data.error === "Not connected to Google Calendar"
           ? "Connect Google Calendar in Settings first"
           : data.error,
         variant: "destructive",
       });
     } else {
-      toast({ 
-        title: "Synced to Google Calendar", 
+      toast({
+        title: "Synced to Google Calendar",
         description: data?.event_link ? "Event created successfully" : undefined,
       });
       fetchJob();
@@ -272,9 +257,9 @@ export default function DroneJobDetail() {
     if (error) {
       toast({ title: "EXIF extraction failed", description: error.message, variant: "destructive" });
     } else {
-      toast({ 
-        title: "EXIF extraction complete", 
-        description: `Processed ${data?.processed || 0} assets` 
+      toast({
+        title: "EXIF extraction complete",
+        description: `Processed ${data?.processed || 0} assets`
       });
       fetchJob();
     }
@@ -359,12 +344,19 @@ export default function DroneJobDetail() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-foreground font-mono">{job.job_number}</h1>
-                {getStatusBadge(job.status)}
+            <div className="flex items-center gap-3">
+              <img
+                src="/assets/drone/drone-logo-original.jpg"
+                alt="Drone Services"
+                className="h-10 w-10 object-contain"
+              />
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-bold text-foreground font-mono">{job.job_number}</h1>
+                  {getStatusBadge(job.status)}
+                </div>
+                <p className="text-sm text-muted-foreground">{job.property_address}</p>
               </div>
-              <p className="text-sm text-muted-foreground">{job.property_address}</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -393,13 +385,12 @@ export default function DroneJobDetail() {
                   <button
                     key={status}
                     onClick={() => handleStatusChange(status)}
-                    className={`flex-shrink-0 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                      isCurrent
-                        ? `${config.color} text-white`
-                        : isPast
+                    className={`flex-shrink-0 px-3 py-1.5 rounded text-sm font-medium transition-colors ${isCurrent
+                      ? `${config.color} text-white`
+                      : isPast
                         ? "bg-muted text-muted-foreground"
                         : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                    }`}
+                      }`}
                   >
                     {config.label}
                   </button>
@@ -448,7 +439,7 @@ export default function DroneJobDetail() {
                           {format(new Date(job.scheduled_date), "MMMM d, yyyy")}
                           {job.scheduled_time && ` at ${job.scheduled_time}`}
                         </p>
-                        {(job as any).google_event_id && (
+                        {job.google_event_id && (
                           <span title="Synced to calendar">
                             <CheckCircle className="h-4 w-4 text-green-500" />
                           </span>
@@ -463,10 +454,10 @@ export default function DroneJobDetail() {
                         title={!calendarConnected ? "Connect Google Calendar in Settings" : undefined}
                       >
                         <Calendar className="mr-2 h-4 w-4" />
-                        {syncingCalendar 
-                          ? "Syncing..." 
-                          : (job as any).google_event_id 
-                            ? "Update Calendar" 
+                        {syncingCalendar
+                          ? "Syncing..."
+                          : job.google_event_id
+                            ? "Update Calendar"
                             : "Add to Calendar"}
                       </Button>
                       {!calendarConnected && (
@@ -547,49 +538,56 @@ export default function DroneJobDetail() {
             </div>
           </TabsContent>
 
+
           {/* Assets Tab */}
           <TabsContent value="assets">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Uploaded Assets</CardTitle>
-                  <CardDescription>{assets.length} files uploaded</CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  {job.upload_token && job.upload_token_expires_at && new Date(job.upload_token_expires_at) > new Date() ? (
-                    <Button variant="outline" size="sm" onClick={copyUploadLink}>
-                      {tokenCopied ? <CheckCircle className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-                      {tokenCopied ? "Copied!" : "Copy Upload Link"}
-                    </Button>
-                  ) : (
-                    <Button variant="outline" size="sm" onClick={generateUploadToken} disabled={generatingToken}>
-                      <Key className="mr-2 h-4 w-4" />
-                      {generatingToken ? "Generating..." : "Generate Upload Link"}
-                    </Button>
-                  )}
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={extractExifData} 
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* Upload Card */}
+              <Card className="lg:col-span-1">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Camera className="h-5 w-5" />
+                    Upload Files
+                  </CardTitle>
+                  <CardDescription>
+                    Drag and drop photos or videos
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AdminAssetUpload jobId={job.id} onUploadComplete={fetchJob} />
+                </CardContent>
+              </Card>
+
+              {/* Assets Grid */}
+              <Card className="lg:col-span-2">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>Uploaded Assets</CardTitle>
+                    <CardDescription>{assets.length} files</CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={extractExifData}
                     disabled={extractingExif || assets.length === 0}
                   >
                     <ScanSearch className="mr-2 h-4 w-4" />
                     {extractingExif ? "Extracting..." : "Extract EXIF"}
                   </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {assets.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Camera className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                    <p>No assets uploaded yet</p>
-                    <p className="text-sm">Generate an upload link and share with the pilot</p>
-                  </div>
-                ) : (
-                  <QAAssetGrid assets={assets} onRefresh={fetchJob} />
-                )}
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent>
+                  {assets.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Camera className="mx-auto h-10 w-10 mb-3 opacity-50" />
+                      <p>No assets uploaded yet</p>
+                      <p className="text-sm">Use the upload panel to add files</p>
+                    </div>
+                  ) : (
+                    <QAAssetGrid assets={assets} onRefresh={fetchJob} />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* QA Tab */}
@@ -662,14 +660,14 @@ export default function DroneJobDetail() {
                     {/* Sky Replacement Candidates */}
                     {(() => {
                       const candidates = assets.filter(asset => {
-                        const qaResults = asset.qa_results as any;
-                        return qaResults?.issues?.some((issue: any) => 
-                          issue.type === "sky_quality" || 
+                        const qaResults = asset.qa_results as unknown as QAResults;
+                        return qaResults?.issues?.some((issue) =>
+                          issue.type === "sky_quality" ||
                           issue.recommended_action?.includes("sky") ||
                           issue.category === "sky"
                         ) || qaResults?.recommendation === "warning";
                       });
-                      
+
                       if (candidates.length === 0) {
                         return (
                           <p className="text-sm text-muted-foreground">
@@ -677,7 +675,7 @@ export default function DroneJobDetail() {
                           </p>
                         );
                       }
-                      
+
                       return (
                         <div className="space-y-3">
                           <Label className="text-muted-foreground">
@@ -701,8 +699,8 @@ export default function DroneJobDetail() {
                                     </span>
                                   </div>
                                   {asset.qa_score && (
-                                    <Badge 
-                                      variant="secondary" 
+                                    <Badge
+                                      variant="secondary"
                                       className="absolute top-1 right-1 text-xs"
                                     >
                                       {asset.qa_score}
@@ -720,15 +718,15 @@ export default function DroneJobDetail() {
                         </div>
                       );
                     })()}
-                    
+
                     {/* Approval Actions */}
                     <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
                       <Button
                         onClick={async () => {
                           await handleStatusChange("processing");
-                          toast({ 
-                            title: "Approved", 
-                            description: "Job will continue to delivery processing" 
+                          toast({
+                            title: "Approved",
+                            description: "Job will continue to delivery processing"
                           });
                         }}
                         className="flex-1 bg-green-600 hover:bg-green-700"
@@ -740,9 +738,9 @@ export default function DroneJobDetail() {
                         variant="destructive"
                         onClick={async () => {
                           await handleStatusChange("revision");
-                          toast({ 
-                            title: "Revision requested", 
-                            description: "Job marked for revision" 
+                          toast({
+                            title: "Revision requested",
+                            description: "Job marked for revision"
                           });
                         }}
                         className="flex-1"
@@ -765,7 +763,7 @@ export default function DroneJobDetail() {
                         Processing Profile
                       </CardTitle>
                       <CardDescription>
-                        {(job.drone_packages.processing_profile as any)?.lightroom_preset || "Default preset"}
+                        {(job.drone_packages.processing_profile as unknown as ProcessingProfile)?.lightroom_preset || "Default preset"}
                       </CardDescription>
                     </div>
                     <Button
@@ -789,9 +787,9 @@ export default function DroneJobDetail() {
                   </CardHeader>
                   <CardContent>
                     {(() => {
-                      const profile = job.drone_packages?.processing_profile as any;
+                      const profile = job.drone_packages?.processing_profile as unknown as ProcessingProfile;
                       if (!profile) return null;
-                      
+
                       return (
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                           {/* Lightroom Settings */}
@@ -799,7 +797,7 @@ export default function DroneJobDetail() {
                             <p className="text-sm font-medium text-muted-foreground">Lightroom Preset</p>
                             <p className="font-mono text-sm">{profile.lightroom_preset}</p>
                           </div>
-                          
+
                           {/* Corrections */}
                           <div className="space-y-2 p-4 rounded-lg bg-muted/50">
                             <p className="text-sm font-medium text-muted-foreground">Auto Corrections</p>
@@ -863,8 +861,8 @@ export default function DroneJobDetail() {
                                 Sky Replacement
                               </p>
                               <p className="text-sm">
-                                {profile.sky_replace === "manual_review" 
-                                  ? "Manual review required" 
+                                {profile.sky_replace === "manual_review"
+                                  ? "Manual review required"
                                   : "Auto-replace enabled"}
                               </p>
                             </div>
@@ -929,17 +927,17 @@ export default function DroneJobDetail() {
                         <Label className="text-muted-foreground">Asset Processing Status</Label>
                         <div className="grid gap-2">
                           {assets.map((asset) => (
-                            <div 
-                              key={asset.id} 
+                            <div
+                              key={asset.id}
                               className="flex items-center justify-between p-2 rounded border bg-card"
                             >
                               <span className="text-sm font-mono truncate max-w-[200px]">
                                 {asset.file_name}
                               </span>
-                              <Badge 
+                              <Badge
                                 variant={
-                                  (asset as any).processing_status === "processed" 
-                                    ? "default" 
+                                  (asset as any).processing_status === "processed"
+                                    ? "default"
                                     : "secondary"
                                 }
                               >

@@ -13,63 +13,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { CheckCircle, AlertTriangle, XCircle, Clock, ThumbsUp, ThumbsDown, MapPin, Camera, Calendar } from "lucide-react";
-import type { Database, Json } from "@/integrations/supabase/types";
-
-type QAStatus = Database["public"]["Enums"]["qa_status"];
-
-interface DroneAsset {
-  id: string;
-  file_name: string;
-  file_path: string;
-  file_type: string | null;
-  qa_status: QAStatus | null;
-  qa_score: number | null;
-  qa_results: Json | null;
-  sort_order: number | null;
-  created_at: string;
-  exif_data?: Json | null;
-  camera_model?: string | null;
-  capture_date?: string | null;
-  gps_latitude?: number | null;
-  gps_longitude?: number | null;
-  gps_altitude?: number | null;
-}
+import type { DroneAsset, QAResults } from "@/types/drone";
 
 interface QADetailModalProps {
   asset: DroneAsset | null;
   onClose: () => void;
   onRefresh: () => void;
-}
-
-interface QualityIssue {
-  category: string;
-  severity: string;
-  description: string;
-  correctable_in_post: boolean;
-  estimated_fix_time_minutes: number;
-  recommended_action: string;
-  client_description?: string;
-}
-
-interface QAResults {
-  overall_score: number;
-  recommendation: string;
-  ready_for_delivery: boolean;
-  shot_classification?: {
-    type: string;
-    confidence: number;
-    matches_expected: boolean;
-  };
-  issues: QualityIssue[];
-  analysis?: {
-    horizon_leveling?: { score: number; tilt_degrees?: number };
-    sharpness?: { score: number; notes?: string };
-    exposure?: { score: number; notes?: string };
-    composition?: { score: number; notes?: string };
-    technical?: { score: number; notes?: string };
-  };
-  highlights?: string[];
-  summary?: string;
 }
 
 const SEVERITY_CONFIG: Record<string, { color: string; label: string }> = {
@@ -128,6 +77,18 @@ export default function QADetailModal({ asset, onClose, onRefresh }: QADetailMod
     return "text-red-600";
   };
 
+  const formatVideoDuration = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <Dialog open={!!asset} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -143,9 +104,63 @@ export default function QADetailModal({ asset, onClose, onRefresh }: QADetailMod
         </DialogHeader>
 
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Image Preview */}
+          {/* Media Preview */}
           <div>
-            {asset.file_type?.startsWith("image") ? (
+            {asset.file_type?.startsWith("video") ? (
+              <div className="space-y-2">
+                <video
+                  src={asset.file_path}
+                  controls
+                  className="w-full rounded-lg border border-border"
+                  preload="metadata"
+                >
+                  Your browser does not support the video tag.
+                </video>
+
+                {/* Video Metadata */}
+                {(asset.video_duration_seconds || asset.video_resolution || asset.video_fps) && (
+                  <div className="p-3 rounded-lg bg-muted/50 space-y-2">
+                    <Label className="text-muted-foreground text-xs">Video Metadata</Label>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      {asset.video_duration_seconds && (
+                        <div>
+                          <span className="text-muted-foreground">Duration:</span>{" "}
+                          <span className="font-medium">
+                            {formatVideoDuration(asset.video_duration_seconds)}
+                          </span>
+                        </div>
+                      )}
+                      {asset.video_resolution && (
+                        <div>
+                          <span className="text-muted-foreground">Resolution:</span>{" "}
+                          <span className="font-medium">{asset.video_resolution}</span>
+                        </div>
+                      )}
+                      {asset.video_fps && (
+                        <div>
+                          <span className="text-muted-foreground">FPS:</span>{" "}
+                          <span className="font-medium">{asset.video_fps.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {asset.video_codec && (
+                        <div>
+                          <span className="text-muted-foreground">Codec:</span>{" "}
+                          <span className="font-medium">{asset.video_codec}</span>
+                        </div>
+                      )}
+                      {asset.video_bitrate && (
+                        <div>
+                          <span className="text-muted-foreground">Bitrate:</span>{" "}
+                          <span className="font-medium">
+                            {(asset.video_bitrate / 1000).toFixed(1)} Mbps
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : asset.file_type?.startsWith("image") ? (
               <img
                 src={asset.file_path}
                 alt={asset.file_name}
@@ -191,7 +206,7 @@ export default function QADetailModal({ asset, onClose, onRefresh }: QADetailMod
                 {asset.gps_latitude && asset.gps_longitude && (
                   <div className="flex items-center gap-2 text-sm">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <a 
+                    <a
                       href={`https://www.google.com/maps?q=${asset.gps_latitude},${asset.gps_longitude}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -298,6 +313,29 @@ export default function QADetailModal({ asset, onClose, onRefresh }: QADetailMod
               <div className="text-center py-8 text-muted-foreground">
                 <Clock className="mx-auto h-8 w-8 mb-2" />
                 <p>No QA analysis available</p>
+                <Button
+                  className="mt-4"
+                  onClick={async () => {
+                    setSaving(true);
+                    try {
+                      const { error } = await supabase.functions.invoke('drone-qa-analyze', {
+                        body: { asset_id: asset.id }
+                      });
+                      if (error) throw error;
+                      toast({ title: "Analysis started", description: "QA analysis is running..." });
+                      setTimeout(() => {
+                        onRefresh();
+                      }, 3000);
+                    } catch (err) {
+                      toast({ title: "Analysis failed", description: String(err), variant: "destructive" });
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  disabled={saving}
+                >
+                  {saving ? "Analyzing..." : "Run QA Analysis"}
+                </Button>
               </div>
             )}
 
@@ -339,6 +377,6 @@ export default function QADetailModal({ asset, onClose, onRefresh }: QADetailMod
           </div>
         </div>
       </DialogContent>
-    </Dialog>
+    </Dialog >
   );
 }

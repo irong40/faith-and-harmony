@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { encodeBase64 } from "https://deno.land/std@0.190.0/encoding/base64.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -6,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -163,7 +164,7 @@ Return ONLY valid JSON matching this structure:
   "metadata": {
     "analysis_version": "2.0",
     "analysis_timestamp": "ISO 8601 timestamp",
-    "model_name": "gemini-2.5-pro",
+    "model_name": "gemini-1.5-pro-latest",
     "processing_time_ms": number
   },
   "overall_score": number (0-100),
@@ -225,6 +226,18 @@ interface AnalyzeRequest {
   job_id?: string;
 }
 
+interface QualityIssue {
+  category: string;
+  severity: string;
+  description: string;
+  estimated_fix_time_minutes: number;
+}
+
+interface QAResults {
+  issues: QualityIssue[];
+  overall_score: number;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -240,8 +253,8 @@ serve(async (req) => {
       );
     }
 
-    if (!LOVABLE_API_KEY) {
-      console.error("LOVABLE_API_KEY not configured");
+    if (!GOOGLE_API_KEY) {
+      console.error("GOOGLE_API_KEY not configured");
       return new Response(
         JSON.stringify({ error: "AI service not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -282,18 +295,17 @@ serve(async (req) => {
     const pkg = job?.drone_packages;
     const customer = job?.customers;
 
-    // Get the image URL from storage
-    const { data: signedUrlData } = await supabase.storage
-      .from("drone-jobs")
-      .createSignedUrl(asset.file_path, 3600);
-
-    if (!signedUrlData?.signedUrl) {
-      console.error("Could not get signed URL for asset");
+    // file_path is already a public URL, use it directly
+    const imageUrl = asset.file_path;
+    if (!imageUrl) {
+      console.error("No file_path for asset");
       return new Response(
         JSON.stringify({ error: "Could not access image file" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log("Using image URL:", imageUrl);
 
     // Build batch context from previously analyzed assets in this job
     let batchContext = null;
@@ -309,9 +321,11 @@ serve(async (req) => {
         const commonIssues: string[] = [];
         let totalEditTime = 0;
 
-        analyzedAssets.forEach((a: any) => {
-          if (a.qa_results?.issues) {
-            a.qa_results.issues.forEach((issue: any) => {
+        analyzedAssets.forEach((a) => {
+          const results = a.qa_results as unknown as QAResults;
+
+          if (results?.issues) {
+            results.issues.forEach((issue) => {
               if (issue.category === "white_balance" && issue.description?.includes("color cast")) {
                 if (!commonIssues.includes("color_cast")) commonIssues.push("color_cast");
               }
@@ -356,35 +370,69 @@ ${job?.construction_context ? `CONSTRUCTION CONTEXT:
 
 Analyze this aerial photograph and return the quality assessment JSON.`;
 
-    console.log("Calling Lovable AI for QA analysis...");
+    console.log("Calling Google Gemini for QA analysis...");
     const startTime = Date.now();
 
-    // Call Lovable AI with the image
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          {
-            role: "user",
-            content: [
-              { type: "text", text: userPrompt },
-              { type: "image_url", image_url: { url: signedUrlData.signedUrl } }
-            ]
+    // Fetch image as base64 for Gemini
+    let base64Image: string;
+    let mimeType: string;
+    try {
+      console.log("Fetching image from:", imageUrl);
+      const imageResponse = await fetch(imageUrl);
+      if (!imageResponse.ok) {
+        throw new Error(`Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`);
+      }
+      const imageBuffer = await imageResponse.arrayBuffer();
+      console.log("Image size:", imageBuffer.byteLength, "bytes");
+
+      if (imageBuffer.byteLength > 25 * 1024 * 1024) {
+        throw new Error(`Image too large (${(imageBuffer.byteLength / 1024 / 1024).toFixed(1)}MB). Max 25MB. Please upload a compressed JPEG.`);
+      }
+
+      // Use Deno's built-in base64 encoding for large images
+      const bytes = new Uint8Array(imageBuffer);
+      base64Image = encodeBase64(bytes);
+      mimeType = (asset.file_name || 'image.jpg').toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+      console.log("Base64 encoding complete, length:", base64Image.length);
+    } catch (fetchError) {
+      console.error("Image fetch error:", fetchError);
+      await supabase.from("drone_assets").update({ qa_status: "pending" }).eq("id", asset_id);
+      return new Response(
+        JSON.stringify({ error: `Image processing failed: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Call Google Gemini API directly
+    const aiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GOOGLE_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          contents: [
+            {
+              parts: [
+                { text: userPrompt },
+                { inlineData: { mimeType, data: base64Image } }
+              ]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.1, // Very low for consistent, deterministic QA output
+            maxOutputTokens: 8192,
           }
-        ]
-      }),
-    });
+        }),
+      }
+    );
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error("AI API error:", aiResponse.status, errorText);
-      
+
       if (aiResponse.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
@@ -412,13 +460,13 @@ Analyze this aerial photograph and return the quality assessment JSON.`;
 
     const aiData = await aiResponse.json();
     const processingTime = Date.now() - startTime;
-    
+
     console.log("AI response received in", processingTime, "ms");
 
-    // Parse the AI response
+    // Parse the AI response (Gemini format)
     let qaResults;
     try {
-      const content = aiData.choices?.[0]?.message?.content;
+      const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!content) {
         throw new Error("No content in AI response");
       }
@@ -438,13 +486,13 @@ Analyze this aerial photograph and return the quality assessment JSON.`;
     } catch (parseError) {
       console.error("Failed to parse AI response:", parseError);
       console.error("Raw content:", aiData.choices?.[0]?.message?.content);
-      
+
       // Create a fallback response
       qaResults = {
         metadata: {
           analysis_version: "2.0",
           analysis_timestamp: new Date().toISOString(),
-          model_name: "gemini-2.5-pro",
+          model_name: "gemini-1.5-pro-latest",
           processing_time_ms: processingTime,
           parse_error: true
         },

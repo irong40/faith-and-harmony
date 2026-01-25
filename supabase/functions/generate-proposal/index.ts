@@ -12,10 +12,10 @@ serve(async (req) => {
 
   try {
     const { serviceRequest, serviceName } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (!ANTHROPIC_API_KEY) {
+      throw new Error("ANTHROPIC_API_KEY is not configured");
     }
 
     const prompt = `You are a professional business proposal writer for Faith & Harmony LLC, a technology and creative services company. Generate a professional proposal based on the following service request:
@@ -50,16 +50,20 @@ Important:
 - Keep scope of work professional and detailed
 - Terms should be fair and professional`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Call Anthropic API directly
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 4096,
+        temperature: 0, // For consistent, deterministic output
+        system: "You are a professional proposal writer. Always respond with valid JSON only, no markdown formatting.",
         messages: [
-          { role: "system", content: "You are a professional proposal writer. Always respond with valid JSON only, no markdown formatting." },
           { role: "user", content: prompt }
         ],
       }),
@@ -67,25 +71,19 @@ Important:
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      
+      console.error("Anthropic API error:", response.status, errorText);
+
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required. Please add credits to your workspace." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      throw new Error("AI gateway error");
+      throw new Error(`Anthropic API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    const content = data.content?.[0]?.text;
 
     if (!content) {
       throw new Error("No content returned from AI");

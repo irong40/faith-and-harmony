@@ -37,7 +37,7 @@ serve(async (req) => {
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const serperApiKey = Deno.env.get('SERPER_API_KEY');
   const hunterApiKey = Deno.env.get('HUNTER_API_KEY');
-  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -160,7 +160,7 @@ serve(async (req) => {
       const isDupe = existingNames.has(result.companyName.toLowerCase()) ||
         (result.phone && existingPhones.has(result.phone)) ||
         (result.website && existingWebsites.has(result.website.toLowerCase()));
-      
+
       if (isDupe) duplicatesFiltered++;
       return !isDupe;
     });
@@ -243,7 +243,7 @@ serve(async (req) => {
       let aiSubject: string | undefined;
       let aiBody: string | undefined;
 
-      if (lovableApiKey && result.email) {
+      if (anthropicApiKey && result.email) {
         try {
           const prompt = `Write a brief, professional cold email to ${result.companyName}, a ${result.niche} in ${result.city}, ${result.state}. 
           
@@ -256,16 +256,19 @@ The email should:
 
 Return JSON format: {"subject": "...", "body": "..."}`;
 
-          const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          const aiResponse = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${lovableApiKey}`,
+              'x-api-key': anthropicApiKey,
+              'anthropic-version': '2023-06-01',
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'google/gemini-2.5-flash',
+              model: 'claude-3-5-sonnet-20241022',
+              max_tokens: 1024,
+              temperature: 0, // For consistent, deterministic output
+              system: 'You are a professional sales email writer. Always respond with valid JSON.',
               messages: [
-                { role: 'system', content: 'You are a professional sales email writer. Always respond with valid JSON.' },
                 { role: 'user', content: prompt },
               ],
             }),
@@ -273,8 +276,8 @@ Return JSON format: {"subject": "...", "body": "..."}`;
 
           if (aiResponse.ok) {
             const aiData = await aiResponse.json();
-            const content = aiData.choices?.[0]?.message?.content || '';
-            openaiCost += 0.001;
+            const content = aiData.content?.[0]?.text || '';
+            openaiCost += 0.003; // Claude 3.5 Sonnet cost estimate
 
             try {
               // Extract JSON from response

@@ -6,10 +6,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  ArrowLeft, 
-  LayoutDashboard, 
-  Server, 
+import {
+  ArrowLeft,
+  LayoutDashboard,
+  Server,
   Megaphone,
   Camera,
   ClipboardList,
@@ -50,6 +50,8 @@ const navCategories: NavCategory[] = [
     items: [
       { href: "/admin/drone-jobs", label: "Drone Jobs", icon: ClipboardList },
       { href: "/admin/drone-crm", label: "CRM", icon: BarChart3 },
+      { href: "/admin/pilots", label: "Manage Pilots", icon: Users },
+      { href: "/pilot", label: "Pilot Portal", icon: Target },
     ],
   },
   {
@@ -117,9 +119,8 @@ export default function AdminNav() {
                       <DropdownMenuItem key={item.href} asChild>
                         <Link
                           to={item.href}
-                          className={`flex items-center gap-2 w-full ${
-                            isItemActive(item.href) ? "bg-accent" : ""
-                          }`}
+                          className={`flex items-center gap-2 w-full ${isItemActive(item.href) ? "bg-accent" : ""
+                            }`}
                         >
                           <item.icon className="h-4 w-4" />
                           {item.label}
@@ -129,7 +130,7 @@ export default function AdminNav() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ))}
-              
+
               {/* Documents - standalone link */}
               <Link to={documentsLink.href}>
                 <Button

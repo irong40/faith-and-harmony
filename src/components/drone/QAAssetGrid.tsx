@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, AlertTriangle, XCircle, Clock, Eye } from "lucide-react";
+import { CheckCircle, AlertTriangle, XCircle, Clock, Eye, Video, Play } from "lucide-react";
 import QADetailModal from "./QADetailModal";
 import type { Database, Json } from "@/integrations/supabase/types";
 
@@ -23,6 +23,10 @@ interface DroneAsset {
   gps_latitude?: number | null;
   gps_longitude?: number | null;
   gps_altitude?: number | null;
+  // Video-specific fields
+  video_duration_seconds?: number | null;
+  video_resolution?: string | null;
+  thumbnail_url?: string | null;
 }
 
 interface QAAssetGridProps {
@@ -41,6 +45,12 @@ const QA_STATUS_CONFIG: Record<string, { icon: typeof CheckCircle; color: string
   rejected: { icon: XCircle, color: "text-red-600", bg: "bg-red-100" },
 };
 
+function formatDuration(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
 export default function QAAssetGrid({ assets, onRefresh, showQADetails = false }: QAAssetGridProps) {
   const [selectedAsset, setSelectedAsset] = useState<DroneAsset | null>(null);
 
@@ -55,12 +65,15 @@ export default function QAAssetGrid({ assets, onRefresh, showQADetails = false }
     return "text-red-600";
   };
 
+  const isVideo = (asset: DroneAsset) => asset.file_type === "video";
+
   return (
     <>
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         {assets.map((asset) => {
           const statusConfig = getStatusConfig(asset.qa_status);
           const StatusIcon = statusConfig.icon;
+          const assetIsVideo = isVideo(asset);
 
           return (
             <div
@@ -68,8 +81,29 @@ export default function QAAssetGrid({ assets, onRefresh, showQADetails = false }
               className="group relative rounded-lg border border-border bg-card overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all"
             >
               {/* Thumbnail */}
-              <div className="aspect-[4/3] bg-muted flex items-center justify-center">
-                {asset.file_type?.startsWith("image") ? (
+              <div className="aspect-[4/3] bg-muted flex items-center justify-center relative">
+                {assetIsVideo ? (
+                  // Video thumbnail
+                  asset.thumbnail_url ? (
+                    <>
+                      <img
+                        src={asset.thumbnail_url}
+                        alt={asset.file_name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="bg-black/50 rounded-full p-2">
+                          <Play className="h-6 w-6 text-white fill-white" />
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <Video className="h-8 w-8" />
+                      <span className="text-xs">{asset.file_name}</span>
+                    </div>
+                  )
+                ) : asset.file_type?.startsWith("image") ? (
                   <img
                     src={asset.file_path}
                     alt={asset.file_name}
@@ -78,6 +112,15 @@ export default function QAAssetGrid({ assets, onRefresh, showQADetails = false }
                 ) : (
                   <div className="text-center text-muted-foreground text-xs p-2">
                     {asset.file_name}
+                  </div>
+                )}
+
+                {/* Video duration badge */}
+                {assetIsVideo && asset.video_duration_seconds && (
+                  <div className="absolute bottom-2 right-2">
+                    <Badge variant="secondary" className="bg-black/70 text-white text-xs font-mono">
+                      {formatDuration(asset.video_duration_seconds)}
+                    </Badge>
                   </div>
                 )}
               </div>
@@ -101,6 +144,9 @@ export default function QAAssetGrid({ assets, onRefresh, showQADetails = false }
               {/* Info Bar */}
               <div className="p-2">
                 <p className="text-xs truncate text-muted-foreground">{asset.file_name}</p>
+                {assetIsVideo && asset.video_resolution && (
+                  <p className="text-xs text-muted-foreground/70">{asset.video_resolution}</p>
+                )}
                 {showQADetails && asset.qa_results && (
                   <Button
                     variant="ghost"

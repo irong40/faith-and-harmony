@@ -143,9 +143,16 @@ export default function DroneJobs() {
 
       <main className="container mx-auto px-4 py-8">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Drone Jobs</h1>
-            <p className="text-sm text-muted-foreground">Manage aerial photography jobs</p>
+          <div className="flex items-center gap-3">
+            <img
+              src="/assets/drone/drone-logo-original.jpg"
+              alt="Drone Services"
+              className="h-10 w-10 object-contain"
+            />
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Drone Jobs</h1>
+              <p className="text-sm text-muted-foreground">Manage aerial photography jobs</p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button onClick={fetchJobs} variant="outline" disabled={loading}>

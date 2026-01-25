@@ -28,14 +28,14 @@ serve(async (req) => {
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-  
+
   const url = new URL(req.url);
-  
+
   try {
     // Parse body once at the start to extract action and other params
     const body = await req.json().catch(() => ({}));
     const action = body.action || "validate";
-    
+
     if (action === "validate") {
       // Validate token and return job info
       const { token } = body as ValidateRequest;
@@ -182,12 +182,23 @@ serve(async (req) => {
 
       console.log("Asset recorded:", asset.id, file_name);
 
-      // Trigger EXIF extraction asynchronously (non-blocking)
-      EdgeRuntime.waitUntil(
-        supabase.functions.invoke("drone-extract-exif", {
-          body: { asset_id: asset.id },
-        }).catch((err: Error) => console.error("EXIF extraction trigger failed:", err))
-      );
+      // Trigger EXIF extraction asynchronously (non-blocking) for images
+      if (file_type === "photo" || file_type === "raw") {
+        EdgeRuntime.waitUntil(
+          supabase.functions.invoke("drone-extract-exif", {
+            body: { asset_id: asset.id },
+          }).catch((err: Error) => console.error("EXIF extraction trigger failed:", err))
+        );
+      }
+
+      // Trigger video processing asynchronously (non-blocking) for videos
+      if (file_type === "video") {
+        EdgeRuntime.waitUntil(
+          supabase.functions.invoke("drone-process-video", {
+            body: { asset_id: asset.id },
+          }).catch((err: Error) => console.error("Video processing trigger failed:", err))
+        );
+      }
 
       return new Response(
         JSON.stringify({

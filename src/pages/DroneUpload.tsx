@@ -7,8 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Upload, Camera, CheckCircle, XCircle, Loader2, 
+import {
+  Upload, Camera, CheckCircle, XCircle, Loader2,
   MapPin, Home, ImageIcon, Video, AlertTriangle, Clock
 } from "lucide-react";
 import { format } from "date-fns";
@@ -81,7 +81,7 @@ export default function DroneUpload() {
     if (!job || !token) return;
 
     // Update status to uploading
-    setUploadingFiles(prev => prev.map((f, i) => 
+    setUploadingFiles(prev => prev.map((f, i) =>
       i === index ? { ...f, status: "uploading", progress: 0 } : f
     ));
 
@@ -107,7 +107,7 @@ export default function DroneUpload() {
       }
 
       // Update progress to 90% after storage upload
-      setUploadingFiles(prev => prev.map((f, i) => 
+      setUploadingFiles(prev => prev.map((f, i) =>
         i === index ? { ...f, progress: 90 } : f
       ));
 
@@ -128,13 +128,13 @@ export default function DroneUpload() {
       }
 
       // Mark complete
-      setUploadingFiles(prev => prev.map((f, i) => 
+      setUploadingFiles(prev => prev.map((f, i) =>
         i === index ? { ...f, status: "complete", progress: 100 } : f
       ));
       setUploadedCount(prev => prev + 1);
 
     } catch (err) {
-      setUploadingFiles(prev => prev.map((f, i) => 
+      setUploadingFiles(prev => prev.map((f, i) =>
         i === index ? { ...f, status: "error", error: err instanceof Error ? err.message : "Upload failed" } : f
       ));
     }
@@ -142,8 +142,8 @@ export default function DroneUpload() {
 
   const handleFiles = useCallback((files: FileList | File[]) => {
     const fileArray = Array.from(files);
-    const validFiles = fileArray.filter(f => 
-      f.type.startsWith("image/") || 
+    const validFiles = fileArray.filter(f =>
+      f.type.startsWith("image/") ||
       f.type.startsWith("video/") ||
       /\.(dng|raw|arw|cr2|cr3|nef|orf|rw2)$/i.test(f.name)
     );
@@ -236,7 +236,11 @@ export default function DroneUpload() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Camera className="h-8 w-8 text-primary" />
+              <img
+                src="/assets/drone/drone-logo-original.jpg"
+                alt="Drone Services"
+                className="h-10 w-10 object-contain"
+              />
               <div>
                 <h1 className="font-semibold text-lg">Faith & Harmony</h1>
                 <p className="text-sm text-muted-foreground">Aerial Photography Upload</p>
@@ -326,8 +330,8 @@ export default function DroneUpload() {
               onDragLeave={handleDragLeave}
               className={`
                 border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer
-                ${isDragging 
-                  ? "border-primary bg-primary/5" 
+                ${isDragging
+                  ? "border-primary bg-primary/5"
                   : "border-muted-foreground/25 hover:border-primary/50"
                 }
               `}

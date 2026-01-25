@@ -8,9 +8,9 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend, FunnelChart, Funnel, LabelList
 } from "recharts";
-import { 
-  Users, Mail, DollarSign, TrendingUp, Target, Zap, 
-  Calendar, CheckCircle, Clock 
+import {
+  Users, Mail, DollarSign, TrendingUp, Target, Zap,
+  Calendar, CheckCircle, Clock
 } from "lucide-react";
 import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
 
@@ -122,9 +122,16 @@ export default function DroneCRMDashboard() {
     <div className="min-h-screen bg-background">
       <AdminNav />
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">Drone CRM Dashboard</h1>
-          <p className="text-muted-foreground">Lead generation performance and revenue insights</p>
+        <div className="mb-6 flex items-center gap-3">
+          <img
+            src="/assets/drone/drone-logo-original.jpg"
+            alt="Drone Services"
+            className="h-12 w-12 object-contain"
+          />
+          <div>
+            <h1 className="text-3xl font-bold">Drone CRM Dashboard</h1>
+            <p className="text-muted-foreground">Lead generation performance and revenue insights</p>
+          </div>
         </div>
 
         {isLoading ? (
@@ -209,11 +216,11 @@ export default function DroneCRMDashboard() {
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis type="number" className="text-xs" />
                         <YAxis dataKey="name" type="category" width={80} className="text-xs" />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: 'hsl(var(--card))', 
-                            border: '1px solid hsl(var(--border))' 
-                          }} 
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))'
+                          }}
                         />
                         <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                           {pipelineData.map((entry, index) => (
@@ -249,11 +256,11 @@ export default function DroneCRMDashboard() {
                             <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: 'hsl(var(--card))', 
-                            border: '1px solid hsl(var(--border))' 
-                          }} 
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))'
+                          }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
@@ -277,17 +284,17 @@ export default function DroneCRMDashboard() {
                           <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                           <XAxis dataKey="month" className="text-xs" />
                           <YAxis className="text-xs" tickFormatter={(v) => `$${v}`} />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: 'hsl(var(--card))', 
-                              border: '1px solid hsl(var(--border))' 
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))'
                             }}
                             formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
                           />
-                          <Line 
-                            type="monotone" 
-                            dataKey="revenue" 
-                            stroke="hsl(var(--primary))" 
+                          <Line
+                            type="monotone"
+                            dataKey="revenue"
+                            stroke="hsl(var(--primary))"
                             strokeWidth={2}
                             dot={{ fill: 'hsl(var(--primary))' }}
                           />
@@ -315,11 +322,11 @@ export default function DroneCRMDashboard() {
                           <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                           <XAxis dataKey="type" className="text-xs" />
                           <YAxis className="text-xs" />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: 'hsl(var(--card))', 
-                              border: '1px solid hsl(var(--border))' 
-                            }} 
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))'
+                            }}
                           />
                           <Bar dataKey="count" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
                         </BarChart>
