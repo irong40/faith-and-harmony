@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Upload, X, CheckCircle, Loader2, Video, Image as ImageIcon } from "lucide-react";
 import { processVideoFile, detectCodecFromFilename } from "@/lib/videoHelpers";
+import { resizeImageForQA } from "@/lib/imageResize";
 
 interface AdminAssetUploadProps {
     jobId: string;
@@ -36,13 +37,23 @@ export default function AdminAssetUpload({ jobId, onUploadComplete }: AdminAsset
             const isRaw = /\.(dng|raw|arw|cr2|cr3|nef|orf|rw2)$/i.test(file.name);
             const fileType = isVideo ? "video" : isRaw ? "raw" : "photo";
 
+            // Resize large images for QA compatibility (max 8MB for Gemini)
+            let fileToUpload = file;
+            if (!isVideo && !isRaw && file.type.startsWith("image/")) {
+                try {
+                    fileToUpload = await resizeImageForQA(file);
+                } catch (resizeErr) {
+                    console.warn("Image resize failed, using original:", resizeErr);
+                }
+            }
+
             // Create storage path
-            const storagePath = `${jobId}/raw/${file.name}`;
+            const storagePath = `${jobId}/raw/${fileToUpload.name}`;
 
             // Upload to Supabase Storage
             const { error: uploadError } = await supabase.storage
                 .from("drone-jobs")
-                .upload(storagePath, file, {
+                .upload(storagePath, fileToUpload, {
                     cacheControl: "3600",
                     upsert: true, // Allow overwrite for admin
                 });

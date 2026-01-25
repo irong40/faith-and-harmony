@@ -7,12 +7,13 @@ const corsHeaders = {
 };
 
 interface PortalRequest {
-  action: 'validate' | 'get-download-url' | 'get-gallery';
+  action: 'validate' | 'get-download-url' | 'get-gallery' | 'get-model-url';
   token: string;
   deliverable_id?: string;
+  asset_type?: 'model' | 'ortho';
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -44,6 +45,9 @@ serve(async (req) => {
         status,
         delivered_at,
         download_url,
+        photogrammetry_status,
+        model_file_path,
+        orthophoto_path,
         package_id,
         customer_id,
         drone_packages:package_id (
@@ -76,9 +80,9 @@ serve(async (req) => {
         .select('id, file_type, file_size')
         .eq('job_id', job.id);
 
-      const photoCount = assets?.filter(a => a.file_type === 'image').length || 0;
-      const videoCount = assets?.filter(a => a.file_type === 'video').length || 0;
-      const totalSize = assets?.reduce((sum, a) => sum + (a.file_size || 0), 0) || 0;
+      const photoCount = assets?.filter((a: any) => a.file_type === 'image').length || 0;
+      const videoCount = assets?.filter((a: any) => a.file_type === 'video').length || 0;
+      const totalSize = assets?.reduce((sum: number, a: any) => sum + (a.file_size || 0), 0) || 0;
 
       // Get deliverables
       const { data: deliverables } = await supabase
@@ -108,6 +112,9 @@ serve(async (req) => {
             video_count: videoCount,
             total_size_mb: Math.round(totalSize / (1024 * 1024) * 10) / 10,
             has_download_url: !!job.download_url,
+            photogrammetry_status: job.photogrammetry_status,
+            has_3d_model: !!job.model_file_path,
+            has_ortho: !!job.orthophoto_path,
           },
           deliverables: deliverables || [],
         }),
@@ -172,6 +179,39 @@ serve(async (req) => {
       );
     }
 
+    if (action === 'get-model-url') {
+      const type = (await req.json() as any).asset_type || 'model'; // 'model' or 'ortho'
+
+      const path = type === 'ortho' ? job.orthophoto_path : job.model_file_path;
+
+      if (!path) {
+        return new Response(
+          JSON.stringify({ error: 'Asset not ready' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Create signed URL from drone-processed-assets bucket
+      const { data: signedUrl } = await supabase.storage
+        .from('drone-processed-assets')
+        .createSignedUrl(path, 3600); // 1 hour
+
+      if (signedUrl) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            download_url: signedUrl.signedUrl,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ error: 'Could not generate link' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     if (action === 'get-gallery') {
       // Get processed assets for gallery preview
       const { data: assets } = await supabase
@@ -184,7 +224,7 @@ serve(async (req) => {
 
       // Generate signed URLs for thumbnails
       const gallery = await Promise.all(
-        (assets || []).map(async (asset) => {
+        (assets || []).map(async (asset: any) => {
           const path = asset.processed_path || asset.file_path;
           const { data: signedUrl } = await supabase.storage
             .from('drone-jobs')
@@ -202,7 +242,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          gallery: gallery.filter(g => g.thumbnail_url),
+          gallery: gallery.filter((g: any) => g.thumbnail_url),
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

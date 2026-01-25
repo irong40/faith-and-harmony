@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { encodeBase64 } from "https://deno.land/std@0.190.0/encoding/base64.ts";
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -238,7 +238,7 @@ interface QAResults {
   overall_score: number;
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -321,7 +321,7 @@ serve(async (req) => {
         const commonIssues: string[] = [];
         let totalEditTime = 0;
 
-        analyzedAssets.forEach((a) => {
+        analyzedAssets.forEach((a: any) => {
           const results = a.qa_results as unknown as QAResults;
 
           if (results?.issues) {
@@ -373,8 +373,8 @@ Analyze this aerial photograph and return the quality assessment JSON.`;
     console.log("Calling Google Gemini for QA analysis...");
     const startTime = Date.now();
 
-    // Fetch image as base64 for Gemini
-    let base64Image: string;
+    // Fetch image as base64 or buffer for Gemini
+    let imageBuffer: ArrayBuffer;
     let mimeType: string;
     try {
       console.log("Fetching image from:", imageUrl);
@@ -382,18 +382,16 @@ Analyze this aerial photograph and return the quality assessment JSON.`;
       if (!imageResponse.ok) {
         throw new Error(`Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`);
       }
-      const imageBuffer = await imageResponse.arrayBuffer();
+      imageBuffer = await imageResponse.arrayBuffer();
       console.log("Image size:", imageBuffer.byteLength, "bytes");
 
       if (imageBuffer.byteLength > 25 * 1024 * 1024) {
         throw new Error(`Image too large (${(imageBuffer.byteLength / 1024 / 1024).toFixed(1)}MB). Max 25MB. Please upload a compressed JPEG.`);
       }
 
-      // Use Deno's built-in base64 encoding for large images
-      const bytes = new Uint8Array(imageBuffer);
-      base64Image = encodeBase64(bytes);
+      // Use raw buffer for upload
       mimeType = (asset.file_name || 'image.jpg').toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
-      console.log("Base64 encoding complete, length:", base64Image.length);
+      console.log("Image fetched, size:", imageBuffer.byteLength);
     } catch (fetchError) {
       console.error("Image fetch error:", fetchError);
       await supabase.from("drone_assets").update({ qa_status: "pending" }).eq("id", asset_id);
@@ -403,7 +401,55 @@ Analyze this aerial photograph and return the quality assessment JSON.`;
       );
     }
 
-    // Call Google Gemini API directly
+    // 1. Upload the file to Gemini File API
+    const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GOOGLE_API_KEY}`;
+
+    // We need to send the metadata and the file. 
+    // For simplicity with standard fetch, we'll try the simple upload method or multipart.
+    // However, the simplest way for a single file is often just POSTing the bytes if we can trigger the right "uploadType=media" flow,
+    // but Gemini usually requires a specific protocol.
+    // A reliable way is to do a multipart/related request or just a standard upload with metadata.
+    // Let's use the standard "uploadType=media" with the correct headers if supported, or the resumable protocol.
+    // Actually, the Gemini API docs suggest:
+    // POST https://generativelanguage.googleapis.com/upload/v1beta/files?key=...
+    // Body: JSON { file: { display_name: "..." } } returns an upload_url? No, that's slightly different.
+
+    // Let's try the simplest approach: POST raw bytes with header X-Goog-Upload-Command: start, upload, finalize
+    // Or check if there is a simpler "media" upload type.
+    // Docs: POST /upload/v1beta/files?key=...
+    // Headers: X-Goog-Upload-Protocol: raw, Content-Type: <mime-type>, Content-Length: <size>, X-Goog-Upload-Header-Content-Meta-Data: {"displayName": "..."}
+
+    // We will use the REST API "media" upload if available, but the documentation points to `upload/v1beta/files`
+
+    console.log("Uploading to Gemini File API...");
+
+    const uploadResponse = await fetch(uploadUrl, {
+      method: "POST",
+      headers: {
+        "X-Goog-Upload-Protocol": "raw",
+        "X-Goog-Upload-Command": "start, upload, finalize",
+        "X-Goog-Upload-Header-Content-Length": imageBuffer.byteLength.toString(),
+        "X-Goog-Upload-Header-Content-Type": mimeType,
+        "Content-Type": mimeType,
+      },
+      body: imageBuffer // Send raw bytes
+    });
+
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
+      throw new Error(`Gemini File Upload failed: ${uploadResponse.status} ${errorText}`);
+    }
+
+    const uploadResult = await uploadResponse.json();
+    const fileUri = uploadResult.file?.uri;
+
+    if (!fileUri) {
+      throw new Error("Gemini File Upload returned no URI");
+    }
+
+    console.log("File uploaded successfully. URI:", fileUri);
+
+    // 2. Generate Content using the File URI
     const aiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GOOGLE_API_KEY}`,
       {
@@ -415,14 +461,15 @@ Analyze this aerial photograph and return the quality assessment JSON.`;
           systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
           contents: [
             {
+              role: "user",
               parts: [
                 { text: userPrompt },
-                { inlineData: { mimeType, data: base64Image } }
+                { fileData: { fileUri: fileUri, mimeType: mimeType } }
               ]
             }
           ],
           generationConfig: {
-            temperature: 0.1, // Very low for consistent, deterministic QA output
+            temperature: 0.1,
             maxOutputTokens: 8192,
           }
         }),

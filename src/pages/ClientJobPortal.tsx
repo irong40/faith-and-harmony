@@ -16,7 +16,8 @@ import {
   Package,
   Image,
   Mail,
-  Phone
+  Phone,
+  Box
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -39,6 +40,9 @@ interface JobData {
   video_count: number;
   total_size_mb: number;
   has_download_url: boolean;
+  photogrammetry_status?: 'pending' | 'queued' | 'processing' | 'completed' | 'failed';
+  has_3d_model: boolean;
+  has_ortho: boolean;
 }
 
 interface Deliverable {
@@ -339,6 +343,77 @@ export default function ClientJobPortal() {
                 <p className="text-center text-sm text-muted-foreground mt-4">
                   +{gallery.length - 12} more photos in download
                 </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 3D Model & Mapping Section */}
+        {job.photogrammetry_status && job.photogrammetry_status !== 'pending' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Box className="h-5 w-5" />
+                3D Model & Mapping
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {job.photogrammetry_status === 'completed' ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-green-600 font-medium">
+                    <CheckCircle className="h-5 w-5" />
+                    Processing Complete
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {job.has_3d_model && (
+                      <Button
+                        variant="outline"
+                        className="w-full gap-2"
+                        onClick={async () => {
+                          try {
+                            const { data } = await supabase.functions.invoke('drone-customer-portal', {
+                              body: { action: 'get-model-url', token, asset_type: 'model' }
+                            });
+                            if (data?.download_url) window.open(data.download_url, '_blank');
+                          } catch (e) { toast.error("Could not load model"); }
+                        }}
+                      >
+                        <Download className="h-4 w-4" /> Download 3D Model (.obj)
+                      </Button>
+                    )}
+                    {job.has_ortho && (
+                      <Button
+                        variant="outline"
+                        className="w-full gap-2"
+                        onClick={async () => {
+                          try {
+                            const { data } = await supabase.functions.invoke('drone-customer-portal', {
+                              body: { action: 'get-model-url', token, asset_type: 'ortho' }
+                            });
+                            if (data?.download_url) window.open(data.download_url, '_blank');
+                          } catch (e) { toast.error("Could not load map"); }
+                        }}
+                      >
+                        <Download className="h-4 w-4" /> Download Orthomosaic (.tif)
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4 p-4 border rounded-lg bg-muted/50">
+                  <div className="relative">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-ping absolute" />
+                    <div className="w-3 h-3 bg-blue-500 rounded-full relative" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">
+                      {job.photogrammetry_status === 'processing' ? 'Processing 3D Model...' : 'Queued for Processing'}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      We are currently generating your 3D digital twin. You will be notified when it is ready.
+                    </p>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
