@@ -9,11 +9,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, Settings, ShieldCheck, Menu, ShoppingCart } from "lucide-react";
+import { User, LogOut, Settings, ShieldCheck, Menu, ShoppingCart, Plane } from "lucide-react";
 import logoIcon from "@/assets/logo-icon.png";
 
 export default function Navbar() {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, isPilot, signOut } = useAuth();
   const { totalItems } = useCart();
 
   return (
@@ -60,6 +60,15 @@ export default function Navbar() {
             >
               Contact
             </Link>
+            {isPilot && (
+              <Link
+                to="/pilot"
+                className="flex items-center gap-1 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
+              >
+                <Plane className="h-4 w-4" />
+                Pilot Portal
+              </Link>
+            )}
             {isAdmin && (
               <Link
                 to="/admin/service-requests"
@@ -97,8 +106,22 @@ export default function Navbar() {
                     {isAdmin && (
                       <p className="text-xs text-accent">Administrator</p>
                     )}
+                    {isPilot && (
+                      <p className="text-xs text-accent">Pilot</p>
+                    )}
                   </div>
                   <DropdownMenuSeparator />
+                  {isPilot && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link to="/pilot" className="flex items-center gap-2">
+                          <Plane className="h-4 w-4" />
+                          Pilot Portal
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   {isAdmin && (
                     <>
                       <DropdownMenuItem asChild>
@@ -155,6 +178,17 @@ export default function Navbar() {
                 <DropdownMenuItem asChild>
                   <Link to="/contact">Contact</Link>
                 </DropdownMenuItem>
+                {isPilot && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/pilot" className="flex items-center gap-2">
+                        <Plane className="h-4 w-4" />
+                        Pilot Portal
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 {isAdmin && (
                   <>
                     <DropdownMenuSeparator />

@@ -49,13 +49,30 @@ const Auth = () => {
     }
   };
 
+  const redirectByRole = async (userId: string) => {
+    const { data } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+
+    const roles = (data ?? []).map((r) => r.role);
+
+    if (roles.includes('pilot' as any)) {
+      navigate('/pilot');
+    } else if (roles.includes('admin')) {
+      navigate('/admin/service-requests');
+    } else {
+      navigate('/');
+    }
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session && view !== 'reset-password') {
         if (ssoCallback) {
           handleSSORedirect(session.user.id, session.user.email || '');
         } else {
-          navigate('/');
+          redirectByRole(session.user.id);
         }
       }
     });
@@ -65,12 +82,12 @@ const Auth = () => {
         setView('reset-password');
         return;
       }
-      
+
       if (session && view !== 'reset-password') {
         if (ssoCallback) {
           handleSSORedirect(session.user.id, session.user.email || '');
         } else {
-          navigate('/');
+          redirectByRole(session.user.id);
         }
       }
     });
