@@ -52,6 +52,7 @@ import Invoices from "./pages/admin/Invoices";
 import PilotDashboard from "./pages/pilot/PilotDashboard";
 import PilotMissionDetail from "./pages/pilot/PilotMissionDetail";
 import PilotManagement from "./pages/admin/PilotManagement";
+import FleetOverview from "./components/pilot/FleetOverview";
 
 const queryClient = new QueryClient();
 
@@ -246,6 +247,14 @@ const App = () => (
                 element={
                   <ProtectedRoute requirePilot>
                     <PilotMissionDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pilot/fleet"
+                element={
+                  <ProtectedRoute requirePilot>
+                    <FleetOverview />
                   </ProtectedRoute>
                 }
               />

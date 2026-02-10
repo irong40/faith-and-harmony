@@ -1,28 +1,20 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, LogOut, WifiOff } from "lucide-react";
+import { RefreshCw, LogOut, WifiOff, Plane } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PilotCard from "@/components/pilot/PilotCard";
 import MissionCard from "@/components/pilot/MissionCard";
-
-interface Mission {
-    id: string;
-    client_name: string;
-    property_address: string;
-    scheduled_date: string | null;
-    status: "scheduled" | "in_progress" | "complete" | "canceled";
-    drone_packages?: { name: string } | null;
-}
+import { usePilotMissions } from "@/hooks/usePilotMissions";
 
 export default function PilotDashboard() {
-    const { user, pilotProfile, signOut } = useAuth();
+    const { pilotProfile, signOut } = useAuth();
     const { toast } = useToast();
-    const [missions, setMissions] = useState<Mission[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [syncing, setSyncing] = useState(false);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+    // TanStack Query for missions
+    const { data: missions = [], isLoading: loading, refetch, isRefetching } = usePilotMissions();
 
     // Monitor online status
     useEffect(() => {
@@ -38,76 +30,12 @@ export default function PilotDashboard() {
         };
     }, []);
 
-    const fetchMissions = async () => {
-        if (!user) {
-            console.log("PilotDashboard: No user found, skipping fetch");
-            return;
-        }
-
-        console.log("PilotDashboard: Fetching missions for pilot:", user.id);
-        setLoading(true);
-
-        const { data, error } = await supabase
-            .from("drone_jobs")
-            .select("id, customers(name), property_address, scheduled_date, status, drone_packages(name)")
-            .eq("pilot_id", user.id)
-            .neq("status", "canceled")
-            .order("scheduled_date", { ascending: true });
-
-        if (error) {
-            console.error("PilotDashboard: Error fetching missions:", error);
-            toast({
-                title: "Error loading missions",
-                description: error.message,
-                variant: "destructive",
-            });
-        } else if (data) {
-            console.log("PilotDashboard: Missions fetched:", data.length);
-            // Transform data to match our interface
-            const transformed = data.map((job: any) => ({
-                id: job.id,
-                client_name: job.customers?.name || "Unknown Client",
-                property_address: job.property_address,
-                scheduled_date: job.scheduled_date,
-                status: job.status as Mission["status"],
-                drone_packages: job.drone_packages,
-            }));
-            setMissions(transformed);
-
-            // Cache to localStorage for offline use
-            localStorage.setItem("trestle_missions", JSON.stringify(transformed));
-        }
-
-        setLoading(false);
-    };
-
     const handleSync = async () => {
-        setSyncing(true);
-        await fetchMissions();
-        setSyncing(false);
+        await refetch();
         toast({ title: "Sync complete" });
     };
 
-    // Load cached missions first, then fetch fresh data
-    useEffect(() => {
-        const cached = localStorage.getItem("trestle_missions");
-        if (cached) {
-            try {
-                setMissions(JSON.parse(cached));
-            } catch {
-                // Invalid cache, ignore
-            }
-        }
-
-        if (isOnline) {
-            fetchMissions();
-        } else {
-            setLoading(false);
-        }
-    }, [user, isOnline]);
-
     const handleLogout = async () => {
-        // Clear local data on logout (security requirement)
         localStorage.removeItem("trestle_missions");
         localStorage.removeItem("trestle_checklist_state");
         await signOut();
@@ -140,9 +68,9 @@ export default function PilotDashboard() {
                             variant="ghost"
                             size="icon"
                             onClick={handleSync}
-                            disabled={syncing || !isOnline}
+                            disabled={isRefetching || !isOnline}
                         >
-                            <RefreshCw className={`h-5 w-5 ${syncing ? "animate-spin" : ""}`} />
+                            <RefreshCw className={`h-5 w-5 ${isRefetching ? "animate-spin" : ""}`} />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={handleLogout}>
                             <LogOut className="h-5 w-5" />
@@ -155,10 +83,18 @@ export default function PilotDashboard() {
             <main className="container mx-auto px-4 py-6 max-w-2xl">
                 {/* Pilot Card */}
                 {pilotProfile && (
-                    <div className="mb-6">
+                    <div className="mb-4">
                         <PilotCard profile={pilotProfile} />
                     </div>
                 )}
+
+                {/* Fleet Link */}
+                <Link to="/pilot/fleet" className="block mb-6">
+                    <Button variant="outline" className="w-full justify-start gap-2">
+                        <Plane className="h-4 w-4" />
+                        Fleet Inventory
+                    </Button>
+                </Link>
 
                 {/* Missions Section */}
                 <div className="mb-4 flex items-center justify-between">
@@ -190,8 +126,8 @@ export default function PilotDashboard() {
                                     client_name: mission.client_name,
                                     address: mission.property_address,
                                     scheduled_date: mission.scheduled_date,
-                                    status: mission.status,
-                                    package_type: mission.drone_packages?.name,
+                                    status: mission.status as any,
+                                    package_type: mission.package_name || undefined,
                                 }}
                             />
                         ))}

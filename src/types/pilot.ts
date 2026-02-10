@@ -14,12 +14,22 @@ export interface ChecklistItem {
     label: string;
     checked: boolean;
     checked_at: string | null;
+    data_source?: 'manual' | 'system' | null;
 }
 
 export interface ChecklistData {
     version: string;
     completed_at: string | null;
     items: Record<string, ChecklistItem>;
+    equipment_id?: string | null;
+    weather_log_id?: string | null;
+    authorization_id?: string | null;
+}
+
+export interface PreFlightData {
+    equipment: { id: string; aircraft_model: string } | null;
+    weatherLog: { id: string; determination: string; station: string } | null;
+    authorization: { id: string; airspace_class: string; requires_laanc: boolean } | null;
 }
 
 export interface FlightLog {

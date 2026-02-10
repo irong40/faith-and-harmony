@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,22 +14,10 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import SOPChecklist from "@/components/pilot/SOPChecklist";
 import GatekeeperButton from "@/components/pilot/GatekeeperButton";
-import { ChecklistData, getCertificationStatus } from "@/types/pilot";
-
-interface MissionDetail {
-    id: string;
-    job_number: string;
-    property_address: string;
-    property_city: string | null;
-    property_state: string | null;
-    property_zip: string | null;
-    scheduled_date: string | null;
-    scheduled_time: string | null;
-    status: string;
-    pilot_notes: string | null;
-    customers?: { name: string } | null;
-    drone_packages?: { name: string; code: string } | null;
-}
+import PreFlightAccordion from "@/components/pilot/PreFlightAccordion";
+import { getCertificationStatus } from "@/types/pilot";
+import type { ChecklistData, PreFlightData } from "@/types/pilot";
+import { usePilotMission } from "@/hooks/usePilotMissions";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
     scheduled: { label: "SCHEDULED", color: "bg-blue-500" },
@@ -44,42 +32,21 @@ export default function PilotMissionDetail() {
     const { toast } = useToast();
     const navigate = useNavigate();
 
-    const [mission, setMission] = useState<MissionDetail | null>(null);
-    const [loading, setLoading] = useState(true);
+    // TanStack Query for mission data
+    const { data: mission, isLoading: loading } = usePilotMission(id);
+
     const [checklistComplete, setChecklistComplete] = useState(false);
     const [checklistData, setChecklistData] = useState<ChecklistData | null>(null);
+    const [preFlightData, setPreFlightData] = useState<PreFlightData>({
+        equipment: null,
+        weatherLog: null,
+        authorization: null,
+    });
     const [logging, setLogging] = useState(false);
 
     // Check if pilot can log flights (Part 107 not expired)
     const certStatus = getCertificationStatus(pilotProfile?.part_107_expiry ?? null);
     const canLogFlights = certStatus !== "expired";
-
-    const fetchMission = async () => {
-        if (!id) return;
-
-        setLoading(true);
-        const { data, error } = await supabase
-            .from("drone_jobs")
-            .select("*, customers(name), drone_packages(name, code)")
-            .eq("id", id)
-            .single();
-
-        if (error) {
-            toast({
-                title: "Error loading mission",
-                description: error.message,
-                variant: "destructive",
-            });
-        } else if (data) {
-            setMission(data);
-        }
-
-        setLoading(false);
-    };
-
-    useEffect(() => {
-        fetchMission();
-    }, [id]);
 
     const openInMaps = () => {
         if (!mission) return;
@@ -93,15 +60,12 @@ export default function PilotMissionDetail() {
 
         const encoded = encodeURIComponent(address);
 
-        // Detect platform and open appropriate maps app
         const userAgent = navigator.userAgent.toLowerCase();
         const isIOS = /iphone|ipad|ipod/.test(userAgent);
 
         if (isIOS) {
-            // Apple Maps
             window.open(`maps://maps.apple.com/?daddr=${encoded}`, "_blank");
         } else {
-            // Google Maps (Android and Desktop)
             window.open(`https://www.google.com/maps/dir/?api=1&destination=${encoded}`, "_blank");
         }
     };
@@ -112,14 +76,12 @@ export default function PilotMissionDetail() {
         setLogging(true);
 
         try {
-            // Generate device ID if not exists
             let deviceId = localStorage.getItem("trestle_device_id");
             if (!deviceId) {
                 deviceId = crypto.randomUUID();
                 localStorage.setItem("trestle_device_id", deviceId);
             }
 
-            // Insert flight log
             const { error: logError } = await supabase
                 .from("flight_logs")
                 .insert({
@@ -131,7 +93,6 @@ export default function PilotMissionDetail() {
 
             if (logError) throw logError;
 
-            // Update mission status to complete
             const { error: updateError } = await supabase
                 .from("drone_jobs")
                 .update({ status: "complete" })
@@ -139,10 +100,8 @@ export default function PilotMissionDetail() {
 
             if (updateError) throw updateError;
 
-            // Clear checklist from localStorage
             localStorage.removeItem(`trestle_checklist_${mission.id}`);
 
-            // Haptic feedback on success
             if ("vibrate" in navigator) {
                 navigator.vibrate([50, 50, 100]);
             }
@@ -152,7 +111,6 @@ export default function PilotMissionDetail() {
                 description: "Mission marked as complete",
             });
 
-            // Navigate back to dashboard
             navigate("/pilot");
 
         } catch (error: any) {
@@ -198,7 +156,7 @@ export default function PilotMissionDetail() {
                     <div className="flex-1">
                         <h1 className="font-semibold text-foreground">{mission.job_number}</h1>
                         <p className="text-xs text-muted-foreground truncate">
-                            {mission.customers?.name || "Unknown Client"}
+                            {mission.client_name}
                         </p>
                     </div>
                     <Badge className={`${statusConfig.color} text-white`}>
@@ -254,13 +212,15 @@ export default function PilotMissionDetail() {
                         )}
 
                         {/* Package Type */}
-                        {mission.drone_packages && (
+                        {mission.package_name && (
                             <div className="flex items-center gap-2">
                                 <Package className="h-4 w-4 text-muted-foreground" />
-                                <span>{mission.drone_packages.name}</span>
-                                <Badge variant="secondary" className="text-xs">
-                                    {mission.drone_packages.code}
-                                </Badge>
+                                <span>{mission.package_name}</span>
+                                {mission.package_code && (
+                                    <Badge variant="secondary" className="text-xs">
+                                        {mission.package_code}
+                                    </Badge>
+                                )}
                             </div>
                         )}
 
@@ -282,6 +242,26 @@ export default function PilotMissionDetail() {
                     </CardContent>
                 </Card>
 
+                {/* Pre-Flight Accordion */}
+                {!isComplete && (
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-lg">Pre-Flight Preparation</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <PreFlightAccordion
+                                missionId={mission.id}
+                                packageId={mission.package_id}
+                                packageCode={mission.package_code}
+                                latitude={mission.latitude}
+                                longitude={mission.longitude}
+                                nearestStation={mission.nearest_weather_station}
+                                onPreFlightData={setPreFlightData}
+                            />
+                        </CardContent>
+                    </Card>
+                )}
+
                 {/* SOP Checklist */}
                 {!isComplete && (
                     <Card>
@@ -292,6 +272,7 @@ export default function PilotMissionDetail() {
                             <SOPChecklist
                                 missionId={mission.id}
                                 disabled={!canLogFlights}
+                                preFlightData={preFlightData}
                                 onComplete={(data) => {
                                     setChecklistComplete(true);
                                     setChecklistData(data);
