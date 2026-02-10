@@ -13,6 +13,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useWeatherThresholds, useMissionWeatherLog, useCreateWeatherBriefing } from '@/hooks/useWeatherBriefing';
 import { evaluateWeather } from '@/lib/weather-evaluation';
+import { parseOrNull, extractCeiling } from '@/lib/metar-utils';
 import type { WeatherDetermination } from '@/types/weather';
 
 interface WeatherBriefingPanelProps {
@@ -133,12 +134,6 @@ export default function WeatherBriefingPanel({
     } finally {
       setFetching(false);
     }
-  };
-
-  const parseOrNull = (v: string): number | null => {
-    if (v.trim() === '') return null;
-    const n = parseFloat(v);
-    return isNaN(n) ? null : n;
   };
 
   const handleManualEvaluate = () => {
@@ -499,20 +494,3 @@ export default function WeatherBriefingPanel({
   );
 }
 
-/**
- * Extract cloud ceiling from METAR JSON response.
- * aviationweather.gov returns clouds as an array of { cover, base } objects.
- */
-function extractCeiling(metar: any): number | null {
-  const clouds = metar.clouds;
-  if (!Array.isArray(clouds) || clouds.length === 0) return null;
-
-  // Ceiling is the lowest BKN or OVC layer
-  for (const layer of clouds) {
-    if (['BKN', 'OVC'].includes(layer.cover)) {
-      return layer.base ?? null;
-    }
-  }
-
-  return null;
-}
