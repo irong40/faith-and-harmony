@@ -10,10 +10,197 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
+      accessories: {
+        Row: {
+          compatible_aircraft: string[] | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          purchase_date: string | null
+          serial_number: string | null
+          status: string
+          type: Database["public"]["Enums"]["accessory_type"]
+          updated_at: string
+        }
+        Insert: {
+          compatible_aircraft?: string[] | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          status?: string
+          type?: Database["public"]["Enums"]["accessory_type"]
+          updated_at?: string
+        }
+        Update: {
+          compatible_aircraft?: string[] | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          status?: string
+          type?: Database["public"]["Enums"]["accessory_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      aircraft: {
+        Row: {
+          created_at: string
+          faa_registration: string | null
+          firmware_version: string | null
+          id: string
+          insurance_expiry: string | null
+          model: string
+          nickname: string | null
+          notes: string | null
+          purchase_date: string | null
+          serial_number: string
+          status: string
+          total_flight_hours: number
+          total_flights: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          faa_registration?: string | null
+          firmware_version?: string | null
+          id?: string
+          insurance_expiry?: string | null
+          model: string
+          nickname?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          serial_number: string
+          status?: string
+          total_flight_hours?: number
+          total_flights?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          faa_registration?: string | null
+          firmware_version?: string | null
+          id?: string
+          insurance_expiry?: string | null
+          model?: string
+          nickname?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          serial_number?: string
+          status?: string
+          total_flight_hours?: number
+          total_flights?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      aircraft_capabilities: {
+        Row: {
+          aircraft_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          package_id: string
+        }
+        Insert: {
+          aircraft_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          package_id: string
+        }
+        Update: {
+          aircraft_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          package_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aircraft_capabilities_aircraft_id_fkey"
+            columns: ["aircraft_id"]
+            isOneToOne: false
+            referencedRelation: "aircraft"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aircraft_capabilities_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "drone_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aircraft_capabilities_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      airspace_grids: {
+        Row: {
+          airspace_class: string
+          ceiling_ft: number
+          created_at: string
+          effective_date: string | null
+          facility_id: string | null
+          facility_name: string | null
+          grid_id: string
+          id: string
+          laanc_eligible: boolean
+          latitude: number | null
+          longitude: number | null
+          notes: string | null
+          updated_at: string
+          zero_grid: boolean
+        }
+        Insert: {
+          airspace_class: string
+          ceiling_ft?: number
+          created_at?: string
+          effective_date?: string | null
+          facility_id?: string | null
+          facility_name?: string | null
+          grid_id: string
+          id?: string
+          laanc_eligible?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          updated_at?: string
+          zero_grid?: boolean
+        }
+        Update: {
+          airspace_class?: string
+          ceiling_ft?: number
+          created_at?: string
+          effective_date?: string | null
+          facility_id?: string | null
+          facility_name?: string | null
+          grid_id?: string
+          id?: string
+          laanc_eligible?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          updated_at?: string
+          zero_grid?: boolean
+        }
+        Relationships: []
+      }
       app_health_history: {
         Row: {
           app_id: string
@@ -131,6 +318,172 @@ export type Database = {
         }
         Relationships: []
       }
+      authorization_requests: {
+        Row: {
+          approved_altitude_ft: number | null
+          approved_at: string | null
+          authorization_type: Database["public"]["Enums"]["authorization_type"]
+          created_at: string
+          denial_reason: string | null
+          expires_at: string | null
+          id: string
+          mission_id: string
+          notes: string | null
+          reference_number: string | null
+          requested_altitude_ft: number | null
+          status: Database["public"]["Enums"]["authorization_status"]
+          submitted_at: string | null
+          submitted_via: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved_altitude_ft?: number | null
+          approved_at?: string | null
+          authorization_type: Database["public"]["Enums"]["authorization_type"]
+          created_at?: string
+          denial_reason?: string | null
+          expires_at?: string | null
+          id?: string
+          mission_id: string
+          notes?: string | null
+          reference_number?: string | null
+          requested_altitude_ft?: number | null
+          status?: Database["public"]["Enums"]["authorization_status"]
+          submitted_at?: string | null
+          submitted_via?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved_altitude_ft?: number | null
+          approved_at?: string | null
+          authorization_type?: Database["public"]["Enums"]["authorization_type"]
+          created_at?: string
+          denial_reason?: string | null
+          expires_at?: string | null
+          id?: string
+          mission_id?: string
+          notes?: string | null
+          reference_number?: string | null
+          requested_altitude_ft?: number | null
+          status?: Database["public"]["Enums"]["authorization_status"]
+          submitted_at?: string | null
+          submitted_via?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "authorization_requests_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "drone_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "authorization_requests_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      batteries: {
+        Row: {
+          aircraft_id: string | null
+          capacity_mah: number
+          created_at: string
+          cycle_count: number
+          health_percentage: number
+          id: string
+          model: string | null
+          notes: string | null
+          purchase_date: string | null
+          serial_number: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          aircraft_id?: string | null
+          capacity_mah: number
+          created_at?: string
+          cycle_count?: number
+          health_percentage?: number
+          id?: string
+          model?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          serial_number: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          aircraft_id?: string | null
+          capacity_mah?: number
+          created_at?: string
+          cycle_count?: number
+          health_percentage?: number
+          id?: string
+          model?: string | null
+          notes?: string | null
+          purchase_date?: string | null
+          serial_number?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batteries_aircraft_id_fkey"
+            columns: ["aircraft_id"]
+            isOneToOne: false
+            referencedRelation: "aircraft"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      controllers: {
+        Row: {
+          created_at: string
+          firmware_version: string | null
+          id: string
+          model: string
+          notes: string | null
+          paired_aircraft_id: string | null
+          serial_number: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          firmware_version?: string | null
+          id?: string
+          model: string
+          notes?: string | null
+          paired_aircraft_id?: string | null
+          serial_number: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          firmware_version?: string | null
+          id?: string
+          model?: string
+          notes?: string | null
+          paired_aircraft_id?: string | null
+          serial_number?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controllers_paired_aircraft_id_fkey"
+            columns: ["paired_aircraft_id"]
+            isOneToOne: false
+            referencedRelation: "aircraft"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           app_id: string | null
@@ -196,16 +549,20 @@ export type Database = {
         Row: {
           address: string | null
           city: string | null
+          client_type: string | null
           company_name: string | null
           created_at: string | null
           email: string
           historical_qa_overrides: number | null
           id: string
+          is_retainer: boolean
           name: string
           notes: string | null
           phone: string | null
           qa_specific_requirements: string[] | null
           qa_threshold_adjustment: number | null
+          retainer_credits_remaining: number
+          square_customer_id: string | null
           state: string | null
           updated_at: string | null
           zip: string | null
@@ -213,16 +570,20 @@ export type Database = {
         Insert: {
           address?: string | null
           city?: string | null
+          client_type?: string | null
           company_name?: string | null
           created_at?: string | null
           email: string
           historical_qa_overrides?: number | null
           id?: string
+          is_retainer?: boolean
           name: string
           notes?: string | null
           phone?: string | null
           qa_specific_requirements?: string[] | null
           qa_threshold_adjustment?: number | null
+          retainer_credits_remaining?: number
+          square_customer_id?: string | null
           state?: string | null
           updated_at?: string | null
           zip?: string | null
@@ -230,16 +591,20 @@ export type Database = {
         Update: {
           address?: string | null
           city?: string | null
+          client_type?: string | null
           company_name?: string | null
           created_at?: string | null
           email?: string
           historical_qa_overrides?: number | null
           id?: string
+          is_retainer?: boolean
           name?: string
           notes?: string | null
           phone?: string | null
           qa_specific_requirements?: string[] | null
           qa_threshold_adjustment?: number | null
+          retainer_credits_remaining?: number
+          square_customer_id?: string | null
           state?: string | null
           updated_at?: string | null
           zip?: string | null
@@ -318,7 +683,13 @@ export type Database = {
           qa_score: number | null
           qa_status: Database["public"]["Enums"]["qa_status"] | null
           sort_order: number | null
+          thumbnail_url: string | null
           updated_at: string
+          video_bitrate: number | null
+          video_codec: string | null
+          video_duration_seconds: number | null
+          video_fps: number | null
+          video_resolution: string | null
         }
         Insert: {
           camera_model?: string | null
@@ -346,7 +717,13 @@ export type Database = {
           qa_score?: number | null
           qa_status?: Database["public"]["Enums"]["qa_status"] | null
           sort_order?: number | null
+          thumbnail_url?: string | null
           updated_at?: string
+          video_bitrate?: number | null
+          video_codec?: string | null
+          video_duration_seconds?: number | null
+          video_fps?: number | null
+          video_resolution?: string | null
         }
         Update: {
           camera_model?: string | null
@@ -374,7 +751,13 @@ export type Database = {
           qa_score?: number | null
           qa_status?: Database["public"]["Enums"]["qa_status"] | null
           sort_order?: number | null
+          thumbnail_url?: string | null
           updated_at?: string
+          video_bitrate?: number | null
+          video_codec?: string | null
+          video_duration_seconds?: number | null
+          video_fps?: number | null
+          video_resolution?: string | null
         }
         Relationships: [
           {
@@ -531,6 +914,8 @@ export type Database = {
       drone_jobs: {
         Row: {
           admin_notes: string | null
+          aircraft_id: string | null
+          completed_at: string | null
           construction_context: Json | null
           created_at: string
           customer_id: string | null
@@ -539,10 +924,14 @@ export type Database = {
           delivery_token: string | null
           delivery_token_created_at: string | null
           download_url: string | null
-          google_event_id: string | null
           id: string
+          is_rush: boolean
           job_number: string
+          job_price: number | null
+          latitude: number | null
+          longitude: number | null
           package_id: string | null
+          pilot_id: string | null
           pilot_notes: string | null
           property_address: string
           property_city: string | null
@@ -562,6 +951,8 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          aircraft_id?: string | null
+          completed_at?: string | null
           construction_context?: Json | null
           created_at?: string
           customer_id?: string | null
@@ -570,10 +961,14 @@ export type Database = {
           delivery_token?: string | null
           delivery_token_created_at?: string | null
           download_url?: string | null
-          google_event_id?: string | null
           id?: string
+          is_rush?: boolean
           job_number: string
+          job_price?: number | null
+          latitude?: number | null
+          longitude?: number | null
           package_id?: string | null
+          pilot_id?: string | null
           pilot_notes?: string | null
           property_address: string
           property_city?: string | null
@@ -593,6 +988,8 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          aircraft_id?: string | null
+          completed_at?: string | null
           construction_context?: Json | null
           created_at?: string
           customer_id?: string | null
@@ -601,10 +998,14 @@ export type Database = {
           delivery_token?: string | null
           delivery_token_created_at?: string | null
           download_url?: string | null
-          google_event_id?: string | null
           id?: string
+          is_rush?: boolean
           job_number?: string
+          job_price?: number | null
+          latitude?: number | null
+          longitude?: number | null
           package_id?: string | null
+          pilot_id?: string | null
           pilot_notes?: string | null
           property_address?: string
           property_city?: string | null
@@ -624,6 +1025,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "drone_jobs_aircraft_id_fkey"
+            columns: ["aircraft_id"]
+            isOneToOne: false
+            referencedRelation: "aircraft"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "drone_jobs_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
@@ -642,6 +1050,13 @@ export type Database = {
             columns: ["package_id"]
             isOneToOne: false
             referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drone_jobs_pilot_id_fkey"
+            columns: ["pilot_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -851,6 +1266,58 @@ export type Database = {
           },
         ]
       }
+      flight_logs: {
+        Row: {
+          checklist_data: Json
+          created_at: string
+          device_id: string | null
+          flight_timestamp: string
+          id: string
+          mission_id: string
+          pilot_id: string
+        }
+        Insert: {
+          checklist_data: Json
+          created_at?: string
+          device_id?: string | null
+          flight_timestamp?: string
+          id?: string
+          mission_id: string
+          pilot_id: string
+        }
+        Update: {
+          checklist_data?: Json
+          created_at?: string
+          device_id?: string | null
+          flight_timestamp?: string
+          id?: string
+          mission_id?: string
+          pilot_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flight_logs_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "drone_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_logs_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flight_logs_pilot_id_fkey"
+            columns: ["pilot_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       generated_documents: {
         Row: {
           created_at: string
@@ -903,132 +1370,6 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "document_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      google_calendar_tokens: {
-        Row: {
-          access_token: string
-          calendar_id: string | null
-          created_at: string | null
-          expires_at: string | null
-          id: string
-          refresh_token: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          access_token: string
-          calendar_id?: string | null
-          created_at?: string | null
-          expires_at?: string | null
-          id?: string
-          refresh_token?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          access_token?: string
-          calendar_id?: string | null
-          created_at?: string | null
-          expires_at?: string | null
-          id?: string
-          refresh_token?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      invoices: {
-        Row: {
-          admin_notes: string | null
-          amount_paid: number | null
-          balance_due: number | null
-          created_at: string | null
-          customer_id: string | null
-          customer_payment_claim: Json | null
-          discount: number | null
-          due_date: string
-          id: string
-          invoice_number: string
-          issue_date: string
-          line_items: Json | null
-          notes: string | null
-          paid_at: string | null
-          payment_terms: string | null
-          proposal_id: string | null
-          sent_at: string | null
-          status: Database["public"]["Enums"]["invoice_status"]
-          subtotal: number
-          total: number
-          updated_at: string | null
-          view_token: string
-          viewed_at: string | null
-        }
-        Insert: {
-          admin_notes?: string | null
-          amount_paid?: number | null
-          balance_due?: number | null
-          created_at?: string | null
-          customer_id?: string | null
-          customer_payment_claim?: Json | null
-          discount?: number | null
-          due_date: string
-          id?: string
-          invoice_number: string
-          issue_date?: string
-          line_items?: Json | null
-          notes?: string | null
-          paid_at?: string | null
-          payment_terms?: string | null
-          proposal_id?: string | null
-          sent_at?: string | null
-          status?: Database["public"]["Enums"]["invoice_status"]
-          subtotal?: number
-          total?: number
-          updated_at?: string | null
-          view_token?: string
-          viewed_at?: string | null
-        }
-        Update: {
-          admin_notes?: string | null
-          amount_paid?: number | null
-          balance_due?: number | null
-          created_at?: string | null
-          customer_id?: string | null
-          customer_payment_claim?: Json | null
-          discount?: number | null
-          due_date?: string
-          id?: string
-          invoice_number?: string
-          issue_date?: string
-          line_items?: Json | null
-          notes?: string | null
-          paid_at?: string | null
-          payment_terms?: string | null
-          proposal_id?: string | null
-          sent_at?: string | null
-          status?: Database["public"]["Enums"]["invoice_status"]
-          subtotal?: number
-          total?: number
-          updated_at?: string | null
-          view_token?: string
-          viewed_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "invoices_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invoices_proposal_id_fkey"
-            columns: ["proposal_id"]
-            isOneToOne: false
-            referencedRelation: "proposals"
             referencedColumns: ["id"]
           },
         ]
@@ -1143,6 +1484,59 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      maintenance_log: {
+        Row: {
+          cost_cents: number | null
+          created_at: string
+          description: string | null
+          equipment_id: string
+          equipment_type: Database["public"]["Enums"]["equipment_type"]
+          id: string
+          maintenance_type: Database["public"]["Enums"]["maintenance_type"]
+          next_due_date: string | null
+          notes: string | null
+          parts_used: string[] | null
+          performed_at: string
+          performed_by: string | null
+        }
+        Insert: {
+          cost_cents?: number | null
+          created_at?: string
+          description?: string | null
+          equipment_id: string
+          equipment_type: Database["public"]["Enums"]["equipment_type"]
+          id?: string
+          maintenance_type: Database["public"]["Enums"]["maintenance_type"]
+          next_due_date?: string | null
+          notes?: string | null
+          parts_used?: string[] | null
+          performed_at?: string
+          performed_by?: string | null
+        }
+        Update: {
+          cost_cents?: number | null
+          created_at?: string
+          description?: string | null
+          equipment_id?: string
+          equipment_type?: Database["public"]["Enums"]["equipment_type"]
+          id?: string
+          maintenance_type?: Database["public"]["Enums"]["maintenance_type"]
+          next_due_date?: string | null
+          notes?: string | null
+          parts_used?: string[] | null
+          performed_at?: string
+          performed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_log_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       maintenance_logs: {
         Row: {
@@ -1359,6 +1753,216 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mission_authorizations: {
+        Row: {
+          active_tfrs: Json | null
+          airspace_class: string | null
+          created_at: string
+          determination_notes: string | null
+          id: string
+          is_zero_grid: boolean
+          max_approved_altitude_ft: number | null
+          mission_id: string
+          requirements_checklist: Json | null
+          requires_laanc: boolean
+          updated_at: string
+        }
+        Insert: {
+          active_tfrs?: Json | null
+          airspace_class?: string | null
+          created_at?: string
+          determination_notes?: string | null
+          id?: string
+          is_zero_grid?: boolean
+          max_approved_altitude_ft?: number | null
+          mission_id: string
+          requirements_checklist?: Json | null
+          requires_laanc?: boolean
+          updated_at?: string
+        }
+        Update: {
+          active_tfrs?: Json | null
+          airspace_class?: string | null
+          created_at?: string
+          determination_notes?: string | null
+          id?: string
+          is_zero_grid?: boolean
+          max_approved_altitude_ft?: number | null
+          mission_id?: string
+          requirements_checklist?: Json | null
+          requires_laanc?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_authorizations_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: true
+            referencedRelation: "drone_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_authorizations_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: true
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mission_equipment: {
+        Row: {
+          aircraft_id: string
+          battery_ids: string[] | null
+          controller_id: string | null
+          created_at: string
+          id: string
+          mission_id: string
+          notes: string | null
+        }
+        Insert: {
+          aircraft_id: string
+          battery_ids?: string[] | null
+          controller_id?: string | null
+          created_at?: string
+          id?: string
+          mission_id: string
+          notes?: string | null
+        }
+        Update: {
+          aircraft_id?: string
+          battery_ids?: string[] | null
+          controller_id?: string | null
+          created_at?: string
+          id?: string
+          mission_id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_equipment_aircraft_id_fkey"
+            columns: ["aircraft_id"]
+            isOneToOne: false
+            referencedRelation: "aircraft"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_equipment_controller_id_fkey"
+            columns: ["controller_id"]
+            isOneToOne: false
+            referencedRelation: "controllers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_equipment_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "drone_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_equipment_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mission_weather_logs: {
+        Row: {
+          altimeter_inhg: number | null
+          briefing_timestamp: string
+          cloud_ceiling_ft: number | null
+          created_at: string
+          determination: Database["public"]["Enums"]["weather_determination"]
+          determination_reasons: string[] | null
+          dewpoint_c: number | null
+          id: string
+          kp_index: number | null
+          metar_raw: string | null
+          metar_station: string | null
+          mission_id: string
+          override_approved_by: string | null
+          override_reason: string | null
+          pilot_override: boolean
+          precipitation_probability: number | null
+          temperature_c: number | null
+          visibility_sm: number | null
+          wind_direction_deg: number | null
+          wind_gust_ms: number | null
+          wind_speed_ms: number | null
+        }
+        Insert: {
+          altimeter_inhg?: number | null
+          briefing_timestamp?: string
+          cloud_ceiling_ft?: number | null
+          created_at?: string
+          determination: Database["public"]["Enums"]["weather_determination"]
+          determination_reasons?: string[] | null
+          dewpoint_c?: number | null
+          id?: string
+          kp_index?: number | null
+          metar_raw?: string | null
+          metar_station?: string | null
+          mission_id: string
+          override_approved_by?: string | null
+          override_reason?: string | null
+          pilot_override?: boolean
+          precipitation_probability?: number | null
+          temperature_c?: number | null
+          visibility_sm?: number | null
+          wind_direction_deg?: number | null
+          wind_gust_ms?: number | null
+          wind_speed_ms?: number | null
+        }
+        Update: {
+          altimeter_inhg?: number | null
+          briefing_timestamp?: string
+          cloud_ceiling_ft?: number | null
+          created_at?: string
+          determination?: Database["public"]["Enums"]["weather_determination"]
+          determination_reasons?: string[] | null
+          dewpoint_c?: number | null
+          id?: string
+          kp_index?: number | null
+          metar_raw?: string | null
+          metar_station?: string | null
+          mission_id?: string
+          override_approved_by?: string | null
+          override_reason?: string | null
+          pilot_override?: boolean
+          precipitation_probability?: number | null
+          temperature_c?: number | null
+          visibility_sm?: number | null
+          wind_direction_deg?: number | null
+          wind_gust_ms?: number | null
+          wind_speed_ms?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_weather_logs_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "drone_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_weather_logs_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_weather_logs_override_approved_by_fkey"
+            columns: ["override_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1637,75 +2241,35 @@ export type Database = {
         }
         Relationships: []
       }
-      projects: {
+      profiles: {
         Row: {
-          admin_notes: string | null
-          completed_at: string | null
+          avatar_url: string | null
           created_at: string | null
-          customer_id: string | null
-          description: string | null
+          full_name: string | null
           id: string
-          project_number: string
-          proposal_id: string | null
-          service_id: string | null
-          started_at: string | null
-          status: Database["public"]["Enums"]["project_status"] | null
-          title: string
+          part_107_expiry: string | null
+          part_107_number: string | null
           updated_at: string | null
         }
         Insert: {
-          admin_notes?: string | null
-          completed_at?: string | null
+          avatar_url?: string | null
           created_at?: string | null
-          customer_id?: string | null
-          description?: string | null
-          id?: string
-          project_number: string
-          proposal_id?: string | null
-          service_id?: string | null
-          started_at?: string | null
-          status?: Database["public"]["Enums"]["project_status"] | null
-          title: string
+          full_name?: string | null
+          id: string
+          part_107_expiry?: string | null
+          part_107_number?: string | null
           updated_at?: string | null
         }
         Update: {
-          admin_notes?: string | null
-          completed_at?: string | null
+          avatar_url?: string | null
           created_at?: string | null
-          customer_id?: string | null
-          description?: string | null
+          full_name?: string | null
           id?: string
-          project_number?: string
-          proposal_id?: string | null
-          service_id?: string | null
-          started_at?: string | null
-          status?: Database["public"]["Enums"]["project_status"] | null
-          title?: string
+          part_107_expiry?: string | null
+          part_107_number?: string | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "projects_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "projects_proposal_id_fkey"
-            columns: ["proposal_id"]
-            isOneToOne: false
-            referencedRelation: "proposals"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "projects_service_id_fkey"
-            columns: ["service_id"]
-            isOneToOne: false
-            referencedRelation: "services"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       proposals: {
         Row: {
@@ -1912,6 +2476,63 @@ export type Database = {
         }
         Relationships: []
       }
+      tfr_cache: {
+        Row: {
+          ceiling_ft: number | null
+          center_latitude: number | null
+          center_longitude: number | null
+          created_at: string
+          description: string | null
+          effective_end: string | null
+          effective_start: string | null
+          fetched_at: string
+          floor_ft: number | null
+          id: string
+          notam_number: string
+          radius_nm: number | null
+          raw_data: Json | null
+          status: Database["public"]["Enums"]["tfr_status"]
+          tfr_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          ceiling_ft?: number | null
+          center_latitude?: number | null
+          center_longitude?: number | null
+          created_at?: string
+          description?: string | null
+          effective_end?: string | null
+          effective_start?: string | null
+          fetched_at?: string
+          floor_ft?: number | null
+          id?: string
+          notam_number: string
+          radius_nm?: number | null
+          raw_data?: Json | null
+          status?: Database["public"]["Enums"]["tfr_status"]
+          tfr_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ceiling_ft?: number | null
+          center_latitude?: number | null
+          center_longitude?: number | null
+          created_at?: string
+          description?: string | null
+          effective_end?: string | null
+          effective_start?: string | null
+          fetched_at?: string
+          floor_ft?: number | null
+          id?: string
+          notam_number?: string
+          radius_nm?: number | null
+          raw_data?: Json | null
+          status?: Database["public"]["Enums"]["tfr_status"]
+          tfr_type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -1930,6 +2551,60 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      weather_thresholds: {
+        Row: {
+          aircraft_model: string | null
+          created_at: string
+          id: string
+          is_part_107_minimum: boolean
+          label: string
+          max_kp_index: number | null
+          max_precip_probability: number | null
+          max_temp_c: number | null
+          max_wind_speed_ms: number | null
+          min_cloud_ceiling_ft: number | null
+          min_temp_c: number | null
+          min_visibility_sm: number | null
+          notes: string | null
+          package_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          aircraft_model?: string | null
+          created_at?: string
+          id?: string
+          is_part_107_minimum?: boolean
+          label: string
+          max_kp_index?: number | null
+          max_precip_probability?: number | null
+          max_temp_c?: number | null
+          max_wind_speed_ms?: number | null
+          min_cloud_ceiling_ft?: number | null
+          min_temp_c?: number | null
+          min_visibility_sm?: number | null
+          notes?: string | null
+          package_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aircraft_model?: string | null
+          created_at?: string
+          id?: string
+          is_part_107_minimum?: boolean
+          label?: string
+          max_kp_index?: number | null
+          max_precip_probability?: number | null
+          max_temp_c?: number | null
+          max_wind_speed_ms?: number | null
+          min_cloud_ceiling_ft?: number | null
+          min_temp_c?: number | null
+          min_visibility_sm?: number | null
+          notes?: string | null
+          package_type?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -2137,18 +2812,7 @@ export type Database = {
     }
     Functions: {
       generate_app_api_key: { Args: { p_app_id: string }; Returns: string }
-      generate_document_number: {
-        Args: {
-          p_column_name: string
-          p_padding?: number
-          p_prefix: string
-          p_table_name: string
-        }
-        Returns: string
-      }
       generate_drone_job_number: { Args: never; Returns: string }
-      generate_invoice_number: { Args: never; Returns: string }
-      generate_project_number: { Args: never; Returns: string }
       generate_proposal_number: { Args: never; Returns: string }
       generate_ticket_number: { Args: never; Returns: string }
       get_app_announcements: {
@@ -2170,6 +2834,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      log_flight: {
+        Args: {
+          p_aircraft_id: string
+          p_battery_ids: string[]
+          p_flight_hours: number
+        }
+        Returns: undefined
+      }
       record_app_heartbeat: {
         Args: {
           p_app_id: string
@@ -2181,14 +2853,6 @@ export type Database = {
         Returns: boolean
       }
       revoke_app_api_key: { Args: { p_app_id: string }; Returns: boolean }
-      select_drone_package_for_proposal: {
-        Args: { p_proposal_total: number; p_work_category: string }
-        Returns: string
-      }
-      upsert_customer_from_service_request: {
-        Args: { p_sr_id: string }
-        Returns: string
-      }
       validate_api_key: {
         Args: { p_api_key: string }
         Returns: {
@@ -2200,7 +2864,26 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      accessory_type:
+        | "filter"
+        | "lens"
+        | "propeller"
+        | "case"
+        | "charger"
+        | "antenna"
+        | "mount"
+        | "other"
+      app_role: "admin" | "user" | "pilot"
+      authorization_status:
+        | "not_started"
+        | "pending"
+        | "auto_approved"
+        | "manual_review"
+        | "approved"
+        | "denied"
+        | "expired"
+        | "cancelled"
+      authorization_type: "laanc" | "caps" | "coa" | "waiver" | "none_required"
       batch_recommendation:
         | "deliver_as_planned"
         | "extended_processing"
@@ -2227,9 +2910,16 @@ export type Database = {
         | "project"
         | "storm"
         | "marketing"
-      invoice_status: "draft" | "sent" | "paid" | "overdue" | "cancelled"
+      equipment_type: "aircraft" | "battery" | "controller" | "accessory"
       lead_gen_job_status: "pending" | "running" | "completed" | "failed"
       lead_status: "new" | "contacted" | "responded" | "qualified" | "client"
+      maintenance_type:
+        | "scheduled"
+        | "unscheduled"
+        | "repair"
+        | "inspection"
+        | "firmware_update"
+        | "calibration"
       order_status:
         | "pending"
         | "confirmed"
@@ -2258,14 +2948,6 @@ export type Database = {
         | "per_video"
         | "per_event"
         | "starting_at"
-      project_status:
-        | "kickoff"
-        | "in_progress"
-        | "review"
-        | "revision"
-        | "complete"
-        | "on_hold"
-        | "cancelled"
       proposal_status:
         | "draft"
         | "sent"
@@ -2290,6 +2972,8 @@ export type Database = {
         | "quoted"
         | "closed"
         | "declined"
+      tfr_status: "active" | "scheduled" | "expired" | "cancelled"
+      weather_determination: "GO" | "CAUTION" | "NO_GO"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2417,7 +3101,28 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      accessory_type: [
+        "filter",
+        "lens",
+        "propeller",
+        "case",
+        "charger",
+        "antenna",
+        "mount",
+        "other",
+      ],
+      app_role: ["admin", "user", "pilot"],
+      authorization_status: [
+        "not_started",
+        "pending",
+        "auto_approved",
+        "manual_review",
+        "approved",
+        "denied",
+        "expired",
+        "cancelled",
+      ],
+      authorization_type: ["laanc", "caps", "coa", "waiver", "none_required"],
       batch_recommendation: [
         "deliver_as_planned",
         "extended_processing",
@@ -2447,9 +3152,17 @@ export const Constants = {
         "storm",
         "marketing",
       ],
-      invoice_status: ["draft", "sent", "paid", "overdue", "cancelled"],
+      equipment_type: ["aircraft", "battery", "controller", "accessory"],
       lead_gen_job_status: ["pending", "running", "completed", "failed"],
       lead_status: ["new", "contacted", "responded", "qualified", "client"],
+      maintenance_type: [
+        "scheduled",
+        "unscheduled",
+        "repair",
+        "inspection",
+        "firmware_update",
+        "calibration",
+      ],
       order_status: [
         "pending",
         "confirmed",
@@ -2482,15 +3195,6 @@ export const Constants = {
         "per_event",
         "starting_at",
       ],
-      project_status: [
-        "kickoff",
-        "in_progress",
-        "review",
-        "revision",
-        "complete",
-        "on_hold",
-        "cancelled",
-      ],
       proposal_status: [
         "draft",
         "sent",
@@ -2518,6 +3222,8 @@ export const Constants = {
         "closed",
         "declined",
       ],
+      tfr_status: ["active", "scheduled", "expired", "cancelled"],
+      weather_determination: ["GO", "CAUTION", "NO_GO"],
     },
   },
 } as const
