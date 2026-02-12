@@ -611,6 +611,54 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_log: {
+        Row: {
+          delivered_at: string | null
+          file_count: number | null
+          id: string
+          mission_id: string
+          notification_sent: boolean | null
+          output_path: string
+          recipient_email: string | null
+          total_size_bytes: number | null
+        }
+        Insert: {
+          delivered_at?: string | null
+          file_count?: number | null
+          id?: string
+          mission_id: string
+          notification_sent?: boolean | null
+          output_path: string
+          recipient_email?: string | null
+          total_size_bytes?: number | null
+        }
+        Update: {
+          delivered_at?: string | null
+          file_count?: number | null
+          id?: string
+          mission_id?: string
+          notification_sent?: boolean | null
+          output_path?: string
+          recipient_email?: string | null
+          total_size_bytes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_log_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "drone_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_log_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_templates: {
         Row: {
           active: boolean
@@ -660,7 +708,9 @@ export type Database = {
         Row: {
           camera_model: string | null
           capture_date: string | null
+          compass_bearing: number | null
           compass_direction: string | null
+          coverage_tag: string | null
           created_at: string
           exif_data: Json | null
           file_name: string
@@ -672,7 +722,10 @@ export type Database = {
           gps_longitude: number | null
           id: string
           job_id: string
+          lr_exported_path: string | null
+          media_format: string | null
           mime_type: string | null
+          pipeline_excluded: boolean | null
           processed_path: string | null
           processing_status: string | null
           qa_analyzed_at: string | null
@@ -694,7 +747,9 @@ export type Database = {
         Insert: {
           camera_model?: string | null
           capture_date?: string | null
+          compass_bearing?: number | null
           compass_direction?: string | null
+          coverage_tag?: string | null
           created_at?: string
           exif_data?: Json | null
           file_name: string
@@ -706,7 +761,10 @@ export type Database = {
           gps_longitude?: number | null
           id?: string
           job_id: string
+          lr_exported_path?: string | null
+          media_format?: string | null
           mime_type?: string | null
+          pipeline_excluded?: boolean | null
           processed_path?: string | null
           processing_status?: string | null
           qa_analyzed_at?: string | null
@@ -728,7 +786,9 @@ export type Database = {
         Update: {
           camera_model?: string | null
           capture_date?: string | null
+          compass_bearing?: number | null
           compass_direction?: string | null
+          coverage_tag?: string | null
           created_at?: string
           exif_data?: Json | null
           file_name?: string
@@ -740,7 +800,10 @@ export type Database = {
           gps_longitude?: number | null
           id?: string
           job_id?: string
+          lr_exported_path?: string | null
+          media_format?: string | null
           mime_type?: string | null
+          pipeline_excluded?: boolean | null
           processed_path?: string | null
           processing_status?: string | null
           qa_analyzed_at?: string | null
@@ -2163,6 +2226,126 @@ export type Database = {
           },
         ]
       }
+      processing_steps: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          items_processed: number | null
+          mission_id: string
+          started_at: string | null
+          status: string
+          step_name: string
+          step_order: number
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          items_processed?: number | null
+          mission_id: string
+          started_at?: string | null
+          status?: string
+          step_name: string
+          step_order: number
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          items_processed?: number | null
+          mission_id?: string
+          started_at?: string | null
+          status?: string
+          step_name?: string
+          step_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processing_steps_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "drone_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processing_steps_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      processing_templates: {
+        Row: {
+          active: boolean | null
+          adiat_enabled: boolean | null
+          created_at: string | null
+          id: string
+          lightroom_preset: string | null
+          output_format: string | null
+          package_id: string
+          preset_name: string
+          qa_api_threshold_high: number | null
+          qa_api_threshold_low: number | null
+          qa_threshold: number | null
+          raw_workflow: boolean | null
+          shot_requirements: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          adiat_enabled?: boolean | null
+          created_at?: string | null
+          id?: string
+          lightroom_preset?: string | null
+          output_format?: string | null
+          package_id: string
+          preset_name: string
+          qa_api_threshold_high?: number | null
+          qa_api_threshold_low?: number | null
+          qa_threshold?: number | null
+          raw_workflow?: boolean | null
+          shot_requirements?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          adiat_enabled?: boolean | null
+          created_at?: string | null
+          id?: string
+          lightroom_preset?: string | null
+          output_format?: string | null
+          package_id?: string
+          preset_name?: string
+          qa_api_threshold_high?: number | null
+          qa_api_threshold_low?: number | null
+          qa_threshold?: number | null
+          raw_workflow?: boolean | null
+          shot_requirements?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processing_templates_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "drone_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processing_templates_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_waitlist: {
         Row: {
           created_at: string
@@ -2896,11 +3079,13 @@ export type Database = {
         | "scheduled"
         | "captured"
         | "uploaded"
+        | "complete"
         | "processing"
         | "review_pending"
         | "qa"
         | "revision"
         | "delivered"
+        | "failed"
         | "cancelled"
       engagement_status: "scheduled" | "in_progress" | "completed" | "cancelled"
       engagement_type:
@@ -3136,11 +3321,13 @@ export const Constants = {
         "scheduled",
         "captured",
         "uploaded",
+        "complete",
         "processing",
         "review_pending",
         "qa",
         "revision",
         "delivered",
+        "failed",
         "cancelled",
       ],
       engagement_status: ["scheduled", "in_progress", "completed", "cancelled"],

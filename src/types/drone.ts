@@ -62,4 +62,10 @@ export interface DroneAsset {
     video_codec?: string | null;
     video_bitrate?: number | null;
     thumbnail_url?: string | null;
+    // Pipeline fields
+    media_format?: string | null;
+    compass_bearing?: number | null;
+    lr_exported_path?: string | null;
+    pipeline_excluded?: boolean;
+    coverage_tag?: string | null;
 }

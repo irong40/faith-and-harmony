@@ -31,6 +31,8 @@ import QAAssetGrid from "@/components/drone/QAAssetGrid";
 import AdminAssetUpload from "@/components/drone/AdminAssetUpload";
 import type { Database, Json } from "@/integrations/supabase/types";
 import type { DroneAsset, QAResults, ProcessingProfile } from "@/types/drone";
+import { useMissionSteps } from "@/hooks/usePipeline";
+import PipelineStepRow from "@/components/pipeline/PipelineStepRow";
 
 type DroneJobStatus = Database["public"]["Enums"]["drone_job_status"];
 
@@ -69,17 +71,37 @@ const STATUS_CONFIG: Record<DroneJobStatus, { label: string; color: string }> = 
   scheduled: { label: "Scheduled", color: "bg-blue-500" },
   captured: { label: "Captured", color: "bg-indigo-500" },
   uploaded: { label: "Uploaded", color: "bg-purple-500" },
+  complete: { label: "Complete", color: "bg-teal-500" },
   processing: { label: "Processing", color: "bg-amber-500" },
   review_pending: { label: "Review Pending", color: "bg-violet-500" },
   qa: { label: "QA Review", color: "bg-orange-500" },
   revision: { label: "Revision", color: "bg-red-500" },
   delivered: { label: "Delivered", color: "bg-green-500" },
+  failed: { label: "Failed", color: "bg-red-700" },
   cancelled: { label: "Cancelled", color: "bg-gray-500" },
 };
 
 const STATUS_ORDER: DroneJobStatus[] = [
-  "intake", "scheduled", "captured", "uploaded", "processing", "review_pending", "qa", "revision", "delivered"
+  "intake", "scheduled", "captured", "uploaded", "complete", "processing", "review_pending", "qa", "revision", "delivered"
 ];
+
+function PipelineSteps({ missionId }: { missionId: string | undefined }) {
+  const { data: steps = [] } = useMissionSteps(missionId);
+  if (steps.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          Pipeline Progress
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <PipelineStepRow steps={steps} />
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function DroneJobDetail() {
   const { id } = useParams<{ id: string }>();
@@ -644,6 +666,8 @@ export default function DroneJobDetail() {
           {/* Processing Tab */}
           <TabsContent value="processing">
             <div className="space-y-6">
+              {/* Pipeline Steps */}
+              <PipelineSteps missionId={id} />
               {/* Premium Review Approval UI */}
               {job.status === "review_pending" && (
                 <Card className="border-violet-500/50 bg-violet-500/5">

@@ -53,6 +53,9 @@ import PilotDashboard from "./pages/pilot/PilotDashboard";
 import PilotMissionDetail from "./pages/pilot/PilotMissionDetail";
 import PilotManagement from "./pages/admin/PilotManagement";
 import FleetOverview from "./components/pilot/FleetOverview";
+import Pipeline from "./pages/admin/Pipeline";
+import PipelineQAReview from "./pages/admin/PipelineQAReview";
+import PipelineCoverageReview from "./pages/admin/PipelineCoverageReview";
 
 const queryClient = new QueryClient();
 
@@ -146,6 +149,30 @@ const App = () => (
                 element={
                   <ProtectedRoute requireAdmin>
                     <DroneCRMDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pipeline"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <Pipeline />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pipeline/qa/:missionId"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <PipelineQAReview />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pipeline/coverage/:missionId"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <PipelineCoverageReview />
                   </ProtectedRoute>
                 }
               />
