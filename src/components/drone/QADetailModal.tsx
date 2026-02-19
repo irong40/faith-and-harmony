@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle, AlertTriangle, XCircle, Clock, ThumbsUp, ThumbsDown, MapPin, Camera, Calendar } from "lucide-react";
+import { CheckCircle, AlertTriangle, XCircle, Clock, ThumbsUp, ThumbsDown, MapPin, Camera, Calendar, Trash2 } from "lucide-react";
 import type { DroneAsset, QAResults } from "@/types/drone";
 
 interface QADetailModalProps {
@@ -71,6 +71,38 @@ export default function QADetailModal({ asset, onClose, onRefresh }: QADetailMod
     setSaving(false);
   };
 
+  const handleDelete = async () => {
+    if (!asset) return;
+
+    if (!confirm(`Are you sure you want to delete ${asset.file_name}? This cannot be undone.`)) {
+      return;
+    }
+
+    setSaving(true);
+
+    // Delete from storage
+    const storagePath = asset.file_path.split('/storage/v1/object/public/drone-jobs/')[1];
+    if (storagePath) {
+      await supabase.storage.from('drone-jobs').remove([storagePath]);
+    }
+
+    // Delete from database
+    const { error } = await supabase
+      .from('drone_assets')
+      .delete()
+      .eq('id', asset.id);
+
+    if (error) {
+      toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Asset deleted' });
+      onRefresh();
+      onClose();
+    }
+
+    setSaving(false);
+  };
+
   const getScoreColor = (score: number) => {
     if (score >= 75) return "text-green-600";
     if (score >= 50) return "text-amber-600";
@@ -93,14 +125,25 @@ export default function QADetailModal({ asset, onClose, onRefresh }: QADetailMod
     <Dialog open={!!asset} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            QA Details: {asset.file_name}
-            {asset.qa_score !== null && (
-              <Badge variant="outline" className={`font-mono ${getScoreColor(asset.qa_score)}`}>
-                Score: {asset.qa_score}
-              </Badge>
-            )}
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              QA Details: {asset.file_name}
+              {asset.qa_score !== null && (
+                <Badge variant="outline" className={`font-mono ${getScoreColor(asset.qa_score)}`}>
+                  Score: {asset.qa_score}
+                </Badge>
+              )}
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleDelete}
+              disabled={saving}
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="grid gap-6 md:grid-cols-2">
@@ -318,16 +361,31 @@ export default function QADetailModal({ asset, onClose, onRefresh }: QADetailMod
                   onClick={async () => {
                     setSaving(true);
                     try {
-                      const { error } = await supabase.functions.invoke('drone-qa-analyze', {
+                      const { data, error } = await supabase.functions.invoke('drone-qa-analyze', {
                         body: { asset_id: asset.id }
                       });
-                      if (error) throw error;
+                      if (error) {
+                        // Try to get more details from the error
+                        let errorMessage = error.message || String(error);
+                        if (error.context?.body) {
+                          try {
+                            const bodyText = await error.context.body.text();
+                            const bodyJson = JSON.parse(bodyText);
+                            errorMessage = bodyJson.error || bodyJson.details || errorMessage;
+                          } catch {
+                            // Ignore parse errors
+                          }
+                        }
+                        throw new Error(errorMessage);
+                      }
                       toast({ title: "Analysis started", description: "QA analysis is running..." });
                       setTimeout(() => {
                         onRefresh();
                       }, 3000);
-                    } catch (err) {
-                      toast({ title: "Analysis failed", description: String(err), variant: "destructive" });
+                    } catch (err: any) {
+                      const message = err?.message || String(err);
+                      console.error("QA Analysis Error:", err);
+                      toast({ title: "Analysis failed", description: message, variant: "destructive" });
                     } finally {
                       setSaving(false);
                     }

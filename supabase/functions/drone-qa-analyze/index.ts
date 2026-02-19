@@ -401,55 +401,124 @@ Analyze this aerial photograph and return the quality assessment JSON.`;
       );
     }
 
-    // 1. Upload the file to Gemini File API
-    const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GOOGLE_API_KEY}`;
+    // Use Gemini File API with resumable upload for large files
+    console.log("Starting Gemini File API upload...");
 
-    // We need to send the metadata and the file. 
-    // For simplicity with standard fetch, we'll try the simple upload method or multipart.
-    // However, the simplest way for a single file is often just POSTing the bytes if we can trigger the right "uploadType=media" flow,
-    // but Gemini usually requires a specific protocol.
-    // A reliable way is to do a multipart/related request or just a standard upload with metadata.
-    // Let's use the standard "uploadType=media" with the correct headers if supported, or the resumable protocol.
-    // Actually, the Gemini API docs suggest:
-    // POST https://generativelanguage.googleapis.com/upload/v1beta/files?key=...
-    // Body: JSON { file: { display_name: "..." } } returns an upload_url? No, that's slightly different.
+    // Step 1: Initiate resumable upload
+    const initiateResponse = await fetch(
+      `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${GOOGLE_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "X-Goog-Upload-Protocol": "resumable",
+          "X-Goog-Upload-Command": "start",
+          "X-Goog-Upload-Header-Content-Length": imageBuffer.byteLength.toString(),
+          "X-Goog-Upload-Header-Content-Type": mimeType,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          file: {
+            display_name: asset.file_name || "drone_image.jpg",
+          },
+        }),
+      }
+    );
 
-    // Let's try the simplest approach: POST raw bytes with header X-Goog-Upload-Command: start, upload, finalize
-    // Or check if there is a simpler "media" upload type.
-    // Docs: POST /upload/v1beta/files?key=...
-    // Headers: X-Goog-Upload-Protocol: raw, Content-Type: <mime-type>, Content-Length: <size>, X-Goog-Upload-Header-Content-Meta-Data: {"displayName": "..."}
+    if (!initiateResponse.ok) {
+      const errorText = await initiateResponse.text();
+      console.error("Gemini upload initiation failed:", initiateResponse.status, errorText);
+      await supabase.from("drone_assets").update({ qa_status: "pending" }).eq("id", asset_id);
+      return new Response(
+        JSON.stringify({ error: `Gemini upload failed: ${initiateResponse.status}` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // We will use the REST API "media" upload if available, but the documentation points to `upload/v1beta/files`
+    const uploadUrl = initiateResponse.headers.get("X-Goog-Upload-URL");
+    if (!uploadUrl) {
+      console.error("No upload URL in initiate response");
+      await supabase.from("drone_assets").update({ qa_status: "pending" }).eq("id", asset_id);
+      return new Response(
+        JSON.stringify({ error: "Gemini upload URL missing" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    console.log("Uploading to Gemini File API...");
+    console.log("Upload URL received, uploading file...");
 
+    // Step 2: Upload the actual file bytes
     const uploadResponse = await fetch(uploadUrl, {
       method: "POST",
       headers: {
-        "X-Goog-Upload-Protocol": "raw",
-        "X-Goog-Upload-Command": "start, upload, finalize",
-        "X-Goog-Upload-Header-Content-Length": imageBuffer.byteLength.toString(),
-        "X-Goog-Upload-Header-Content-Type": mimeType,
-        "Content-Type": mimeType,
+        "Content-Length": imageBuffer.byteLength.toString(),
+        "X-Goog-Upload-Offset": "0",
+        "X-Goog-Upload-Command": "upload, finalize",
       },
-      body: imageBuffer // Send raw bytes
+      body: imageBuffer,
     });
 
     if (!uploadResponse.ok) {
       const errorText = await uploadResponse.text();
-      throw new Error(`Gemini File Upload failed: ${uploadResponse.status} ${errorText}`);
+      console.error("Gemini file upload failed:", uploadResponse.status, errorText);
+      await supabase.from("drone_assets").update({ qa_status: "pending" }).eq("id", asset_id);
+      return new Response(
+        JSON.stringify({ error: `Gemini file upload failed: ${uploadResponse.status}` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const uploadResult = await uploadResponse.json();
     const fileUri = uploadResult.file?.uri;
 
     if (!fileUri) {
-      throw new Error("Gemini File Upload returned no URI");
+      console.error("No file URI in upload result:", uploadResult);
+      await supabase.from("drone_assets").update({ qa_status: "pending" }).eq("id", asset_id);
+      return new Response(
+        JSON.stringify({ error: "Gemini file URI missing" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     console.log("File uploaded successfully. URI:", fileUri);
 
-    // 2. Generate Content using the File URI
+    // Wait for file to be processed (Gemini needs time to process large files)
+    console.log("Waiting for file to be processed...");
+    let fileReady = false;
+    for (let i = 0; i < 10; i++) {
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+
+      const statusResponse = await fetch(
+        `${fileUri}?key=${GOOGLE_API_KEY}`,
+        { method: "GET" }
+      );
+
+      if (statusResponse.ok) {
+        const fileStatus = await statusResponse.json();
+        console.log("File status:", fileStatus.state);
+
+        if (fileStatus.state === "ACTIVE") {
+          fileReady = true;
+          break;
+        }
+      }
+    }
+
+    if (!fileReady) {
+      console.error("File did not become ready in time");
+      await supabase.from("drone_assets").update({ qa_status: "pending" }).eq("id", asset_id);
+      return new Response(
+        JSON.stringify({ error: "Gemini file processing timeout" }),
+        {
+          status: 500, headers: {
+            ...corsHeaders, "Content-Type": "application/json"
+          }
+        }
+      );
+    }
+
+    console.log("File is ready for analysis!");
+
+    // Step 3: Generate content using the uploaded file
     const aiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GOOGLE_API_KEY}`,
       {
@@ -480,6 +549,12 @@ Analyze this aerial photograph and return the quality assessment JSON.`;
       const errorText = await aiResponse.text();
       console.error("AI API error:", aiResponse.status, errorText);
 
+      // Revert status on error
+      await supabase
+        .from("drone_assets")
+        .update({ qa_status: "pending" })
+        .eq("id", asset_id);
+
       if (aiResponse.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
@@ -493,14 +568,9 @@ Analyze this aerial photograph and return the quality assessment JSON.`;
         );
       }
 
-      // Revert status on error
-      await supabase
-        .from("drone_assets")
-        .update({ qa_status: "pending" })
-        .eq("id", asset_id);
-
+      // Return the actual error for debugging
       return new Response(
-        JSON.stringify({ error: "AI analysis failed" }),
+        JSON.stringify({ error: `Gemini API error ${aiResponse.status}: ${errorText.slice(0, 500)}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -630,8 +700,9 @@ Analyze this aerial photograph and return the quality assessment JSON.`;
 
   } catch (error) {
     console.error("QA analysis error:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack");
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error", details: String(error) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
