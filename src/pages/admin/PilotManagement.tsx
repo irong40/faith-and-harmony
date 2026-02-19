@@ -75,7 +75,7 @@ export default function PilotManagement() {
         const { data: roleData, error: roleError } = await supabase
             .from("user_roles")
             .select("user_id")
-            .eq("role", "pilot" as any); // Cast for now until types updated
+            .eq("role", "pilot");
 
         if (roleError) {
             toast({ title: "Error fetching roles", description: roleError.message, variant: "destructive" });
@@ -160,7 +160,7 @@ export default function PilotManagement() {
                 .from("user_roles")
                 .insert({
                     user_id: formData.userId,
-                    role: "pilot" as any
+                    role: "pilot"
                 });
 
             if (roleError) throw roleError;
@@ -171,7 +171,7 @@ export default function PilotManagement() {
                 .update({
                     part_107_number: formData.part107Number || null,
                     part_107_expiry: formData.part107Expiry || null
-                } as any)
+                })
                 .eq("id", formData.userId);
 
             if (profileError) throw profileError;
@@ -200,7 +200,7 @@ export default function PilotManagement() {
                     full_name: formData.fullName || null,
                     part_107_number: formData.part107Number || null,
                     part_107_expiry: formData.part107Expiry || null
-                } as any)
+                })
                 .eq("id", selectedPilot.id);
 
             if (error) throw error;
@@ -224,7 +224,7 @@ export default function PilotManagement() {
                 .from("user_roles")
                 .delete()
                 .eq("user_id", pilotId)
-                .eq("role", "pilot" as any);
+                .eq("role", "pilot");
 
             if (error) throw error;
 

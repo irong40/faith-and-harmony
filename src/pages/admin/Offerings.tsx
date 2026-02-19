@@ -315,7 +315,7 @@ export default function Offerings() {
                           <TableCell><Badge variant="outline" className={getCategoryColor(pkg.category)}>{pkg.category === "real_estate" ? "Real Estate" : "Construction"}</Badge></TableCell>
                           <TableCell className="font-medium">{formatCurrency(Number(pkg.price))}</TableCell>
                           <TableCell><div className="flex items-center gap-1"><Clock className="h-4 w-4 text-muted-foreground" />{pkg.edit_budget_minutes} min</div></TableCell>
-                          <TableCell><div className="flex items-center gap-1"><Camera className="h-4 w-4 text-muted-foreground" />{getShotCount(pkg.shot_manifest as any[])}</div></TableCell>
+                          <TableCell><div className="flex items-center gap-1"><Camera className="h-4 w-4 text-muted-foreground" />{getShotCount(pkg.shot_manifest as ShotManifestItem[] | null)}</div></TableCell>
                           <TableCell><Badge variant={pkg.active ? "default" : "secondary"}>{pkg.active ? "Active" : "Inactive"}</Badge></TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">

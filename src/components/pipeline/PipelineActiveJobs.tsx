@@ -12,17 +12,7 @@ import {
 } from '@/components/ui/table';
 import { ChevronDown, ChevronRight, Eye } from 'lucide-react';
 import PipelineStepRow from './PipelineStepRow';
-import type { ProcessingStep } from '@/types/pipeline';
-
-interface PipelineJob {
-  id: string;
-  job_number: string;
-  property_address: string;
-  status: string;
-  customers: { name: string; email: string } | null;
-  drone_packages: { name: string; code: string } | null;
-  processing_steps: ProcessingStep[];
-}
+import type { PipelineJob } from '@/types/pipeline';
 
 interface PipelineActiveJobsProps {
   jobs: PipelineJob[];

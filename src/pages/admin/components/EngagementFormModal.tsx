@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, DollarSign, Camera, Video } from "lucide-react";
+import type { Database } from "@/integrations/supabase/types";
 
 interface EngagementFormModalProps {
   leadId: string;
@@ -53,8 +54,8 @@ export default function EngagementFormModal({ leadId, open, onClose }: Engagemen
           lead_id: leadId,
           engagement_date: formData.engagement_date,
           property_address: formData.property_address || null,
-          engagement_type: formData.engagement_type as any,
-          status: formData.status as any,
+          engagement_type: formData.engagement_type as Database["public"]["Enums"]["engagement_type"],
+          status: formData.status as Database["public"]["Enums"]["engagement_status"],
           quoted_price: formData.quoted_price ? parseFloat(formData.quoted_price) : null,
           actual_revenue: formData.actual_revenue ? parseFloat(formData.actual_revenue) : null,
           cost: formData.cost ? parseFloat(formData.cost) : null,
@@ -62,7 +63,7 @@ export default function EngagementFormModal({ leadId, open, onClose }: Engagemen
           video_count: formData.video_count ? parseInt(formData.video_count) : 0,
           satisfaction_score: formData.satisfaction_score ? parseInt(formData.satisfaction_score) : null,
           notes: formData.notes || null,
-        } as any);
+        });
       if (error) throw error;
     },
     onSuccess: () => {

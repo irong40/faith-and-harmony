@@ -90,10 +90,15 @@ export function DronePackageForm({ package: pkg, onSuccess }: DronePackageFormPr
     name: "shot_manifest",
   });
 
-  const { fields: featureFields, append: appendFeature, remove: removeFeature } = useFieldArray({
-    control,
-    name: "features" as any,
-  });
+  const addFeature = () => {
+    const current = watch("features") || [];
+    setValue("features", [...current, ""]);
+  };
+
+  const removeFeature = (index: number) => {
+    const current = watch("features") || [];
+    setValue("features", current.filter((_, i) => i !== index));
+  };
 
   const saveMutation = useMutation({
     mutationFn: async (data: PackageFormData) => {
@@ -231,7 +236,7 @@ export function DronePackageForm({ package: pkg, onSuccess }: DronePackageFormPr
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => appendFeature("" as any)}
+              onClick={() => addFeature()}
             >
               <Plus className="h-4 w-4 mr-1" /> Add Feature
             </Button>

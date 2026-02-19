@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
-      .eq("role", "pilot" as any)
+      .eq("role", "pilot")
       .maybeSingle();
 
     if (!error && data) {
@@ -58,14 +58,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchPilotProfile = async (userId: string) => {
     // Query profiles table - using type assertion since Part 107 fields 
     // may not be in generated types until migrations are run
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("profiles")
       .select("id, full_name, part_107_number, part_107_expiry")
       .eq("id", userId)
       .single();
 
     if (!error && data) {
-      setPilotProfile(data as PilotProfile);
+      setPilotProfile(data);
     } else {
       // If profiles table doesn't have Part 107 fields yet, create a basic profile
       setPilotProfile({

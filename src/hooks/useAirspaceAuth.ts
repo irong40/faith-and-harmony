@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { haversineDistanceNm } from '@/lib/geo-utils';
 import type { AirspaceGrid, TfrCache, MissionAuthorization, TfrSummary } from '@/types/authorization';
+import type { Json } from '@/integrations/supabase/types';
 
 /**
  * Fetch all airspace grids and find the nearest to given coordinates.
@@ -135,7 +136,7 @@ export function useSaveMissionAuthorization() {
           requires_laanc: input.requires_laanc,
           is_zero_grid: input.is_zero_grid,
           max_approved_altitude_ft: input.max_approved_altitude_ft,
-          active_tfrs: input.active_tfrs as any,
+          active_tfrs: input.active_tfrs as unknown as Json,
           determination_notes: input.determination_notes,
         })
         .select()

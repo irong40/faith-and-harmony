@@ -26,6 +26,7 @@ import {
   ExternalLink, Plus, Building2, Clock, Send, Eye, MousePointer
 } from "lucide-react";
 import { format } from "date-fns";
+import type { Database } from "@/integrations/supabase/types";
 
 interface Lead {
   id: string;
@@ -116,10 +117,10 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
   });
 
   const updateLeadMutation = useMutation({
-    mutationFn: async (updates: { status?: string; priority?: string; notes?: string }) => {
+    mutationFn: async (updates: { status?: Database["public"]["Enums"]["lead_status"]; priority?: string; notes?: string }) => {
       const { error } = await supabase
         .from('drone_leads')
-        .update(updates as any)
+        .update(updates)
         .eq('id', lead.id);
       if (error) throw error;
     },
@@ -135,10 +136,10 @@ export default function LeadDetailModal({ lead, open, onClose }: LeadDetailModal
         .from('outreach_log')
         .insert({
           lead_id: lead.id,
-          contact_method: outreachMethod as any,
-          outcome: outreachOutcome as any,
+          contact_method: outreachMethod as Database["public"]["Enums"]["outreach_contact_method"],
+          outcome: outreachOutcome as Database["public"]["Enums"]["outreach_outcome"],
           notes: outreachNotes,
-        } as any);
+        });
       if (error) throw error;
     },
     onSuccess: () => {

@@ -960,12 +960,12 @@ export default function DroneJobDetail() {
                               </span>
                               <Badge
                                 variant={
-                                  (asset as any).processing_status === "processed"
+                                  asset.processing_status === "processed"
                                     ? "default"
                                     : "secondary"
                                 }
                               >
-                                {(asset as any).processing_status || "raw"}
+                                {asset.processing_status || "raw"}
                               </Badge>
                             </div>
                           ))}

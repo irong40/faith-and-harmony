@@ -39,7 +39,8 @@ export default function PipelineCoverageReview() {
     enabled: !!missionId,
   });
 
-  const packageId = (job?.drone_packages as any)?.id;
+  const dronePackages = job?.drone_packages as { id: string; name: string } | null;
+  const packageId = dronePackages?.id;
   const { data: template } = useProcessingTemplate(packageId);
 
   const { data: assets = [] } = useQuery({

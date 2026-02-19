@@ -43,6 +43,17 @@ export interface DeliveryLog {
   notification_sent: boolean;
 }
 
+export interface PipelineJob {
+  id: string;
+  job_number: string;
+  property_address: string;
+  status: string;
+  scheduled_date: string | null;
+  customers: { name: string; email: string } | null;
+  drone_packages: { name: string; code: string } | null;
+  processing_steps: ProcessingStep[];
+}
+
 export const PIPELINE_STEPS = [
   'file_detect',
   'exif_extract',

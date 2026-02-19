@@ -11,20 +11,10 @@ import {
 } from '@/components/ui/table';
 import { Eye } from 'lucide-react';
 import { format } from 'date-fns';
-import type { ProcessingStep } from '@/types/pipeline';
-
-interface HistoryJob {
-  id: string;
-  job_number: string;
-  property_address: string;
-  status: string;
-  customers: { name: string; email: string } | null;
-  drone_packages: { name: string; code: string } | null;
-  processing_steps: ProcessingStep[];
-}
+import type { PipelineJob } from '@/types/pipeline';
 
 interface PipelineHistoryProps {
-  jobs: HistoryJob[];
+  jobs: PipelineJob[];
 }
 
 export default function PipelineHistory({ jobs }: PipelineHistoryProps) {

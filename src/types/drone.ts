@@ -68,4 +68,6 @@ export interface DroneAsset {
     lr_exported_path?: string | null;
     pipeline_excluded?: boolean;
     coverage_tag?: string | null;
+    processing_status?: string | null;
+    processed_path?: string | null;
 }

@@ -114,19 +114,19 @@ export default function Pipeline() {
           <TabsContent value="active">
             <Card>
               <CardContent className="p-0">
-                <PipelineActiveJobs jobs={activeJobs as any} />
+                <PipelineActiveJobs jobs={activeJobs} />
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="hold">
-            <PipelineHoldPoints holdPoints={holdPoints as any} />
+            <PipelineHoldPoints holdPoints={holdPoints} />
           </TabsContent>
 
           <TabsContent value="history">
             <Card>
               <CardContent className="p-0">
-                <PipelineHistory jobs={historyJobs as any} />
+                <PipelineHistory jobs={historyJobs} />
               </CardContent>
             </Card>
           </TabsContent>

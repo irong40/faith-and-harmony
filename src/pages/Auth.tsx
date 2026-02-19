@@ -57,7 +57,7 @@ const Auth = () => {
 
     const roles = (data ?? []).map((r) => r.role);
 
-    if (roles.includes('pilot' as any)) {
+    if (roles.includes('pilot')) {
       navigate('/pilot');
     } else if (roles.includes('admin')) {
       navigate('/admin/service-requests');

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { ProcessingStep, ProcessingTemplate, DeliveryLog } from '@/types/pipeline';
+import type { ProcessingStep, ProcessingTemplate, DeliveryLog, PipelineJob } from '@/types/pipeline';
 
 // ─── Queries ───────────────────────────────────────────────────────
 
@@ -25,7 +25,7 @@ export function usePipelineJobs() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as PipelineJob[];
     },
     refetchInterval: 15_000,
   });
