@@ -1,36 +1,26 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, LogOut, WifiOff, Plane } from "lucide-react";
+import { RefreshCw, LogOut, Plane } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PilotCard from "@/components/pilot/PilotCard";
 import MissionCard from "@/components/pilot/MissionCard";
+import SyncStatusIndicator from "@/components/pilot/SyncStatusIndicator";
 import { usePilotMissions } from "@/hooks/usePilotMissions";
+import { useOfflineSync } from "@/hooks/useOfflineSync";
 
 export default function PilotDashboard() {
     const { pilotProfile, signOut } = useAuth();
     const { toast } = useToast();
-    const [isOnline, setIsOnline] = useState(navigator.onLine);
 
     // TanStack Query for missions
-    const { data: missions = [], isLoading: loading, refetch, isRefetching } = usePilotMissions();
+    const { data: missions = [], isLoading: loading, refetch } = usePilotMissions();
 
-    // Monitor online status
-    useEffect(() => {
-        const handleOnline = () => setIsOnline(true);
-        const handleOffline = () => setIsOnline(false);
-
-        window.addEventListener("online", handleOnline);
-        window.addEventListener("offline", handleOffline);
-
-        return () => {
-            window.removeEventListener("online", handleOnline);
-            window.removeEventListener("offline", handleOffline);
-        };
-    }, []);
+    // Offline sync engine
+    const { syncStatus, pendingCount, isOnline, syncNow } = useOfflineSync(pilotProfile?.id);
 
     const handleSync = async () => {
+        await syncNow();
         await refetch();
         toast({ title: "Sync complete" });
     };
@@ -57,21 +47,13 @@ export default function PilotDashboard() {
                             <p className="text-xs text-muted-foreground">Field Operations</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        {!isOnline && (
-                            <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                                <WifiOff className="h-4 w-4" />
-                                <span className="hidden sm:inline">Offline</span>
-                            </div>
-                        )}
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleSync}
-                            disabled={isRefetching || !isOnline}
-                        >
-                            <RefreshCw className={`h-5 w-5 ${isRefetching ? "animate-spin" : ""}`} />
-                        </Button>
+                    <div className="flex items-center gap-1">
+                        <SyncStatusIndicator
+                            status={syncStatus}
+                            pendingCount={pendingCount}
+                            isOnline={isOnline}
+                            onSync={handleSync}
+                        />
                         <Button variant="ghost" size="icon" onClick={handleLogout}>
                             <LogOut className="h-5 w-5" />
                         </Button>
@@ -126,7 +108,7 @@ export default function PilotDashboard() {
                                     client_name: mission.client_name,
                                     address: mission.property_address,
                                     scheduled_date: mission.scheduled_date,
-                                    status: mission.status as any,
+                                    status: mission.status as "scheduled" | "in_progress" | "complete" | "canceled",
                                     package_type: mission.package_name || undefined,
                                 }}
                             />

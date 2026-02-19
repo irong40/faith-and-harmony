@@ -1,13 +1,31 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
   ArrowLeft, Plane, Battery, Gamepad2, RefreshCw,
-  Shield, Clock, Wrench
+  Shield, Clock, Wrench, Plus, Pencil, Trash2,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 import { useAllAircraft, useAllBatteries, useAllControllers } from '@/hooks/useFleet';
+import { useDeleteAircraft, useDeleteBattery, useDeleteController } from '@/hooks/useFleetMutations';
+import AircraftFormDialog from './AircraftFormDialog';
+import BatteryFormDialog from './BatteryFormDialog';
+import ControllerFormDialog from './ControllerFormDialog';
+import MaintenanceLogDialog from './MaintenanceLogDialog';
+import type { Aircraft, Battery as BatteryType, Controller, EquipmentType } from '@/types/fleet';
 
 const STATUS_BADGE: Record<string, string> = {
   active: 'bg-green-500 text-white',
@@ -17,15 +35,46 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function FleetOverview() {
+  const { toast } = useToast();
   const { data: aircraft, isLoading: loadingAircraft } = useAllAircraft();
   const { data: batteries, isLoading: loadingBatteries } = useAllBatteries();
   const { data: controllers, isLoading: loadingControllers } = useAllControllers();
 
+  const deleteAircraft = useDeleteAircraft();
+  const deleteBattery = useDeleteBattery();
+  const deleteController = useDeleteController();
+
+  // Dialog states
+  const [aircraftDialog, setAircraftDialog] = useState(false);
+  const [editingAircraft, setEditingAircraft] = useState<Aircraft | null>(null);
+  const [batteryDialog, setBatteryDialog] = useState(false);
+  const [editingBattery, setEditingBattery] = useState<BatteryType | null>(null);
+  const [controllerDialog, setControllerDialog] = useState(false);
+  const [editingController, setEditingController] = useState<Controller | null>(null);
+
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'aircraft' | 'battery' | 'controller'; id: string; name: string } | null>(null);
+
+  // Maintenance log
+  const [maintenanceTarget, setMaintenanceTarget] = useState<{ id: string; type: EquipmentType; name: string } | null>(null);
+
   const isLoading = loadingAircraft || loadingBatteries || loadingControllers;
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      if (deleteTarget.type === 'aircraft') await deleteAircraft.mutateAsync(deleteTarget.id);
+      else if (deleteTarget.type === 'battery') await deleteBattery.mutateAsync(deleteTarget.id);
+      else await deleteController.mutateAsync(deleteTarget.id);
+      toast({ title: `${deleteTarget.type} deleted` });
+    } catch (error: any) {
+      toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
+    }
+    setDeleteTarget(null);
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
         <div className="container mx-auto px-4 py-3 flex items-center gap-3">
           <Link to="/pilot">
@@ -37,6 +86,11 @@ export default function FleetOverview() {
             <h1 className="font-semibold text-foreground">Fleet Inventory</h1>
             <p className="text-xs text-muted-foreground">Aircraft, batteries & controllers</p>
           </div>
+          <Link to="/pilot/fleet/maintenance">
+            <Button variant="outline" size="sm">
+              <Wrench className="h-4 w-4 mr-1" /> Log
+            </Button>
+          </Link>
         </div>
       </header>
 
@@ -49,10 +103,15 @@ export default function FleetOverview() {
           <>
             {/* Aircraft */}
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Plane className="h-5 w-5" />
-                <h2 className="text-lg font-semibold">Aircraft</h2>
-                <Badge variant="secondary">{aircraft?.length || 0}</Badge>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Plane className="h-5 w-5" />
+                  <h2 className="text-lg font-semibold">Aircraft</h2>
+                  <Badge variant="secondary">{aircraft?.length || 0}</Badge>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => { setEditingAircraft(null); setAircraftDialog(true); }}>
+                  <Plus className="h-4 w-4 mr-1" /> Add
+                </Button>
               </div>
               <div className="space-y-3">
                 {aircraft?.map(a => (
@@ -65,9 +124,17 @@ export default function FleetOverview() {
                             <span className="text-sm text-muted-foreground ml-2">{a.model}</span>
                           )}
                         </div>
-                        <Badge className={STATUS_BADGE[a.status] || 'bg-gray-400 text-white'}>
-                          {a.status}
-                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <Badge className={STATUS_BADGE[a.status] || 'bg-gray-400 text-white'}>
+                            {a.status}
+                          </Badge>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingAircraft(a); setAircraftDialog(true); }}>
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget({ type: 'aircraft', id: a.id, name: a.nickname || a.model })}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
                         <div>S/N: {a.serial_number}</div>
@@ -91,6 +158,14 @@ export default function FleetOverview() {
                           </span>
                         </div>
                       )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full mt-1 text-xs"
+                        onClick={() => setMaintenanceTarget({ id: a.id, type: 'aircraft', name: a.nickname || a.model })}
+                      >
+                        <Wrench className="h-3 w-3 mr-1" /> Log Maintenance
+                      </Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -104,10 +179,15 @@ export default function FleetOverview() {
 
             {/* Batteries */}
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Battery className="h-5 w-5" />
-                <h2 className="text-lg font-semibold">Batteries</h2>
-                <Badge variant="secondary">{batteries?.length || 0}</Badge>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Battery className="h-5 w-5" />
+                  <h2 className="text-lg font-semibold">Batteries</h2>
+                  <Badge variant="secondary">{batteries?.length || 0}</Badge>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => { setEditingBattery(null); setBatteryDialog(true); }}>
+                  <Plus className="h-4 w-4 mr-1" /> Add
+                </Button>
               </div>
               <div className="space-y-2">
                 {batteries?.map(b => (
@@ -120,16 +200,22 @@ export default function FleetOverview() {
                             <span className="text-xs text-muted-foreground ml-2">{b.model}</span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                           <Badge
                             variant={b.health_percentage > 80 ? 'secondary' : b.health_percentage > 50 ? 'outline' : 'destructive'}
                             className="text-xs"
                           >
                             {b.health_percentage}%
                           </Badge>
-                          <Badge className={STATUS_BADGE[b.status] || 'bg-gray-400 text-white'} >
+                          <Badge className={STATUS_BADGE[b.status] || 'bg-gray-400 text-white'}>
                             {b.status}
                           </Badge>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingBattery(b); setBatteryDialog(true); }}>
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget({ type: 'battery', id: b.id, name: b.serial_number })}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         </div>
                       </div>
                       <div className="flex gap-4 text-xs text-muted-foreground mt-1">
@@ -149,10 +235,15 @@ export default function FleetOverview() {
 
             {/* Controllers */}
             <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Gamepad2 className="h-5 w-5" />
-                <h2 className="text-lg font-semibold">Controllers</h2>
-                <Badge variant="secondary">{controllers?.length || 0}</Badge>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Gamepad2 className="h-5 w-5" />
+                  <h2 className="text-lg font-semibold">Controllers</h2>
+                  <Badge variant="secondary">{controllers?.length || 0}</Badge>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => { setEditingController(null); setControllerDialog(true); }}>
+                  <Plus className="h-4 w-4 mr-1" /> Add
+                </Button>
               </div>
               <div className="space-y-2">
                 {controllers?.map(c => (
@@ -163,9 +254,17 @@ export default function FleetOverview() {
                           <span className="font-medium text-sm">{c.model}</span>
                           <span className="text-xs text-muted-foreground ml-2">{c.serial_number}</span>
                         </div>
-                        <Badge className={STATUS_BADGE[c.status] || 'bg-gray-400 text-white'}>
-                          {c.status}
-                        </Badge>
+                        <div className="flex items-center gap-1">
+                          <Badge className={STATUS_BADGE[c.status] || 'bg-gray-400 text-white'}>
+                            {c.status}
+                          </Badge>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingController(c); setControllerDialog(true); }}>
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget({ type: 'controller', id: c.id, name: c.model })}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </div>
                       {c.firmware_version && (
                         <div className="text-xs text-muted-foreground mt-1">
@@ -183,6 +282,52 @@ export default function FleetOverview() {
           </>
         )}
       </main>
+
+      {/* Form Dialogs */}
+      <AircraftFormDialog
+        open={aircraftDialog}
+        onOpenChange={setAircraftDialog}
+        aircraft={editingAircraft}
+      />
+      <BatteryFormDialog
+        open={batteryDialog}
+        onOpenChange={setBatteryDialog}
+        battery={editingBattery}
+      />
+      <ControllerFormDialog
+        open={controllerDialog}
+        onOpenChange={setControllerDialog}
+        controller={editingController}
+      />
+
+      {/* Maintenance Log Dialog */}
+      {maintenanceTarget && (
+        <MaintenanceLogDialog
+          open={!!maintenanceTarget}
+          onOpenChange={() => setMaintenanceTarget(null)}
+          equipmentId={maintenanceTarget.id}
+          equipmentType={maintenanceTarget.type}
+          equipmentName={maintenanceTarget.name}
+        />
+      )}
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {deleteTarget?.type}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete {deleteTarget?.name}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -61,3 +61,35 @@ export interface MissionEquipment {
   notes: string | null;
   created_at: string;
 }
+
+export type AccessoryType = 'filter' | 'lens' | 'propeller' | 'case' | 'charger' | 'antenna' | 'mount' | 'other';
+
+export interface Accessory {
+  id: string;
+  name: string;
+  type: AccessoryType;
+  serial_number: string | null;
+  compatible_aircraft: string[] | null;
+  status: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type EquipmentType = 'aircraft' | 'battery' | 'controller' | 'accessory';
+export type MaintenanceType = 'scheduled' | 'unscheduled' | 'repair' | 'inspection' | 'firmware_update' | 'calibration';
+
+export interface MaintenanceLogEntry {
+  id: string;
+  equipment_id: string;
+  equipment_type: EquipmentType;
+  maintenance_type: MaintenanceType;
+  description: string | null;
+  performed_at: string;
+  performed_by: string | null;
+  cost_cents: number | null;
+  parts_used: string[] | null;
+  next_due_date: string | null;
+  notes: string | null;
+  created_at: string;
+}

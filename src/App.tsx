@@ -53,9 +53,12 @@ import PilotDashboard from "./pages/pilot/PilotDashboard";
 import PilotMissionDetail from "./pages/pilot/PilotMissionDetail";
 import PilotManagement from "./pages/admin/PilotManagement";
 import FleetOverview from "./components/pilot/FleetOverview";
+import MaintenanceHistory from "./components/pilot/MaintenanceHistory";
 import Pipeline from "./pages/admin/Pipeline";
 import PipelineQAReview from "./pages/admin/PipelineQAReview";
 import PipelineCoverageReview from "./pages/admin/PipelineCoverageReview";
+import PWAUpdatePrompt from "./components/pwa/PWAUpdatePrompt";
+import PWAInstallPrompt from "./components/pwa/PWAInstallPrompt";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +69,8 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <PWAUpdatePrompt />
+          <PWAInstallPrompt />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
@@ -282,6 +287,14 @@ const App = () => (
                 element={
                   <ProtectedRoute requirePilot>
                     <FleetOverview />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pilot/fleet/maintenance"
+                element={
+                  <ProtectedRoute requirePilot>
+                    <MaintenanceHistory />
                   </ProtectedRoute>
                 }
               />
