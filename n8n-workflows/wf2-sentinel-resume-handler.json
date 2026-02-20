@@ -1,0 +1,380 @@
+{
+  "name": "WF2 - Sentinel Resume Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sentinel-pipeline-resume",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "webhookId": "sentinel-pipeline-resume"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ received: true, mission_id: $json.body.mission_id }) }}",
+        "options": {}
+      },
+      "id": "respond-accepted",
+      "name": "Respond Accepted",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [440, 160]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/drone_jobs?id=eq.{{ $json.body.mission_id }}&select=*,drone_packages(name,code),customers(name,email,phone)",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Accept", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "fetch-job",
+      "name": "Fetch Job State",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $('Webhook Trigger').item.json.body.mission_id }}&order=step_order.asc",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Accept", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "fetch-steps",
+      "name": "Fetch Processing Steps",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/drone_assets?job_id=eq.{{ $('Webhook Trigger').item.json.body.mission_id }}&pipeline_excluded=eq.false&select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Accept", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "fetch-assets",
+      "name": "Fetch Active Assets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            { "outputIndex": 0, "value": "qa_review" },
+            { "outputIndex": 1, "value": "coverage_review" }
+          ]
+        },
+        "dataPropertyName": "={{ $('Webhook Trigger').item.json.body.hold_type }}",
+        "fallbackOutput": 0
+      },
+      "id": "route-hold-type",
+      "name": "Route by Hold Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// QA Review resume: re-check remaining non-excluded assets\nconst trigger = $('Webhook Trigger').item.json.body;\nconst jobData = $('Fetch Job State').item.json;\nconst job = Array.isArray(jobData) ? jobData[0] : jobData;\nconst assets = $('Fetch Active Assets').item.json;\nconst assetList = Array.isArray(assets) ? assets : [assets];\n\n// Get processing template QA threshold\nconst profile = job.processing_profile || {};\nconst threshold = profile.qa_threshold || 70;\n\n// Calculate average QA score of non-excluded assets\nconst scores = assetList\n  .filter(a => a.qa_score != null)\n  .map(a => a.qa_score);\nconst avgScore = scores.length > 0\n  ? scores.reduce((sum, s) => sum + s, 0) / scores.length\n  : 0;\n\nconst passed = avgScore >= threshold;\n\nreturn [{\n  json: {\n    mission_id: trigger.mission_id,\n    hold_type: 'qa_review',\n    qa_passed: passed,\n    avg_score: Math.round(avgScore * 10) / 10,\n    threshold: threshold,\n    asset_count: assetList.length,\n    job: job\n  }\n}];"
+      },
+      "id": "qa-review-logic",
+      "name": "QA Review Logic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "qa-resume-pass",
+              "leftValue": "={{ $json.qa_passed }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-qa-resume-pass",
+      "name": "QA Resume Passed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1540, 200]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $json.mission_id }}&step_name=eq.qa_gate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'complete', completed_at: new Date().toISOString(), error_message: null }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "mark-qa-complete",
+      "name": "Mark QA Gate Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 100],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/drone_jobs?id=eq.{{ $json.mission_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'processing' }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "resume-job-qa",
+      "name": "Resume Job (QA)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1980, 100],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.N8N_CALLBACK_BASE }}/webhook/sentinel-delivery",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  job_id: $json.mission_id,\n  job_number: $json.job?.job_number,\n  package_code: $json.job?.drone_packages?.code,\n  property_address: $json.job?.property_address,\n  client_email: $json.job?.customers?.email,\n  client_name: $json.job?.customers?.name,\n  include_social_exports: ['PHOTO_VIDEO_795', 'PREMIUM_1250'].includes($json.job?.drone_packages?.code),\n  include_raw_files: $json.job?.processing_profile?.raw_workflow || false,\n  include_technical_data: false\n}) }}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "trigger-delivery-qa",
+      "name": "Trigger Delivery (QA Resume)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, 100],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Coverage review resume: re-check coverage tags vs requirements\nconst trigger = $('Webhook Trigger').item.json.body;\nconst jobData = $('Fetch Job State').item.json;\nconst job = Array.isArray(jobData) ? jobData[0] : jobData;\nconst assets = $('Fetch Active Assets').item.json;\nconst assetList = Array.isArray(assets) ? assets : [assets];\n\nconst profile = job.processing_profile || {};\nconst shotReqs = profile.shot_requirements || {};\nconst required = Object.keys(shotReqs);\n\nconst coveredTags = new Set();\nfor (const a of assetList) {\n  if (a.coverage_tag) coveredTags.add(a.coverage_tag);\n}\n\nconst missing = required.filter(r => !coveredTags.has(r));\nconst passed = missing.length === 0;\n\nreturn [{\n  json: {\n    mission_id: trigger.mission_id,\n    hold_type: 'coverage_review',\n    coverage_passed: passed,\n    missing_shots: missing,\n    covered: [...coveredTags],\n    job: job\n  }\n}];"
+      },
+      "id": "coverage-review-logic",
+      "name": "Coverage Review Logic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "coverage-resume-pass",
+              "leftValue": "={{ $json.coverage_passed }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-coverage-resume-pass",
+      "name": "Coverage Resume Passed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1540, 400]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $json.mission_id }}&step_name=eq.coverage_check",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'complete', completed_at: new Date().toISOString(), error_message: null }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "mark-coverage-complete",
+      "name": "Mark Coverage Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 350],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/drone_jobs?id=eq.{{ $json.mission_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'processing' }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "resume-job-coverage",
+      "name": "Resume Job (Coverage)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1980, 350],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.N8N_CALLBACK_BASE }}/webhook/sentinel-pipeline",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  ...$json.job,\n  resume_from: 'lightroom_edit'\n}) }}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "re-trigger-wf1",
+      "name": "Re-trigger WF1 (from lightroom_edit)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, 350],
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          { "node": "Respond Accepted", "type": "main", "index": 0 },
+          { "node": "Fetch Job State", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Fetch Job State": {
+      "main": [
+        [{ "node": "Fetch Processing Steps", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch Processing Steps": {
+      "main": [
+        [{ "node": "Fetch Active Assets", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch Active Assets": {
+      "main": [
+        [{ "node": "Route by Hold Type", "type": "main", "index": 0 }]
+      ]
+    },
+    "Route by Hold Type": {
+      "main": [
+        [{ "node": "QA Review Logic", "type": "main", "index": 0 }],
+        [{ "node": "Coverage Review Logic", "type": "main", "index": 0 }]
+      ]
+    },
+    "QA Review Logic": {
+      "main": [
+        [{ "node": "QA Resume Passed?", "type": "main", "index": 0 }]
+      ]
+    },
+    "QA Resume Passed?": {
+      "main": [
+        [{ "node": "Mark QA Gate Complete", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Mark QA Gate Complete": {
+      "main": [
+        [{ "node": "Resume Job (QA)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Resume Job (QA)": {
+      "main": [
+        [{ "node": "Trigger Delivery (QA Resume)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Coverage Review Logic": {
+      "main": [
+        [{ "node": "Coverage Resume Passed?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Coverage Resume Passed?": {
+      "main": [
+        [{ "node": "Mark Coverage Complete", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Mark Coverage Complete": {
+      "main": [
+        [{ "node": "Resume Job (Coverage)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Resume Job (Coverage)": {
+      "main": [
+        [{ "node": "Re-trigger WF1 (from lightroom_edit)", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [{ "name": "sentinel" }, { "name": "pipeline" }]
+}

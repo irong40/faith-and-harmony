@@ -1,0 +1,17 @@
+# Cloudflare Tunnel configuration for Sentinel Processing Server
+# Copy this to ~/.cloudflared/config.yml after creating the tunnel
+#
+# Setup steps:
+#   cloudflared tunnel create sentinel-rig
+#   cloudflared tunnel route dns sentinel-rig rig.sentinel-aerial.com
+#   cp cloudflared-config.yml ~/.cloudflared/config.yml
+#   (edit tunnel ID and credentials-file below)
+#   cloudflared tunnel run sentinel-rig
+
+tunnel: <TUNNEL-ID>
+credentials-file: ~/.cloudflared/<TUNNEL-ID>.json
+
+ingress:
+  - hostname: rig.sentinel-aerial.com
+    service: http://localhost:8000
+  - service: http_status:404

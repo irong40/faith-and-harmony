@@ -1,2 +1,9 @@
 requests
 python-dotenv
+supabase
+fastapi
+uvicorn[standard]
+watchdog
+Pillow
+weasyprint
+httpx

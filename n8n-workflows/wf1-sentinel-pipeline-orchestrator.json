@@ -1,0 +1,954 @@
+{
+  "name": "WF1 - Sentinel Pipeline Orchestrator",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sentinel-pipeline",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "webhookId": "sentinel-pipeline"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ received: true, job_id: $json.body.job_id }) }}",
+        "options": {}
+      },
+      "id": "respond-accepted",
+      "name": "Respond Accepted",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [440, 160]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify([\n  { mission_id: $json.body.job_id, step_name: 'file_detect', step_order: 1, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'exif_extract', step_order: 2, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'coverage_check', step_order: 3, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'lightroom_edit', step_order: 4, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'qa_gate', step_order: 5, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'packaging', step_order: 6, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'delivery', step_order: 7, status: 'waiting' }\n]) }}",
+        "options": {
+          "redirect": { "redirect": {} }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Prefer", "value": "return=representation" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "insert-steps",
+      "name": "Insert Processing Steps",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $('Webhook Trigger').item.json.body.job_id }}&step_name=eq.file_detect",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'running', started_at: new Date().toISOString() }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Prefer", "value": "return=representation" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "step1-start",
+      "name": "Step 1 Start - File Detect",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verify all asset file paths are accessible\nconst body = $('Webhook Trigger').item.json.body;\nconst assets = body.assets || [];\nconst supabaseUrl = $env.SUPABASE_URL;\nconst results = [];\n\nfor (const asset of assets) {\n  const url = asset.file_path.startsWith('http')\n    ? asset.file_path\n    : `${supabaseUrl}/storage/v1/object/public/drone-jobs/${asset.file_path}`;\n  \n  try {\n    const resp = await fetch(url, { method: 'HEAD' });\n    results.push({\n      asset_id: asset.id,\n      file_name: asset.file_name,\n      accessible: resp.ok,\n      status: resp.status\n    });\n  } catch (e) {\n    results.push({\n      asset_id: asset.id,\n      file_name: asset.file_name,\n      accessible: false,\n      error: e.message\n    });\n  }\n}\n\nconst allAccessible = results.every(r => r.accessible);\nconst failedCount = results.filter(r => !r.accessible).length;\n\nreturn [{\n  json: {\n    ...body,\n    file_detect_results: results,\n    file_detect_passed: allAccessible,\n    file_detect_failed_count: failedCount\n  }\n}];"
+      },
+      "id": "file-detect",
+      "name": "File Detect Logic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $json.job_id }}&step_name=eq.file_detect",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: $json.file_detect_passed ? 'complete' : 'failed', completed_at: new Date().toISOString(), items_processed: $json.assets.length, error_message: $json.file_detect_passed ? null : `${$json.file_detect_failed_count} files not accessible` }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "step1-complete",
+      "name": "Step 1 Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "file-detect-pass",
+              "leftValue": "={{ $json.file_detect_passed }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-files-ok",
+      "name": "Files Accessible?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1320, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $json.job_id }}&step_name=eq.exif_extract",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'running', started_at: new Date().toISOString() }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "step2-start",
+      "name": "Step 2 Start - EXIF Extract",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/functions/v1/drone-extract-exif",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ job_id: $json.job_id }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer {{ $env.SUPABASE_SERVICE_KEY }}" }
+          ]
+        },
+        "options": { "timeout": 120000 }
+      },
+      "id": "call-exif-extract",
+      "name": "Call EXIF Extract",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $('Webhook Trigger').item.json.body.job_id }}&step_name=eq.exif_extract",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'complete', completed_at: new Date().toISOString() }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "step2-complete",
+      "name": "Step 2 Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1980, 200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $('Webhook Trigger').item.json.body.job_id }}&step_name=eq.coverage_check",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'running', started_at: new Date().toISOString() }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "step3-start",
+      "name": "Step 3 Start - Coverage Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, 200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Coverage check: compare asset coverage_tags against shot_requirements\nconst body = $('Webhook Trigger').item.json.body;\nconst assets = body.assets || [];\nconst profile = body.processing_profile || {};\nconst shotReqs = profile.shot_requirements || {};\n\n// Get coverage tags from assets (fetched during EXIF extraction)\nconst coveredTags = new Set();\nfor (const a of assets) {\n  if (a.coverage_tag) coveredTags.add(a.coverage_tag);\n}\n\nconst required = Object.keys(shotReqs);\nconst missing = required.filter(r => !coveredTags.has(r));\nconst passed = missing.length === 0;\n\nreturn [{\n  json: {\n    ...body,\n    coverage_passed: passed,\n    coverage_missing: missing,\n    coverage_covered: [...coveredTags]\n  }\n}];"
+      },
+      "id": "coverage-logic",
+      "name": "Coverage Check Logic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2420, 200]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $json.job_id }}&step_name=eq.coverage_check",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: $json.coverage_passed ? 'complete' : 'failed', completed_at: new Date().toISOString(), error_message: $json.coverage_passed ? null : `Missing shots: ${$json.coverage_missing.join(', ')}` }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "step3-complete",
+      "name": "Step 3 Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2640, 200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "coverage-pass",
+              "leftValue": "={{ $json.coverage_passed }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-coverage-ok",
+      "name": "Coverage Passed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2860, 200]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/drone_jobs?id=eq.{{ $json.job_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'review_pending' }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "set-review-pending-coverage",
+      "name": "Set Review Pending (Coverage)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3080, 400],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Route processing by package_code\nconst body = $json;\nconst code = (body.package_code || '').toUpperCase();\n\nlet path = 'A'; // default real estate\nif (['PROGRESS_800', 'INSPECTION'].includes(code)) {\n  path = 'B'; // construction\n} else if (['SITE_SURVEY', 'MAPPING'].includes(code)) {\n  path = 'C'; // WebODM\n}\n\nreturn [{ json: { ...body, processing_path: path } }];"
+      },
+      "id": "route-by-package",
+      "name": "Route by Package Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3080, 100]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            { "outputIndex": 0, "value": "A" },
+            { "outputIndex": 1, "value": "B" },
+            { "outputIndex": 2, "value": "C" }
+          ]
+        },
+        "dataPropertyName": "processing_path",
+        "fallbackOutput": 0
+      },
+      "id": "switch-path",
+      "name": "Switch Processing Path",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [3300, 100]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $json.job_id }}&step_name=eq.lightroom_edit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'running', started_at: new Date().toISOString() }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "step4a-start",
+      "name": "Step 4A Start - LR Edit (RE)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3520, -100],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SENTINEL_RIG_URL }}/api/lightroom/process",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  job_id: $json.job_id,\n  preset_name: $json.processing_profile?.lightroom_preset || 'RE_Basic_v2',\n  assets: $json.assets,\n  callback_url: $env.N8N_CALLBACK_BASE + '/webhook/sentinel-lr-callback'\n}) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Sentinel-Key", "value": "={{ $env.SENTINEL_API_KEY }}" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "call-lightroom-re",
+      "name": "Call Lightroom (RE)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3740, -100],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "webhookSuffix": "sentinel-lr-callback",
+        "options": { "timeout": 3600, "timeoutUnit": "seconds" }
+      },
+      "id": "wait-lightroom-re",
+      "name": "Wait for LR Callback (RE)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [3960, -100]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $json.job_id }}&step_name=eq.lightroom_edit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: $json.body.status === 'complete' ? 'complete' : 'failed', completed_at: new Date().toISOString(), items_processed: $json.body.exported_count || 0, error_message: $json.body.error || null }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "step4a-complete",
+      "name": "Step 4A Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4180, -100],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $json.job_id }}&step_name=eq.lightroom_edit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'running', started_at: new Date().toISOString() }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "step4b-start",
+      "name": "Step 4B Start - LR Edit (Constr)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3520, 100],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SENTINEL_RIG_URL }}/api/lightroom/process",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  job_id: $json.job_id,\n  preset_name: 'Construction_v1',\n  assets: $json.assets,\n  callback_url: $env.N8N_CALLBACK_BASE + '/webhook/sentinel-lr-callback-b'\n}) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Sentinel-Key", "value": "={{ $env.SENTINEL_API_KEY }}" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "call-lightroom-constr",
+      "name": "Call Lightroom (Construction)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3740, 100],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "webhookSuffix": "sentinel-lr-callback-b",
+        "options": { "timeout": 3600, "timeoutUnit": "seconds" }
+      },
+      "id": "wait-lightroom-constr",
+      "name": "Wait for LR Callback (Constr)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [3960, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SENTINEL_RIG_URL }}/api/label/process",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  job_id: $json.job_id,\n  address: $json.property_address,\n  assets: $json.assets.map(a => ({\n    file_path: a.file_path,\n    file_name: a.file_name,\n    capture_date: a.capture_date,\n    compass_direction: a.compass_direction\n  })),\n  callback_url: $env.N8N_CALLBACK_BASE + '/webhook/sentinel-label-callback'\n}) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Sentinel-Key", "value": "={{ $env.SENTINEL_API_KEY }}" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "call-label",
+      "name": "Call Label Process",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4180, 100],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "webhookSuffix": "sentinel-label-callback",
+        "options": { "timeout": 1800, "timeoutUnit": "seconds" }
+      },
+      "id": "wait-label",
+      "name": "Wait for Label Callback",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [4400, 100]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $json.job_id }}&step_name=eq.lightroom_edit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'complete', completed_at: new Date().toISOString() }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "step4b-complete",
+      "name": "Step 4B Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4620, 100],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $json.job_id }}&step_name=eq.lightroom_edit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'skipped', completed_at: new Date().toISOString() }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "step4c-skip-lr",
+      "name": "Step 4C Skip LR (Mapping)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3520, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SENTINEL_RIG_URL }}/api/webodm/process",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  job_id: $json.job_id,\n  address: $json.property_address,\n  scheduled_date: $json.scheduled_date || '',\n  assets: $json.assets,\n  processing_options: $json.processing_profile?.odm_options || null,\n  callback_url: $env.N8N_CALLBACK_BASE + '/webhook/sentinel-webodm-callback'\n}) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Sentinel-Key", "value": "={{ $env.SENTINEL_API_KEY }}" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "call-webodm",
+      "name": "Call WebODM Process",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3740, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "webhookSuffix": "sentinel-webodm-callback",
+        "options": { "timeout": 10800, "timeoutUnit": "seconds" }
+      },
+      "id": "wait-webodm",
+      "name": "Wait for WebODM Callback",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [3960, 300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $json.job_id }}&step_name=eq.lightroom_edit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: $json.body.status === 'complete' ? 'complete' : 'failed', completed_at: new Date().toISOString(), error_message: $json.body.error || null }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "step4c-complete",
+      "name": "Step 4C Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4180, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $json.job_id }}&step_name=eq.qa_gate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'running', started_at: new Date().toISOString() }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "step5-start",
+      "name": "Step 5 Start - QA Gate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4840, 100],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// QA gate: for mapping jobs auto-pass, otherwise check processed quality\nconst body = $json;\nconst path = body.processing_path;\n\n// Mapping data is validated differently - auto pass\nif (path === 'C') {\n  return [{ json: { ...body, qa_gate_passed: true, qa_gate_reason: 'mapping_auto_pass' } }];\n}\n\n// For photo processing, verify we have processed files\nconst profile = body.processing_profile || {};\nconst threshold = profile.qa_threshold || 70;\nconst qaScore = body.qa_score || 0;\n\nconst passed = qaScore >= threshold;\nreturn [{ json: { ...body, qa_gate_passed: passed, qa_gate_reason: passed ? 'score_above_threshold' : `qa_score ${qaScore} below threshold ${threshold}` } }];"
+      },
+      "id": "qa-gate-logic",
+      "name": "QA Gate Logic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [5060, 100]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $json.job_id }}&step_name=eq.qa_gate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: $json.qa_gate_passed ? 'complete' : 'failed', completed_at: new Date().toISOString(), error_message: $json.qa_gate_passed ? null : $json.qa_gate_reason }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "step5-complete",
+      "name": "Step 5 Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [5280, 100],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "qa-pass",
+              "leftValue": "={{ $json.qa_gate_passed }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-qa-ok",
+      "name": "QA Passed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [5500, 100]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/drone_jobs?id=eq.{{ $json.job_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'review_pending' }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "set-review-pending-qa",
+      "name": "Set Review Pending (QA)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [5720, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.N8N_CALLBACK_BASE }}/webhook/sentinel-delivery",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  job_id: $json.job_id,\n  job_number: $json.job_number,\n  package_code: $json.package_code,\n  property_address: $json.property_address,\n  client_email: $json.client_email,\n  client_name: $json.client_name,\n  include_social_exports: ['PHOTO_VIDEO_795', 'PREMIUM_1250'].includes($json.package_code),\n  include_raw_files: $json.processing_profile?.raw_workflow || false,\n  include_technical_data: $json.processing_path === 'C'\n}) }}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "trigger-delivery",
+      "name": "Trigger Delivery Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [5720, 0],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/drone_jobs?id=eq.{{ $json.job_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'failed' }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "set-failed",
+      "name": "Set Job Failed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 500],
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          { "node": "Respond Accepted", "type": "main", "index": 0 },
+          { "node": "Insert Processing Steps", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Insert Processing Steps": {
+      "main": [
+        [{ "node": "Step 1 Start - File Detect", "type": "main", "index": 0 }]
+      ]
+    },
+    "Step 1 Start - File Detect": {
+      "main": [
+        [{ "node": "File Detect Logic", "type": "main", "index": 0 }]
+      ]
+    },
+    "File Detect Logic": {
+      "main": [
+        [{ "node": "Step 1 Complete", "type": "main", "index": 0 }]
+      ]
+    },
+    "Step 1 Complete": {
+      "main": [
+        [{ "node": "Files Accessible?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Files Accessible?": {
+      "main": [
+        [{ "node": "Step 2 Start - EXIF Extract", "type": "main", "index": 0 }],
+        [{ "node": "Set Job Failed", "type": "main", "index": 0 }]
+      ]
+    },
+    "Step 2 Start - EXIF Extract": {
+      "main": [
+        [{ "node": "Call EXIF Extract", "type": "main", "index": 0 }]
+      ]
+    },
+    "Call EXIF Extract": {
+      "main": [
+        [{ "node": "Step 2 Complete", "type": "main", "index": 0 }]
+      ]
+    },
+    "Step 2 Complete": {
+      "main": [
+        [{ "node": "Step 3 Start - Coverage Check", "type": "main", "index": 0 }]
+      ]
+    },
+    "Step 3 Start - Coverage Check": {
+      "main": [
+        [{ "node": "Coverage Check Logic", "type": "main", "index": 0 }]
+      ]
+    },
+    "Coverage Check Logic": {
+      "main": [
+        [{ "node": "Step 3 Complete", "type": "main", "index": 0 }]
+      ]
+    },
+    "Step 3 Complete": {
+      "main": [
+        [{ "node": "Coverage Passed?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Coverage Passed?": {
+      "main": [
+        [{ "node": "Route by Package Code", "type": "main", "index": 0 }],
+        [{ "node": "Set Review Pending (Coverage)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Route by Package Code": {
+      "main": [
+        [{ "node": "Switch Processing Path", "type": "main", "index": 0 }]
+      ]
+    },
+    "Switch Processing Path": {
+      "main": [
+        [{ "node": "Step 4A Start - LR Edit (RE)", "type": "main", "index": 0 }],
+        [{ "node": "Step 4B Start - LR Edit (Constr)", "type": "main", "index": 0 }],
+        [{ "node": "Step 4C Skip LR (Mapping)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Step 4A Start - LR Edit (RE)": {
+      "main": [
+        [{ "node": "Call Lightroom (RE)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Call Lightroom (RE)": {
+      "main": [
+        [{ "node": "Wait for LR Callback (RE)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Wait for LR Callback (RE)": {
+      "main": [
+        [{ "node": "Step 4A Complete", "type": "main", "index": 0 }]
+      ]
+    },
+    "Step 4A Complete": {
+      "main": [
+        [{ "node": "Step 5 Start - QA Gate", "type": "main", "index": 0 }]
+      ]
+    },
+    "Step 4B Start - LR Edit (Constr)": {
+      "main": [
+        [{ "node": "Call Lightroom (Construction)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Call Lightroom (Construction)": {
+      "main": [
+        [{ "node": "Wait for LR Callback (Constr)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Wait for LR Callback (Constr)": {
+      "main": [
+        [{ "node": "Call Label Process", "type": "main", "index": 0 }]
+      ]
+    },
+    "Call Label Process": {
+      "main": [
+        [{ "node": "Wait for Label Callback", "type": "main", "index": 0 }]
+      ]
+    },
+    "Wait for Label Callback": {
+      "main": [
+        [{ "node": "Step 4B Complete", "type": "main", "index": 0 }]
+      ]
+    },
+    "Step 4B Complete": {
+      "main": [
+        [{ "node": "Step 5 Start - QA Gate", "type": "main", "index": 0 }]
+      ]
+    },
+    "Step 4C Skip LR (Mapping)": {
+      "main": [
+        [{ "node": "Call WebODM Process", "type": "main", "index": 0 }]
+      ]
+    },
+    "Call WebODM Process": {
+      "main": [
+        [{ "node": "Wait for WebODM Callback", "type": "main", "index": 0 }]
+      ]
+    },
+    "Wait for WebODM Callback": {
+      "main": [
+        [{ "node": "Step 4C Complete", "type": "main", "index": 0 }]
+      ]
+    },
+    "Step 4C Complete": {
+      "main": [
+        [{ "node": "Step 5 Start - QA Gate", "type": "main", "index": 0 }]
+      ]
+    },
+    "Step 5 Start - QA Gate": {
+      "main": [
+        [{ "node": "QA Gate Logic", "type": "main", "index": 0 }]
+      ]
+    },
+    "QA Gate Logic": {
+      "main": [
+        [{ "node": "Step 5 Complete", "type": "main", "index": 0 }]
+      ]
+    },
+    "Step 5 Complete": {
+      "main": [
+        [{ "node": "QA Passed?", "type": "main", "index": 0 }]
+      ]
+    },
+    "QA Passed?": {
+      "main": [
+        [{ "node": "Trigger Delivery Workflow", "type": "main", "index": 0 }],
+        [{ "node": "Set Review Pending (QA)", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [{ "name": "sentinel" }, { "name": "pipeline" }]
+}
