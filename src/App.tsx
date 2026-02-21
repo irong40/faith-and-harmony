@@ -57,6 +57,7 @@ import MaintenanceHistory from "./components/pilot/MaintenanceHistory";
 import Pipeline from "./pages/admin/Pipeline";
 import PipelineQAReview from "./pages/admin/PipelineQAReview";
 import PipelineCoverageReview from "./pages/admin/PipelineCoverageReview";
+import SentinelPricing from "./pages/admin/SentinelPricing";
 import PWAUpdatePrompt from "./components/pwa/PWAUpdatePrompt";
 import PWAInstallPrompt from "./components/pwa/PWAInstallPrompt";
 
@@ -254,6 +255,14 @@ const App = () => (
                 element={
                   <ProtectedRoute requireAdmin>
                     <Documents />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pricing"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <SentinelPricing />
                   </ProtectedRoute>
                 }
               />

@@ -12,7 +12,10 @@ export type SyncAction =
   | 'upsert_equipment'
   | 'insert_weather_briefing'
   | 'save_authorization'
-  | 'update_mission_status';
+  | 'update_mission_status'
+  | 'insert_record'
+  | 'update_record'
+  | 'delete_record';
 
 export interface SyncQueueItem {
   id?: number;

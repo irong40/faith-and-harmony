@@ -65,6 +65,27 @@ async function executeAction(item: SyncQueueItem): Promise<boolean> {
       return true;
     }
 
+    case 'insert_record': {
+      const { _offline_id, ...insertPayload } = payload;
+      const { error } = await supabase.from(table).insert(insertPayload);
+      if (error) throw error;
+      return true;
+    }
+
+    case 'update_record': {
+      const { _record_id, ...updatePayload } = payload;
+      const { error } = await supabase.from(table).update(updatePayload).eq('id', _record_id as string);
+      if (error) throw error;
+      return true;
+    }
+
+    case 'delete_record': {
+      const deleteId = payload._record_id as string;
+      const { error } = await supabase.from(table).delete().eq('id', deleteId);
+      if (error) throw error;
+      return true;
+    }
+
     default:
       console.warn(`Unknown sync action: ${action}`);
       return false;
@@ -134,16 +155,18 @@ export async function pullMissions(pilotId: string): Promise<void> {
 export async function pullFleet(): Promise<void> {
   if (!navigator.onLine) return;
 
-  const [aircraft, batteries, controllers] = await Promise.all([
+  const [aircraft, batteries, controllers, accessories] = await Promise.all([
     supabase.from('aircraft').select('*').order('model'),
     supabase.from('batteries').select('*').order('serial_number'),
     supabase.from('controllers').select('*').order('model'),
+    supabase.from('accessories').select('*').order('name'),
   ]);
 
   const fleetData = [
     ...(aircraft.data || []).map(a => ({ ...a, _type: 'aircraft' })),
     ...(batteries.data || []).map(b => ({ ...b, _type: 'battery' })),
     ...(controllers.data || []).map(c => ({ ...c, _type: 'controller' })),
+    ...(accessories.data || []).map(a => ({ ...a, _type: 'accessory' })),
   ];
 
   await putAll(STORES.FLEET, fleetData);

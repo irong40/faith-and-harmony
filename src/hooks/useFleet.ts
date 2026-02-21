@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Aircraft, Battery, Controller, AircraftCapability } from '@/types/fleet';
+import type { Aircraft, Battery, Controller, Accessory, AircraftCapability } from '@/types/fleet';
 
 /**
  * Fetch all active aircraft.
@@ -121,6 +121,25 @@ export function useAllControllers() {
 
       if (error) throw error;
       return data as Controller[];
+    },
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+/**
+ * Fetch all accessories for fleet overview.
+ */
+export function useAllAccessories() {
+  return useQuery({
+    queryKey: ['fleet-accessories-all'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('accessories')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return data as Accessory[];
     },
     staleTime: 10 * 60 * 1000,
   });
