@@ -5,9 +5,9 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Plane, Battery, Gamepad2, CheckCircle2 } from 'lucide-react';
+import { Loader2, Plane, Battery, Gamepad2, Package, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useActiveAircraft, useActiveBatteries, useActiveControllers, useAircraftCapabilities } from '@/hooks/useFleet';
+import { useActiveAircraft, useActiveBatteries, useActiveControllers, useAircraftCapabilities, useAllAccessories } from '@/hooks/useFleet';
 import { useMissionEquipment, useUpsertMissionEquipment } from '@/hooks/useMissionEquipment';
 
 interface EquipmentSelectorProps {
@@ -31,6 +31,7 @@ export default function EquipmentSelector({
   const { data: allAircraft, isLoading: loadingAircraft } = useActiveAircraft();
   const { data: capabilities } = useAircraftCapabilities(packageId);
   const { data: controllers } = useActiveControllers();
+  const { data: accessories } = useAllAccessories();
   const { data: savedEquipment, isLoading: loadingSaved } = useMissionEquipment(missionId);
   const upsertMutation = useUpsertMissionEquipment();
 
@@ -38,6 +39,7 @@ export default function EquipmentSelector({
   const [selectedAircraftId, setSelectedAircraftId] = useState<string>('');
   const [selectedBatteryIds, setSelectedBatteryIds] = useState<string[]>([]);
   const [selectedControllerId, setSelectedControllerId] = useState<string>('');
+  const [selectedAccessoryIds, setSelectedAccessoryIds] = useState<string[]>([]);
 
   // Get batteries filtered by selected aircraft
   const { data: batteries } = useActiveBatteries(selectedAircraftId || null);
@@ -64,6 +66,7 @@ export default function EquipmentSelector({
     if (!savedEquipment) return;
     setSelectedAircraftId(savedEquipment.aircraft_id);
     setSelectedBatteryIds(savedEquipment.battery_ids || []);
+    setSelectedAccessoryIds(savedEquipment.accessory_ids || []);
     if (savedEquipment.controller_id) {
       setSelectedControllerId(savedEquipment.controller_id);
     }
@@ -76,7 +79,8 @@ export default function EquipmentSelector({
 
   const handleAircraftChange = (value: string) => {
     setSelectedAircraftId(value);
-    setSelectedBatteryIds([]); // Reset batteries when aircraft changes
+    setSelectedBatteryIds([]);
+    setSelectedAccessoryIds([]);
     onEquipmentCleared();
   };
 
@@ -88,6 +92,23 @@ export default function EquipmentSelector({
     );
   };
 
+  const handleAccessoryToggle = (accessoryId: string) => {
+    setSelectedAccessoryIds(prev =>
+      prev.includes(accessoryId)
+        ? prev.filter(id => id !== accessoryId)
+        : [...prev, accessoryId]
+    );
+  };
+
+  // Filter accessories by compatibility with selected aircraft
+  const selectedAircraft = filteredAircraft.find(a => a.id === selectedAircraftId);
+  const availableAccessories = (accessories || []).filter(acc => {
+    if (acc.status !== 'active') return false;
+    if (!acc.compatible_aircraft || acc.compatible_aircraft.length === 0) return true;
+    if (!selectedAircraft) return true;
+    return acc.compatible_aircraft.includes(selectedAircraft.model);
+  });
+
   const handleSave = async () => {
     if (!selectedAircraftId) return;
 
@@ -97,6 +118,7 @@ export default function EquipmentSelector({
         aircraft_id: selectedAircraftId,
         battery_ids: selectedBatteryIds,
         controller_id: selectedControllerId || null,
+        accessory_ids: selectedAccessoryIds,
       });
 
       const aircraft = filteredAircraft.find(a => a.id === selectedAircraftId);
@@ -125,6 +147,7 @@ export default function EquipmentSelector({
     const aircraft = allAircraft?.find(a => a.id === savedEquipment.aircraft_id);
     const batteryCount = savedEquipment.battery_ids?.length || 0;
     const controller = controllers?.find(c => c.id === savedEquipment.controller_id);
+    const accessoryCount = savedEquipment.accessory_ids?.length || 0;
 
     return (
       <div className="space-y-3">
@@ -148,6 +171,12 @@ export default function EquipmentSelector({
               <span>{controller.model}</span>
             </div>
           )}
+          {accessoryCount > 0 && (
+            <div className="flex items-center gap-2">
+              <Package className="h-4 w-4 text-muted-foreground" />
+              <span>{accessoryCount} {accessoryCount === 1 ? 'accessory' : 'accessories'}</span>
+            </div>
+          )}
         </div>
         <Button variant="outline" size="sm" onClick={() => {
           // Allow re-editing by clearing savedEquipment query
@@ -155,6 +184,7 @@ export default function EquipmentSelector({
           setSelectedAircraftId(savedEquipment.aircraft_id);
           setSelectedBatteryIds(savedEquipment.battery_ids || []);
           if (savedEquipment.controller_id) setSelectedControllerId(savedEquipment.controller_id);
+          setSelectedAccessoryIds(savedEquipment.accessory_ids || []);
         }}>
           Change Equipment
         </Button>
@@ -251,6 +281,42 @@ export default function EquipmentSelector({
               No controller paired with selected aircraft
             </p>
           )}
+        </div>
+      )}
+
+      {/* Accessories Selection */}
+      {selectedAircraftId && availableAccessories.length > 0 && (
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Accessories
+            <Badge variant="outline" className="text-xs">{selectedAccessoryIds.length} selected</Badge>
+          </Label>
+          <div className="space-y-2">
+            {availableAccessories.map(acc => (
+              <div
+                key={acc.id}
+                className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-colors ${
+                  selectedAccessoryIds.includes(acc.id)
+                    ? 'bg-primary/5 border-primary/20'
+                    : 'bg-card border-border'
+                }`}
+                onClick={() => handleAccessoryToggle(acc.id)}
+              >
+                <Checkbox
+                  checked={selectedAccessoryIds.includes(acc.id)}
+                  className="pointer-events-none"
+                />
+                <div className="flex-1 text-sm">
+                  <span className="font-medium">{acc.name}</span>
+                  <span className="text-muted-foreground ml-1 capitalize text-xs">{acc.type}</span>
+                </div>
+                {acc.serial_number && (
+                  <Badge variant="secondary" className="text-xs">{acc.serial_number}</Badge>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { addToSyncQueue } from '@/lib/sync/db';
 import type { WeatherThreshold, MissionWeatherLog, WeatherDetermination } from '@/types/weather';
 
 /**
@@ -82,28 +83,42 @@ export function useCreateWeatherBriefing() {
 
   return useMutation({
     mutationFn: async (input: CreateWeatherBriefingInput) => {
+      const record = {
+        mission_id: input.mission_id,
+        metar_station: input.metar_station,
+        metar_raw: input.metar_raw,
+        briefing_timestamp: new Date().toISOString(),
+        wind_speed_ms: input.wind_speed_ms,
+        wind_gust_ms: input.wind_gust_ms,
+        wind_direction_deg: input.wind_direction_deg,
+        visibility_sm: input.visibility_sm,
+        cloud_ceiling_ft: input.cloud_ceiling_ft,
+        temperature_c: input.temperature_c,
+        dewpoint_c: input.dewpoint_c,
+        altimeter_inhg: input.altimeter_inhg,
+        precipitation_probability: input.precipitation_probability,
+        kp_index: input.kp_index,
+        determination: input.determination,
+        determination_reasons: input.determination_reasons,
+        pilot_override: input.pilot_override || false,
+        override_reason: input.override_reason || null,
+      };
+
+      if (!navigator.onLine) {
+        await addToSyncQueue({
+          action: 'insert_weather_briefing',
+          table: 'mission_weather_logs',
+          payload: record,
+          created_at: new Date().toISOString(),
+          retries: 0,
+          last_error: null,
+        });
+        return { ...record, id: `offline-${Date.now()}` } as unknown as MissionWeatherLog;
+      }
+
       const { data, error } = await supabase
         .from('mission_weather_logs')
-        .insert({
-          mission_id: input.mission_id,
-          metar_station: input.metar_station,
-          metar_raw: input.metar_raw,
-          briefing_timestamp: new Date().toISOString(),
-          wind_speed_ms: input.wind_speed_ms,
-          wind_gust_ms: input.wind_gust_ms,
-          wind_direction_deg: input.wind_direction_deg,
-          visibility_sm: input.visibility_sm,
-          cloud_ceiling_ft: input.cloud_ceiling_ft,
-          temperature_c: input.temperature_c,
-          dewpoint_c: input.dewpoint_c,
-          altimeter_inhg: input.altimeter_inhg,
-          precipitation_probability: input.precipitation_probability,
-          kp_index: input.kp_index,
-          determination: input.determination,
-          determination_reasons: input.determination_reasons,
-          pilot_override: input.pilot_override || false,
-          override_reason: input.override_reason || null,
-        })
+        .insert(record)
         .select()
         .single();
 

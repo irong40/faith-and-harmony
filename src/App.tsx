@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,60 +7,77 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import Services from "./pages/Services";
-import Shop from "./pages/Shop";
-import ProductDetail from "./pages/ProductDetail";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
-import Auth from "./pages/Auth";
-import AIVideoCreation from "./pages/services/AIVideoCreation";
-import MasonicDigitalProjects from "./pages/services/MasonicDigitalProjects";
-import BlackHistoryStorytelling from "./pages/services/BlackHistoryStorytelling";
-import CybersecurityAI from "./pages/services/CybersecurityAI";
-import VendorAssistant from "./pages/services/VendorAssistant";
-import ChurchTech from "./pages/services/ChurchTech";
+import { Loader2 } from "lucide-react";
 
-import AerialPhotography from "./pages/services/AerialPhotography";
-import WebsiteHosting from "./pages/services/WebsiteHosting";
-import AerialGallery from "./pages/AerialGallery";
-import RequestService from "./pages/RequestService";
-import Dashboard from "./pages/admin/Dashboard";
-import ServiceRequests from "./pages/admin/ServiceRequests";
-import Proposals from "./pages/admin/Proposals";
-import Projects from "./pages/admin/Projects";
-import DroneJobs from "./pages/admin/DroneJobs";
-import DroneJobDetail from "./pages/admin/DroneJobDetail";
-import DroneLeads from "./pages/admin/DroneLeads";
-import DroneCRMDashboard from "./pages/admin/DroneCRMDashboard";
-import Orders from "./pages/admin/Orders";
-import People from "./pages/admin/People";
-import Offerings from "./pages/admin/Offerings";
-import Messages from "./pages/admin/Messages";
-import Apps from "./pages/admin/Apps";
-import Announcements from "./pages/admin/Announcements";
-import Documents from "./pages/admin/Documents";
-import Settings from "./pages/admin/Settings";
-import Contact from "./pages/Contact";
-import Pricing from "./pages/Pricing";
-import Licensing from "./pages/Licensing";
-import CustomerProposal from "./pages/CustomerProposal";
-import CustomerInvoice from "./pages/CustomerInvoice";
-import DroneUpload from "./pages/DroneUpload";
-import ClientJobPortal from "./pages/ClientJobPortal";
-import Invoices from "./pages/admin/Invoices";
-import PilotDashboard from "./pages/pilot/PilotDashboard";
-import PilotMissionDetail from "./pages/pilot/PilotMissionDetail";
-import PilotManagement from "./pages/admin/PilotManagement";
-import FleetOverview from "./components/pilot/FleetOverview";
-import MaintenanceHistory from "./components/pilot/MaintenanceHistory";
-import Pipeline from "./pages/admin/Pipeline";
-import PipelineQAReview from "./pages/admin/PipelineQAReview";
-import PipelineCoverageReview from "./pages/admin/PipelineCoverageReview";
-import SentinelPricing from "./pages/admin/SentinelPricing";
+// Eager — first paint / auth
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import NotFound from "./pages/NotFound";
+
+// Lazy — public pages
+const Services = lazy(() => import("./pages/Services"));
+const Shop = lazy(() => import("./pages/Shop"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Licensing = lazy(() => import("./pages/Licensing"));
+const AerialGallery = lazy(() => import("./pages/AerialGallery"));
+const RequestService = lazy(() => import("./pages/RequestService"));
+const CustomerProposal = lazy(() => import("./pages/CustomerProposal"));
+const CustomerInvoice = lazy(() => import("./pages/CustomerInvoice"));
+const DroneUpload = lazy(() => import("./pages/DroneUpload"));
+const ClientJobPortal = lazy(() => import("./pages/ClientJobPortal"));
+
+// Lazy — service pages
+const AIVideoCreation = lazy(() => import("./pages/services/AIVideoCreation"));
+const MasonicDigitalProjects = lazy(() => import("./pages/services/MasonicDigitalProjects"));
+const BlackHistoryStorytelling = lazy(() => import("./pages/services/BlackHistoryStorytelling"));
+const CybersecurityAI = lazy(() => import("./pages/services/CybersecurityAI"));
+const VendorAssistant = lazy(() => import("./pages/services/VendorAssistant"));
+const ChurchTech = lazy(() => import("./pages/services/ChurchTech"));
+const AerialPhotography = lazy(() => import("./pages/services/AerialPhotography"));
+const WebsiteHosting = lazy(() => import("./pages/services/WebsiteHosting"));
+
+// Lazy — admin pages
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const ServiceRequests = lazy(() => import("./pages/admin/ServiceRequests"));
+const Proposals = lazy(() => import("./pages/admin/Proposals"));
+const Projects = lazy(() => import("./pages/admin/Projects"));
+const DroneJobs = lazy(() => import("./pages/admin/DroneJobs"));
+const DroneJobDetail = lazy(() => import("./pages/admin/DroneJobDetail"));
+const DroneLeads = lazy(() => import("./pages/admin/DroneLeads"));
+const DroneCRMDashboard = lazy(() => import("./pages/admin/DroneCRMDashboard"));
+const Orders = lazy(() => import("./pages/admin/Orders"));
+const People = lazy(() => import("./pages/admin/People"));
+const Offerings = lazy(() => import("./pages/admin/Offerings"));
+const Messages = lazy(() => import("./pages/admin/Messages"));
+const Apps = lazy(() => import("./pages/admin/Apps"));
+const Announcements = lazy(() => import("./pages/admin/Announcements"));
+const Documents = lazy(() => import("./pages/admin/Documents"));
+const Settings = lazy(() => import("./pages/admin/Settings"));
+const Invoices = lazy(() => import("./pages/admin/Invoices"));
+const PilotManagement = lazy(() => import("./pages/admin/PilotManagement"));
+const Pipeline = lazy(() => import("./pages/admin/Pipeline"));
+const PipelineQAReview = lazy(() => import("./pages/admin/PipelineQAReview"));
+const PipelineCoverageReview = lazy(() => import("./pages/admin/PipelineCoverageReview"));
+const SentinelPricing = lazy(() => import("./pages/admin/SentinelPricing"));
+
+// Lazy — pilot pages
+const PilotDashboard = lazy(() => import("./pages/pilot/PilotDashboard"));
+const PilotMissionDetail = lazy(() => import("./pages/pilot/PilotMissionDetail"));
+const FleetOverview = lazy(() => import("./components/pilot/FleetOverview"));
+const MaintenanceHistory = lazy(() => import("./components/pilot/MaintenanceHistory"));
+
 import PWAUpdatePrompt from "./components/pwa/PWAUpdatePrompt";
 import PWAInstallPrompt from "./components/pwa/PWAInstallPrompt";
+
+const PageSpinner = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -73,6 +91,7 @@ const App = () => (
           <PWAUpdatePrompt />
           <PWAInstallPrompt />
           <BrowserRouter>
+            <Suspense fallback={<PageSpinner />}>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
@@ -310,6 +329,7 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </BrowserRouter>
         </TooltipProvider>
       </CartProvider>

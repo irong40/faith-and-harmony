@@ -58,6 +58,7 @@ export interface MissionEquipment {
   aircraft_id: string;
   battery_ids: string[] | null;
   controller_id: string | null;
+  accessory_ids: string[] | null;
   notes: string | null;
   created_at: string;
 }

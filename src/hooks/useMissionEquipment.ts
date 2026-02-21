@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { addToSyncQueue } from '@/lib/sync/db';
 import type { MissionEquipment } from '@/types/fleet';
 
 /**
@@ -28,6 +29,7 @@ interface UpsertEquipmentInput {
   aircraft_id: string;
   battery_ids: string[];
   controller_id: string | null;
+  accessory_ids?: string[];
   notes?: string | null;
 }
 
@@ -41,6 +43,27 @@ export function useUpsertMissionEquipment() {
 
   return useMutation({
     mutationFn: async (input: UpsertEquipmentInput) => {
+      const record = {
+        mission_id: input.mission_id,
+        aircraft_id: input.aircraft_id,
+        battery_ids: input.battery_ids,
+        controller_id: input.controller_id,
+        accessory_ids: input.accessory_ids || [],
+        notes: input.notes || null,
+      };
+
+      if (!navigator.onLine) {
+        await addToSyncQueue({
+          action: 'upsert_equipment',
+          table: 'mission_equipment',
+          payload: record as unknown as Record<string, unknown>,
+          created_at: new Date().toISOString(),
+          retries: 0,
+          last_error: null,
+        });
+        return { ...record, id: `offline-${Date.now()}`, created_at: new Date().toISOString() } as unknown as MissionEquipment;
+      }
+
       // Delete any existing record for this mission
       await supabase
         .from('mission_equipment')
@@ -50,13 +73,7 @@ export function useUpsertMissionEquipment() {
       // Insert fresh
       const { data, error } = await supabase
         .from('mission_equipment')
-        .insert({
-          mission_id: input.mission_id,
-          aircraft_id: input.aircraft_id,
-          battery_ids: input.battery_ids,
-          controller_id: input.controller_id,
-          notes: input.notes || null,
-        })
+        .insert(record)
         .select()
         .single();
 
