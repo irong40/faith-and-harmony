@@ -95,7 +95,7 @@ export default function FleetOverview() {
           </div>
           <Link to="/pilot/fleet/maintenance">
             <Button variant="outline" size="sm">
-              <Wrench className="h-4 w-4 mr-1" /> Log
+              <Wrench className="h-4 w-4 mr-1" /> History
             </Button>
           </Link>
         </div>

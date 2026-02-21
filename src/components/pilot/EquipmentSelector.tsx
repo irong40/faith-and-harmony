@@ -40,6 +40,7 @@ export default function EquipmentSelector({
   const [selectedBatteryIds, setSelectedBatteryIds] = useState<string[]>([]);
   const [selectedControllerId, setSelectedControllerId] = useState<string>('');
   const [selectedAccessoryIds, setSelectedAccessoryIds] = useState<string[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Get batteries filtered by selected aircraft
   const { data: batteries } = useActiveBatteries(selectedAircraftId || null);
@@ -123,6 +124,7 @@ export default function EquipmentSelector({
 
       const aircraft = filteredAircraft.find(a => a.id === selectedAircraftId);
       onEquipmentSelected({ id: result.id, aircraft_model: aircraft?.model || '' });
+      setIsEditing(false);
 
       toast({ title: 'Equipment saved' });
     } catch (error: any) {
@@ -142,8 +144,8 @@ export default function EquipmentSelector({
     );
   }
 
-  // Show saved summary if equipment already saved
-  if (savedEquipment && !upsertMutation.isPending) {
+  // Show saved summary if equipment already saved and not re-editing
+  if (savedEquipment && !upsertMutation.isPending && !isEditing) {
     const aircraft = allAircraft?.find(a => a.id === savedEquipment.aircraft_id);
     const batteryCount = savedEquipment.battery_ids?.length || 0;
     const controller = controllers?.find(c => c.id === savedEquipment.controller_id);
@@ -179,7 +181,7 @@ export default function EquipmentSelector({
           )}
         </div>
         <Button variant="outline" size="sm" onClick={() => {
-          // Allow re-editing by clearing savedEquipment query
+          setIsEditing(true);
           onEquipmentCleared();
           setSelectedAircraftId(savedEquipment.aircraft_id);
           setSelectedBatteryIds(savedEquipment.battery_ids || []);

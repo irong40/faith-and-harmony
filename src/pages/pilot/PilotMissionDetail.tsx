@@ -2,13 +2,15 @@ import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { addToSyncQueue } from "@/lib/sync/db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
     ArrowLeft, MapPin, Calendar, Package, FileText,
-    RefreshCw, Navigation, ExternalLink
+    RefreshCw, Navigation, ExternalLink, CheckCircle2,
+    Plane, Battery, Shield, Cloud
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -18,6 +20,10 @@ import PreFlightAccordion from "@/components/pilot/PreFlightAccordion";
 import { getCertificationStatus } from "@/types/pilot";
 import type { ChecklistData, PreFlightData } from "@/types/pilot";
 import { usePilotMission } from "@/hooks/usePilotMissions";
+import { useMissionEquipment } from "@/hooks/useMissionEquipment";
+import { useMissionWeatherLog } from "@/hooks/useWeatherBriefing";
+import { useMissionAuthorization } from "@/hooks/useAirspaceAuth";
+import { useActiveAircraft, useActiveControllers } from "@/hooks/useFleet";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
     scheduled: { label: "SCHEDULED", color: "bg-blue-500" },
@@ -47,6 +53,14 @@ export default function PilotMissionDetail() {
     // Check if pilot can log flights (Part 107 not expired)
     const certStatus = getCertificationStatus(pilotProfile?.part_107_expiry ?? null);
     const canLogFlights = certStatus !== "expired";
+
+    // Completed mission data (only fetched when mission is complete)
+    const isComplete = mission?.status === "complete";
+    const { data: savedEquipment } = useMissionEquipment(isComplete ? id : undefined);
+    const { data: weatherLog } = useMissionWeatherLog(isComplete ? id : undefined);
+    const { data: authorization } = useMissionAuthorization(isComplete ? id : undefined);
+    const { data: allAircraft } = useActiveAircraft();
+    const { data: allControllers } = useActiveControllers();
 
     const openInMaps = () => {
         if (!mission) return;
@@ -82,23 +96,45 @@ export default function PilotMissionDetail() {
                 localStorage.setItem("trestle_device_id", deviceId);
             }
 
-            const { error: logError } = await supabase
-                .from("flight_logs")
-                .insert({
-                    mission_id: mission.id,
-                    pilot_id: user.id,
-                    checklist_data: checklistData,
-                    device_id: deviceId,
+            const flightLogPayload = {
+                mission_id: mission.id,
+                pilot_id: user.id,
+                checklist_data: checklistData,
+                device_id: deviceId,
+            };
+
+            if (!navigator.onLine) {
+                // Queue both operations for later sync
+                await addToSyncQueue({
+                    action: 'insert_flight_log',
+                    table: 'flight_logs',
+                    payload: flightLogPayload as unknown as Record<string, unknown>,
+                    created_at: new Date().toISOString(),
+                    retries: 0,
+                    last_error: null,
                 });
+                await addToSyncQueue({
+                    action: 'update_mission_status',
+                    table: 'drone_jobs',
+                    payload: { id: mission.id, status: 'complete' },
+                    created_at: new Date().toISOString(),
+                    retries: 0,
+                    last_error: null,
+                });
+            } else {
+                const { error: logError } = await supabase
+                    .from("flight_logs")
+                    .insert(flightLogPayload);
 
-            if (logError) throw logError;
+                if (logError) throw logError;
 
-            const { error: updateError } = await supabase
-                .from("drone_jobs")
-                .update({ status: "complete" })
-                .eq("id", mission.id);
+                const { error: updateError } = await supabase
+                    .from("drone_jobs")
+                    .update({ status: "complete" })
+                    .eq("id", mission.id);
 
-            if (updateError) throw updateError;
+                if (updateError) throw updateError;
+            }
 
             localStorage.removeItem(`trestle_checklist_${mission.id}`);
 
@@ -107,8 +143,8 @@ export default function PilotMissionDetail() {
             }
 
             toast({
-                title: "Flight logged successfully",
-                description: "Mission marked as complete",
+                title: navigator.onLine ? "Flight logged successfully" : "Flight saved offline",
+                description: navigator.onLine ? "Mission marked as complete" : "Will sync when back online",
             });
 
             navigate("/pilot");
@@ -141,7 +177,6 @@ export default function PilotMissionDetail() {
     }
 
     const statusConfig = STATUS_CONFIG[mission.status] || STATUS_CONFIG.scheduled;
-    const isComplete = mission.status === "complete";
 
     return (
         <div className="min-h-screen bg-background pb-24">
@@ -241,6 +276,73 @@ export default function PilotMissionDetail() {
                         )}
                     </CardContent>
                 </Card>
+
+                {/* Completed Mission Summary */}
+                {isComplete && (
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <div className="flex items-center gap-2 text-green-600">
+                                <CheckCircle2 className="h-5 w-5" />
+                                <CardTitle className="text-lg">Mission Complete</CardTitle>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {savedEquipment && (() => {
+                                const aircraft = allAircraft?.find(a => a.id === savedEquipment.aircraft_id);
+                                const controller = allControllers?.find(c => c.id === savedEquipment.controller_id);
+                                const batteryCount = savedEquipment.battery_ids?.length || 0;
+                                return (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <Plane className="h-4 w-4 text-muted-foreground" />
+                                            <span>{aircraft?.nickname || aircraft?.model || 'Aircraft'}</span>
+                                            {aircraft?.model && <Badge variant="secondary" className="text-xs">{aircraft.model}</Badge>}
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <Battery className="h-4 w-4 text-muted-foreground" />
+                                            <span>{batteryCount} {batteryCount === 1 ? 'battery' : 'batteries'}</span>
+                                        </div>
+                                        {controller && (
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <Package className="h-4 w-4 text-muted-foreground" />
+                                                <span>{controller.model}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })()}
+                            {authorization && (
+                                <div className="flex items-center gap-2 text-sm">
+                                    <Shield className="h-4 w-4 text-muted-foreground" />
+                                    <span>Class {authorization.airspace_class}</span>
+                                    <Badge variant="secondary" className="text-xs">
+                                        {authorization.requires_laanc ? 'LAANC' : 'No LAANC'}
+                                    </Badge>
+                                </div>
+                            )}
+                            {weatherLog && (
+                                <div className="flex items-center gap-2 text-sm">
+                                    <Cloud className="h-4 w-4 text-muted-foreground" />
+                                    <Badge
+                                        className={`text-xs ${
+                                            weatherLog.determination === 'GO' ? 'bg-green-600 text-white' :
+                                            weatherLog.determination === 'CAUTION' ? 'bg-amber-500 text-white' :
+                                            'bg-red-600 text-white'
+                                        }`}
+                                    >
+                                        {weatherLog.determination}
+                                    </Badge>
+                                    {weatherLog.metar_station && (
+                                        <span className="text-muted-foreground">{weatherLog.metar_station}</span>
+                                    )}
+                                </div>
+                            )}
+                            {!savedEquipment && !authorization && !weatherLog && (
+                                <p className="text-sm text-muted-foreground">No pre-flight data recorded for this mission.</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Pre-Flight Accordion */}
                 {!isComplete && (

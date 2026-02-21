@@ -1,8 +1,10 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, LogOut, Plane } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { isToday, isBefore, startOfDay } from "date-fns";
 import PilotCard from "@/components/pilot/PilotCard";
 import MissionCard from "@/components/pilot/MissionCard";
 import SyncStatusIndicator from "@/components/pilot/SyncStatusIndicator";
@@ -17,7 +19,7 @@ export default function PilotDashboard() {
     const { data: missions = [], isLoading: loading, refetch } = usePilotMissions();
 
     // Offline sync engine
-    const { syncStatus, pendingCount, isOnline, syncNow } = useOfflineSync(pilotProfile?.id);
+    const { syncStatus, pendingCount, pendingMissionIds, isOnline, syncNow } = useOfflineSync(pilotProfile?.id);
 
     const handleSync = async () => {
         await syncNow();
@@ -78,14 +80,6 @@ export default function PilotDashboard() {
                     </Button>
                 </Link>
 
-                {/* Missions Section */}
-                <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold text-foreground">My Missions</h2>
-                    <span className="text-sm text-muted-foreground">
-                        {missions.length} {missions.length === 1 ? "mission" : "missions"}
-                    </span>
-                </div>
-
                 {/* Mission List */}
                 {loading ? (
                     <div className="flex items-center justify-center py-12">
@@ -99,23 +93,92 @@ export default function PilotDashboard() {
                         </p>
                     </div>
                 ) : (
-                    <div className="space-y-3">
-                        {missions.map((mission) => (
-                            <MissionCard
-                                key={mission.id}
-                                mission={{
-                                    id: mission.id,
-                                    client_name: mission.client_name,
-                                    address: mission.property_address,
-                                    scheduled_date: mission.scheduled_date,
-                                    status: mission.status as "scheduled" | "in_progress" | "complete" | "canceled",
-                                    package_type: mission.package_name || undefined,
-                                }}
-                            />
-                        ))}
-                    </div>
+                    <MissionGroups
+                        missions={missions}
+                        isOnline={isOnline}
+                        pendingMissionIds={pendingMissionIds}
+                    />
                 )}
             </main>
+        </div>
+    );
+}
+
+function MissionGroups({
+    missions,
+    isOnline,
+    pendingMissionIds,
+}: {
+    missions: any[];
+    isOnline: boolean;
+    pendingMissionIds: Set<string>;
+}) {
+    const { today, upcoming, past } = useMemo(() => {
+        const now = startOfDay(new Date());
+        const groups = { today: [] as any[], upcoming: [] as any[], past: [] as any[] };
+
+        for (const m of missions) {
+            if (!m.scheduled_date) {
+                groups.upcoming.push(m);
+                continue;
+            }
+            const d = startOfDay(new Date(m.scheduled_date));
+            if (isToday(d)) groups.today.push(m);
+            else if (isBefore(d, now)) groups.past.push(m);
+            else groups.upcoming.push(m);
+        }
+
+        return groups;
+    }, [missions]);
+
+    const renderCard = (mission: any) => (
+        <MissionCard
+            key={mission.id}
+            mission={{
+                id: mission.id,
+                client_name: mission.client_name,
+                address: mission.property_address,
+                scheduled_date: mission.scheduled_date,
+                status: mission.status as "scheduled" | "in_progress" | "complete" | "canceled",
+                package_type: mission.package_name || undefined,
+            }}
+            syncStatus={
+                !isOnline ? "offline" :
+                pendingMissionIds.has(mission.id) ? "pending" :
+                "synced"
+            }
+        />
+    );
+
+    return (
+        <div className="space-y-6">
+            {today.length > 0 && (
+                <section>
+                    <div className="mb-2 flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-foreground">Today</h2>
+                        <span className="text-sm text-muted-foreground">{today.length}</span>
+                    </div>
+                    <div className="space-y-3">{today.map(renderCard)}</div>
+                </section>
+            )}
+            {upcoming.length > 0 && (
+                <section>
+                    <div className="mb-2 flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-foreground">Upcoming</h2>
+                        <span className="text-sm text-muted-foreground">{upcoming.length}</span>
+                    </div>
+                    <div className="space-y-3">{upcoming.map(renderCard)}</div>
+                </section>
+            )}
+            {past.length > 0 && (
+                <section>
+                    <div className="mb-2 flex items-center justify-between">
+                        <h2 className="text-sm font-medium text-muted-foreground">Past</h2>
+                        <span className="text-sm text-muted-foreground">{past.length}</span>
+                    </div>
+                    <div className="space-y-3 opacity-75">{past.map(renderCard)}</div>
+                </section>
+            )}
         </div>
     );
 }

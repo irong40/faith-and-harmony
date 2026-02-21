@@ -91,9 +91,24 @@ export function useOfflineSync(pilotId?: string) {
     }
   }, [pilotId]);
 
+  const [pendingMissionIds, setPendingMissionIds] = useState<Set<string>>(new Set());
+
+  // Track which missions have pending sync items
+  useEffect(() => {
+    getSyncQueue().then(q => {
+      const ids = new Set<string>();
+      for (const item of q) {
+        const mid = item.payload?.mission_id as string | undefined;
+        if (mid) ids.add(mid);
+      }
+      setPendingMissionIds(ids);
+    });
+  }, [pendingCount]);
+
   return {
     syncStatus,
     pendingCount,
+    pendingMissionIds,
     isOnline,
     enqueue,
     syncNow,
