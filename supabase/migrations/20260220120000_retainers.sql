@@ -1,3 +1,6 @@
+-- Enable moddatetime extension (idempotent)
+CREATE EXTENSION IF NOT EXISTS moddatetime WITH SCHEMA extensions;
+
 -- Retainers table for brokerage retainer billing
 CREATE TABLE public.retainers (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -18,7 +21,7 @@ CREATE TABLE public.retainers (
 CREATE TRIGGER retainers_updated_at
   BEFORE UPDATE ON public.retainers
   FOR EACH ROW
-  EXECUTE FUNCTION public.moddatetime(updated_at);
+  EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 -- RLS
 ALTER TABLE public.retainers ENABLE ROW LEVEL SECURITY;

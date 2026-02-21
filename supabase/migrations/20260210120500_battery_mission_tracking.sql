@@ -62,7 +62,7 @@ CREATE OR REPLACE FUNCTION log_flight(
   p_mission_id UUID DEFAULT NULL,
   p_mission_equipment_id UUID DEFAULT NULL
 )
-RETURNS VOID AS $
+RETURNS VOID AS $$
 DECLARE
   v_battery_id UUID;
   v_cycle_before INTEGER;
@@ -122,7 +122,7 @@ BEGIN
     END IF;
   END LOOP;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- ============================================================================
 -- UPDATED flight_log_fleet_sync TRIGGER
@@ -131,7 +131,7 @@ $ LANGUAGE plpgsql;
 -- This updated version passes mission_id so battery_mission_log gets populated.
 
 CREATE OR REPLACE FUNCTION sync_flight_log_to_fleet()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 DECLARE
   v_aircraft_id UUID;
   v_battery_ids UUID[];
@@ -161,7 +161,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- Recreate the trigger (DROP first to avoid duplicate)
 DROP TRIGGER IF EXISTS flight_log_fleet_sync ON flight_logs;
@@ -242,7 +242,7 @@ RETURNS TABLE (
   slot_position INTEGER,
   cycle_at_flight INTEGER,
   notes TEXT
-) AS $
+) AS $$
 BEGIN
   RETURN QUERY
   SELECT
@@ -257,7 +257,7 @@ BEGIN
   WHERE bml.battery_id = p_battery_id
   ORDER BY bml.flight_date DESC;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- ============================================================================
 -- HELPER FUNCTION: Get all batteries used on a specific mission
@@ -272,7 +272,7 @@ RETURNS TABLE (
   cycle_after INTEGER,
   current_cycles INTEGER,
   health_percent INTEGER
-) AS $
+) AS $$
 BEGIN
   RETURN QUERY
   SELECT
@@ -288,7 +288,7 @@ BEGIN
   WHERE bml.mission_id = p_mission_id
   ORDER BY bml.slot_position;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 -- ============================================================================
 -- ROW LEVEL SECURITY

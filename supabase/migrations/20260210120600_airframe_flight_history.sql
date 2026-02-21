@@ -102,7 +102,7 @@ RETURNS TABLE (
   cumulative_hours NUMERIC,
   batteries_used UUID[],
   notes TEXT
-) AS $
+) AS $$
 BEGIN
   RETURN QUERY
   SELECT
@@ -121,4 +121,4 @@ BEGIN
     AND me.flight_duration_minutes IS NOT NULL
   ORDER BY me.created_at DESC;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
