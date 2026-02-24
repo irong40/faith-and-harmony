@@ -7,25 +7,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  ArrowLeft,
   LayoutDashboard,
   Server,
   Megaphone,
   Camera,
   ClipboardList,
-  BarChart3,
+  Activity,
+  Users,
   Target,
   Briefcase,
   FileText,
-  Package,
-  ShoppingCart,
-  Users,
   MessageSquare,
   FileOutput,
   Settings,
   ChevronDown,
   FolderKanban,
-  Activity
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -46,13 +42,12 @@ const navCategories: NavCategory[] = [
     ],
   },
   {
-    label: "Drone",
+    label: "Missions",
     icon: Camera,
     items: [
-      { href: "/admin/drone-jobs", label: "Drone Jobs", icon: ClipboardList },
+      { href: "/admin/drone-jobs", label: "Jobs", icon: ClipboardList },
       { href: "/admin/pipeline", label: "Pipeline", icon: Activity },
-      { href: "/admin/drone-crm", label: "CRM", icon: BarChart3 },
-      { href: "/admin/pilots", label: "Manage Pilots", icon: Users },
+      { href: "/admin/pilots", label: "Pilots", icon: Users },
       { href: "/pilot", label: "Pilot Portal", icon: Target },
     ],
   },
@@ -64,9 +59,6 @@ const navCategories: NavCategory[] = [
       { href: "/admin/proposals", label: "Proposals", icon: ClipboardList },
       { href: "/admin/projects", label: "Projects", icon: FolderKanban },
       { href: "/admin/invoices", label: "Invoices", icon: FileText },
-      { href: "/admin/offerings", label: "Offerings", icon: Package },
-      { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
-      { href: "/admin/drone-leads", label: "Leads", icon: Target },
     ],
   },
   {
@@ -97,10 +89,8 @@ export default function AdminNav() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
+            <Link to="/" className="flex items-center gap-2 text-sm font-semibold text-primary mr-2">
+              Sentinel
             </Link>
             <nav className="flex gap-1">
               {navCategories.map((category) => (
@@ -121,8 +111,7 @@ export default function AdminNav() {
                       <DropdownMenuItem key={item.href} asChild>
                         <Link
                           to={item.href}
-                          className={`flex items-center gap-2 w-full ${isItemActive(item.href) ? "bg-accent" : ""
-                            }`}
+                          className={`flex items-center gap-2 w-full ${isItemActive(item.href) ? "bg-accent" : ""}`}
                         >
                           <item.icon className="h-4 w-4" />
                           {item.label}
