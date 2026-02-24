@@ -38,6 +38,9 @@ const Pipeline = lazy(() => import("./pages/admin/Pipeline"));
 const PipelineQAReview = lazy(() => import("./pages/admin/PipelineQAReview"));
 const PipelineCoverageReview = lazy(() => import("./pages/admin/PipelineCoverageReview"));
 const SentinelPricing = lazy(() => import("./pages/admin/SentinelPricing"));
+const Clients = lazy(() => import("./pages/admin/Clients"));
+const JobIntake = lazy(() => import("./pages/admin/JobIntake"));
+const ProcessingTemplates = lazy(() => import("./pages/admin/ProcessingTemplates"));
 
 // Lazy — pilot pages
 const PilotDashboard = lazy(() => import("./pages/pilot/PilotDashboard"));
@@ -229,6 +232,30 @@ const App = () => (
                 element={
                   <ProtectedRoute requireAdmin>
                     <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/clients"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <Clients />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/jobs/new"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <JobIntake />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/processing-templates"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <ProcessingTemplates />
                   </ProtectedRoute>
                 }
               />

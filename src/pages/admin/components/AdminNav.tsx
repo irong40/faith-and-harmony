@@ -22,6 +22,8 @@ import {
   Settings,
   ChevronDown,
   FolderKanban,
+  Plus,
+  Route,
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -45,10 +47,13 @@ const navCategories: NavCategory[] = [
     label: "Missions",
     icon: Camera,
     items: [
+      { href: "/admin/jobs/new", label: "New Job", icon: Plus },
       { href: "/admin/drone-jobs", label: "Jobs", icon: ClipboardList },
+      { href: "/admin/clients", label: "Clients", icon: Users },
       { href: "/admin/pipeline", label: "Pipeline", icon: Activity },
       { href: "/admin/pilots", label: "Pilots", icon: Users },
       { href: "/pilot", label: "Pilot Portal", icon: Target },
+      { href: "/admin/processing-templates", label: "Templates", icon: Route },
     ],
   },
   {
