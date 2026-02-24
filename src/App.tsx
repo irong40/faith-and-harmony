@@ -3,42 +3,21 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { CartProvider } from "@/contexts/CartContext";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Loader2 } from "lucide-react";
 
-// Eager — first paint / auth
-import Index from "./pages/Index";
+// Eager — auth
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
-// Lazy — public pages
-const Services = lazy(() => import("./pages/Services"));
-const Shop = lazy(() => import("./pages/Shop"));
-const ProductDetail = lazy(() => import("./pages/ProductDetail"));
-const Cart = lazy(() => import("./pages/Cart"));
-const Checkout = lazy(() => import("./pages/Checkout"));
-const Contact = lazy(() => import("./pages/Contact"));
-const Pricing = lazy(() => import("./pages/Pricing"));
-const Licensing = lazy(() => import("./pages/Licensing"));
-const AerialGallery = lazy(() => import("./pages/AerialGallery"));
-const RequestService = lazy(() => import("./pages/RequestService"));
+// Lazy — tokenized client routes (no auth required)
 const CustomerProposal = lazy(() => import("./pages/CustomerProposal"));
 const CustomerInvoice = lazy(() => import("./pages/CustomerInvoice"));
 const DroneUpload = lazy(() => import("./pages/DroneUpload"));
 const ClientJobPortal = lazy(() => import("./pages/ClientJobPortal"));
-
-// Lazy — service pages
-const AIVideoCreation = lazy(() => import("./pages/services/AIVideoCreation"));
-const MasonicDigitalProjects = lazy(() => import("./pages/services/MasonicDigitalProjects"));
-const BlackHistoryStorytelling = lazy(() => import("./pages/services/BlackHistoryStorytelling"));
-const CybersecurityAI = lazy(() => import("./pages/services/CybersecurityAI"));
-const VendorAssistant = lazy(() => import("./pages/services/VendorAssistant"));
-const ChurchTech = lazy(() => import("./pages/services/ChurchTech"));
-const AerialPhotography = lazy(() => import("./pages/services/AerialPhotography"));
-const WebsiteHosting = lazy(() => import("./pages/services/WebsiteHosting"));
 
 // Lazy — admin pages
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
@@ -47,11 +26,7 @@ const Proposals = lazy(() => import("./pages/admin/Proposals"));
 const Projects = lazy(() => import("./pages/admin/Projects"));
 const DroneJobs = lazy(() => import("./pages/admin/DroneJobs"));
 const DroneJobDetail = lazy(() => import("./pages/admin/DroneJobDetail"));
-const DroneLeads = lazy(() => import("./pages/admin/DroneLeads"));
-const DroneCRMDashboard = lazy(() => import("./pages/admin/DroneCRMDashboard"));
-const Orders = lazy(() => import("./pages/admin/Orders"));
 const People = lazy(() => import("./pages/admin/People"));
-const Offerings = lazy(() => import("./pages/admin/Offerings"));
 const Messages = lazy(() => import("./pages/admin/Messages"));
 const Apps = lazy(() => import("./pages/admin/Apps"));
 const Announcements = lazy(() => import("./pages/admin/Announcements"));
@@ -79,40 +54,40 @@ const PageSpinner = () => (
   </div>
 );
 
+// Role-based redirect from root
+function RootRedirect() {
+  const { user, isAdmin, isPilot, loading } = useAuth();
+  if (loading) return <PageSpinner />;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
+  if (isPilot) return <Navigate to="/pilot" replace />;
+  return <Navigate to="/auth" replace />;
+}
+
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <CartProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <PWAUpdatePrompt />
-          <PWAInstallPrompt />
-          <BrowserRouter>
-            <Suspense fallback={<PageSpinner />}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <PWAUpdatePrompt />
+        <PWAInstallPrompt />
+        <BrowserRouter>
+          <Suspense fallback={<PageSpinner />}>
             <Routes>
-              <Route path="/" element={<Index />} />
+              {/* Root — role-based redirect */}
+              <Route path="/" element={<RootRedirect />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/shop/product/:id" element={<ProductDetail />} />
-              <Route path="/cart" element={<Cart />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/services/ai-video-creation" element={<AIVideoCreation />} />
-              <Route path="/services/masonic-digital-projects" element={<MasonicDigitalProjects />} />
-              <Route path="/services/black-history-storytelling" element={<BlackHistoryStorytelling />} />
-              <Route path="/services/cybersecurity-ai" element={<CybersecurityAI />} />
-              <Route path="/services/vendor-assistant" element={<VendorAssistant />} />
-              <Route path="/services/church-tech" element={<ChurchTech />} />
-              <Route path="/services/aerial-photography" element={<AerialPhotography />} />
-              <Route path="/services/website-hosting" element={<WebsiteHosting />} />
-              <Route path="/gallery/aerial-art" element={<AerialGallery />} />
-              <Route path="/request-service" element={<RequestService />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/licensing" element={<Licensing />} />
+
+              {/* Tokenized client routes — no auth required */}
+              <Route path="/proposal/:token" element={<CustomerProposal />} />
+              <Route path="/invoice/:token" element={<CustomerInvoice />} />
+              <Route path="/drone-upload/:token" element={<DroneUpload />} />
+              <Route path="/my-jobs/:token" element={<ClientJobPortal />} />
+
+              {/* Admin routes */}
               <Route
                 path="/admin/dashboard"
                 element={
@@ -162,22 +137,6 @@ const App = () => (
                 }
               />
               <Route
-                path="/admin/drone-leads"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <DroneLeads />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/drone-crm"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <DroneCRMDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/admin/pipeline"
                 element={
                   <ProtectedRoute requireAdmin>
@@ -217,26 +176,6 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/admin/offerings"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <Offerings />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/orders"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <Orders />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/proposal/:token" element={<CustomerProposal />} />
-              <Route path="/invoice/:token" element={<CustomerInvoice />} />
-              <Route path="/drone-upload/:token" element={<DroneUpload />} />
-              <Route path="/my-jobs/:token" element={<ClientJobPortal />} />
               <Route
                 path="/admin/invoices"
                 element={
@@ -293,7 +232,8 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              {/* Pilot Portal Routes */}
+
+              {/* Pilot portal routes */}
               <Route
                 path="/pilot"
                 element={
@@ -326,13 +266,13 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-            </Suspense>
-          </BrowserRouter>
-        </TooltipProvider>
-      </CartProvider>
+          </Suspense>
+        </BrowserRouter>
+      </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
