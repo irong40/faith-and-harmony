@@ -31,8 +31,10 @@ import QAAssetGrid from "@/components/drone/QAAssetGrid";
 import AdminAssetUpload from "@/components/drone/AdminAssetUpload";
 import type { Database, Json } from "@/integrations/supabase/types";
 import type { DroneAsset, QAResults, ProcessingProfile } from "@/types/drone";
-import { useMissionSteps } from "@/hooks/usePipeline";
+import { useMissionSteps, useProcessingJob, useTriggerPipeline, useResumeManualEdit } from "@/hooks/usePipeline";
+import type { ProcessingJobStep } from "@/hooks/usePipeline";
 import PipelineStepRow from "@/components/pipeline/PipelineStepRow";
+import PipelineStepper from "@/components/pipeline/PipelineStepper";
 
 type DroneJobStatus = Database["public"]["Enums"]["drone_job_status"];
 
@@ -98,11 +100,157 @@ function PipelineSteps({ missionId }: { missionId: string | undefined }) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          Pipeline Progress
+          Legacy Pipeline Steps
         </CardTitle>
       </CardHeader>
       <CardContent>
         <PipelineStepRow steps={steps} />
+      </CardContent>
+    </Card>
+  );
+}
+
+function ProcessingJobCard({ missionId, processingTemplateId }: {
+  missionId: string;
+  processingTemplateId: string | null;
+}) {
+  const { toast } = useToast();
+  const { data: processingJob, isLoading } = useProcessingJob(missionId);
+  const triggerPipeline = useTriggerPipeline();
+  const resumeManualEdit = useResumeManualEdit();
+
+  const handleStartProcessing = async () => {
+    if (!processingTemplateId) {
+      toast({
+        title: "No processing template",
+        description: "Assign a processing template to this job before starting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await triggerPipeline.mutateAsync({
+        missionId,
+        processingTemplateId,
+      });
+      toast({ title: "Pipeline started", description: "Processing job created and sent to n8n." });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Failed to start pipeline", description: message, variant: "destructive" });
+    }
+  };
+
+  const handleMarkEditComplete = async (stepName: string) => {
+    if (!processingJob) return;
+    try {
+      await resumeManualEdit.mutateAsync({
+        processingJobId: processingJob.id,
+        stepName,
+      });
+      toast({ title: "Pipeline resumed", description: "Manual edit marked complete. Continuing..." });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      toast({ title: "Resume failed", description: message, variant: "destructive" });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-muted-foreground">
+          <RefreshCw className="mx-auto h-6 w-6 animate-spin mb-2" />
+          <p className="text-sm">Loading pipeline status...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!processingJob) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5" />
+            Start Processing
+          </CardTitle>
+          <CardDescription>
+            No active pipeline job for this mission.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            onClick={handleStartProcessing}
+            disabled={triggerPipeline.isPending || !processingTemplateId}
+            className="w-full sm:w-auto"
+          >
+            {triggerPipeline.isPending ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Starting...
+              </>
+            ) : (
+              <>
+                <Zap className="mr-2 h-4 w-4" />
+                Start Processing Pipeline
+              </>
+            )}
+          </Button>
+          {!processingTemplateId && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Assign a processing template in the Overview tab first.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const steps = (processingJob.steps ?? []) as ProcessingJobStep[];
+  const statusBadgeClass =
+    processingJob.status === 'complete'
+      ? 'bg-green-100 text-green-700'
+      : processingJob.status === 'failed'
+        ? 'bg-red-100 text-red-700'
+        : processingJob.status === 'running'
+          ? 'bg-blue-100 text-blue-700'
+          : processingJob.status === 'awaiting_manual_edit'
+            ? 'bg-amber-100 text-amber-700'
+            : 'bg-slate-100 text-slate-600';
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5" />
+            Pipeline Status
+          </CardTitle>
+          <Badge variant="secondary" className={statusBadgeClass}>
+            {processingJob.status.replace('_', ' ')}
+          </Badge>
+        </div>
+        {processingJob.started_at && (
+          <CardDescription>
+            Started {format(new Date(processingJob.started_at), "MMM d 'at' h:mm a")}
+            {processingJob.completed_at && (
+              <> &middot; Completed {format(new Date(processingJob.completed_at), "MMM d 'at' h:mm a")}</>
+            )}
+          </CardDescription>
+        )}
+      </CardHeader>
+      <CardContent>
+        {processingJob.error_message && (
+          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 font-mono">
+            {processingJob.error_message}
+          </div>
+        )}
+        <PipelineStepper
+          steps={steps}
+          currentStep={processingJob.current_step}
+          processingJobId={processingJob.id}
+          onMarkEditComplete={handleMarkEditComplete}
+        />
       </CardContent>
     </Card>
   );
@@ -714,7 +862,15 @@ export default function DroneJobDetail() {
           {/* Processing Tab */}
           <TabsContent value="processing">
             <div className="space-y-6">
-              {/* Pipeline Steps */}
+              {/* New processing_jobs stepper */}
+              {id && (
+                <ProcessingJobCard
+                  missionId={id}
+                  processingTemplateId={job.processing_template_id}
+                />
+              )}
+
+              {/* Legacy processing_steps (kept for backward compat) */}
               <PipelineSteps missionId={id} />
               {/* Premium Review Approval UI */}
               {job.status === "review_pending" && (
