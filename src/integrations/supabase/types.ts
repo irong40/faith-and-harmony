@@ -974,10 +974,62 @@ export type Database = {
           },
         ]
       }
+      clients: {
+        Row: {
+          address: string | null
+          city: string | null
+          company: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          state: string | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: []
+      }
       drone_jobs: {
         Row: {
           admin_notes: string | null
           aircraft_id: string | null
+          client_id: string | null
           completed_at: string | null
           construction_context: Json | null
           created_at: string
@@ -996,6 +1048,7 @@ export type Database = {
           package_id: string | null
           pilot_id: string | null
           pilot_notes: string | null
+          processing_template_id: string | null
           property_address: string
           property_city: string | null
           property_state: string | null
@@ -1007,6 +1060,7 @@ export type Database = {
           scheduled_date: string | null
           scheduled_time: string | null
           service_request_id: string | null
+          site_address: string | null
           status: Database["public"]["Enums"]["drone_job_status"]
           updated_at: string
           upload_token: string | null
@@ -1015,6 +1069,7 @@ export type Database = {
         Insert: {
           admin_notes?: string | null
           aircraft_id?: string | null
+          client_id?: string | null
           completed_at?: string | null
           construction_context?: Json | null
           created_at?: string
@@ -1033,6 +1088,7 @@ export type Database = {
           package_id?: string | null
           pilot_id?: string | null
           pilot_notes?: string | null
+          processing_template_id?: string | null
           property_address: string
           property_city?: string | null
           property_state?: string | null
@@ -1044,6 +1100,7 @@ export type Database = {
           scheduled_date?: string | null
           scheduled_time?: string | null
           service_request_id?: string | null
+          site_address?: string | null
           status?: Database["public"]["Enums"]["drone_job_status"]
           updated_at?: string
           upload_token?: string | null
@@ -1052,6 +1109,7 @@ export type Database = {
         Update: {
           admin_notes?: string | null
           aircraft_id?: string | null
+          client_id?: string | null
           completed_at?: string | null
           construction_context?: Json | null
           created_at?: string
@@ -1070,6 +1128,7 @@ export type Database = {
           package_id?: string | null
           pilot_id?: string | null
           pilot_notes?: string | null
+          processing_template_id?: string | null
           property_address?: string
           property_city?: string | null
           property_state?: string | null
@@ -1081,6 +1140,7 @@ export type Database = {
           scheduled_date?: string | null
           scheduled_time?: string | null
           service_request_id?: string | null
+          site_address?: string | null
           status?: Database["public"]["Enums"]["drone_job_status"]
           updated_at?: string
           upload_token?: string | null
@@ -2285,10 +2345,14 @@ export type Database = {
           active: boolean | null
           adiat_enabled: boolean | null
           created_at: string | null
+          default_steps: Json | null
+          description: string | null
+          display_name: string | null
           id: string
           lightroom_preset: string | null
           output_format: string | null
-          package_id: string
+          package_id: string | null
+          path_code: string | null
           preset_name: string
           qa_api_threshold_high: number | null
           qa_api_threshold_low: number | null
@@ -2301,10 +2365,14 @@ export type Database = {
           active?: boolean | null
           adiat_enabled?: boolean | null
           created_at?: string | null
+          default_steps?: Json | null
+          description?: string | null
+          display_name?: string | null
           id?: string
           lightroom_preset?: string | null
           output_format?: string | null
-          package_id: string
+          package_id?: string | null
+          path_code?: string | null
           preset_name: string
           qa_api_threshold_high?: number | null
           qa_api_threshold_low?: number | null
@@ -2317,10 +2385,14 @@ export type Database = {
           active?: boolean | null
           adiat_enabled?: boolean | null
           created_at?: string | null
+          default_steps?: Json | null
+          description?: string | null
+          display_name?: string | null
           id?: string
           lightroom_preset?: string | null
           output_format?: string | null
-          package_id?: string
+          package_id?: string | null
+          path_code?: string | null
           preset_name?: string
           qa_api_threshold_high?: number | null
           qa_api_threshold_low?: number | null
