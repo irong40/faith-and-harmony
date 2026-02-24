@@ -2,53 +2,47 @@
 **Date:** 2026-02-20
 **Branch:** main
 
-## Accomplished (Round 2)
-- Created retainers migration (20260220120000_retainers.sql) with RLS and moddatetime trigger
-- Added accessory_ids column to mission_equipment (20260220120100_mission_equipment_accessories.sql)
-- Wired accessories into EquipmentSelector with compatibility filtering, saved summary, and restore on edit
-- Wired offline sync into useCreateWeatherBriefing, useSaveMissionAuthorization, and useUpsertMissionEquipment
-- Code-split all routes with React.lazy — each page loads as a separate chunk
-- Added Vercel env vars for preview and development environments
-- Deployed to production (commit d7ca47b, auto-deploy READY)
+## Accomplished
+- Wired offline sync into weather briefing, airspace auth, equipment, and flight logging hooks
+- Code-split all 40+ routes with React.lazy (each page loads as separate chunk)
+- Added accessories selection to EquipmentSelector with compatibility filtering
+- Created retainers migration + mission_equipment accessory_ids column + nearest_weather_station column
+- Applied all 3 migrations to Supabase (retainers, accessory_ids, weather_station)
+- Set Vercel env vars for preview and development environments
+- Fixed SQL dollar-quoting in battery_mission_tracking and airframe_flight_history migrations
+- Enabled moddatetime extension for retainers trigger
+- **QA review found and fixed 7 pilot portal issues:**
+  1. Fixed dead "Change Equipment" button (added isEditing state bypass)
+  2. Added offline sync to flight logging (was direct Supabase with no fallback)
+  3. Added nearest_weather_station column to drone_jobs
+  4. Added completed mission summary (equipment/weather/airspace recap)
+  5. Wired per-mission syncStatus into MissionCard (pending/offline/synced icons)
+  6. Grouped dashboard missions into Today / Upcoming / Past sections
+  7. Renamed misleading Fleet "Log" button to "History"
 
-## Accomplished (Round 1)
-- Replaced SVG placeholder PWA icons with real rasterized PNGs (192x192 and 512x512) using sharp
-- Wired offline sync enqueue into all fleet mutation hooks (aircraft, batteries, controllers, accessories, maintenance)
-- Added 3 generic SyncAction types (insert_record, update_record, delete_record) to sync engine
-- Built accessories management UI (AccessoryFormDialog, query hooks, mutation hooks, FleetOverview section)
-- Created admin Sentinel Pricing & Billing page at /admin/pricing
-
-## New Files
-- src/components/pilot/AccessoryFormDialog.tsx
-- src/pages/admin/SentinelPricing.tsx
-- supabase/migrations/20260220120000_retainers.sql
-- supabase/migrations/20260220120100_mission_equipment_accessories.sql
-
-## Modified Files
-- public/pwa-192x192.png, public/pwa-512x512.png (real PNGs now)
-- src/App.tsx (React.lazy code-splitting for all routes, Suspense wrapper)
-- src/components/pilot/EquipmentSelector.tsx (accessories selection UI)
-- src/components/pilot/FleetOverview.tsx (accessories section, lost status badge)
-- src/hooks/useAirspaceAuth.ts (offline sync)
-- src/hooks/useFleet.ts (useAllAccessories)
-- src/hooks/useFleetMutations.ts (offline sync for all mutations, accessory CRUD)
-- src/hooks/useMissionEquipment.ts (offline sync, accessory_ids)
-- src/hooks/useWeatherBriefing.ts (offline sync)
-- src/lib/sync/db.ts (generic SyncAction types)
-- src/lib/sync/sync-engine.ts (generic CRUD handlers, accessories in pullFleet)
-- src/types/fleet.ts (accessory_ids on MissionEquipment)
+## Commits This Session
+- `4e2d8b8` fix: resolve 7 QA issues in pilot portal
+- `45afaa4` fix: repair SQL dollar-quoting and enable moddatetime for migrations
+- `d7ca47b` feat: offline sync, code-splitting, accessories, and retainers
+- `bb3aed2` feat: add accessories UI, offline sync wiring, pricing page, and production PWA icons
 
 ## Next Steps
-- Apply migrations to Supabase (retainers table + mission_equipment accessory_ids column)
 - End-to-end test offline queue with actual network disconnection
-- Add proper PNG icons designed by a designer (current ones are programmatic rasters of the SVG)
-- PricingEngine component uses inline styles (not Tailwind) since it was built as a standalone tool
-- DroneCRMDashboard chunk is 419 KB — could be further split with sub-route lazy loading
+- Fix battery_mission_tracking and airframe_flight_history migrations (marked as applied but views reference non-existent columns like b.battery_id, b.compatible_aircraft_models, b.health_percent — need schema alignment)
+- Add proper PNG icons designed by a designer (current ones are programmatic rasters)
+- DroneCRMDashboard chunk is 419 KB — could be further split
+- Populate nearest_weather_station on drone_jobs (admin UI or geocoding function)
+- PricingEngine component uses inline styles (not Tailwind)
 
-## REMINDER: Rotate Supabase service role key
-The service role key was exposed in chat. Go to Supabase Dashboard > Settings > API and rotate it.
+## Known Issues
+- Two older migrations (battery_mission_tracking, airframe_flight_history) are marked "applied" in Supabase but were NOT actually executed — their views/functions reference columns that don't exist on the remote batteries/aircraft tables. They need schema alignment before they can work.
+- Supabase service role key was exposed in chat — **MUST BE ROTATED** at Dashboard > Settings > API
 
 ## Key Decisions
-- Used generic SyncAction types (insert_record/update_record/delete_record) instead of per-entity actions
-- Pricing page is admin-only since it contains internal cost data and retainer management
-- Code-splitting keeps Index, Auth, and NotFound eager; everything else lazy-loaded
+- Used isEditing flag (not query invalidation) for Change Equipment button — simpler, no network round-trip
+- Flight logging queues two separate sync items (insert_flight_log + update_mission_status) rather than a compound action
+- Mission grouping uses date-fns isToday/isBefore for Today/Upcoming/Past buckets
+- Completed mission summary fetches equipment/weather/auth data only when status === "complete" (conditional query enable)
+
+## Uncommitted Changes
+None — all changes committed and pushed.
