@@ -1,6 +1,18 @@
-import { CircleDashed, Loader2, CheckCircle2, XCircle, PauseCircle } from 'lucide-react';
+import { useState } from 'react';
+import { CircleDashed, Loader2, CheckCircle2, XCircle, PauseCircle, CheckCheck } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 
 export type StepStatus =
@@ -23,6 +35,8 @@ export interface PipelineStep {
 interface PipelineStepperProps {
   steps: PipelineStep[];
   currentStep?: string | null;
+  processingJobId?: string | null;
+  onMarkEditComplete?: (stepName: string) => Promise<void>;
   className?: string;
 }
 
@@ -50,7 +64,10 @@ const STATUS_BADGE_CLASS: Record<StepStatus, string> = {
   awaiting_manual_edit: 'bg-amber-100 text-amber-700',
 };
 
-function formatDuration(startedAt: string | null | undefined, completedAt: string | null | undefined): string | null {
+function formatDuration(
+  startedAt: string | null | undefined,
+  completedAt: string | null | undefined,
+): string | null {
   if (!startedAt) return null;
   const end = completedAt ? new Date(completedAt) : new Date();
   const start = new Date(startedAt);
@@ -61,81 +78,148 @@ function formatDuration(startedAt: string | null | undefined, completedAt: strin
   return rem > 0 ? `${mins}m ${rem}s` : `${mins}m`;
 }
 
-export default function PipelineStepper({ steps, currentStep, className }: PipelineStepperProps) {
+export default function PipelineStepper({
+  steps,
+  currentStep,
+  processingJobId,
+  onMarkEditComplete,
+  className,
+}: PipelineStepperProps) {
+  const [confirmStep, setConfirmStep] = useState<string | null>(null);
+  const [completing, setCompleting] = useState(false);
+
   if (steps.length === 0) return null;
 
   const completedCount = steps.filter((s) => s.status === 'complete').length;
   const progressPct = Math.round((completedCount / steps.length) * 100);
 
+  const handleConfirm = async () => {
+    if (!confirmStep || !onMarkEditComplete) return;
+    setCompleting(true);
+    try {
+      await onMarkEditComplete(confirmStep);
+    } finally {
+      setCompleting(false);
+      setConfirmStep(null);
+    }
+  };
+
   return (
-    <div className={cn('space-y-4', className)}>
-      {/* Overall progress bar */}
-      <div className="space-y-1">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>{completedCount} of {steps.length} steps complete</span>
-          <span>{progressPct}%</span>
+    <>
+      <div className={cn('space-y-4', className)}>
+        {/* Overall progress bar */}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{completedCount} of {steps.length} steps complete</span>
+            <span>{progressPct}%</span>
+          </div>
+          <Progress value={progressPct} className="h-1.5" />
         </div>
-        <Progress value={progressPct} className="h-1.5" />
-      </div>
 
-      {/* Step list */}
-      <ol className="space-y-2">
-        {steps.map((step, idx) => {
-          const isCurrent = step.name === currentStep || step.status === 'running';
-          const duration = formatDuration(step.started_at, step.completed_at);
+        {/* Step list */}
+        <ol className="space-y-2">
+          {steps.map((step, idx) => {
+            const isCurrent = step.name === currentStep || step.status === 'running';
+            const duration = formatDuration(step.started_at, step.completed_at);
+            const isManualEdit = step.status === 'awaiting_manual_edit';
 
-          return (
-            <li
-              key={`${step.name}-${idx}`}
-              className={cn(
-                'flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm',
-                isCurrent && 'bg-blue-50 ring-1 ring-blue-200',
-                step.status === 'failed' && 'bg-red-50 ring-1 ring-red-200',
-                step.status === 'awaiting_manual_edit' && 'bg-amber-50 ring-1 ring-amber-200',
-                !isCurrent && step.status !== 'failed' && step.status !== 'awaiting_manual_edit' && 'bg-muted/30',
-              )}
-            >
-              {/* Status icon */}
-              <span className="mt-0.5 flex-shrink-0">{STATUS_ICON[step.status]}</span>
+            return (
+              <li
+                key={`${step.name}-${idx}`}
+                className={cn(
+                  'flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm',
+                  isCurrent && 'bg-blue-50 ring-1 ring-blue-200',
+                  step.status === 'failed' && 'bg-red-50 ring-1 ring-red-200',
+                  isManualEdit && 'bg-amber-50 ring-1 ring-amber-200',
+                  !isCurrent &&
+                    step.status !== 'failed' &&
+                    !isManualEdit &&
+                    'bg-muted/30',
+                )}
+              >
+                {/* Status icon */}
+                <span className="mt-0.5 flex-shrink-0">{STATUS_ICON[step.status]}</span>
 
-              {/* Step details */}
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={cn('font-medium', step.status === 'pending' && 'text-muted-foreground')}>
-                    {step.name}
-                  </span>
-                  {step.script && (
-                    <span className="font-mono text-xs text-muted-foreground">{step.script}</span>
+                {/* Step details */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={cn(
+                        'font-medium',
+                        step.status === 'pending' && 'text-muted-foreground',
+                      )}
+                    >
+                      {step.name}
+                    </span>
+                    {step.script && (
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {step.script}
+                      </span>
+                    )}
+                    <Badge
+                      variant="secondary"
+                      className={cn('text-xs px-1.5 py-0', STATUS_BADGE_CLASS[step.status])}
+                    >
+                      {STATUS_LABEL[step.status]}
+                    </Badge>
+                    {duration && (
+                      <span className="text-xs text-muted-foreground">{duration}</span>
+                    )}
+                  </div>
+
+                  {/* Error message inline */}
+                  {step.status === 'failed' && step.error && (
+                    <p className="mt-1 text-xs text-red-600 font-mono break-all">{step.error}</p>
                   )}
-                  <Badge
-                    variant="secondary"
-                    className={cn('text-xs px-1.5 py-0', STATUS_BADGE_CLASS[step.status])}
-                  >
-                    {STATUS_LABEL[step.status]}
-                  </Badge>
-                  {duration && (
-                    <span className="text-xs text-muted-foreground">{duration}</span>
+
+                  {/* Manual edit action area */}
+                  {isManualEdit && (
+                    <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <p className="text-xs text-amber-700">
+                        Complete your manual edits in Lightroom or Photoshop, then mark this step done to resume the pipeline.
+                      </p>
+                      {onMarkEditComplete && processingJobId && (
+                        <Button
+                          size="sm"
+                          className="h-7 shrink-0 bg-amber-600 text-white hover:bg-amber-700"
+                          onClick={() => setConfirmStep(step.name)}
+                        >
+                          <CheckCheck className="mr-1.5 h-3.5 w-3.5" />
+                          Mark Edit Complete
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </div>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
 
-                {/* Error message inline */}
-                {step.status === 'failed' && step.error && (
-                  <p className="mt-1 text-xs text-red-600 font-mono break-all">
-                    {step.error}
-                  </p>
-                )}
-
-                {/* Awaiting manual edit indicator */}
-                {step.status === 'awaiting_manual_edit' && (
-                  <p className="mt-1 text-xs text-amber-700">
-                    Waiting for manual edit confirmation before pipeline resumes.
-                  </p>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-    </div>
+      {/* Confirmation dialog */}
+      <AlertDialog open={!!confirmStep} onOpenChange={(open) => !open && setConfirmStep(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark manual edit as complete?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This confirms you have finished your manual edits in Lightroom or Photoshop.
+              The pipeline will resume and proceed to the next automated step.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={completing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirm}
+              disabled={completing}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              {completing ? 'Resuming...' : 'Yes, resume pipeline'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
