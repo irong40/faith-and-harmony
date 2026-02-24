@@ -1,6 +1,6 @@
 /**
- * Faith & Harmony LLC - Brand Constants
- * 
+ * Sentinel Aerial Inspections - Brand Constants
+ *
  * Centralized branding for consistent use across the application,
  * PDFs, emails, and all customer-facing documents.
  */
@@ -8,11 +8,13 @@
 export const BRAND = {
   // Company Information
   name: "Faith & Harmony LLC",
-  tagline: "Rooted in Purpose. Driven by Service.",
-  email: "info@faithandharmonyllc.com",
+  dba: "Sentinel Aerial Inspections",
+  app: "Trestle",
+  tagline: "Veteran-owned aerial inspection services in Hampton Roads, Virginia.",
+  email: "info@sentinelaerial.com",
   emailPayment: "faithandharmonyllc@gmail.com",
   phone: "(757) 555-0199", // Update with actual phone
-  website: "faithandharmony.com",
+  website: "sentinelaerial.com",
   location: "Hampton Roads, Virginia",
 
   // Payment Options
@@ -41,23 +43,16 @@ export const BRAND = {
     slate: "220 15% 42%",
   },
 
-  // Social Links
-  social: {
-    facebook: "https://facebook.com/faithandharmonyllc",
-    instagram: "https://instagram.com/faithandharmonyllc",
-    linkedin: "https://linkedin.com/company/faithandharmonyllc",
-  },
-
   // Copyright
-  copyright: `© ${new Date().getFullYear()} Faith & Harmony LLC. All rights reserved.`,
+  copyright: `\u00a9 ${new Date().getFullYear()} Faith & Harmony LLC DBA Sentinel Aerial Inspections. All rights reserved.`,
 } as const;
 
-// Edge function / Email specific brand object (mirrors send-order-invoice-email format)
+// Edge function / Email specific brand object
 export const EMAIL_BRAND = {
   purple: BRAND.colors.purple,
   gold: BRAND.colors.gold,
   cream: BRAND.colors.cream,
-  companyName: BRAND.name,
+  companyName: BRAND.dba,
   tagline: BRAND.tagline,
   email: BRAND.email,
   phone: BRAND.phone,

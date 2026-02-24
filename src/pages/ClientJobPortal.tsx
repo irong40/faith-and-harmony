@@ -168,8 +168,8 @@ export default function ClientJobPortal() {
             </p>
             <p className="text-sm text-muted-foreground">
               If you believe this is an error, please contact us at{' '}
-              <a href="mailto:hello@faithandharmony.com" className="text-primary hover:underline">
-                hello@faithandharmony.com
+              <a href="mailto:info@sentinelaerial.com" className="text-primary hover:underline">
+                info@sentinelaerial.com
               </a>
             </p>
           </CardContent>
@@ -455,11 +455,11 @@ export default function ClientJobPortal() {
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <a
-                  href="mailto:hello@faithandharmony.com"
+                  href="mailto:info@sentinelaerial.com"
                   className="flex items-center gap-2 text-sm text-primary hover:underline"
                 >
                   <Mail className="h-4 w-4" />
-                  hello@faithandharmony.com
+                  info@sentinelaerial.com
                 </a>
                 <a
                   href="tel:+17576093268"
@@ -477,7 +477,7 @@ export default function ClientJobPortal() {
       {/* Footer */}
       <footer className="border-t mt-12">
         <div className="max-w-4xl mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} Faith & Harmony LLC. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Faith &amp; Harmony LLC DBA Sentinel Aerial Inspections. All rights reserved.</p>
           <p className="mt-1">
             Thank you for choosing us for your aerial photography needs.
           </p>

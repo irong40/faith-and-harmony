@@ -64,7 +64,7 @@ export default function Messages() {
         .insert({
           conversation_id: conversationId,
           sender_type: "admin",
-          sender_name: "Faith & Harmony Team",
+          sender_name: "Sentinel Aerial Inspections",
           content,
         })
         .select()

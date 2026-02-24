@@ -2,7 +2,7 @@
  * Mission Control Plugin Configuration
  * 
  * Configure these values for your satellite application to connect
- * to the Faith & Harmony Hub's Mission Control system.
+ * to the Trestle Hub's Mission Control system.
  */
 
 export interface MissionControlConfig {

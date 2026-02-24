@@ -8,7 +8,7 @@ interface FieldProps {
 }
 
 const PAGE_COUNTS = ['1', '2-5', '6-10', 'More than 10'];
-const DOMAIN_APPROACHES = ['Use my existing domain', 'I need help getting a domain', 'Host under faithandharmonyllc.com'];
+const DOMAIN_APPROACHES = ['Use my existing domain', 'I need help getting a domain', 'Host under sentinelaerial.com'];
 
 export function WebsiteFields({ metadata, onMetadataChange }: FieldProps) {
   return (

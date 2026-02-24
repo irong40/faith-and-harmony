@@ -61,7 +61,7 @@ Timeline:
 
 Ownership:
 - Full ownership transfers upon final payment
-- Faith & Harmony LLC retains portfolio rights`;
+- Faith & Harmony LLC DBA Sentinel Aerial Inspections retains portfolio rights`;
 
 export default function ProposalForm({
   serviceRequest,
@@ -297,7 +297,7 @@ export default function ProposalForm({
           <!-- Header -->
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid #e5e7eb;">
             <div>
-              <h1 style="font-size: 24px; font-weight: bold; color: #111827;">Faith & Harmony LLC</h1>
+              <h1 style="font-size: 24px; font-weight: bold; color: #111827;">Sentinel Aerial Inspections</h1>
               <p style="font-size: 14px; color: #6b7280; margin-top: 4px;">Professional Services Proposal</p>
             </div>
             <div style="text-align: right;">
@@ -391,8 +391,8 @@ export default function ProposalForm({
 
           <!-- Footer -->
           <div style="margin-top: 48px; padding-top: 16px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 14px; color: #9ca3af;">
-            <p style="font-weight: 500;">Faith & Harmony LLC</p>
-            <p>faithandharmony.com</p>
+            <p style="font-weight: 500;">Sentinel Aerial Inspections</p>
+            <p>sentinelaerial.com</p>
             <p style="margin-top: 8px; font-style: italic;">Thank you for considering us for your project.</p>
           </div>
         </body>

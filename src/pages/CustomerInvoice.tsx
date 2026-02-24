@@ -241,7 +241,7 @@ export default function CustomerInvoice() {
               </div>
               <div>
                 <div className="text-sm text-muted-foreground">From</div>
-                <div className="font-medium">Faith & Harmony, LLC</div>
+                <div className="font-medium">Sentinel Aerial Inspections</div>
                 <div className="text-muted-foreground">Virginia Beach, VA</div>
               </div>
             </div>
@@ -392,8 +392,8 @@ export default function CustomerInvoice() {
           <p>Questions about this invoice?</p>
           <p>
             Contact us at{" "}
-            <a href="mailto:hello@faithharmony.com" className="text-primary hover:underline">
-              hello@faithharmony.com
+            <a href="mailto:info@sentinelaerial.com" className="text-primary hover:underline">
+              info@sentinelaerial.com
             </a>
           </p>
         </div>
@@ -402,7 +402,7 @@ export default function CustomerInvoice() {
       {/* Footer */}
       <footer className="bg-muted py-8 mt-12">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Faith & Harmony, LLC. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Faith &amp; Harmony LLC DBA Sentinel Aerial Inspections. All rights reserved.</p>
         </div>
       </footer>
 

@@ -217,7 +217,7 @@ export default function DroneUpload() {
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-sm text-muted-foreground">
-              Please contact Faith & Harmony if you need a new upload link.
+              Please contact Sentinel Aerial Inspections if you need a new upload link.
             </p>
           </CardContent>
         </Card>
@@ -242,7 +242,7 @@ export default function DroneUpload() {
                 className="h-10 w-10 object-contain"
               />
               <div>
-                <h1 className="font-semibold text-lg">Faith & Harmony</h1>
+                <h1 className="font-semibold text-lg">Sentinel Aerial Inspections</h1>
                 <p className="text-sm text-muted-foreground">Aerial Photography Upload</p>
               </div>
             </div>
@@ -437,7 +437,7 @@ export default function DroneUpload() {
       {/* Footer */}
       <footer className="border-t mt-auto py-4 bg-muted/30">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Faith & Harmony LLC. All rights reserved.
+          &copy; {new Date().getFullYear()} Faith &amp; Harmony LLC DBA Sentinel Aerial Inspections. All rights reserved.
         </div>
       </footer>
     </div>

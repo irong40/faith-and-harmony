@@ -60,7 +60,7 @@ const Auth = () => {
     if (roles.includes('pilot')) {
       navigate('/pilot');
     } else if (roles.includes('admin')) {
-      navigate('/admin/service-requests');
+      navigate('/admin/dashboard');
     } else {
       navigate('/');
     }
@@ -215,8 +215,8 @@ const Auth = () => {
   const getSubtitle = () => {
     if (ssoCallback) return 'Sign in to continue to Event Tracking';
     switch (view) {
-      case 'login': return 'Welcome back to Faith & Harmony';
-      case 'signup': return 'Create your Faith & Harmony account';
+      case 'login': return 'Welcome back to Trestle';
+      case 'signup': return 'Create your Sentinel account';
       case 'forgot-password': return 'Enter your email to receive a reset link';
       case 'reset-password': return 'Enter your new password below';
     }

@@ -327,9 +327,9 @@ export default function CustomerProposal() {
       <header className="bg-[#2b0a3d] text-white py-8">
         <div className="container max-w-4xl mx-auto px-4">
           <h1 className="text-2xl md:text-3xl font-bold text-[#dfae62]">
-            Faith & Harmony LLC
+            Sentinel Aerial Inspections
           </h1>
-          <p className="text-white/80 text-sm mt-1">Technology & Creative Services</p>
+          <p className="text-white/80 text-sm mt-1">Aerial Inspection Services</p>
         </div>
       </header>
 
@@ -528,10 +528,10 @@ export default function CustomerProposal() {
       {/* Footer */}
       <footer className="bg-[#2b0a3d] text-white py-6 mt-12">
         <div className="container max-w-4xl mx-auto px-4 text-center">
-          <p className="text-[#dfae62] font-semibold">Faith & Harmony LLC</p>
-          <p className="text-sm text-white/60 mt-1">dradamopierce@gmail.com</p>
+          <p className="text-[#dfae62] font-semibold">Sentinel Aerial Inspections</p>
+          <p className="text-sm text-white/60 mt-1">info@sentinelaerial.com</p>
           <p className="text-xs text-white/40 mt-2">
-            © {new Date().getFullYear()} Faith & Harmony LLC. All rights reserved.
+            &copy; {new Date().getFullYear()} Faith &amp; Harmony LLC DBA Sentinel Aerial Inspections. All rights reserved.
           </p>
         </div>
       </footer>

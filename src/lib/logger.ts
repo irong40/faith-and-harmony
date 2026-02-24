@@ -1,5 +1,5 @@
 /**
- * Logging utility for Faith & Harmony application.
+ * Logging utility for Trestle / Sentinel Aerial Inspections.
  * Provides environment-aware logging that can be disabled in production.
  */
 

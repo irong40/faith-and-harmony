@@ -1,7 +1,7 @@
 /**
  * Mission Control Plugin
  * 
- * A plugin for satellite applications to connect to the Faith & Harmony Hub's
+ * A plugin for satellite applications to connect to the Trestle Hub's
  * centralized Mission Control system for health monitoring, ticket management,
  * and system announcements.
  * 

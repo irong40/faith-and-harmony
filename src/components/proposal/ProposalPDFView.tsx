@@ -41,7 +41,7 @@ export const ProposalPDFView = forwardRef<HTMLDivElement, ProposalPDFViewProps>(
         {/* Header */}
         <div className="flex justify-between items-start mb-8 border-b pb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Faith & Harmony LLC</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Sentinel Aerial Inspections</h1>
             <p className="text-sm text-gray-600 mt-1">Professional Services Proposal</p>
           </div>
           <div className="text-right">
@@ -204,8 +204,8 @@ export const ProposalPDFView = forwardRef<HTMLDivElement, ProposalPDFViewProps>(
 
         {/* Footer */}
         <div className="mt-12 pt-4 border-t text-center text-sm text-gray-500">
-          <p className="font-medium">Faith & Harmony LLC</p>
-          <p>faithandharmony.com</p>
+          <p className="font-medium">Sentinel Aerial Inspections</p>
+          <p>sentinelaerial.com</p>
           <p className="mt-2 italic">Thank you for considering us for your project.</p>
         </div>
       </div>

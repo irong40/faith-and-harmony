@@ -255,7 +255,7 @@ export default function Proposals() {
         <body>
           <div class="header">
             <div>
-              <div class="logo">Faith & Harmony LLC</div>
+              <div class="logo">Sentinel Aerial Inspections</div>
               <p style="font-size: 12px; color: #666;">Professional Services Proposal</p>
             </div>
             <div style="text-align: right;">
@@ -323,7 +323,7 @@ export default function Proposals() {
           ` : ''}
 
           <div class="footer">
-            <p>Faith & Harmony LLC | faithandharmony.com</p>
+            <p>Sentinel Aerial Inspections | sentinelaerial.com</p>
             <p>Thank you for considering us for your project.</p>
           </div>
         </body>
