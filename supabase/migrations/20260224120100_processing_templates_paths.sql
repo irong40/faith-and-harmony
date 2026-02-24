@@ -10,6 +10,9 @@ ALTER TABLE processing_templates
   ADD COLUMN IF NOT EXISTS description TEXT,
   ADD COLUMN IF NOT EXISTS default_steps JSONB DEFAULT '[]'::jsonb;
 
+-- Allow NULL package_id for paths without a direct package counterpart
+ALTER TABLE processing_templates ALTER COLUMN package_id DROP NOT NULL;
+
 -- Unique path code per active template
 CREATE UNIQUE INDEX IF NOT EXISTS idx_processing_templates_path_code
   ON processing_templates (path_code)

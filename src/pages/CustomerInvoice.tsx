@@ -40,7 +40,7 @@ import {
   CreditCard,
   Loader2,
 } from "lucide-react";
-import fhWordmark from "@/assets/branding/fh-wordmark.png";
+import { BRAND } from "@/lib/brand";
 
 type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled";
 
@@ -195,7 +195,7 @@ export default function CustomerInvoice() {
       {/* Header */}
       <header className="bg-primary text-primary-foreground py-6">
         <div className="container mx-auto px-4">
-          <img src={fhWordmark} alt="Faith & Harmony" className="h-10 brightness-0 invert" />
+          <span className="text-xl font-semibold tracking-wide">{BRAND.dba}</span>
         </div>
       </header>
 
@@ -319,7 +319,7 @@ export default function CustomerInvoice() {
             <CardContent className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
                 <a
-                  href="https://paypal.me/faithharmonyllc"
+                  href={`https://paypal.me/${BRAND.payments.paypal}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block"
@@ -327,12 +327,12 @@ export default function CustomerInvoice() {
                   <Button variant="outline" className="w-full h-auto py-4">
                     <div className="text-center">
                       <div className="font-semibold">Pay via PayPal</div>
-                      <div className="text-sm text-muted-foreground">paypal.me/faithharmonyllc</div>
+                      <div className="text-sm text-muted-foreground">{BRAND.payments.paypal}</div>
                     </div>
                   </Button>
                 </a>
                 <a
-                  href="https://cash.app/$FaithHarmonyLLC"
+                  href={`https://cash.app/${BRAND.payments.cashApp}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block"
@@ -340,7 +340,7 @@ export default function CustomerInvoice() {
                   <Button variant="outline" className="w-full h-auto py-4">
                     <div className="text-center">
                       <div className="font-semibold">Pay via Cash App</div>
-                      <div className="text-sm text-muted-foreground">$FaithHarmonyLLC</div>
+                      <div className="text-sm text-muted-foreground">{BRAND.payments.cashApp}</div>
                     </div>
                   </Button>
                 </a>
@@ -402,7 +402,7 @@ export default function CustomerInvoice() {
       {/* Footer */}
       <footer className="bg-muted py-8 mt-12">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Faith &amp; Harmony LLC DBA Sentinel Aerial Inspections. All rights reserved.</p>
+          <p>{BRAND.copyright}</p>
         </div>
       </footer>
 

@@ -17,7 +17,7 @@ import {
   LayoutDashboard,
   Activity,
   Truck,
-  CloudSun,
+
   Users,
 } from "lucide-react";
 
