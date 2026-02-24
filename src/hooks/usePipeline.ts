@@ -227,3 +227,134 @@ export function useResumePipeline() {
     },
   });
 }
+
+// ─── Processing Jobs (new table) ───────────────────────────────────
+
+export interface ProcessingJobStep {
+  name: string;
+  script?: string;
+  status: 'pending' | 'running' | 'complete' | 'failed' | 'awaiting_manual_edit';
+  started_at?: string | null;
+  completed_at?: string | null;
+  error?: string | null;
+  output?: string | null;
+}
+
+export interface ProcessingJob {
+  id: string;
+  mission_id: string;
+  processing_template_id: string | null;
+  status: 'pending' | 'running' | 'awaiting_manual_edit' | 'complete' | 'failed' | 'cancelled';
+  current_step: string | null;
+  steps: ProcessingJobStep[];
+  started_at: string | null;
+  completed_at: string | null;
+  error_message: string | null;
+  triggered_by: string | null;
+  idempotency_key: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Active processing_job for a specific mission.
+ * Returns the most recent job that is not cancelled.
+ */
+export function useProcessingJob(missionId: string | undefined) {
+  return useQuery({
+    queryKey: ['processing-job', missionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('processing_jobs')
+        .select('*')
+        .eq('mission_id', missionId!)
+        .not('status', 'eq', 'cancelled')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data as ProcessingJob | null;
+    },
+    enabled: !!missionId,
+    refetchInterval: 10_000,
+  });
+}
+
+/**
+ * All active processing_jobs (pending, running, awaiting_manual_edit).
+ * Used by the Pipeline admin page.
+ */
+export function useActiveProcessingJobs() {
+  return useQuery({
+    queryKey: ['processing-jobs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('processing_jobs')
+        .select('*')
+        .in('status', ['pending', 'running', 'awaiting_manual_edit'])
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as ProcessingJob[];
+    },
+    refetchInterval: 10_000,
+  });
+}
+
+/**
+ * Trigger the pipeline for a mission via the pipeline-trigger edge function.
+ */
+export function useTriggerPipeline() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      missionId,
+      processingTemplateId,
+    }: {
+      missionId: string;
+      processingTemplateId: string;
+    }) => {
+      const { data, error } = await supabase.functions.invoke('pipeline-trigger', {
+        body: { mission_id: missionId, processing_template_id: processingTemplateId },
+      });
+
+      if (error) throw error;
+      return data as { processing_job_id: string };
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['processing-job', variables.missionId] });
+      queryClient.invalidateQueries({ queryKey: ['processing-jobs'] });
+    },
+  });
+}
+
+/**
+ * Resume pipeline after V5 manual edit step.
+ * Calls pipeline-manual-edit-complete edge function.
+ */
+export function useResumeManualEdit() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      processingJobId,
+      stepName,
+    }: {
+      processingJobId: string;
+      stepName: string;
+    }) => {
+      const { data, error } = await supabase.functions.invoke('pipeline-manual-edit-complete', {
+        body: { processing_job_id: processingJobId, step_name: stepName },
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['processing-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['processing-job'] });
+    },
+  });
+}

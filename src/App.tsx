@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { PipelineRealtimeProvider } from "@/contexts/PipelineRealtimeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Loader2 } from "lucide-react";
 
@@ -72,6 +73,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <PipelineRealtimeProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -300,6 +302,7 @@ const App = () => (
           </Suspense>
         </BrowserRouter>
       </TooltipProvider>
+      </PipelineRealtimeProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
