@@ -5,6 +5,7 @@ import AdminNav from './components/AdminNav';
 import PipelineActiveJobs from '@/components/pipeline/PipelineActiveJobs';
 import PipelineHoldPoints from '@/components/pipeline/PipelineHoldPoints';
 import PipelineHistory from '@/components/pipeline/PipelineHistory';
+import N8nHealthIndicator from '@/components/pipeline/N8nHealthIndicator';
 import { usePipelineJobs, useHoldPointJobs, usePipelineRealtime } from '@/hooks/usePipeline';
 
 export default function Pipeline() {
@@ -39,16 +40,19 @@ export default function Pipeline() {
     <div className="min-h-screen bg-background">
       <AdminNav />
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="rounded-full bg-blue-100 p-2">
-            <Activity className="h-5 w-5 text-blue-600" />
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="rounded-full bg-blue-100 p-2">
+              <Activity className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Pipeline</h1>
+              <p className="text-sm text-muted-foreground">
+                Sentinel processing orchestrator
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Pipeline</h1>
-            <p className="text-sm text-muted-foreground">
-              Sentinel processing orchestrator
-            </p>
-          </div>
+          <N8nHealthIndicator />
         </div>
 
         {/* Summary Cards */}
