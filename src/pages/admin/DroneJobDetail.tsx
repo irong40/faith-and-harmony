@@ -47,6 +47,9 @@ interface DroneJob {
   status: DroneJobStatus;
   scheduled_date: string | null;
   scheduled_time: string | null;
+  site_address: string | null;
+  client_id: string | null;
+  processing_template_id: string | null;
   pilot_notes: string | null;
   admin_notes: string | null;
   qa_score: number | null;
@@ -64,6 +67,8 @@ interface DroneJob {
   customers?: { id: string; name: string; email: string; phone: string | null } | null;
   drone_packages?: { id: string; name: string; code: string; price: number; edit_budget_minutes: number; processing_profile: Json | null } | null;
   service_requests?: { id: string; project_title: string | null } | null;
+  clients?: { id: string; name: string; company: string | null; email: string | null; phone: string | null } | null;
+  processing_templates?: { id: string; display_name: string | null; path_code: string | null; description: string | null } | null;
 }
 
 const STATUS_CONFIG: Record<DroneJobStatus, { label: string; color: string }> = {
@@ -129,7 +134,7 @@ export default function DroneJobDetail() {
     const [jobRes, assetsRes] = await Promise.all([
       supabase
         .from("drone_jobs")
-        .select("*, customers(id, name, email, phone), drone_packages(id, name, code, price, edit_budget_minutes, processing_profile), service_requests(id, project_title)")
+        .select("*, customers(id, name, email, phone), drone_packages(id, name, code, price, edit_budget_minutes, processing_profile), service_requests(id, project_title), clients(id, name, company, email, phone), processing_templates(id, display_name, path_code, description)")
         .eq("id", id)
         .single(),
       supabase
@@ -496,12 +501,31 @@ export default function DroneJobDetail() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Customer & Package</CardTitle>
+                  <CardTitle>Client & Job Type</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {job.customers ? (
+                  {job.clients ? (
                     <div>
-                      <Label className="text-muted-foreground">Customer</Label>
+                      <Label className="text-muted-foreground">Client</Label>
+                      <button
+                        className="block text-left hover:underline font-medium text-primary"
+                        onClick={() => {/* TODO Phase 2: open client edit */}}
+                      >
+                        {job.clients.name}
+                      </button>
+                      {job.clients.company && (
+                        <p className="text-sm text-muted-foreground">{job.clients.company}</p>
+                      )}
+                      {job.clients.email && (
+                        <p className="text-sm text-muted-foreground">{job.clients.email}</p>
+                      )}
+                      {job.clients.phone && (
+                        <p className="text-sm text-muted-foreground">{job.clients.phone}</p>
+                      )}
+                    </div>
+                  ) : job.customers ? (
+                    <div>
+                      <Label className="text-muted-foreground">Customer (legacy)</Label>
                       <p className="font-medium">{job.customers.name}</p>
                       <p className="text-sm text-muted-foreground">{job.customers.email}</p>
                       {job.customers.phone && (
@@ -509,16 +533,40 @@ export default function DroneJobDetail() {
                       )}
                     </div>
                   ) : (
-                    <p className="text-muted-foreground">No customer assigned</p>
+                    <p className="text-muted-foreground">No client assigned</p>
                   )}
 
-                  {job.drone_packages && (
+                  {job.processing_templates ? (
                     <div>
-                      <Label className="text-muted-foreground">Package</Label>
+                      <Label className="text-muted-foreground">Job Type</Label>
+                      <div className="flex items-center gap-2">
+                        {job.processing_templates.path_code && (
+                          <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-mono font-medium text-primary">
+                            {job.processing_templates.path_code}
+                          </span>
+                        )}
+                        <p className="font-medium">{job.processing_templates.display_name}</p>
+                      </div>
+                      {job.processing_templates.description && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {job.processing_templates.description}
+                        </p>
+                      )}
+                    </div>
+                  ) : job.drone_packages ? (
+                    <div>
+                      <Label className="text-muted-foreground">Package (legacy)</Label>
                       <p className="font-medium">{job.drone_packages.name}</p>
                       <p className="text-sm text-muted-foreground">
                         ${job.drone_packages.price} • {job.drone_packages.edit_budget_minutes} min edit budget
                       </p>
+                    </div>
+                  ) : null}
+
+                  {job.site_address && (
+                    <div>
+                      <Label className="text-muted-foreground">Site Address</Label>
+                      <p className="font-medium">{job.site_address}</p>
                     </div>
                   )}
 

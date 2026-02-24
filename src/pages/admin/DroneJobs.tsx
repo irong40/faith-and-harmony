@@ -27,12 +27,19 @@ import {
 } from "@/components/ui/dialog";
 import { Search, RefreshCw, Plus, Eye, Camera, Calendar, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
 import { format } from "date-fns";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AdminNav from "./components/AdminNav";
 import DroneJobForm from "./components/DroneJobForm";
 import type { Database } from "@/integrations/supabase/types";
 
 type DroneJobStatus = Database["public"]["Enums"]["drone_job_status"];
+
+interface ProcessingTemplate {
+  id: string;
+  path_code: string | null;
+  display_name: string | null;
+  preset_name: string;
+}
 
 interface DroneJob {
   id: string;
@@ -45,11 +52,16 @@ interface DroneJob {
   status: DroneJobStatus;
   scheduled_date: string | null;
   scheduled_time: string | null;
+  site_address: string | null;
   qa_score: number | null;
   created_at: string;
+  client_id: string | null;
+  processing_template_id: string | null;
   customers?: { name: string; email: string } | null;
   drone_packages?: { name: string; code: string; price: number } | null;
   drone_assets?: { id: string }[];
+  clients?: { name: string; company: string | null } | null;
+  processing_templates?: { path_code: string | null; display_name: string | null; preset_name: string } | null;
 }
 
 const STATUS_CONFIG: Record<DroneJobStatus, { label: string; color: string }> = {
@@ -69,18 +81,30 @@ const STATUS_CONFIG: Record<DroneJobStatus, { label: string; color: string }> = 
 
 export default function DroneJobs() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState<DroneJob[]>([]);
+  const [templates, setTemplates] = useState<ProcessingTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [templateFilter, setTemplateFilter] = useState<string>("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const fetchJobs = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("drone_jobs")
-      .select("*, customers(name, email), drone_packages(name, code, price), drone_assets(id)")
-      .order("created_at", { ascending: false });
+    const [jobsRes, templatesRes] = await Promise.all([
+      supabase
+        .from("drone_jobs")
+        .select("*, customers(name, email), drone_packages(name, code, price), drone_assets(id), clients(name, company), processing_templates(path_code, display_name, preset_name)")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("processing_templates")
+        .select("id, path_code, display_name, preset_name")
+        .eq("active", true)
+        .order("path_code"),
+    ]);
+
+    const { data, error } = jobsRes;
 
     if (error) {
       toast({
@@ -91,6 +115,7 @@ export default function DroneJobs() {
     } else {
       setJobs(data || []);
     }
+    if (templatesRes.data) setTemplates(templatesRes.data);
     setLoading(false);
   };
 
@@ -100,15 +125,18 @@ export default function DroneJobs() {
 
   const filteredJobs = jobs.filter((job) => {
     const searchLower = searchTerm.toLowerCase();
+    const clientName = job.clients?.name || job.customers?.name || "";
     const matchesSearch =
       searchTerm === "" ||
       job.job_number.toLowerCase().includes(searchLower) ||
       job.property_address.toLowerCase().includes(searchLower) ||
-      job.customers?.name.toLowerCase().includes(searchLower);
+      clientName.toLowerCase().includes(searchLower);
 
     const matchesStatus = statusFilter === "all" || job.status === statusFilter;
+    const matchesTemplate =
+      templateFilter === "all" || job.processing_template_id === templateFilter;
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesTemplate;
   });
 
   const getStatusBadge = (status: DroneJobStatus) => {
@@ -161,7 +189,7 @@ export default function DroneJobs() {
               <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Refresh
             </Button>
-            <Button onClick={() => setIsFormOpen(true)}>
+            <Button onClick={() => navigate("/admin/jobs/new")}>
               <Plus className="mr-2 h-4 w-4" />
               New Job
             </Button>
@@ -240,6 +268,19 @@ export default function DroneJobs() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={templateFilter} onValueChange={setTemplateFilter}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Filter by job type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Job Types</SelectItem>
+              {templates.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.path_code ? `${t.path_code} – ` : ""}{t.display_name || t.preset_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Table */}
@@ -248,9 +289,9 @@ export default function DroneJobs() {
             <TableHeader>
               <TableRow>
                 <TableHead>Job #</TableHead>
-                <TableHead>Property</TableHead>
-                <TableHead className="hidden md:table-cell">Customer</TableHead>
-                <TableHead className="hidden lg:table-cell">Package</TableHead>
+                <TableHead>Property / Site</TableHead>
+                <TableHead className="hidden md:table-cell">Client</TableHead>
+                <TableHead className="hidden lg:table-cell">Job Type</TableHead>
                 <TableHead>Scheduled</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden sm:table-cell">QA</TableHead>
@@ -277,18 +318,33 @@ export default function DroneJobs() {
                       {job.job_number}
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium">{job.property_address}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {[job.property_city, job.property_state].filter(Boolean).join(", ")}
+                      <div className="font-medium">
+                        {job.site_address || job.property_address}
                       </div>
+                      {!job.site_address && (
+                        <div className="text-sm text-muted-foreground">
+                          {[job.property_city, job.property_state].filter(Boolean).join(", ")}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {job.customers?.name || "—"}
+                      {job.clients?.name || job.customers?.name || "—"}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
-                      <span className="text-sm">
-                        {job.drone_packages?.name || "—"}
-                      </span>
+                      {job.processing_templates ? (
+                        <span className="flex items-center gap-1.5 text-sm">
+                          {job.processing_templates.path_code && (
+                            <Badge variant="outline" className="text-xs font-mono py-0">
+                              {job.processing_templates.path_code}
+                            </Badge>
+                          )}
+                          {job.processing_templates.display_name || job.processing_templates.preset_name}
+                        </span>
+                      ) : job.drone_packages ? (
+                        <span className="text-sm">{job.drone_packages.name}</span>
+                      ) : (
+                        "—"
+                      )}
                     </TableCell>
                     <TableCell>
                       {job.scheduled_date
