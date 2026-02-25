@@ -42,6 +42,7 @@ const SentinelPricing = lazy(() => import("./pages/admin/SentinelPricing"));
 const Clients = lazy(() => import("./pages/admin/Clients"));
 const JobIntake = lazy(() => import("./pages/admin/JobIntake"));
 const ProcessingTemplates = lazy(() => import("./pages/admin/ProcessingTemplates"));
+const DeliveryReview = lazy(() => import("./pages/admin/DeliveryReview"));
 
 // Lazy — pilot pages
 const PilotDashboard = lazy(() => import("./pages/pilot/PilotDashboard"));
@@ -138,6 +139,14 @@ const App = () => (
                 element={
                   <ProtectedRoute requireAdmin>
                     <DroneJobDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/drone-jobs/:id/delivery"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <DeliveryReview />
                   </ProtectedRoute>
                 }
               />
