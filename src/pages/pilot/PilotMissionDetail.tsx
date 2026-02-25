@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { addToSyncQueue } from "@/lib/sync/db";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import {
     ArrowLeft, MapPin, Calendar, Package, FileText,
     RefreshCw, Navigation, ExternalLink, CheckCircle2,
-    Plane, Battery, Shield, Cloud
+    Plane, Battery, Shield, Cloud, AlertTriangle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -49,10 +50,27 @@ export default function PilotMissionDetail() {
         authorization: null,
     });
     const [logging, setLogging] = useState(false);
+    // Tick for live METAR age re-evaluation (every 30s)
+    const [, setAgeTick] = useState(0);
 
     // Check if pilot can log flights (Part 107 not expired)
     const certStatus = getCertificationStatus(pilotProfile?.part_107_expiry ?? null);
     const canLogFlights = certStatus !== "expired";
+
+    // Weather freshness gate at final "Log Flight" step
+    // Re-check METAR age at the moment of submission (catches "checked 2 hours ago" scenario P8)
+    const weatherLogTimestamp = preFlightData.weatherLog?.briefing_timestamp ?? null;
+    const weatherAgeMinutes = weatherLogTimestamp
+        ? (Date.now() - new Date(weatherLogTimestamp).getTime()) / 60_000
+        : null;
+    const isWeatherStaleAtGate = weatherAgeMinutes != null && weatherAgeMinutes > 30;
+    const hasWeather = !!preFlightData.weatherLog;
+
+    // Refresh tick so GatekeeperButton re-evaluates stale state every 30s
+    useState(() => {
+        const interval = setInterval(() => setAgeTick(t => t + 1), 30_000);
+        return () => clearInterval(interval);
+    });
 
     // Completed mission data (only fetched when mission is complete)
     const isComplete = mission?.status === "complete";
@@ -86,6 +104,30 @@ export default function PilotMissionDetail() {
 
     const handleLogFlight = async () => {
         if (!mission || !user || !checklistData) return;
+
+        // Final gate: re-check METAR age at the moment of flight log submission (P8)
+        // Catches the "checked weather 2 hours ago, now at site" scenario
+        const currentAgeMinutes = weatherLogTimestamp
+            ? (Date.now() - new Date(weatherLogTimestamp).getTime()) / 60_000
+            : null;
+
+        if (currentAgeMinutes != null && currentAgeMinutes > 30) {
+            toast({
+                title: 'Weather data too old to log flight',
+                description: `Weather was checked ${Math.round(currentAgeMinutes)} minutes ago. Return to Pre-Flight and refresh weather before logging.`,
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        if (!hasWeather) {
+            toast({
+                title: 'Weather briefing required',
+                description: 'Complete the weather briefing in Pre-Flight before logging.',
+                variant: 'destructive',
+            });
+            return;
+        }
 
         setLogging(true);
 
@@ -392,9 +434,28 @@ export default function PilotMissionDetail() {
             {/* Fixed Bottom Button */}
             {!isComplete && (
                 <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t">
-                    <div className="container mx-auto max-w-2xl">
+                    <div className="container mx-auto max-w-2xl space-y-2">
+                        {/* Weather freshness warning at final gate */}
+                        {hasWeather && isWeatherStaleAtGate && (
+                            <Alert variant="destructive" className="py-2">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertTitle className="text-sm">Weather Stale</AlertTitle>
+                                <AlertDescription className="text-xs">
+                                    Refresh weather in Pre-Flight before logging flight.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                        {!hasWeather && checklistComplete && (
+                            <Alert className="py-2">
+                                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                <AlertTitle className="text-sm">Weather Required</AlertTitle>
+                                <AlertDescription className="text-xs">
+                                    Complete weather briefing in Pre-Flight section above.
+                                </AlertDescription>
+                            </Alert>
+                        )}
                         <GatekeeperButton
-                            enabled={checklistComplete && canLogFlights}
+                            enabled={checklistComplete && canLogFlights && !isWeatherStaleAtGate}
                             loading={logging}
                             onLogFlight={handleLogFlight}
                         />
