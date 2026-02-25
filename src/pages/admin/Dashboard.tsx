@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminNav from "./components/AdminNav";
 import N8nHealthIndicator from "@/components/pipeline/N8nHealthIndicator";
+import ComplianceAlertsCard from "@/components/admin/ComplianceAlertsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -436,6 +437,11 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* Compliance Alerts */}
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <ComplianceAlertsCard />
         </div>
       </main>
     </div>
