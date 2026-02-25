@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminNav from "./components/AdminNav";
+import N8nHealthIndicator from "@/components/pipeline/N8nHealthIndicator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -102,7 +103,10 @@ export default function Dashboard() {
       <AdminNav />
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">Mission Control</h1>
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-3xl font-bold">Mission Control</h1>
+            <N8nHealthIndicator />
+          </div>
           <p className="text-muted-foreground mt-1">
             Overview of all apps, tickets, and maintenance activity
           </p>

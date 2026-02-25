@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Wifi, WifiOff, AlertTriangle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 type HealthStatus = 'online' | 'degraded' | 'offline' | 'loading';
 
@@ -76,7 +77,15 @@ export default function N8nHealthIndicator() {
     fetchHeartbeat();
 
     const interval = setInterval(fetchHeartbeat, 60_000);
-    return () => clearInterval(interval);
+
+    // Realtime push: PipelineRealtimeContext dispatches this event on heartbeat INSERT/UPDATE
+    const handleRealtimeUpdate = () => { void fetchHeartbeat(); };
+    window.addEventListener('n8n-heartbeat-update', handleRealtimeUpdate);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('n8n-heartbeat-update', handleRealtimeUpdate);
+    };
   }, []);
 
   const config = STATUS_CONFIG[status];
@@ -92,31 +101,42 @@ export default function N8nHealthIndicator() {
   })();
 
   return (
-    <div
-      className={cn(
-        'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
-        status === 'loading' && 'bg-slate-100',
-        status === 'online' && 'bg-green-50',
-        status === 'degraded' && 'bg-yellow-50',
-        status === 'offline' && 'bg-red-50',
+    <>
+      <div
+        className={cn(
+          'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
+          status === 'loading' && 'bg-slate-100',
+          status === 'online' && 'bg-green-50',
+          status === 'degraded' && 'bg-yellow-50',
+          status === 'offline' && 'bg-red-50',
+        )}
+        title={lastPing ? `Last ping: ${ageLabel}` : 'No heartbeat received'}
+      >
+        <span
+          className={cn(
+            'inline-block h-2 w-2 rounded-full',
+            config.dotColor,
+            status === 'loading' && 'animate-pulse',
+          )}
+        />
+        <Icon
+          className={cn(
+            'h-3 w-3',
+            config.textColor,
+            status === 'loading' && 'animate-spin',
+          )}
+        />
+        <span className={cn('hidden sm:inline', config.textColor)}>{config.label}</span>
+      </div>
+
+      {status === 'offline' && (
+        <Alert variant="destructive" className="mt-2">
+          <WifiOff className="h-4 w-4" />
+          <AlertDescription>
+            Automation engine offline — processing paused
+          </AlertDescription>
+        </Alert>
       )}
-      title={lastPing ? `Last ping: ${ageLabel}` : 'No heartbeat received'}
-    >
-      <span
-        className={cn(
-          'inline-block h-2 w-2 rounded-full',
-          config.dotColor,
-          status === 'loading' && 'animate-pulse',
-        )}
-      />
-      <Icon
-        className={cn(
-          'h-3 w-3',
-          config.textColor,
-          status === 'loading' && 'animate-spin',
-        )}
-      />
-      <span className={cn('hidden sm:inline', config.textColor)}>{config.label}</span>
-    </div>
+    </>
   );
 }

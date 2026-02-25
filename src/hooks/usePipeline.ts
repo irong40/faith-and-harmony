@@ -320,7 +320,24 @@ export function useTriggerPipeline() {
         body: { mission_id: missionId, processing_template_id: processingTemplateId },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Detect 409 conflict: pipeline already active for this mission today
+        // Supabase FunctionsHttpError includes the response status via error.context
+        const isConflict =
+          (error as { context?: { status?: number } }).context?.status === 409 ||
+          error.message?.includes('409');
+
+        if (isConflict) {
+          // Return a conflict sentinel instead of throwing
+          // The calling component shows a specific warning toast for this case
+          return { conflict: true, processing_job_id: null } as {
+            conflict: true;
+            processing_job_id: null;
+          };
+        }
+        throw error;
+      }
+
       return data as { processing_job_id: string };
     },
     onSuccess: (_data, variables) => {
@@ -341,12 +358,18 @@ export function useResumeManualEdit() {
     mutationFn: async ({
       processingJobId,
       stepName,
+      notes,
     }: {
       processingJobId: string;
       stepName: string;
+      notes?: string;
     }) => {
       const { data, error } = await supabase.functions.invoke('pipeline-manual-edit-complete', {
-        body: { processing_job_id: processingJobId, step_name: stepName },
+        body: {
+          processing_job_id: processingJobId,
+          step_name: stepName,
+          ...(notes ? { notes } : {}),
+        },
       });
 
       if (error) throw error;

@@ -130,23 +130,33 @@ function ProcessingJobCard({ missionId, processingTemplateId }: {
     }
 
     try {
-      await triggerPipeline.mutateAsync({
+      const result = await triggerPipeline.mutateAsync({
         missionId,
         processingTemplateId,
       });
-      toast({ title: "Pipeline started", description: "Processing job created and sent to n8n." });
+
+      if ((result as { conflict?: boolean }).conflict) {
+        toast({
+          title: "Job already active",
+          description: "A pipeline job for this mission is already running.",
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Pipeline started", description: "Processing job created and sent to n8n." });
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";
       toast({ title: "Failed to start pipeline", description: message, variant: "destructive" });
     }
   };
 
-  const handleMarkEditComplete = async (stepName: string) => {
+  const handleMarkEditComplete = async (stepName: string, notes?: string) => {
     if (!processingJob) return;
     try {
       await resumeManualEdit.mutateAsync({
         processingJobId: processingJob.id,
         stepName,
+        notes,
       });
       toast({ title: "Pipeline resumed", description: "Manual edit marked complete. Continuing..." });
     } catch (err: unknown) {

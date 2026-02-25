@@ -72,6 +72,28 @@ export function PipelineRealtimeProvider({ children }: { children: React.ReactNo
           }
         },
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'n8n_heartbeat',
+        },
+        () => {
+          window.dispatchEvent(new CustomEvent('n8n-heartbeat-update'));
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'n8n_heartbeat',
+        },
+        () => {
+          window.dispatchEvent(new CustomEvent('n8n-heartbeat-update'));
+        },
+      )
       .subscribe((status) => {
         setIsSubscribed(status === 'SUBSCRIBED');
       });

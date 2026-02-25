@@ -3,6 +3,7 @@ import { CircleDashed, Loader2, CheckCircle2, XCircle, PauseCircle, CheckCheck }
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,7 +37,7 @@ interface PipelineStepperProps {
   steps: PipelineStep[];
   currentStep?: string | null;
   processingJobId?: string | null;
-  onMarkEditComplete?: (stepName: string) => Promise<void>;
+  onMarkEditComplete?: (stepName: string, notes?: string) => Promise<void>;
   className?: string;
 }
 
@@ -87,6 +88,7 @@ export default function PipelineStepper({
 }: PipelineStepperProps) {
   const [confirmStep, setConfirmStep] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
+  const [editNotes, setEditNotes] = useState('');
 
   if (steps.length === 0) return null;
 
@@ -97,10 +99,11 @@ export default function PipelineStepper({
     if (!confirmStep || !onMarkEditComplete) return;
     setCompleting(true);
     try {
-      await onMarkEditComplete(confirmStep);
+      await onMarkEditComplete(confirmStep, editNotes || undefined);
     } finally {
       setCompleting(false);
       setConfirmStep(null);
+      setEditNotes('');
     }
   };
 
@@ -198,7 +201,7 @@ export default function PipelineStepper({
       </div>
 
       {/* Confirmation dialog */}
-      <AlertDialog open={!!confirmStep} onOpenChange={(open) => !open && setConfirmStep(null)}>
+      <AlertDialog open={!!confirmStep} onOpenChange={(open) => { if (!open) { setConfirmStep(null); setEditNotes(''); } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Mark manual edit as complete?</AlertDialogTitle>
@@ -208,6 +211,20 @@ export default function PipelineStepper({
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="mt-3 space-y-1.5">
+            <label htmlFor="edit-notes" className="text-sm font-medium">
+              Edit notes (optional)
+            </label>
+            <Textarea
+              id="edit-notes"
+              placeholder="Describe what you changed in Lightroom or DaVinci Resolve..."
+              rows={3}
+              value={editNotes}
+              onChange={(e) => setEditNotes(e.target.value)}
+              disabled={completing}
+              className="text-sm"
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={completing}>Cancel</AlertDialogCancel>
             <AlertDialogAction

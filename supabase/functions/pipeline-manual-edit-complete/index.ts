@@ -15,6 +15,7 @@ const N8N_WEBHOOK_URL = Deno.env.get("N8N_WEBHOOK_URL");
 interface RequestBody {
   processing_job_id: string;
   step_name: string;
+  notes?: string;
 }
 
 serve(async (req) => {
@@ -63,7 +64,7 @@ serve(async (req) => {
     }
 
     const body = await req.json() as RequestBody;
-    const { processing_job_id, step_name } = body;
+    const { processing_job_id, step_name, notes } = body;
 
     if (!processing_job_id || !step_name) {
       return new Response(
@@ -113,6 +114,7 @@ serve(async (req) => {
       ...updatedSteps[stepIndex],
       status: "complete",
       completed_at: new Date().toISOString(),
+      ...(notes ? { output: notes } : {}),
     };
 
     // Determine next step (first step after current that is 'pending')
