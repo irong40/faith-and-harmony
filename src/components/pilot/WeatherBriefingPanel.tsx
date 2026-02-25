@@ -15,6 +15,7 @@ import { useWeatherThresholds, useMissionWeatherLog, useCreateWeatherBriefing } 
 import { evaluateWeather } from '@/lib/weather-evaluation';
 import { parseOrNull, extractCeiling } from '@/lib/metar-utils';
 import type { WeatherDetermination } from '@/types/weather';
+import MetarAgeIndicator from './MetarAgeIndicator';
 
 interface WeatherBriefingPanelProps {
   missionId: string;
@@ -207,6 +208,9 @@ export default function WeatherBriefingPanel({
 
     return (
       <div className="space-y-3">
+        {/* METAR age indicator — prominent in header */}
+        <MetarAgeIndicator observationTime={savedLog.briefing_timestamp} />
+
         <div className="flex items-center gap-3">
           <Badge className={`text-lg px-3 py-1 ${config.color}`}>
             {config.label}
