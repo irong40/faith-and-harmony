@@ -17,7 +17,9 @@ import {
   Image,
   Mail,
   Phone,
-  Box
+  Box,
+  ExternalLink,
+  FolderOpen,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -40,6 +42,8 @@ interface JobData {
   video_count: number;
   total_size_mb: number;
   has_download_url: boolean;
+  drive_url?: string | null;
+  delivery_status?: string | null;
   photogrammetry_status?: 'pending' | 'queued' | 'processing' | 'completed' | 'failed';
   has_3d_model: boolean;
   has_ortho: boolean;
@@ -69,6 +73,8 @@ export default function ClientJobPortal() {
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(false);
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
 
   const validateToken = useCallback(async () => {
     try {
@@ -81,6 +87,9 @@ export default function ClientJobPortal() {
 
       setJob(data.job);
       setDeliverables(data.deliverables || []);
+      if (data.job?.delivery_status === 'delivery_confirmed') {
+        setConfirmed(true);
+      }
 
       // Load gallery in background
       loadGallery();
@@ -139,6 +148,25 @@ export default function ClientJobPortal() {
       toast.error(message);
     } finally {
       setDownloading(null);
+    }
+  };
+
+  const handleConfirmReceipt = async () => {
+    if (!token) return;
+    setConfirming(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('drone-customer-portal', {
+        body: { action: 'confirm-receipt', token }
+      });
+      if (error) throw error;
+      if (!data.success) throw new Error('Confirmation failed');
+      setConfirmed(true);
+      toast.success('Receipt confirmed — thank you!');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unable to confirm';
+      toast.error(message);
+    } finally {
+      setConfirming(false);
     }
   };
 
@@ -251,12 +279,26 @@ export default function ClientJobPortal() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Download className="h-5 w-5" />
-              Download Your Files
+              Access Your Files
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Primary Download */}
-            {job.has_download_url && (
+            {/* Drive Folder (primary — if pipeline uploaded to Drive) */}
+            {job.drive_url && (
+              <a
+                href={job.drive_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full rounded-lg bg-primary text-primary-foreground py-3 px-6 font-semibold text-base hover:bg-primary/90 transition-colors"
+              >
+                <FolderOpen className="h-5 w-5" />
+                Open Google Drive Folder
+                <ExternalLink className="h-4 w-4 opacity-70" />
+              </a>
+            )}
+
+            {/* Legacy direct download fallback */}
+            {!job.drive_url && job.has_download_url && (
               <Button
                 size="lg"
                 className="w-full gap-2"
@@ -444,6 +486,47 @@ export default function ClientJobPortal() {
             )}
           </CardContent>
         </Card>
+
+        {/* Confirm Receipt */}
+        {!confirmed ? (
+          <Card className="border-blue-200 bg-blue-50/50">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-3">
+                <h3 className="font-semibold">Got your files?</h3>
+                <p className="text-sm text-muted-foreground">
+                  Let us know you received your deliverables — it helps us close out the job.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={handleConfirmReceipt}
+                  disabled={confirming}
+                  className="border-blue-400 text-blue-700 hover:bg-blue-50"
+                >
+                  {confirming ? (
+                    <>Confirming...</>
+                  ) : (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Confirm Receipt
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-green-200 bg-green-50/50">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-2">
+                <CheckCircle className="mx-auto h-8 w-8 text-green-600" />
+                <p className="font-semibold text-green-700">Receipt Confirmed</p>
+                <p className="text-sm text-muted-foreground">
+                  Thank you for confirming! We appreciate your business.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Support Footer */}
         <Card className="bg-muted/30">

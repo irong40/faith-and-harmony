@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface PortalRequest {
-  action: 'validate' | 'get-download-url' | 'get-gallery' | 'get-model-url';
+  action: 'validate' | 'get-download-url' | 'get-gallery' | 'get-model-url' | 'confirm-receipt';
   token: string;
   deliverable_id?: string;
   asset_type?: 'model' | 'ortho';
@@ -45,6 +45,8 @@ serve(async (req: Request) => {
         status,
         delivered_at,
         download_url,
+        delivery_drive_url,
+        delivery_status,
         photogrammetry_status,
         model_file_path,
         orthophoto_path,
@@ -111,7 +113,9 @@ serve(async (req: Request) => {
             photo_count: photoCount,
             video_count: videoCount,
             total_size_mb: Math.round(totalSize / (1024 * 1024) * 10) / 10,
-            has_download_url: !!job.download_url,
+            has_download_url: !!(job.download_url || job.delivery_drive_url),
+            drive_url: job.delivery_drive_url || job.download_url || null,
+            delivery_status: job.delivery_status,
             photogrammetry_status: job.photogrammetry_status,
             has_3d_model: !!job.model_file_path,
             has_ortho: !!job.orthophoto_path,
@@ -244,6 +248,26 @@ serve(async (req: Request) => {
           success: true,
           gallery: gallery.filter((g: any) => g.thumbnail_url),
         }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (action === 'confirm-receipt') {
+      const { error: updateError } = await supabase
+        .from('drone_jobs')
+        .update({ delivery_status: 'delivery_confirmed' })
+        .eq('id', job.id);
+
+      if (updateError) {
+        return new Response(
+          JSON.stringify({ error: 'Could not confirm receipt' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log(`Client confirmed receipt for job ${job.job_number}`);
+      return new Response(
+        JSON.stringify({ success: true }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
