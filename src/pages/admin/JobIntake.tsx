@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { emitActivityEvent } from "@/components/admin/ActivityFeed";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -209,6 +210,15 @@ export default function JobIntake() {
       });
       return;
     }
+
+    // Emit activity event (best-effort)
+    await emitActivityEvent({
+      event_type: "mission_created",
+      entity_type: "mission",
+      entity_id: data.id,
+      summary: `Mission created: ${values.site_address || "Unknown address"}`,
+      metadata: { pilot_id: values.pilot_id || null },
+    });
 
     toast({ title: "Job created successfully" });
     navigate(`/admin/drone-jobs/${data.id}`);

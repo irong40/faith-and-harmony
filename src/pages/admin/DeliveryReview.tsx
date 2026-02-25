@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { emitActivityEvent } from "@/components/admin/ActivityFeed";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -166,6 +167,14 @@ export default function DeliveryReview() {
       return;
     }
 
+    await emitActivityEvent({
+      event_type: "delivery_sent",
+      entity_type: "delivery",
+      entity_id: job.id,
+      summary: `Delivery sent to ${clientName || clientEmail} for ${siteLabel}`,
+      metadata: { job_number: job.job_number, client_email: clientEmail },
+    });
+
     toast({ title: "Delivery sent", description: `Email sent to ${clientEmail}` });
     setSending(false);
     setSendDialogOpen(false);
@@ -191,6 +200,13 @@ export default function DeliveryReview() {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
+      await emitActivityEvent({
+        event_type: "delivery_confirmed",
+        entity_type: "delivery",
+        entity_id: job.id,
+        summary: `Delivery confirmed for ${siteLabel}`,
+        metadata: { job_number: job.job_number },
+      });
       toast({ title: "Marked as delivered" });
       fetchData();
     }
