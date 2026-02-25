@@ -7,7 +7,7 @@
 
 export const BRAND = {
   // Company Information
-  name: "Faith & Harmony LLC",
+  name: "Sentinel Aerial Inspections",
   dba: "Sentinel Aerial Inspections",
   app: "Trestle",
   tagline: "Veteran-owned aerial inspection services in Hampton Roads, Virginia.",
@@ -44,7 +44,7 @@ export const BRAND = {
   },
 
   // Copyright
-  copyright: `\u00a9 ${new Date().getFullYear()} Faith & Harmony LLC DBA Sentinel Aerial Inspections. All rights reserved.`,
+  copyright: `\u00a9 ${new Date().getFullYear()} Sentinel Aerial Inspections. All rights reserved.`,
 } as const;
 
 // Edge function / Email specific brand object

@@ -655,7 +655,7 @@ export default function PricingEngine() {
         )}
 
         <div style={{ marginTop: "32px", textAlign: "center", fontSize: "11px", color: "#3a3a4a", letterSpacing: "0.05em" }}>
-          Faith & Harmony LLC DBA Sentinel Aerial Inspections. Veteran Owned. Hampton Roads, Virginia.
+          Sentinel Aerial Inspections. Veteran Owned. Hampton Roads, Virginia.
         </div>
       </div>
     </div>

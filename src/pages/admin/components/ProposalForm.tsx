@@ -61,7 +61,7 @@ Timeline:
 
 Ownership:
 - Full ownership transfers upon final payment
-- Faith & Harmony LLC DBA Sentinel Aerial Inspections retains portfolio rights`;
+- Sentinel Aerial Inspections retains portfolio rights`;
 
 export default function ProposalForm({
   serviceRequest,
