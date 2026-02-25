@@ -1035,7 +1035,11 @@ export type Database = {
           created_at: string
           customer_id: string | null
           delivered_at: string | null
+          delivery_drive_url: string | null
+          delivery_email_to: string | null
           delivery_notes: string | null
+          delivery_sent_at: string | null
+          delivery_status: string | null
           delivery_token: string | null
           delivery_token_created_at: string | null
           download_url: string | null
@@ -1075,7 +1079,11 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           delivered_at?: string | null
+          delivery_drive_url?: string | null
+          delivery_email_to?: string | null
           delivery_notes?: string | null
+          delivery_sent_at?: string | null
+          delivery_status?: string | null
           delivery_token?: string | null
           delivery_token_created_at?: string | null
           download_url?: string | null
@@ -1115,7 +1123,11 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           delivered_at?: string | null
+          delivery_drive_url?: string | null
+          delivery_email_to?: string | null
           delivery_notes?: string | null
+          delivery_sent_at?: string | null
+          delivery_status?: string | null
           delivery_token?: string | null
           delivery_token_created_at?: string | null
           download_url?: string | null
