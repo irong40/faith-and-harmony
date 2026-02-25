@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { PipelineRealtimeProvider } from "@/contexts/PipelineRealtimeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
 
 // Eager — auth
@@ -69,6 +70,24 @@ function RootRedirect() {
   return <Navigate to="/auth" replace />;
 }
 
+// Helper: wrap admin route in ErrorBoundary + ProtectedRoute
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorBoundary>
+      <ProtectedRoute requireAdmin>{children}</ProtectedRoute>
+    </ErrorBoundary>
+  );
+}
+
+// Helper: wrap pilot route in ErrorBoundary + ProtectedRoute
+function PilotRoute({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorBoundary>
+      <ProtectedRoute requirePilot>{children}</ProtectedRoute>
+    </ErrorBoundary>
+  );
+}
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -88,222 +107,40 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
 
               {/* Tokenized client routes — no auth required */}
-              <Route path="/proposal/:token" element={<CustomerProposal />} />
-              <Route path="/invoice/:token" element={<CustomerInvoice />} />
-              <Route path="/drone-upload/:token" element={<DroneUpload />} />
-              <Route path="/my-jobs/:token" element={<ClientJobPortal />} />
+              <Route path="/proposal/:token" element={<ErrorBoundary><CustomerProposal /></ErrorBoundary>} />
+              <Route path="/invoice/:token" element={<ErrorBoundary><CustomerInvoice /></ErrorBoundary>} />
+              <Route path="/drone-upload/:token" element={<ErrorBoundary><DroneUpload /></ErrorBoundary>} />
+              <Route path="/my-jobs/:token" element={<ErrorBoundary><ClientJobPortal /></ErrorBoundary>} />
 
               {/* Admin routes */}
-              <Route
-                path="/admin/dashboard"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/service-requests"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <ServiceRequests />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/proposals"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <Proposals />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/projects"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <Projects />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/drone-jobs"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <DroneJobs />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/drone-jobs/:id"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <DroneJobDetail />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/drone-jobs/:id/delivery"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <DeliveryReview />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/pipeline"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <Pipeline />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/pipeline/qa/:missionId"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <PipelineQAReview />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/pipeline/coverage/:missionId"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <PipelineCoverageReview />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/pilots"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <PilotManagement />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/people"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <People />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/invoices"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <Invoices />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/messages"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <Messages />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/apps"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <Apps />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/announcements"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <Announcements />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/documents"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <Documents />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/pricing"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <SentinelPricing />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/settings"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <Settings />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/clients"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <Clients />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/jobs/new"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <JobIntake />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/processing-templates"
-                element={
-                  <ProtectedRoute requireAdmin>
-                    <ProcessingTemplates />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/admin/dashboard" element={<AdminRoute><Dashboard /></AdminRoute>} />
+              <Route path="/admin/service-requests" element={<AdminRoute><ServiceRequests /></AdminRoute>} />
+              <Route path="/admin/proposals" element={<AdminRoute><Proposals /></AdminRoute>} />
+              <Route path="/admin/projects" element={<AdminRoute><Projects /></AdminRoute>} />
+              <Route path="/admin/drone-jobs" element={<AdminRoute><DroneJobs /></AdminRoute>} />
+              <Route path="/admin/drone-jobs/:id" element={<AdminRoute><DroneJobDetail /></AdminRoute>} />
+              <Route path="/admin/drone-jobs/:id/delivery" element={<AdminRoute><DeliveryReview /></AdminRoute>} />
+              <Route path="/admin/pipeline" element={<AdminRoute><Pipeline /></AdminRoute>} />
+              <Route path="/admin/pipeline/qa/:missionId" element={<AdminRoute><PipelineQAReview /></AdminRoute>} />
+              <Route path="/admin/pipeline/coverage/:missionId" element={<AdminRoute><PipelineCoverageReview /></AdminRoute>} />
+              <Route path="/admin/pilots" element={<AdminRoute><PilotManagement /></AdminRoute>} />
+              <Route path="/admin/people" element={<AdminRoute><People /></AdminRoute>} />
+              <Route path="/admin/invoices" element={<AdminRoute><Invoices /></AdminRoute>} />
+              <Route path="/admin/messages" element={<AdminRoute><Messages /></AdminRoute>} />
+              <Route path="/admin/apps" element={<AdminRoute><Apps /></AdminRoute>} />
+              <Route path="/admin/announcements" element={<AdminRoute><Announcements /></AdminRoute>} />
+              <Route path="/admin/documents" element={<AdminRoute><Documents /></AdminRoute>} />
+              <Route path="/admin/pricing" element={<AdminRoute><SentinelPricing /></AdminRoute>} />
+              <Route path="/admin/settings" element={<AdminRoute><Settings /></AdminRoute>} />
+              <Route path="/admin/clients" element={<AdminRoute><Clients /></AdminRoute>} />
+              <Route path="/admin/jobs/new" element={<AdminRoute><JobIntake /></AdminRoute>} />
+              <Route path="/admin/processing-templates" element={<AdminRoute><ProcessingTemplates /></AdminRoute>} />
 
               {/* Pilot portal routes */}
-              <Route
-                path="/pilot"
-                element={
-                  <ProtectedRoute requirePilot>
-                    <PilotDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/pilot/mission/:id"
-                element={
-                  <ProtectedRoute requirePilot>
-                    <PilotMissionDetail />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/pilot/fleet"
-                element={
-                  <ProtectedRoute requirePilot>
-                    <FleetOverview />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/pilot/fleet/maintenance"
-                element={
-                  <ProtectedRoute requirePilot>
-                    <MaintenanceHistory />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/pilot" element={<PilotRoute><PilotDashboard /></PilotRoute>} />
+              <Route path="/pilot/mission/:id" element={<PilotRoute><PilotMissionDetail /></PilotRoute>} />
+              <Route path="/pilot/fleet" element={<PilotRoute><FleetOverview /></PilotRoute>} />
+              <Route path="/pilot/fleet/maintenance" element={<PilotRoute><MaintenanceHistory /></PilotRoute>} />
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
