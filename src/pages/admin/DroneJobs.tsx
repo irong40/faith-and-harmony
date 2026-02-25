@@ -369,7 +369,7 @@ export default function DroneJobs() {
         </div>
 
         {/* Table */}
-        <div className="rounded-lg border border-border bg-card">
+        <div className="rounded-lg border border-border bg-card overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
