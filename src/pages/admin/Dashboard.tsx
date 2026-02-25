@@ -3,58 +3,131 @@ import { supabase } from "@/integrations/supabase/client";
 import AdminNav from "./components/AdminNav";
 import N8nHealthIndicator from "@/components/pipeline/N8nHealthIndicator";
 import ComplianceAlertsCard from "@/components/admin/ComplianceAlertsCard";
+import ActivityFeed from "@/components/admin/ActivityFeed";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
-import { format } from "date-fns";
+import { format, isToday } from "date-fns";
 import {
   Activity,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  FileText,
+  CalendarClock,
+  Cog,
   Send,
-  Server,
-  XCircle
+  Users,
 } from "lucide-react";
 
+// -------------------------------------------------------
+// Types
+// -------------------------------------------------------
+interface MissionRow {
+  id: string;
+  job_number: string;
+  site_address: string | null;
+  property_address: string;
+  scheduled_date: string | null;
+  scheduled_time: string | null;
+  status: string;
+  delivery_status: string | null;
+  pilot_id: string | null;
+  clients: { name: string } | null;
+  customers: { name: string } | null;
+  profiles: { full_name: string | null } | null;
+}
+
+interface ProcessingRow {
+  id: string;
+  mission_id: string;
+  status: string;
+  path_code: string | null;
+  started_at: string | null;
+  drone_jobs: {
+    job_number: string;
+    site_address: string | null;
+    property_address: string;
+  } | null;
+}
+
+// -------------------------------------------------------
+// Status badge helper
+// -------------------------------------------------------
+const STATUS_COLORS: Record<string, string> = {
+  intake: "bg-slate-500",
+  scheduled: "bg-blue-500",
+  captured: "bg-indigo-500",
+  uploaded: "bg-purple-500",
+  processing: "bg-amber-500",
+  review_pending: "bg-violet-500",
+  qa: "bg-orange-500",
+  revision: "bg-red-500",
+  complete: "bg-teal-500",
+  delivered: "bg-green-500",
+  failed: "bg-red-700",
+  cancelled: "bg-gray-500",
+};
+
+function StatusBadge({ status }: { status: string }) {
+  const color = STATUS_COLORS[status] ?? "bg-gray-400";
+  const label = status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return <Badge className={`${color} text-white capitalize text-xs`}>{label}</Badge>;
+}
+
+// -------------------------------------------------------
+// Metric Card
+// -------------------------------------------------------
+function MetricCard({
+  label,
+  value,
+  icon: Icon,
+  to,
+  loading,
+  accent,
+}: {
+  label: string;
+  value: number;
+  icon: React.ElementType;
+  to?: string;
+  loading: boolean;
+  accent?: string;
+}) {
+  const inner = (
+    <Card className={`hover:border-primary/40 transition-colors ${to ? "cursor-pointer" : ""}`}>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium">{label}</CardTitle>
+        <Icon className={`h-4 w-4 ${accent ?? "text-muted-foreground"}`} />
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <Skeleton className="h-8 w-16" />
+        ) : (
+          <div className={`text-2xl font-bold ${accent ? "text-blue-600" : ""}`}>{value}</div>
+        )}
+      </CardContent>
+    </Card>
+  );
+  return to ? <Link to={to} className="block">{inner}</Link> : inner;
+}
+
+// -------------------------------------------------------
+// Main Dashboard
+// -------------------------------------------------------
 export default function Dashboard() {
-  const { data: apps, isLoading: appsLoading } = useQuery({
-    queryKey: ["apps"],
+  // Active missions (not cancelled/delivered)
+  const { data: activeMissions, isLoading: activeMissionsLoading } = useQuery({
+    queryKey: ["dashboard-active-missions"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("apps")
-        .select("*")
-        .order("name");
+        .from("drone_jobs")
+        .select("id, job_number, site_address, property_address, scheduled_date, scheduled_time, status, delivery_status, pilot_id, clients(name), customers(name), profiles(full_name)")
+        .not("status", "in", '("delivered","cancelled")')
+        .order("scheduled_date", { ascending: true });
       if (error) throw error;
-      return data;
+      return (data || []) as MissionRow[];
     },
+    staleTime: 60_000,
   });
 
-  const { data: tickets, isLoading: ticketsLoading } = useQuery({
-    queryKey: ["maintenance-tickets"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("maintenance_tickets")
-        .select("*");
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  const { data: logs, isLoading: logsLoading } = useQuery({
-    queryKey: ["maintenance-logs"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("maintenance_logs")
-        .select("*");
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // Delivery widgets
+  // Pending deliveries
   const { data: pendingDeliveries, isLoading: deliveriesLoading } = useQuery({
     queryKey: ["pending-deliveries"],
     queryFn: async () => {
@@ -63,384 +136,253 @@ export default function Dashboard() {
         .select("id")
         .eq("delivery_status", "ready");
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
-  const { data: recentDeliveries, isLoading: recentDeliveriesLoading } = useQuery({
-    queryKey: ["recent-deliveries"],
+  // Processing queue
+  const { data: processingJobs, isLoading: processingLoading } = useQuery({
+    queryKey: ["dashboard-processing-jobs"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("drone_jobs")
-        .select("id, job_number, site_address, property_address, delivery_sent_at, clients(name), customers(name)")
-        .eq("delivery_status", "sent")
-        .order("delivery_sent_at", { ascending: false })
-        .limit(5);
+        .from("processing_jobs")
+        .select("id, mission_id, status, path_code, started_at, drone_jobs(job_number, site_address, property_address)")
+        .in("status", ["queued", "running"])
+        .order("started_at", { ascending: false })
+        .limit(10);
       if (error) throw error;
-      return data;
+      return (data || []) as ProcessingRow[];
     },
+    staleTime: 30_000,
   });
 
-  const ticketStats = {
-    open: tickets?.filter((t) => t.status === "open").length || 0,
-    inProgress: tickets?.filter((t) => t.status === "in-progress").length || 0,
-    resolved: tickets?.filter((t) => t.status === "resolved").length || 0,
-    total: tickets?.length || 0,
-  };
+  // -------------------------------------------------------
+  // Derived data
+  // -------------------------------------------------------
+  const todaysMissions = (activeMissions || []).filter(
+    (m) => m.scheduled_date && isToday(new Date(m.scheduled_date))
+  );
 
-  const priorityStats = {
-    critical: tickets?.filter((t) => t.priority === "critical").length || 0,
-    high: tickets?.filter((t) => t.priority === "high").length || 0,
-    medium: tickets?.filter((t) => t.priority === "medium").length || 0,
-    low: tickets?.filter((t) => t.priority === "low").length || 0,
-  };
+  // Group active missions by pilot
+  const missionsByPilot = (activeMissions || []).reduce(
+    (acc, m) => {
+      const pilotName = m.profiles?.full_name || (m.pilot_id ? "Assigned Pilot" : "Unassigned");
+      const key = m.pilot_id || "__unassigned__";
+      if (!acc[key]) acc[key] = { name: pilotName, missions: [] };
+      acc[key].missions.push(m);
+      return acc;
+    },
+    {} as Record<string, { name: string; missions: MissionRow[] }>
+  );
 
-  const totalHours = logs?.reduce((sum, log) => sum + Number(log.hours), 0) || 0;
-  const hoursByType = logs?.reduce((acc, log) => {
-    acc[log.type] = (acc[log.type] || 0) + Number(log.hours);
-    return acc;
-  }, {} as Record<string, number>) || {};
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "online":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case "degraded":
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-      case "offline":
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return <Activity className="h-4 w-4 text-muted-foreground" />;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "online":
-        return <Badge variant="default" className="bg-green-500/10 text-green-600 border-green-500/20">Online</Badge>;
-      case "degraded":
-        return <Badge variant="default" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">Degraded</Badge>;
-      case "offline":
-        return <Badge variant="destructive">Offline</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
-
-  const isLoading = appsLoading || ticketsLoading || logsLoading;
+  const activeMissionCount = activeMissions?.length ?? 0;
   const pendingDeliveryCount = pendingDeliveries?.length ?? 0;
+  const processingCount = processingJobs?.length ?? 0;
+  const globalLoading = activeMissionsLoading || deliveriesLoading || processingLoading;
 
   return (
     <div className="min-h-screen bg-background">
       <AdminNav />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-3xl font-bold">Mission Control</h1>
             <N8nHealthIndicator />
           </div>
           <p className="text-muted-foreground mt-1">
-            Overview of all apps, tickets, and maintenance activity
+            Real-time overview of all missions, pipeline, and team activity
           </p>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-4 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Apps</CardTitle>
-              <Server className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <div className="text-2xl font-bold">{apps?.length || 0}</div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Open Tickets</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <div className="text-2xl font-bold">{ticketStats.open}</div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Critical Issues</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <div className="text-2xl font-bold text-destructive">
-                  {priorityStats.critical}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-16" />
-              ) : (
-                <div className="text-2xl font-bold">{totalHours.toFixed(1)}</div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* App Health Status */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Server className="h-5 w-5" />
-                App Health Status
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-12 w-full" />
-                  ))}
-                </div>
-              ) : apps && apps.length > 0 ? (
-                <div className="space-y-3">
-                  {apps.map((app) => (
-                    <div
-                      key={app.id}
-                      className="flex items-center justify-between p-3 rounded-lg border bg-card"
-                    >
-                      <div className="flex items-center gap-3">
-                        {getStatusIcon(app.status)}
-                        <div>
-                          <p className="font-medium">{app.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {app.code}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {app.version && (
-                          <span className="text-sm text-muted-foreground">
-                            v{app.version}
-                          </span>
-                        )}
-                        {getStatusBadge(app.status)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-center py-8">
-                  No apps configured yet
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Ticket Summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Ticket Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3, 4].map((i) => (
-                    <Skeleton key={i} className="h-10 w-full" />
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                      <p className="text-2xl font-bold text-yellow-600">
-                        {ticketStats.open}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Open</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                      <p className="text-2xl font-bold text-blue-600">
-                        {ticketStats.inProgress}
-                      </p>
-                      <p className="text-sm text-muted-foreground">In Progress</p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                      <p className="text-2xl font-bold text-green-600">
-                        {ticketStats.resolved}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Resolved</p>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t">
-                    <p className="text-sm font-medium mb-3">By Priority</p>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Critical</span>
-                        <Badge variant="destructive">{priorityStats.critical}</Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">High</span>
-                        <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20">
-                          {priorityStats.high}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Medium</span>
-                        <Badge variant="secondary">{priorityStats.medium}</Badge>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Low</span>
-                        <Badge variant="outline">{priorityStats.low}</Badge>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Maintenance Hours */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Maintenance Hours by Type
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="grid grid-cols-4 gap-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <Skeleton key={i} className="h-20 w-full" />
-                  ))}
-                </div>
-              ) : Object.keys(hoursByType).length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {Object.entries(hoursByType).map(([type, hours]) => (
-                    <div
-                      key={type}
-                      className="p-4 rounded-lg border bg-card text-center"
-                    >
-                      <p className="text-2xl font-bold">{hours.toFixed(1)}</p>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {type.replace(/-/g, " ")}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-center py-8">
-                  No maintenance logs recorded yet
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Delivery Section */}
-        <div className="grid gap-6 lg:grid-cols-2 mt-6">
-          {/* Pending Deliveries Card */}
-          <Link
+        {/* Row 1 — Key Metrics */}
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-4 mb-8">
+          <MetricCard
+            label="Active Missions"
+            value={activeMissionCount}
+            icon={Activity}
+            to="/admin/drone-jobs"
+            loading={activeMissionsLoading}
+          />
+          <MetricCard
+            label="Pending Deliveries"
+            value={pendingDeliveryCount}
+            icon={Send}
             to="/admin/drone-jobs?delivery=ready"
-            className="block"
-          >
-            <Card className="hover:border-blue-400 transition-colors cursor-pointer">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Pending Deliveries</CardTitle>
-                <Send className="h-4 w-4 text-blue-500" />
-              </CardHeader>
-              <CardContent>
-                {deliveriesLoading ? (
-                  <Skeleton className="h-8 w-16" />
-                ) : (
-                  <>
-                    <div className="text-3xl font-bold text-blue-600">
-                      {pendingDeliveryCount}
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {pendingDeliveryCount === 1 ? "job ready to send" : "jobs ready to send"}
-                    </p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </Link>
+            loading={deliveriesLoading}
+            accent="text-blue-500"
+          />
+          <MetricCard
+            label="Processing Queue"
+            value={processingCount}
+            icon={Cog}
+            to="/admin/pipeline"
+            loading={processingLoading}
+          />
+          <MetricCard
+            label="Today's Missions"
+            value={todaysMissions.length}
+            icon={CalendarClock}
+            loading={activeMissionsLoading}
+          />
+        </div>
 
-          {/* Recent Deliveries Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                Recent Deliveries
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {recentDeliveriesLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-10 w-full" />
-                  ))}
-                </div>
-              ) : recentDeliveries && recentDeliveries.length > 0 ? (
-                <div className="space-y-2">
-                  {recentDeliveries.map((job) => (
-                    <div
-                      key={job.id}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div>
-                        <Link
-                          to={`/admin/drone-jobs/${job.id}/delivery`}
-                          className="font-mono text-sm font-medium hover:underline text-primary"
-                        >
-                          {job.job_number}
-                        </Link>
-                        <p className="text-xs text-muted-foreground">
-                          {(job as any).clients?.name || (job as any).customers?.name || "—"} &bull; {job.site_address || job.property_address}
-                        </p>
-                      </div>
-                      {job.delivery_sent_at && (
-                        <span className="text-xs text-muted-foreground shrink-0 ml-2">
-                          {format(new Date(job.delivery_sent_at), "MMM d")}
+        {/* Row 2 — Today's Schedule */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarClock className="h-5 w-5" />
+              Today's Schedule
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {activeMissionsLoading ? (
+              <div className="space-y-3">
+                {[1, 2].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
+              </div>
+            ) : todaysMissions.length === 0 ? (
+              <p className="text-muted-foreground text-sm text-center py-4">No missions scheduled today</p>
+            ) : (
+              <div className="space-y-2">
+                {todaysMissions.map((m) => (
+                  <div key={m.id} className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
+                    <div className="min-w-0">
+                      <Link to={`/admin/drone-jobs/${m.id}`} className="font-mono text-sm font-semibold hover:underline text-primary">
+                        {m.job_number}
+                      </Link>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {m.site_address || m.property_address}
+                        {m.clients?.name || m.customers?.name ? ` · ${m.clients?.name || m.customers?.name}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {m.scheduled_time && (
+                        <span className="text-xs text-muted-foreground">
+                          {m.scheduled_time.slice(0, 5)}
                         </span>
                       )}
+                      {m.profiles?.full_name && (
+                        <Badge variant="outline" className="text-xs">{m.profiles.full_name}</Badge>
+                      )}
+                      <StatusBadge status={m.status} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Row 3 + Row 4 — Active Missions by Pilot + Processing Queue */}
+        <div className="grid gap-6 lg:grid-cols-2 mb-8">
+          {/* Active Missions by Pilot */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Active Missions by Pilot
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {activeMissionsLoading ? (
+                <div className="space-y-4">
+                  {[1, 2].map((i) => <Skeleton key={i} className="h-20 w-full" />)}
+                </div>
+              ) : activeMissionCount === 0 ? (
+                <p className="text-muted-foreground text-sm text-center py-4">No active missions</p>
+              ) : (
+                <div className="space-y-4">
+                  {Object.entries(missionsByPilot).map(([key, { name, missions }]) => (
+                    <div key={key}>
+                      <div className="flex items-center justify-between mb-2">
+                        <Link
+                          to={key === "__unassigned__" ? "/admin/drone-jobs" : `/admin/drone-jobs?pilot=${key}`}
+                          className="text-sm font-semibold hover:underline"
+                        >
+                          {name}
+                        </Link>
+                        <Badge variant="secondary" className="text-xs">{missions.length}</Badge>
+                      </div>
+                      <div className="space-y-1 pl-3 border-l-2 border-muted">
+                        {missions.slice(0, 3).map((m) => (
+                          <div key={m.id} className="flex items-center justify-between gap-2 text-xs">
+                            <Link to={`/admin/drone-jobs/${m.id}`} className="font-mono hover:underline text-primary truncate max-w-[120px]">
+                              {m.job_number}
+                            </Link>
+                            <span className="text-muted-foreground truncate">{m.site_address || m.property_address}</span>
+                            <StatusBadge status={m.status} />
+                          </div>
+                        ))}
+                        {missions.length > 3 && (
+                          <Link
+                            to={`/admin/drone-jobs?pilot=${key}`}
+                            className="text-xs text-muted-foreground hover:underline"
+                          >
+                            +{missions.length - 3} more
+                          </Link>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Processing Queue */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Cog className="h-5 w-5" />
+                  Processing Queue
+                </CardTitle>
+                <Link to="/admin/pipeline" className="text-xs text-muted-foreground hover:underline">
+                  View all →
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {processingLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
+                </div>
+              ) : !processingJobs || processingJobs.length === 0 ? (
+                <p className="text-muted-foreground text-sm text-center py-4">No jobs currently processing</p>
               ) : (
-                <p className="text-muted-foreground text-center py-4 text-sm">
-                  No recent deliveries
-                </p>
+                <div className="space-y-2">
+                  {processingJobs.map((pj) => (
+                    <div key={pj.id} className="flex items-center justify-between gap-2 p-2 rounded-lg border bg-card text-sm">
+                      <div className="min-w-0">
+                        <Link
+                          to={`/admin/drone-jobs/${pj.mission_id}`}
+                          className="font-mono text-xs font-semibold hover:underline text-primary"
+                        >
+                          {pj.drone_jobs?.job_number || pj.mission_id.slice(0, 8)}
+                        </Link>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {pj.drone_jobs?.site_address || pj.drone_jobs?.property_address || ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {pj.path_code && (
+                          <Badge variant="outline" className="text-xs font-mono">{pj.path_code}</Badge>
+                        )}
+                        <Badge className={`text-xs ${pj.status === "running" ? "bg-amber-500 text-white" : "bg-slate-400 text-white"}`}>
+                          {pj.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Compliance Alerts */}
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        {/* Row 5 — Activity Feed + Compliance Alerts */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <ActivityFeed />
           <ComplianceAlertsCard />
         </div>
       </main>
