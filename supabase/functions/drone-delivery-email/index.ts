@@ -299,8 +299,8 @@ serve(async (req) => {
     // Generate delivery token for client portal access
     const deliveryToken = crypto.randomUUID().replace(/-/g, "");
 
-    // Update drone_jobs with delivery info
-    await supabase
+    // Update drone_jobs with delivery info — all delivery_status fields written atomically with the email send
+    const { error: updateError } = await supabase
       .from("drone_jobs")
       .update({
         status: "delivered",
@@ -308,9 +308,16 @@ serve(async (req) => {
         delivery_notes: custom_message ?? null,
         delivery_token: deliveryToken,
         delivery_token_created_at: new Date().toISOString(),
+        delivery_status: "sent",
+        delivery_sent_at: new Date().toISOString(),
+        delivery_email_to: recipientEmail,
         ...(download_url ? { download_url } : {}),
       })
       .eq("id", job_id);
+
+    if (updateError) {
+      console.warn("delivery_status update failed after email send:", updateError);
+    }
 
     return new Response(
       JSON.stringify({
