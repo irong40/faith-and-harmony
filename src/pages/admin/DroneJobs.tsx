@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, RefreshCw, Plus, Eye, Camera, Calendar, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
+import { Search, RefreshCw, Plus, Eye, Camera, Calendar, CheckCircle, AlertTriangle, XCircle, Send } from "lucide-react";
 import { format } from "date-fns";
 import { Link, useNavigate } from "react-router-dom";
 import AdminNav from "./components/AdminNav";
@@ -57,12 +57,21 @@ interface DroneJob {
   created_at: string;
   client_id: string | null;
   processing_template_id: string | null;
+  delivery_status: string | null;
+  delivery_sent_at: string | null;
   customers?: { name: string; email: string } | null;
   drone_packages?: { name: string; code: string; price: number } | null;
   drone_assets?: { id: string }[];
   clients?: { name: string; company: string | null } | null;
   processing_templates?: { path_code: string | null; display_name: string | null; preset_name: string } | null;
 }
+
+const DELIVERY_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  not_ready: { label: "Processing", color: "bg-slate-400 text-white" },
+  ready: { label: "Ready to Send", color: "bg-blue-500 text-white" },
+  sent: { label: "Sent", color: "bg-green-500 text-white" },
+  delivery_confirmed: { label: "Confirmed", color: "bg-green-700 text-white" },
+};
 
 const STATUS_CONFIG: Record<DroneJobStatus, { label: string; color: string }> = {
   intake: { label: "Intake", color: "bg-slate-500" },
@@ -89,13 +98,14 @@ export default function DroneJobs() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [templateFilter, setTemplateFilter] = useState<string>("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [deliveryFilter, setDeliveryFilter] = useState<string>("all");
 
   const fetchJobs = async () => {
     setLoading(true);
     const [jobsRes, templatesRes] = await Promise.all([
       supabase
         .from("drone_jobs")
-        .select("*, customers(name, email), drone_packages(name, code, price), drone_assets(id), clients(name, company), processing_templates(path_code, display_name, preset_name)")
+        .select("*, customers(name, email), drone_packages(name, code, price), drone_assets(id), clients(name, company), processing_templates(path_code, display_name, preset_name), delivery_status, delivery_sent_at")
         .order("created_at", { ascending: false }),
       supabase
         .from("processing_templates")
@@ -135,8 +145,10 @@ export default function DroneJobs() {
     const matchesStatus = statusFilter === "all" || job.status === statusFilter;
     const matchesTemplate =
       templateFilter === "all" || job.processing_template_id === templateFilter;
+    const matchesDelivery =
+      deliveryFilter === "all" || (job.delivery_status ?? "not_ready") === deliveryFilter;
 
-    return matchesSearch && matchesStatus && matchesTemplate;
+    return matchesSearch && matchesStatus && matchesTemplate && matchesDelivery;
   });
 
   const getStatusBadge = (status: DroneJobStatus) => {
@@ -281,6 +293,18 @@ export default function DroneJobs() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={deliveryFilter} onValueChange={setDeliveryFilter}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Filter by delivery" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Delivery</SelectItem>
+              <SelectItem value="ready">Ready to Send</SelectItem>
+              <SelectItem value="sent">Sent</SelectItem>
+              <SelectItem value="delivery_confirmed">Confirmed</SelectItem>
+              <SelectItem value="not_ready">Not Ready</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Table */}
@@ -294,6 +318,7 @@ export default function DroneJobs() {
                 <TableHead className="hidden lg:table-cell">Job Type</TableHead>
                 <TableHead>Scheduled</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="hidden md:table-cell">Delivery</TableHead>
                 <TableHead className="hidden sm:table-cell">QA</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -301,13 +326,13 @@ export default function DroneJobs() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
+                  <TableCell colSpan={9} className="text-center py-8">
                     <RefreshCw className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
               ) : filteredJobs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     No drone jobs found
                   </TableCell>
                 </TableRow>
@@ -352,6 +377,32 @@ export default function DroneJobs() {
                         : "—"}
                     </TableCell>
                     <TableCell>{getStatusBadge(job.status)}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {(() => {
+                        const ds = job.delivery_status ?? "not_ready";
+                        const cfg = DELIVERY_STATUS_CONFIG[ds] ?? DELIVERY_STATUS_CONFIG.not_ready;
+                        if (ds === "ready") {
+                          return (
+                            <Link to={`/admin/drone-jobs/${job.id}/delivery`}>
+                              <Badge className={`${cfg.color} cursor-pointer hover:opacity-80`}>
+                                <Send className="mr-1 h-3 w-3" />
+                                {cfg.label}
+                              </Badge>
+                            </Link>
+                          );
+                        }
+                        return (
+                          <div className="space-y-0.5">
+                            <Badge className={cfg.color}>{cfg.label}</Badge>
+                            {job.delivery_sent_at && (
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(job.delivery_sent_at), "MMM d")}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <div className="flex items-center gap-2">
                         {getQAIndicator(job.qa_score)}
