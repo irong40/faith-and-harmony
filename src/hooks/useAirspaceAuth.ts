@@ -79,6 +79,7 @@ export function useNearestAirspace(latitude: number | null, longitude: number | 
 
 /**
  * Fetch active TFRs near given coordinates (within 30 NM).
+ * Polls every 5 minutes to stay current with tfr_cache updates.
  */
 export function useActiveTfrs(latitude: number | null, longitude: number | null) {
   return useQuery({
@@ -113,7 +114,8 @@ export function useActiveTfrs(latitude: number | null, longitude: number | null)
         .sort((a, b) => a.distance_nm - b.distance_nm);
     },
     enabled: latitude != null && longitude != null,
-    staleTime: 10 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000, // Auto-refresh every 5 minutes
   });
 }
 

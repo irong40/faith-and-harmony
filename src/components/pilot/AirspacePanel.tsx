@@ -213,25 +213,73 @@ export default function AirspacePanel({
         </div>
       )}
 
-      {/* TFR Alerts */}
-      {tfrSummaries.length > 0 && (
+      {/* TFR Alerts — enhanced with full detail and FAA links */}
+      {(activeTfrs || []).length > 0 && (
         <Alert>
           <AlertTriangle className="h-4 w-4 text-amber-500" />
-          <AlertTitle>Active TFR{tfrSummaries.length > 1 ? 's' : ''} Nearby</AlertTitle>
+          <AlertTitle>Active TFR{(activeTfrs || []).length > 1 ? 's' : ''} Nearby</AlertTitle>
           <AlertDescription>
-            <div className="space-y-2 mt-2">
-              {tfrSummaries.map(tfr => (
-                <div key={tfr.notam_number} className="text-sm flex items-start gap-2">
-                  <Badge variant={tfr.status === 'active' ? 'destructive' : 'secondary'} className="text-xs shrink-0">
-                    {tfr.status}
-                  </Badge>
-                  <div>
-                    <span className="font-medium">{tfr.notam_number}</span>
-                    {tfr.description && <span className="text-muted-foreground"> — {tfr.description}</span>}
-                    <span className="text-muted-foreground"> ({tfr.distance_nm} NM)</span>
+            <div className="space-y-3 mt-2">
+              {(activeTfrs || []).map(tfr => {
+                const tfrFull = tfr as typeof tfr & {
+                  distance_nm: number;
+                  tfr_type: string | null;
+                  effective_start: string | null;
+                  effective_end: string | null;
+                  floor_ft: number | null;
+                  ceiling_ft: number | null;
+                  radius_nm: number | null;
+                };
+
+                return (
+                  <div key={tfrFull.notam_number} className="text-sm border rounded-lg p-2 space-y-1 bg-background">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={tfrFull.status === 'active' ? 'destructive' : 'secondary'} className="text-xs shrink-0">
+                          {tfrFull.status}
+                        </Badge>
+                        <span className="font-medium font-mono">{tfrFull.notam_number}</span>
+                        {tfrFull.tfr_type && (
+                          <Badge variant="outline" className="text-xs">{tfrFull.tfr_type}</Badge>
+                        )}
+                      </div>
+                      <a
+                        href={`https://tfr.faa.gov/tfr2/list.html`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary flex items-center gap-1 hover:underline shrink-0"
+                      >
+                        FAA <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+
+                    {tfrFull.description && (
+                      <p className="text-xs text-muted-foreground line-clamp-2">{tfrFull.description}</p>
+                    )}
+
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span>{tfrFull.distance_nm} NM away</span>
+                      {tfrFull.radius_nm != null && (
+                        <span>Radius: {tfrFull.radius_nm.toFixed(1)} NM</span>
+                      )}
+                      {tfrFull.floor_ft != null && tfrFull.ceiling_ft != null && (
+                        <span>{tfrFull.floor_ft}–{tfrFull.ceiling_ft} ft MSL</span>
+                      )}
+                    </div>
+
+                    {(tfrFull.effective_start || tfrFull.effective_end) && (
+                      <div className="text-xs text-muted-foreground">
+                        {tfrFull.effective_start && (
+                          <span>From: {new Date(tfrFull.effective_start).toLocaleString()}</span>
+                        )}
+                        {tfrFull.effective_end && (
+                          <span className="ml-2">Until: {new Date(tfrFull.effective_end).toLocaleString()}</span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </AlertDescription>
         </Alert>
