@@ -25,9 +25,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, RefreshCw, Plus, Eye, Camera, Calendar, CheckCircle, AlertTriangle, XCircle, Send } from "lucide-react";
+import { Search, RefreshCw, Plus, Eye, Camera, Calendar, CheckCircle, AlertTriangle, XCircle, Send, User } from "lucide-react";
 import { format } from "date-fns";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AdminNav from "./components/AdminNav";
 import DroneJobForm from "./components/DroneJobForm";
 import type { Database } from "@/integrations/supabase/types";
@@ -39,6 +39,11 @@ interface ProcessingTemplate {
   path_code: string | null;
   display_name: string | null;
   preset_name: string;
+}
+
+interface PilotOption {
+  id: string;
+  full_name: string | null;
 }
 
 interface DroneJob {
@@ -56,6 +61,7 @@ interface DroneJob {
   qa_score: number | null;
   created_at: string;
   client_id: string | null;
+  pilot_id: string | null;
   processing_template_id: string | null;
   delivery_status: string | null;
   delivery_sent_at: string | null;
@@ -64,6 +70,7 @@ interface DroneJob {
   drone_assets?: { id: string }[];
   clients?: { name: string; company: string | null } | null;
   processing_templates?: { path_code: string | null; display_name: string | null; preset_name: string } | null;
+  profiles?: { full_name: string | null } | null;
 }
 
 const DELIVERY_STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -91,27 +98,37 @@ const STATUS_CONFIG: Record<DroneJobStatus, { label: string; color: string }> = 
 export default function DroneJobs() {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [jobs, setJobs] = useState<DroneJob[]>([]);
   const [templates, setTemplates] = useState<ProcessingTemplate[]>([]);
+  const [pilots, setPilots] = useState<PilotOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [templateFilter, setTemplateFilter] = useState<string>("all");
+  const [pilotFilter, setPilotFilter] = useState<string>(searchParams.get("pilot") || "all");
+  const [deliveryFilter, setDeliveryFilter] = useState<string>(searchParams.get("delivery") || "all");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [deliveryFilter, setDeliveryFilter] = useState<string>("all");
 
   const fetchJobs = async () => {
     setLoading(true);
-    const [jobsRes, templatesRes] = await Promise.all([
+    const [jobsRes, templatesRes, pilotsRes] = await Promise.all([
       supabase
         .from("drone_jobs")
-        .select("*, customers(name, email), drone_packages(name, code, price), drone_assets(id), clients(name, company), processing_templates(path_code, display_name, preset_name), delivery_status, delivery_sent_at")
+        .select("*, customers(name, email), drone_packages(name, code, price), drone_assets(id), clients(name, company), processing_templates(path_code, display_name, preset_name), delivery_status, delivery_sent_at, pilot_id, profiles(full_name)")
         .order("created_at", { ascending: false }),
       supabase
         .from("processing_templates")
         .select("id, path_code, display_name, preset_name")
         .eq("active", true)
         .order("path_code"),
+      supabase
+        .from("profiles")
+        .select("id, full_name")
+        .not("full_name", "is", null)
+        .order("full_name"),
     ]);
 
     const { data, error } = jobsRes;
@@ -126,6 +143,7 @@ export default function DroneJobs() {
       setJobs(data || []);
     }
     if (templatesRes.data) setTemplates(templatesRes.data);
+    if (pilotsRes.data) setPilots(pilotsRes.data as PilotOption[]);
     setLoading(false);
   };
 
@@ -136,19 +154,28 @@ export default function DroneJobs() {
   const filteredJobs = jobs.filter((job) => {
     const searchLower = searchTerm.toLowerCase();
     const clientName = job.clients?.name || job.customers?.name || "";
+    const pilotName = job.profiles?.full_name || "";
     const matchesSearch =
       searchTerm === "" ||
       job.job_number.toLowerCase().includes(searchLower) ||
       job.property_address.toLowerCase().includes(searchLower) ||
-      clientName.toLowerCase().includes(searchLower);
+      clientName.toLowerCase().includes(searchLower) ||
+      pilotName.toLowerCase().includes(searchLower);
 
     const matchesStatus = statusFilter === "all" || job.status === statusFilter;
     const matchesTemplate =
       templateFilter === "all" || job.processing_template_id === templateFilter;
     const matchesDelivery =
       deliveryFilter === "all" || (job.delivery_status ?? "not_ready") === deliveryFilter;
+    const matchesPilot =
+      pilotFilter === "all" ||
+      (pilotFilter === "__unassigned__" ? !job.pilot_id : job.pilot_id === pilotFilter);
+    const matchesDateFrom =
+      !dateFrom || !job.scheduled_date || job.scheduled_date >= dateFrom;
+    const matchesDateTo =
+      !dateTo || !job.scheduled_date || job.scheduled_date <= dateTo;
 
-    return matchesSearch && matchesStatus && matchesTemplate && matchesDelivery;
+    return matchesSearch && matchesStatus && matchesTemplate && matchesDelivery && matchesPilot && matchesDateFrom && matchesDateTo;
   });
 
   const getStatusBadge = (status: DroneJobStatus) => {
@@ -256,19 +283,19 @@ export default function DroneJobs() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+        {/* Filters — Row 1 */}
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search by job #, address, or customer..."
+              placeholder="Search by job #, address, client, or pilot..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-48">
+            <SelectTrigger className="w-full sm:w-44">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
@@ -280,8 +307,25 @@ export default function DroneJobs() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={pilotFilter} onValueChange={setPilotFilter}>
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="Filter by pilot" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Pilots</SelectItem>
+              <SelectItem value="__unassigned__">Unassigned</SelectItem>
+              {pilots.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.full_name || "Unknown"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {/* Filters — Row 2 */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
           <Select value={templateFilter} onValueChange={setTemplateFilter}>
-            <SelectTrigger className="w-full sm:w-48">
+            <SelectTrigger className="w-full sm:w-44">
               <SelectValue placeholder="Filter by job type" />
             </SelectTrigger>
             <SelectContent>
@@ -294,7 +338,7 @@ export default function DroneJobs() {
             </SelectContent>
           </Select>
           <Select value={deliveryFilter} onValueChange={setDeliveryFilter}>
-            <SelectTrigger className="w-full sm:w-48">
+            <SelectTrigger className="w-full sm:w-44">
               <SelectValue placeholder="Filter by delivery" />
             </SelectTrigger>
             <SelectContent>
@@ -305,6 +349,23 @@ export default function DroneJobs() {
               <SelectItem value="not_ready">Not Ready</SelectItem>
             </SelectContent>
           </Select>
+          <div className="flex items-center gap-2">
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="w-full sm:w-36 text-sm"
+              title="From date"
+            />
+            <span className="text-muted-foreground text-sm shrink-0">to</span>
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="w-full sm:w-36 text-sm"
+              title="To date"
+            />
+          </div>
         </div>
 
         {/* Table */}
@@ -315,7 +376,8 @@ export default function DroneJobs() {
                 <TableHead>Job #</TableHead>
                 <TableHead>Property / Site</TableHead>
                 <TableHead className="hidden md:table-cell">Client</TableHead>
-                <TableHead className="hidden lg:table-cell">Job Type</TableHead>
+                <TableHead className="hidden lg:table-cell">Pilot</TableHead>
+                <TableHead className="hidden xl:table-cell">Job Type</TableHead>
                 <TableHead>Scheduled</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">Delivery</TableHead>
@@ -326,13 +388,13 @@ export default function DroneJobs() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8">
+                  <TableCell colSpan={10} className="text-center py-8">
                     <RefreshCw className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                   </TableCell>
                 </TableRow>
               ) : filteredJobs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                     No drone jobs found
                   </TableCell>
                 </TableRow>
@@ -356,6 +418,19 @@ export default function DroneJobs() {
                       {job.clients?.name || job.customers?.name || "—"}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
+                      {job.profiles?.full_name ? (
+                        <button
+                          onClick={() => setPilotFilter(job.pilot_id ?? "all")}
+                          className="flex items-center gap-1.5 text-sm hover:underline text-primary"
+                        >
+                          <User className="h-3.5 w-3.5 text-muted-foreground" />
+                          {job.profiles.full_name}
+                        </button>
+                      ) : (
+                        <span className="text-sm text-amber-600 font-medium">Unassigned</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="hidden xl:table-cell">
                       {job.processing_templates ? (
                         <span className="flex items-center gap-1.5 text-sm">
                           {job.processing_templates.path_code && (
