@@ -11,9 +11,10 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
 
-// Eager — auth
+// Eager — auth + landing
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import LandingPage from "./pages/LandingPage";
 
 // Lazy — tokenized client routes (no auth required)
 const CustomerProposal = lazy(() => import("./pages/CustomerProposal"));
@@ -60,11 +61,11 @@ const PageSpinner = () => (
   </div>
 );
 
-// Role-based redirect from root
+// Role-based redirect — logged-in users go to dashboard, guests see landing page
 function RootRedirect() {
   const { user, isAdmin, isPilot, loading } = useAuth();
   if (loading) return <PageSpinner />;
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!user) return <LandingPage />;
   if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
   if (isPilot) return <Navigate to="/pilot" replace />;
   return <Navigate to="/auth" replace />;

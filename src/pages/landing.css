@@ -1,0 +1,813 @@
+/* Landing Page — Sentinel Aerial Inspections */
+/* Scoped under .landing-page to avoid leaking into app */
+
+.landing-page {
+  --steel-gray: #4A5568;
+  --safety-orange: #FF6B35;
+  --deep-black: #050505;
+  --warm-white: #F0EDE8;
+  --gunmetal: #1C1C1C;
+  --gunmetal-light: #2A2D32;
+
+  font-family: 'Share Tech Mono', monospace;
+  background: var(--deep-black);
+  color: var(--warm-white);
+  line-height: 1.6;
+  position: relative;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Scanline + flicker overlays */
+@keyframes lp-scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+@keyframes lp-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.97; }
+}
+@keyframes lp-gridPulse {
+  0%, 100% { opacity: 0.03; }
+  50% { opacity: 0.08; }
+}
+@keyframes lp-fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes lp-slideInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes lp-slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes lp-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.landing-page .lp-scanline-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 107, 53, 0.03) 2px, rgba(255, 107, 53, 0.03) 4px);
+  pointer-events: none;
+  z-index: 1000;
+  animation: lp-flicker 3s infinite;
+}
+
+.landing-page .lp-scanline-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--safety-orange), transparent);
+  animation: lp-scanline 8s linear infinite;
+  pointer-events: none;
+  z-index: 1001;
+  opacity: 0.3;
+}
+
+.landing-page .lp-grid-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(rgba(255, 107, 53, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 107, 53, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: 0;
+  animation: lp-gridPulse 4s ease-in-out infinite;
+}
+
+.landing-page .lp-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 40px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Header */
+.landing-page .lp-header {
+  background: linear-gradient(180deg, rgba(28, 28, 28, 0.95) 0%, rgba(5, 5, 5, 0.9) 100%);
+  padding: 30px 0;
+  border-bottom: 1px solid var(--safety-orange);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  position: relative;
+  animation: lp-fadeInUp 0.6s ease-out;
+}
+
+.landing-page .lp-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 30px;
+}
+
+.landing-page .lp-logo-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.landing-page .lp-logo-section img {
+  height: 80px;
+  width: auto;
+  filter: drop-shadow(0 0 20px rgba(255, 107, 53, 0.3));
+  animation: lp-slideInLeft 0.8s ease-out;
+}
+
+.landing-page .lp-logo-text h1 {
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: 42px;
+  font-weight: 900;
+  color: var(--warm-white);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  text-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+  animation: lp-slideInLeft 0.8s ease-out;
+  margin: 0;
+}
+
+.landing-page .lp-logo-section .lp-subtitle {
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--steel-gray);
+  font-size: 11px;
+  margin-top: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.landing-page .lp-header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.landing-page .lp-login-link {
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--steel-gray);
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+
+.landing-page .lp-login-link:hover {
+  color: var(--safety-orange);
+}
+
+.landing-page .lp-veteran-badge {
+  background: var(--safety-orange);
+  color: var(--deep-black);
+  padding: 12px 24px;
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+  box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+  animation: lp-slideInRight 0.8s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-page .lp-veteran-badge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
+  animation: lp-shimmer 3s infinite;
+}
+
+/* Hero */
+.landing-page .lp-hero {
+  padding: 120px 0;
+  text-align: center;
+  background:
+    linear-gradient(180deg, rgba(5, 5, 5, 0.85) 0%, rgba(28, 28, 28, 0.9) 50%, rgba(5, 5, 5, 0.95) 100%),
+    url('/assets/landing/hero-banner.jpg') center center / cover no-repeat,
+    radial-gradient(ellipse at 50% 0%, rgba(255, 107, 53, 0.15) 0%, transparent 60%),
+    linear-gradient(180deg, #1C1C1C 0%, #050505 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-page .lp-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--safety-orange), transparent);
+  opacity: 0.5;
+}
+
+.landing-page .lp-hero h2 {
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: 72px;
+  font-weight: 900;
+  margin-bottom: 30px;
+  color: var(--warm-white);
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  text-shadow: 0 0 40px rgba(255, 107, 53, 0.3);
+  animation: lp-fadeInUp 1s ease-out 0.2s backwards;
+  line-height: 1.1;
+}
+
+.landing-page .lp-hero h2 span {
+  display: block;
+  font-size: 48px;
+  color: var(--safety-orange);
+  margin-top: 10px;
+}
+
+.landing-page .lp-hero p {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 16px;
+  color: var(--steel-gray);
+  max-width: 900px;
+  margin: 0 auto 50px;
+  line-height: 1.9;
+  letter-spacing: 0.5px;
+  animation: lp-fadeInUp 1s ease-out 0.4s backwards;
+}
+
+.landing-page .lp-cta-button {
+  display: inline-block;
+  background: var(--safety-orange);
+  color: var(--deep-black);
+  padding: 20px 50px;
+  text-decoration: none;
+  font-family: 'Saira Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 20px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  clip-path: polygon(15px 0, 100% 0, calc(100% - 15px) 100%, 0 100%);
+  transition: all 0.3s ease;
+  box-shadow: 0 0 30px rgba(255, 107, 53, 0.4);
+  position: relative;
+  overflow: hidden;
+  animation: lp-fadeInUp 1s ease-out 0.6s backwards;
+  border: none;
+  cursor: pointer;
+}
+
+.landing-page .lp-cta-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.landing-page .lp-cta-button:hover::before {
+  left: 100%;
+}
+
+.landing-page .lp-cta-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 40px rgba(255, 107, 53, 0.6);
+}
+
+/* Section title */
+.landing-page .lp-section-title {
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: 56px;
+  font-weight: 900;
+  text-align: center;
+  margin-bottom: 80px;
+  color: var(--warm-white);
+  position: relative;
+  padding-bottom: 30px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.landing-page .lp-section-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--safety-orange), transparent);
+}
+
+/* Services */
+.landing-page .lp-services {
+  padding: 100px 0;
+  background: var(--deep-black);
+  position: relative;
+}
+
+.landing-page .lp-services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 40px;
+}
+
+.landing-page .lp-service-card {
+  background: linear-gradient(135deg, rgba(28, 28, 28, 0.9) 0%, rgba(42, 45, 50, 0.6) 100%);
+  padding: 50px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  transition: all 0.4s ease;
+}
+
+.landing-page .lp-service-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 0;
+  background: var(--safety-orange);
+  transition: height 0.4s ease;
+}
+
+.landing-page .lp-service-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 4px;
+  background: var(--safety-orange);
+  transition: width 0.4s ease 0.2s;
+}
+
+.landing-page .lp-service-card:hover::before {
+  height: 100%;
+}
+
+.landing-page .lp-service-card:hover::after {
+  width: 100%;
+}
+
+.landing-page .lp-service-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--safety-orange);
+  box-shadow: 0 8px 40px rgba(255, 107, 53, 0.3);
+}
+
+.landing-page .lp-service-card h3 {
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: 32px;
+  font-weight: 900;
+  margin-bottom: 20px;
+  color: var(--warm-white);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.landing-page .lp-service-card h3::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 2px;
+  background: var(--safety-orange);
+  margin-top: 15px;
+}
+
+.landing-page .lp-service-card p {
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--steel-gray);
+  line-height: 1.8;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+}
+
+/* Equipment */
+.landing-page .lp-equipment {
+  padding: 100px 0;
+  background: linear-gradient(180deg, var(--deep-black) 0%, var(--gunmetal-light) 100%);
+}
+
+.landing-page .lp-equipment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 40px;
+  margin-top: 60px;
+}
+
+.landing-page .lp-equipment-item {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  transition: all 0.4s ease;
+}
+
+.landing-page .lp-equipment-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(5, 5, 5, 0.8) 100%);
+  z-index: 1;
+  transition: opacity 0.4s ease;
+}
+
+.landing-page .lp-equipment-item:hover::before {
+  opacity: 0.6;
+}
+
+.landing-page .lp-equipment-item:hover {
+  border-color: var(--safety-orange);
+  box-shadow: 0 8px 40px rgba(255, 107, 53, 0.3);
+  transform: scale(1.02);
+}
+
+.landing-page .lp-equipment-item img {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+  display: block;
+}
+
+.landing-page .lp-equipment-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 30px;
+  z-index: 2;
+}
+
+.landing-page .lp-equipment-caption h3 {
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--warm-white);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.landing-page .lp-equipment-caption p {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  color: var(--steel-gray);
+  letter-spacing: 0.5px;
+}
+
+/* Portfolio */
+.landing-page .lp-portfolio {
+  padding: 100px 0;
+  background: linear-gradient(180deg, var(--deep-black) 0%, var(--gunmetal) 50%, var(--deep-black) 100%);
+}
+
+.landing-page .lp-portfolio-content {
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.landing-page .lp-portfolio-content p {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 15px;
+  color: var(--steel-gray);
+  margin-bottom: 50px;
+  line-height: 1.9;
+  letter-spacing: 0.5px;
+}
+
+/* About */
+.landing-page .lp-about {
+  padding: 100px 0;
+  background: var(--deep-black);
+}
+
+.landing-page .lp-about-content {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.landing-page .lp-about-content h3 {
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: 38px;
+  font-weight: 900;
+  margin-bottom: 30px;
+  color: var(--safety-orange);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.landing-page .lp-about-content p {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;
+  color: var(--steel-gray);
+  margin-bottom: 25px;
+  line-height: 1.9;
+  letter-spacing: 0.3px;
+}
+
+.landing-page .lp-features-list {
+  list-style: none;
+  margin-top: 50px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.landing-page .lp-features-list li {
+  padding: 20px 20px 20px 50px;
+  position: relative;
+  color: var(--warm-white);
+  font-size: 14px;
+  font-family: 'Share Tech Mono', monospace;
+  background: rgba(28, 28, 28, 0.5);
+  border-left: 2px solid var(--safety-orange);
+  transition: all 0.3s ease;
+}
+
+.landing-page .lp-features-list li:hover {
+  background: rgba(42, 45, 50, 0.7);
+  transform: translateX(5px);
+}
+
+.landing-page .lp-features-list li::before {
+  content: '\25B8';
+  position: absolute;
+  left: 20px;
+  color: var(--safety-orange);
+  font-size: 18px;
+}
+
+/* Vets to Drones */
+.landing-page .lp-vets {
+  padding: 100px 0;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(255, 107, 53, 0.1) 0%, transparent 70%),
+    var(--gunmetal);
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-page .lp-vets::before,
+.landing-page .lp-vets::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--safety-orange), transparent);
+}
+
+.landing-page .lp-vets::before { top: 0; }
+.landing-page .lp-vets::after { bottom: 0; }
+
+.landing-page .lp-vets-content {
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.landing-page .lp-vets-content h2 {
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: 56px;
+  font-weight: 900;
+  margin-bottom: 30px;
+  color: var(--warm-white);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.landing-page .lp-vets-content h2 span {
+  color: var(--safety-orange);
+}
+
+.landing-page .lp-vets-subtitle {
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--safety-orange);
+  margin-bottom: 40px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.landing-page .lp-vets-content p {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;
+  color: var(--steel-gray);
+  margin-bottom: 25px;
+  line-height: 1.9;
+  letter-spacing: 0.3px;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.landing-page .lp-vets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+  margin-top: 60px;
+  margin-bottom: 60px;
+}
+
+.landing-page .lp-vets-card {
+  background: rgba(28, 28, 28, 0.8);
+  padding: 40px 30px;
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.landing-page .lp-vets-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--safety-orange);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.landing-page .lp-vets-card:hover::before {
+  transform: scaleX(1);
+}
+
+.landing-page .lp-vets-card:hover {
+  border-color: var(--safety-orange);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(255, 107, 53, 0.3);
+}
+
+.landing-page .lp-vets-card h3 {
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--safety-orange);
+  margin-bottom: 20px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.landing-page .lp-vets-card p {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: var(--steel-gray);
+  line-height: 1.8;
+  letter-spacing: 0.3px;
+  margin-bottom: 0;
+}
+
+.landing-page .lp-vets-cta {
+  margin-top: 50px;
+}
+
+.landing-page .lp-vets-cta p {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 15px;
+  color: var(--warm-white);
+  margin-bottom: 30px;
+  letter-spacing: 0.5px;
+}
+
+/* Contact */
+.landing-page .lp-contact {
+  padding: 100px 0;
+  background: linear-gradient(180deg, var(--deep-black) 0%, var(--gunmetal-light) 100%);
+  text-align: center;
+  position: relative;
+}
+
+.landing-page .lp-contact::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--safety-orange), transparent);
+}
+
+.landing-page .lp-contact-subtitle {
+  color: var(--steel-gray);
+  font-size: 15px;
+  margin-bottom: 30px;
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 0.5px;
+}
+
+.landing-page .lp-contact-info {
+  display: flex;
+  justify-content: center;
+  gap: 80px;
+  flex-wrap: wrap;
+  margin-top: 50px;
+}
+
+.landing-page .lp-contact-item {
+  position: relative;
+  padding: 30px;
+  background: rgba(28, 28, 28, 0.6);
+  border: 1px solid rgba(255, 107, 53, 0.2);
+  min-width: 250px;
+}
+
+.landing-page .lp-contact-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--safety-orange);
+}
+
+.landing-page .lp-contact-item h4 {
+  color: var(--safety-orange);
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: 18px;
+  font-weight: 900;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.landing-page .lp-contact-item p {
+  color: var(--warm-white);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+}
+
+.landing-page .lp-contact-item a {
+  color: var(--warm-white);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.landing-page .lp-contact-item a:hover {
+  color: var(--safety-orange);
+}
+
+/* Footer */
+.landing-page .lp-footer {
+  background: var(--deep-black);
+  padding: 50px 0;
+  text-align: center;
+  border-top: 1px solid var(--safety-orange);
+}
+
+.landing-page .lp-footer p {
+  color: var(--steel-gray);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  line-height: 2;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .landing-page .lp-logo-section {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
+  }
+  .landing-page .lp-logo-section img { height: 60px; }
+  .landing-page .lp-hero h2 { font-size: 48px; }
+  .landing-page .lp-hero h2 span { font-size: 32px; }
+  .landing-page .lp-hero p { font-size: 14px; }
+  .landing-page .lp-services-grid { grid-template-columns: 1fr; }
+  .landing-page .lp-equipment-grid { grid-template-columns: 1fr; }
+  .landing-page .lp-contact-info { flex-direction: column; gap: 30px; }
+  .landing-page .lp-logo-text h1 { font-size: 28px; }
+  .landing-page .lp-section-title { font-size: 38px; }
+  .landing-page .lp-features-list { grid-template-columns: 1fr; }
+  .landing-page .lp-vets-content h2 { font-size: 38px; }
+}
