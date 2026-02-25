@@ -10,7 +10,7 @@ interface PortalRequest {
   action: 'validate' | 'get-download-url' | 'get-gallery' | 'get-model-url' | 'confirm-receipt';
   token: string;
   deliverable_id?: string;
-  asset_type?: 'model' | 'ortho';
+  asset_type?: string;
 }
 
 serve(async (req: Request) => {
@@ -19,7 +19,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { action, token, deliverable_id } = await req.json() as PortalRequest;
+    const { action, token, deliverable_id, asset_type } = await req.json() as PortalRequest;
 
     if (!token) {
       return new Response(
@@ -189,7 +189,7 @@ serve(async (req: Request) => {
     }
 
     if (action === 'get-model-url') {
-      const type = (await req.json() as any).asset_type || 'model'; // 'model' or 'ortho'
+      const type = asset_type || 'model';
 
       const path = type === 'ortho' ? job.orthophoto_path : job.model_file_path;
 

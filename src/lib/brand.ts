@@ -13,7 +13,7 @@ export const BRAND = {
   tagline: "Veteran-owned aerial inspection services in Hampton Roads, Virginia.",
   email: "info@sentinelaerial.com",
   emailPayment: "faithandharmonyllc@gmail.com",
-  phone: "(757) 555-0199", // Update with actual phone
+  phone: "(757) 609-3268",
   website: "sentinelaerial.com",
   location: "Hampton Roads, Virginia",
 

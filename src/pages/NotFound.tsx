@@ -1,14 +1,16 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const NotFound = () => {
   const location = useLocation();
 
   useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
+    // Fire-and-forget 404 tracking
+    supabase.from("activity_events").insert({
+      event_type: "navigation.404",
+      description: `404: ${location.pathname}`,
+    }).then(() => {});
   }, [location.pathname]);
 
   return (

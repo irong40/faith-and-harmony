@@ -1,8 +1,9 @@
 // ============================================
 // AUDIT LOGGING UTILITY
 // ============================================
-// Simple audit logging for tracking admin actions
-// Can be enhanced later with dedicated audit_logs table
+// Routes audit events through activity_events table
+
+import { supabase } from "@/integrations/supabase/client";
 
 export interface AuditLogEvent {
   action: 'created' | 'updated' | 'deleted';
@@ -14,24 +15,22 @@ export interface AuditLogEvent {
 }
 
 /**
- * Log an audit event
- * Currently logs to console - can be extended to write to database
+ * Log an audit event to activity_events table (fire-and-forget)
  */
 export async function logAuditEvent(event: AuditLogEvent): Promise<void> {
-  const timestamp = new Date().toISOString();
-  
-  console.log(`[AUDIT] ${timestamp} | ${event.action.toUpperCase()} on ${event.tableName}:${event.recordId}`);
-  
-  if (event.notes) {
-    console.log(`[AUDIT] Notes: ${event.notes}`);
-  }
-  
-  if (event.changesBefore) {
-    console.log(`[AUDIT] Before:`, event.changesBefore);
-  }
-  
-  if (event.changesAfter) {
-    console.log(`[AUDIT] After:`, event.changesAfter);
+  try {
+    await supabase.from("activity_events").insert({
+      event_type: `audit.${event.action}`,
+      description: `${event.action.toUpperCase()} on ${event.tableName}:${event.recordId}${event.notes ? ` — ${event.notes}` : ""}`,
+      metadata: {
+        table: event.tableName,
+        record_id: event.recordId,
+        before: event.changesBefore ?? null,
+        after: event.changesAfter ?? null,
+      },
+    });
+  } catch {
+    // Fire-and-forget — don't break the calling flow
   }
 }
 
