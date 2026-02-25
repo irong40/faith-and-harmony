@@ -28,7 +28,7 @@ export interface ChecklistData {
 
 export interface PreFlightData {
     equipment: { id: string; aircraft_model: string } | null;
-    weatherLog: { id: string; determination: string; station: string } | null;
+    weatherLog: { id: string; determination: string; station: string; briefing_timestamp: string } | null;
     authorization: { id: string; airspace_class: string; requires_laanc: boolean } | null;
 }
 

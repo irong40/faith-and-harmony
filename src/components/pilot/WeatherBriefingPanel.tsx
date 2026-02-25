@@ -11,6 +11,7 @@ import {
   CheckCircle2, AlertTriangle, XCircle, RefreshCw,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { useWeatherThresholds, useMissionWeatherLog, useCreateWeatherBriefing } from '@/hooks/useWeatherBriefing';
 import { evaluateWeather } from '@/lib/weather-evaluation';
 import { parseOrNull, extractCeiling } from '@/lib/metar-utils';
@@ -24,7 +25,7 @@ interface WeatherBriefingPanelProps {
   latitude: number | null;
   longitude: number | null;
   nearestStation: string | null;
-  onDetermination: (data: { id: string; determination: string; station: string }) => void;
+  onDetermination: (data: { id: string; determination: string; station: string; briefing_timestamp: string }) => void;
 }
 
 const DETERMINATION_CONFIG: Record<WeatherDetermination, { label: string; color: string; icon: typeof CheckCircle2 }> = {
@@ -51,6 +52,7 @@ export default function WeatherBriefingPanel({
   onDetermination,
 }: WeatherBriefingPanelProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const station = nearestStation || 'KORF'; // Default to Norfolk
   const { data: thresholds } = useWeatherThresholds(aircraftModel, packageCode);
@@ -79,6 +81,26 @@ export default function WeatherBriefingPanel({
   const [showOverride, setShowOverride] = useState(false);
   const [overrideReason, setOverrideReason] = useState('');
 
+  // Re-render ticker for stale detection (updates every 30 seconds)
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  /** Returns age of the saved briefing in minutes, or null if not saved */
+  const savedBriefingAgeMinutes = savedLog
+    ? (Date.now() - new Date(savedLog.briefing_timestamp).getTime()) / 60_000
+    : null;
+
+  /** METAR is stale (> 30 min) — blocks checklist advancement */
+  const isMetarStale = savedBriefingAgeMinutes != null && savedBriefingAgeMinutes > 30;
+
+  /** METAR is in caution zone (15-30 min) — warn but allow proceed */
+  const isMetarCaution = savedBriefingAgeMinutes != null
+    && savedBriefingAgeMinutes >= 15
+    && savedBriefingAgeMinutes <= 30;
+
   // Notify parent of saved log
   useEffect(() => {
     if (savedLog) {
@@ -86,6 +108,7 @@ export default function WeatherBriefingPanel({
         id: savedLog.id,
         determination: savedLog.determination,
         station: savedLog.metar_station || station,
+        briefing_timestamp: savedLog.briefing_timestamp,
       });
     }
   }, [savedLog]);
@@ -189,6 +212,7 @@ export default function WeatherBriefingPanel({
         id: result.id,
         determination: result.determination,
         station,
+        briefing_timestamp: result.briefing_timestamp,
       });
 
       toast({ title: 'Weather briefing saved' });
@@ -210,6 +234,28 @@ export default function WeatherBriefingPanel({
       <div className="space-y-3">
         {/* METAR age indicator — prominent in header */}
         <MetarAgeIndicator observationTime={savedLog.briefing_timestamp} />
+
+        {/* Stale gate: block advancement when > 30 min */}
+        {isMetarStale && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Weather Data Stale</AlertTitle>
+            <AlertDescription>
+              Weather data is over 30 minutes old. Refresh required before proceeding.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Caution: 15-30 min — warn but allow */}
+        {isMetarCaution && !isMetarStale && (
+          <Alert>
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
+            <AlertTitle>Weather Data Aging</AlertTitle>
+            <AlertDescription>
+              Weather is {Math.round(savedBriefingAgeMinutes!)} minutes old. Consider refreshing before flight.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="flex items-center gap-3">
           <Badge className={`text-lg px-3 py-1 ${config.color}`}>
@@ -253,6 +299,20 @@ export default function WeatherBriefingPanel({
             </div>
           )}
         </div>
+
+        {/* Refresh Weather button — always available, required when stale */}
+        <Button
+          variant={isMetarStale ? 'default' : 'outline'}
+          size="sm"
+          className="w-full"
+          onClick={() => {
+            // Invalidate saved log so WeatherBriefingPanel resets to fetch mode
+            queryClient.removeQueries({ queryKey: ['mission-weather-log', missionId] });
+          }}
+        >
+          <RefreshCw className="mr-2 h-3 w-3" />
+          {isMetarStale ? 'Refresh Weather (Required)' : 'Re-check Weather'}
+        </Button>
       </div>
     );
   }

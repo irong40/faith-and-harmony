@@ -60,7 +60,7 @@ export default function PreFlightAccordion({
     notifyParent(equipment, auth, weatherLog);
   };
 
-  const handleWeatherDetermination = (data: { id: string; determination: string; station: string }) => {
+  const handleWeatherDetermination = (data: { id: string; determination: string; station: string; briefing_timestamp: string }) => {
     const wx = data;
     setWeatherLog(wx);
     notifyParent(equipment, authorization, wx);
@@ -69,7 +69,19 @@ export default function PreFlightAccordion({
   // Status indicators
   const equipmentStatus = equipment ? 'complete' : 'pending';
   const airspaceStatus = authorization ? 'complete' : 'pending';
-  const weatherStatus = !equipment ? 'locked' : weatherLog ? 'complete' : 'pending';
+
+  // Weather is stale if briefing timestamp exists and is > 30 min old
+  const weatherIsStale = weatherLog?.briefing_timestamp
+    ? (Date.now() - new Date(weatherLog.briefing_timestamp).getTime()) / 60_000 > 30
+    : false;
+
+  const weatherStatus = !equipment
+    ? 'locked'
+    : weatherLog && !weatherIsStale
+    ? 'complete'
+    : weatherLog && weatherIsStale
+    ? 'pending'  // Stale — needs re-check
+    : 'pending';
 
   const StatusIcon = ({ status }: { status: 'complete' | 'pending' | 'locked' }) => {
     if (status === 'complete') return <CheckCircle2 className="h-4 w-4 text-green-500" />;
@@ -133,7 +145,7 @@ export default function PreFlightAccordion({
             <StatusIcon status={weatherStatus} />
             <Cloud className="h-4 w-4" />
             <span className="font-medium">Weather Briefing</span>
-            {weatherLog && (
+            {weatherLog && !weatherIsStale && (
               <Badge
                 variant="secondary"
                 className={`text-xs ${
@@ -145,6 +157,11 @@ export default function PreFlightAccordion({
                 }`}
               >
                 {weatherLog.determination}
+              </Badge>
+            )}
+            {weatherLog && weatherIsStale && (
+              <Badge variant="outline" className="text-xs text-red-600 border-red-300">
+                STALE — Refresh Required
               </Badge>
             )}
             {weatherStatus === 'locked' && (
