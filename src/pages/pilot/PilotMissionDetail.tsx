@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,10 +68,10 @@ export default function PilotMissionDetail() {
     const hasWeather = !!preFlightData.weatherLog;
 
     // Refresh tick so GatekeeperButton re-evaluates stale state every 30s
-    useState(() => {
+    useEffect(() => {
         const interval = setInterval(() => setAgeTick(t => t + 1), 30_000);
         return () => clearInterval(interval);
-    });
+    }, []);
 
     // Completed mission data (only fetched when mission is complete)
     const isComplete = mission?.status === "complete";
