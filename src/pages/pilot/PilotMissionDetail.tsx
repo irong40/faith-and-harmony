@@ -20,6 +20,7 @@ import GatekeeperButton from "@/components/pilot/GatekeeperButton";
 import PreFlightAccordion from "@/components/pilot/PreFlightAccordion";
 import { getCertificationStatus } from "@/types/pilot";
 import type { ChecklistData, PreFlightData } from "@/types/pilot";
+import { logChecklistComplete, logFinalWeatherGate } from "@/lib/safety-audit";
 import { usePilotMission } from "@/hooks/usePilotMissions";
 import { useMissionEquipment } from "@/hooks/useMissionEquipment";
 import { useMissionWeatherLog } from "@/hooks/useWeatherBriefing";
@@ -127,6 +128,14 @@ export default function PilotMissionDetail() {
                 variant: 'destructive',
             });
             return;
+        }
+
+        // Safety audit: log that final weather gate passed
+        if (currentAgeMinutes != null) {
+            void logFinalWeatherGate(mission.id, user.id, {
+                ageMinutes: currentAgeMinutes,
+                determination: preFlightData.weatherLog?.determination || 'unknown',
+            });
         }
 
         setLogging(true);
@@ -420,6 +429,14 @@ export default function PilotMissionDetail() {
                                 onComplete={(data) => {
                                     setChecklistComplete(true);
                                     setChecklistData(data);
+                                    // Safety audit: log checklist completion
+                                    if (user) {
+                                        const itemCount = Object.keys(data.items || {}).length;
+                                        void logChecklistComplete(mission.id, user.id, {
+                                            itemCount,
+                                            weatherDetermination: preFlightData.weatherLog?.determination,
+                                        });
+                                    }
                                 }}
                                 onIncomplete={() => {
                                     setChecklistComplete(false);

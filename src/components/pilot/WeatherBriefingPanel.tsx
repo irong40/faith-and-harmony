@@ -17,6 +17,8 @@ import { evaluateWeather } from '@/lib/weather-evaluation';
 import { parseOrNull, extractCeiling } from '@/lib/metar-utils';
 import type { WeatherDetermination } from '@/types/weather';
 import MetarAgeIndicator from './MetarAgeIndicator';
+import { logWeatherBriefing, logWeatherRefresh } from '@/lib/safety-audit';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface WeatherBriefingPanelProps {
   missionId: string;
@@ -53,6 +55,7 @@ export default function WeatherBriefingPanel({
 }: WeatherBriefingPanelProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const station = nearestStation || 'KORF'; // Default to Norfolk
   const { data: thresholds } = useWeatherThresholds(aircraftModel, packageCode);
@@ -233,6 +236,16 @@ export default function WeatherBriefingPanel({
         briefing_timestamp: result.briefing_timestamp,
       });
 
+      // Safety audit: log weather briefing (or override)
+      if (user) {
+        void logWeatherBriefing(missionId, user.id, {
+          determination: result.determination,
+          station,
+          isOverride: pilotOverride,
+          overrideReason: pilotOverride ? overrideReason : null,
+        });
+      }
+
       toast({ title: 'Weather briefing saved' });
     } catch (error: any) {
       toast({
@@ -324,6 +337,13 @@ export default function WeatherBriefingPanel({
           size="sm"
           className="w-full"
           onClick={() => {
+            // Safety audit: log weather refresh
+            if (user && savedBriefingAgeMinutes != null) {
+              void logWeatherRefresh(missionId, user.id, {
+                station: savedLog.metar_station || station,
+                previousAgeMinutes: savedBriefingAgeMinutes,
+              });
+            }
             // Invalidate saved log so WeatherBriefingPanel resets to fetch mode
             queryClient.removeQueries({ queryKey: ['mission-weather-log', missionId] });
           }}

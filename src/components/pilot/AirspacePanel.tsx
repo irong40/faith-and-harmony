@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, Shield, AlertTriangle, CheckCircle2, MapPin, Info, Clock, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   useNearestAirspace,
   useActiveTfrs,
@@ -12,6 +13,7 @@ import {
   useTfrFreshness,
 } from '@/hooks/useAirspaceAuth';
 import type { TfrSummary } from '@/types/authorization';
+import { logTfrReview } from '@/lib/safety-audit';
 
 interface AirspacePanelProps {
   missionId: string;
@@ -35,6 +37,7 @@ export default function AirspacePanel({
   onAuthorizationReady,
 }: AirspacePanelProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: nearestAirspace, isLoading: loadingAirspace } = useNearestAirspace(latitude, longitude);
   const { data: activeTfrs, isLoading: loadingTfrs } = useActiveTfrs(latitude, longitude);
@@ -141,6 +144,15 @@ export default function AirspacePanel({
         airspace_class: airspaceClass,
         requires_laanc: requiresLaanc,
       });
+
+      // Safety audit: log TFR review
+      if (user) {
+        void logTfrReview(missionId, user.id, {
+          airspaceClass,
+          requiresLaanc,
+          activeTfrCount: tfrSummaries.length,
+        });
+      }
 
       toast({ title: 'Airspace check confirmed' });
     } catch (error: any) {
