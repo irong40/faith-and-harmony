@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Shield, AlertTriangle, CheckCircle2, MapPin, Info } from 'lucide-react';
+import { Loader2, Shield, AlertTriangle, CheckCircle2, MapPin, Info, Clock, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   useNearestAirspace,
   useActiveTfrs,
   useMissionAuthorization,
   useSaveMissionAuthorization,
+  useTfrFreshness,
 } from '@/hooks/useAirspaceAuth';
 import type { TfrSummary } from '@/types/authorization';
 
@@ -38,6 +39,7 @@ export default function AirspacePanel({
   const { data: nearestAirspace, isLoading: loadingAirspace } = useNearestAirspace(latitude, longitude);
   const { data: activeTfrs, isLoading: loadingTfrs } = useActiveTfrs(latitude, longitude);
   const { data: savedAuth, isLoading: loadingSaved } = useMissionAuthorization(missionId);
+  const { data: tfrFreshness } = useTfrFreshness();
   const saveMutation = useSaveMissionAuthorization();
 
   // Notify parent of saved auth
@@ -233,6 +235,67 @@ export default function AirspacePanel({
             </div>
           </AlertDescription>
         </Alert>
+      )}
+
+      {/* TFR Data Freshness */}
+      {tfrFreshness && (
+        <div className={`p-3 rounded-lg border text-sm ${
+          tfrFreshness.tier === 'fresh'
+            ? 'bg-green-500/10 border-green-500/20'
+            : tfrFreshness.tier === 'warning'
+            ? 'bg-amber-500/10 border-amber-500/20'
+            : tfrFreshness.tier === 'stale'
+            ? 'bg-red-500/10 border-red-500/20'
+            : 'bg-muted/50'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 font-medium">
+              <Clock className="h-4 w-4" />
+              <span>TFR Data</span>
+              <Badge
+                variant="outline"
+                className={
+                  tfrFreshness.tier === 'fresh'
+                    ? 'text-green-600 border-green-500'
+                    : tfrFreshness.tier === 'warning'
+                    ? 'text-amber-600 border-amber-500'
+                    : 'text-red-600 border-red-500'
+                }
+              >
+                {tfrFreshness.tier === 'fresh' && 'Current'}
+                {tfrFreshness.tier === 'warning' && 'Aging'}
+                {tfrFreshness.tier === 'stale' && 'Stale'}
+                {tfrFreshness.tier === 'unknown' && 'Unknown'}
+              </Badge>
+            </div>
+            <a
+              href="https://tfr.faa.gov"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground flex items-center gap-1 hover:text-foreground"
+            >
+              tfr.faa.gov <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+          {tfrFreshness.lastRefreshed ? (
+            <p className="text-xs text-muted-foreground mt-1">
+              Last refreshed:{' '}
+              {tfrFreshness.ageMinutes != null
+                ? tfrFreshness.ageMinutes < 1
+                  ? 'just now'
+                  : `${Math.round(tfrFreshness.ageMinutes)} min ago`
+                : 'unknown'}
+              {' '}({new Date(tfrFreshness.lastRefreshed).toLocaleTimeString()})
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-1">No TFR data available</p>
+          )}
+          {tfrFreshness.tier === 'stale' && (
+            <p className="text-xs text-red-600 font-medium mt-1">
+              TFR data is over 1 hour old. Verify at tfr.faa.gov before flight.
+            </p>
+          )}
+        </div>
       )}
 
       {/* Coordinates */}

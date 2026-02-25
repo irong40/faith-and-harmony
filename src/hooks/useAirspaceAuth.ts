@@ -6,6 +6,39 @@ import type { AirspaceGrid, TfrCache, MissionAuthorization, TfrSummary } from '@
 import type { Json } from '@/integrations/supabase/types';
 
 /**
+ * Returns the age of the most recently fetched TFR record in minutes, plus a freshness tier.
+ * Used for pre-flight TFR freshness indicator.
+ */
+export function useTfrFreshness() {
+  return useQuery({
+    queryKey: ['tfr-freshness'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tfr_cache')
+        .select('fetched_at')
+        .order('fetched_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) return { lastRefreshed: null, ageMinutes: null, tier: 'unknown' as const };
+
+      const lastRefreshed = new Date(data.fetched_at);
+      const ageMinutes = (Date.now() - lastRefreshed.getTime()) / 60000;
+
+      let tier: 'fresh' | 'warning' | 'stale' | 'unknown';
+      if (ageMinutes < 45) tier = 'fresh';
+      else if (ageMinutes < 90) tier = 'warning';
+      else tier = 'stale';
+
+      return { lastRefreshed: data.fetched_at, ageMinutes, tier };
+    },
+    refetchInterval: 5 * 60 * 1000, // Re-check every 5 minutes
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
  * Fetch all airspace grids and find the nearest to given coordinates.
  * Returns the closest grid within 15 NM, or null.
  */
