@@ -5,12 +5,15 @@ import N8nHealthIndicator from "@/components/pipeline/N8nHealthIndicator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Activity, 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock, 
-  FileText, 
+import { Link } from "react-router-dom";
+import { format } from "date-fns";
+import {
+  Activity,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  FileText,
+  Send,
   Server,
   XCircle
 } from "lucide-react";
@@ -45,6 +48,33 @@ export default function Dashboard() {
       const { data, error } = await supabase
         .from("maintenance_logs")
         .select("*");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Delivery widgets
+  const { data: pendingDeliveries, isLoading: deliveriesLoading } = useQuery({
+    queryKey: ["pending-deliveries"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("drone_jobs")
+        .select("id")
+        .eq("delivery_status", "ready");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: recentDeliveries, isLoading: recentDeliveriesLoading } = useQuery({
+    queryKey: ["recent-deliveries"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("drone_jobs")
+        .select("id, job_number, site_address, property_address, delivery_sent_at, clients(name), customers(name)")
+        .eq("delivery_status", "sent")
+        .order("delivery_sent_at", { ascending: false })
+        .limit(5);
       if (error) throw error;
       return data;
     },
@@ -97,6 +127,7 @@ export default function Dashboard() {
   };
 
   const isLoading = appsLoading || ticketsLoading || logsLoading;
+  const pendingDeliveryCount = pendingDeliveries?.length ?? 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -322,6 +353,85 @@ export default function Dashboard() {
               ) : (
                 <p className="text-muted-foreground text-center py-8">
                   No maintenance logs recorded yet
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Delivery Section */}
+        <div className="grid gap-6 lg:grid-cols-2 mt-6">
+          {/* Pending Deliveries Card */}
+          <Link
+            to="/admin/drone-jobs?delivery=ready"
+            className="block"
+          >
+            <Card className="hover:border-blue-400 transition-colors cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Pending Deliveries</CardTitle>
+                <Send className="h-4 w-4 text-blue-500" />
+              </CardHeader>
+              <CardContent>
+                {deliveriesLoading ? (
+                  <Skeleton className="h-8 w-16" />
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold text-blue-600">
+                      {pendingDeliveryCount}
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {pendingDeliveryCount === 1 ? "job ready to send" : "jobs ready to send"}
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* Recent Deliveries Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                Recent Deliveries
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {recentDeliveriesLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-10 w-full" />
+                  ))}
+                </div>
+              ) : recentDeliveries && recentDeliveries.length > 0 ? (
+                <div className="space-y-2">
+                  {recentDeliveries.map((job) => (
+                    <div
+                      key={job.id}
+                      className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div>
+                        <Link
+                          to={`/admin/drone-jobs/${job.id}/delivery`}
+                          className="font-mono text-sm font-medium hover:underline text-primary"
+                        >
+                          {job.job_number}
+                        </Link>
+                        <p className="text-xs text-muted-foreground">
+                          {(job as any).clients?.name || (job as any).customers?.name || "—"} &bull; {job.site_address || job.property_address}
+                        </p>
+                      </div>
+                      {job.delivery_sent_at && (
+                        <span className="text-xs text-muted-foreground shrink-0 ml-2">
+                          {format(new Date(job.delivery_sent_at), "MMM d")}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4 text-sm">
+                  No recent deliveries
                 </p>
               )}
             </CardContent>
