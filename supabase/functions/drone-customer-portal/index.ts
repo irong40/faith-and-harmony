@@ -52,6 +52,7 @@ serve(async (req: Request) => {
         orthophoto_path,
         package_id,
         customer_id,
+        client_id,
         drone_packages:package_id (
           name,
           description,
@@ -60,6 +61,10 @@ serve(async (req: Request) => {
         customers:customer_id (
           name,
           company_name
+        ),
+        clients:client_id (
+          name,
+          company
         )
       `)
       .eq('delivery_token', token)
@@ -108,8 +113,8 @@ serve(async (req: Request) => {
             package_name: job.drone_packages?.name || 'Standard Package',
             package_description: job.drone_packages?.description,
             package_features: job.drone_packages?.features || [],
-            customer_name: job.customers?.name,
-            company_name: job.customers?.company_name,
+            customer_name: job.clients?.name || job.customers?.name,
+            company_name: job.clients?.company || job.customers?.company_name,
             photo_count: photoCount,
             video_count: videoCount,
             total_size_mb: Math.round(totalSize / (1024 * 1024) * 10) / 10,

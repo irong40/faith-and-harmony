@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import logoFull from "@/assets/logo-full.png";
+const sentinelLogo = "/assets/drone/drone-logo.png";
 
 interface JobData {
   id: string;
@@ -212,7 +212,7 @@ export default function ClientJobPortal() {
       <header className="border-b bg-card">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/">
-            <img src={logoFull} alt="Faith & Harmony" className="h-10" />
+            <img src={sentinelLogo} alt="Sentinel Aerial Inspections" className="h-10" />
           </Link>
           <Badge variant="secondary" className="gap-1">
             <CheckCircle className="h-3 w-3" />
@@ -560,9 +560,9 @@ export default function ClientJobPortal() {
       {/* Footer */}
       <footer className="border-t mt-12">
         <div className="max-w-4xl mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Faith &amp; Harmony LLC DBA Sentinel Aerial Inspections. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Sentinel Aerial Inspections. All rights reserved.</p>
           <p className="mt-1">
-            Thank you for choosing us for your aerial photography needs.
+            Thank you for choosing Sentinel for your aerial inspection needs.
           </p>
         </div>
       </footer>

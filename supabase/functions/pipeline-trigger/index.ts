@@ -35,26 +35,20 @@ async function generateIdempotencyKey(
 }
 
 /**
- * Build the initial steps array from a processing_template's processing_steps.
+ * Build the initial steps array from a processing_template's default_steps JSONB.
  */
 function buildStepsFromTemplate(
-  templateSteps: Array<{
-    step_name: string;
-    step_order: number;
-    script_name?: string | null;
-  }>,
+  defaultSteps: string[],
 ): Array<Record<string, unknown>> {
-  return templateSteps
-    .sort((a, b) => a.step_order - b.step_order)
-    .map((s) => ({
-      name: s.step_name,
-      script: s.script_name ?? null,
-      status: "pending",
-      started_at: null,
-      completed_at: null,
-      error: null,
-      output: null,
-    }));
+  return defaultSteps.map((stepName) => ({
+    name: stepName,
+    script: null,
+    status: "pending",
+    started_at: null,
+    completed_at: null,
+    error: null,
+    output: null,
+  }));
 }
 
 serve(async (req) => {
@@ -151,7 +145,7 @@ serve(async (req) => {
     // Fetch the processing template with its steps
     const { data: template, error: templateError } = await supabase
       .from("processing_templates")
-      .select("id, display_name, path_code, processing_steps(*)")
+      .select("id, display_name, path_code, default_steps")
       .eq("id", processing_template_id)
       .single();
 
@@ -162,16 +156,12 @@ serve(async (req) => {
       );
     }
 
-    // Build steps array from template
-    const templateSteps = Array.isArray(template.processing_steps)
-      ? template.processing_steps as Array<{
-          step_name: string;
-          step_order: number;
-          script_name?: string | null;
-        }>
+    // Build steps array from template's default_steps JSONB
+    const defaultSteps = Array.isArray(template.default_steps)
+      ? template.default_steps as string[]
       : [];
 
-    const steps = buildStepsFromTemplate(templateSteps);
+    const steps = buildStepsFromTemplate(defaultSteps);
     const firstStep = steps[0] ?? null;
 
     // Create the processing_jobs record

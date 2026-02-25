@@ -470,7 +470,8 @@ export default function DroneJobDetail() {
   };
 
   const sendDelivery = async () => {
-    if (!job || !job.customers?.email) return;
+    const recipientEmail = job?.clients?.email || job?.customers?.email;
+    if (!job || !recipientEmail) return;
     setSending(true);
 
     const { error } = await supabase.functions.invoke("drone-delivery-email", {
@@ -1259,8 +1260,8 @@ export default function DroneJobDetail() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {!job.customers?.email ? (
-                  <p className="text-muted-foreground">No customer email on file</p>
+                {!(job.clients?.email || job.customers?.email) ? (
+                  <p className="text-muted-foreground">No client email on file</p>
                 ) : (
                   <>
                     <div>
@@ -1275,7 +1276,7 @@ export default function DroneJobDetail() {
 
                     <div className="flex items-center justify-between pt-4">
                       <p className="text-sm text-muted-foreground">
-                        Sending to: {job.customers.email}
+                        Sending to: {job.clients?.email || job.customers?.email}
                       </p>
                       <Button onClick={sendDelivery} disabled={sending || assets.length === 0}>
                         {sending ? (
