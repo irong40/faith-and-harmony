@@ -67,6 +67,22 @@ export default function WeatherBriefingPanel({
     metar_raw: string | null;
   } | null>(null);
 
+  // Rate limit: track last fetch time; disable refresh for 60s after fetch
+  const [lastFetchedAt, setLastFetchedAt] = useState<number | null>(null);
+  const [rateLimitSecondsLeft, setRateLimitSecondsLeft] = useState(0);
+
+  // Countdown for rate limit
+  useEffect(() => {
+    if (!lastFetchedAt) return;
+    const interval = setInterval(() => {
+      const elapsed = (Date.now() - lastFetchedAt) / 1000;
+      const remaining = Math.max(0, 60 - elapsed);
+      setRateLimitSecondsLeft(Math.ceil(remaining));
+      if (remaining === 0) clearInterval(interval);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lastFetchedAt]);
+
   // Manual entry state
   const [showManual, setShowManual] = useState(false);
   const [manualForm, setManualForm] = useState<ManualWeatherForm>({
@@ -116,6 +132,8 @@ export default function WeatherBriefingPanel({
   const fetchMetar = async () => {
     setFetching(true);
     setBriefingResult(null);
+    setLastFetchedAt(Date.now());
+    setRateLimitSecondsLeft(60);
 
     try {
       const url = `https://aviationweather.gov/api/data/metar?ids=${station}&format=json`;
@@ -339,11 +357,20 @@ export default function WeatherBriefingPanel({
             Station: <strong>{station}</strong>
             {aircraftModel && <> — Aircraft: <strong>{aircraftModel}</strong></>}
           </div>
-          <Button onClick={fetchMetar} disabled={fetching} className="w-full">
+          <Button
+            onClick={fetchMetar}
+            disabled={fetching || rateLimitSecondsLeft > 0}
+            className="w-full"
+          >
             {fetching ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Fetching METAR...
+              </>
+            ) : rateLimitSecondsLeft > 0 ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh available in {rateLimitSecondsLeft}s
               </>
             ) : (
               <>
@@ -501,9 +528,16 @@ export default function WeatherBriefingPanel({
               >
                 Override NO GO (Requires Reason)
               </Button>
-              <Button variant="ghost" onClick={() => setBriefingResult(null)} className="w-full">
+              <Button
+                variant="ghost"
+                onClick={() => setBriefingResult(null)}
+                disabled={rateLimitSecondsLeft > 0}
+                className="w-full"
+              >
                 <RefreshCw className="mr-2 h-4 w-4" />
-                Re-check Weather
+                {rateLimitSecondsLeft > 0
+                  ? `Re-check available in ${rateLimitSecondsLeft}s`
+                  : 'Re-check Weather'}
               </Button>
             </div>
           ) : briefingResult.determination === 'NO_GO' && showOverride ? (
