@@ -1194,6 +1194,16 @@ export default function DroneJobDetail() {
 
           {/* Delivery Tab */}
           <TabsContent value="delivery" className="space-y-4">
+            {/* Open Delivery Review */}
+            <div className="flex justify-end">
+              <Link to={`/admin/drone-jobs/${job.id}/delivery`}>
+                <Button variant="outline" size="sm">
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Open Delivery Review
+                </Button>
+              </Link>
+            </div>
+
             {/* Customer Portal Link Card - show if delivered */}
             {job.delivery_token && (
               <Card className="border-primary/20 bg-primary/5">
