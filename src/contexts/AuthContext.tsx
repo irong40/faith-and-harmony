@@ -92,14 +92,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Defer role checks with setTimeout to avoid deadlock
         if (session?.user) {
-          console.log("AuthContext: User authenticated, checking roles for:", session.user.id);
           setTimeout(() => {
             checkAdminRole(session.user.id);
             checkPilotRole(session.user.id);
             fetchPilotProfile(session.user.id);
           }, 0);
         } else {
-          console.log("AuthContext: No user session");
           setIsAdmin(false);
           setIsPilot(false);
           setPilotProfile(null);
@@ -113,12 +111,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        console.log("AuthContext: Session found on init, checking roles");
         checkAdminRole(session.user.id);
         checkPilotRole(session.user.id);
         fetchPilotProfile(session.user.id);
-      } else {
-        console.log("AuthContext: No initial session");
       }
       setLoading(false);
     });

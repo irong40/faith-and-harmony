@@ -154,8 +154,6 @@ export default function CustomerProposal() {
 
       if (error) {
         console.error("Failed to send response email:", error);
-      } else {
-        console.log("Response email sent successfully");
       }
     } catch (err) {
       console.error("Error sending response email:", err);

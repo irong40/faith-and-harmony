@@ -106,7 +106,7 @@ export async function batchProcessVideos(jobId: string): Promise<void> {
         return;
     }
 
-    console.log(`Found ${assets?.length || 0} videos to process`);
+    // Found ${assets?.length || 0} videos to process
 
     // Note: Batch processing would require fetching the actual file blobs
     // This is a placeholder for the pattern - actual implementation would need
