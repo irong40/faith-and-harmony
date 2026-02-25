@@ -166,17 +166,6 @@ export default function DeliveryReview() {
       return;
     }
 
-    // Update delivery_status fields
-    await supabase
-      .from("drone_jobs")
-      .update({
-        delivery_status: "sent",
-        delivery_sent_at: new Date().toISOString(),
-        delivery_email_to: clientEmail,
-        delivery_notes: deliveryNotes || null,
-      })
-      .eq("id", job.id);
-
     toast({ title: "Delivery sent", description: `Email sent to ${clientEmail}` });
     setSending(false);
     setSendDialogOpen(false);
@@ -193,6 +182,9 @@ export default function DeliveryReview() {
         delivery_status: "sent",
         delivery_sent_at: new Date().toISOString(),
         delivery_notes: deliveryNotes || null,
+        delivery_token: crypto.randomUUID().replace(/-/g, ""),
+        delivery_token_created_at: new Date().toISOString(),
+        status: "delivered",
       })
       .eq("id", job.id);
 
