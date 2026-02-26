@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 1 of 5 (SEO Foundation)
-Current Plan: 2 of 4
+Current Plan: 4 of 4
 Status: Executing
-Last activity: 2026-02-26 — Plan 01-01 complete (react-helmet-async, HelmetProvider, LandingPageHelmet, DefaultHelmet)
+Last activity: 2026-02-26 — Plan 01-03 complete (sitemap.xml, robots.txt, OG tags, Twitter card tags)
 
-Progress: [█░░░░░░░░░] 7%
+Progress: [███░░░░░░░] 21%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: --
-- Total execution time: --
+- Total plans completed: 3
+- Average duration: ~5 min
+- Total execution time: ~15 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-seo-foundation | 1/4 | -- | -- |
+| 01-seo-foundation | 3/4 | ~15 min | ~5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01
-- Trend: --
+- Last 5 plans: 01-01, 01-02, 01-03
+- Trend: Consistent (all pre-existing work verification)
 
 *Updated after each plan completion*
 
@@ -49,6 +49,10 @@ Recent decisions affecting current work:
 - VITE_PUBLIC_URL env var drives canonical URL, fallback is sentinelaerial.faithandharmonyllc.com (01-01)
 - DefaultHelmet uses noindex/nofollow to prevent admin and pilot routes from competing with landing page (01-01)
 - OG and Twitter card tags added to LandingPageHelmet in plan 01-01 instead of 01-03 (pre-existing implementation decision, satisfies 01-03 early)
+- sitemap.xml lists only the landing page root URL; all private and authenticated routes excluded (01-03)
+- robots.txt uses single User-agent wildcard block with 7 Disallow entries covering all private route prefixes (01-03)
+- twitter:card is summary_large_image (not summary) to match 1200x630 hero banner aspect ratio (01-03)
+- og:image and twitter:image use absolute HTTPS URLs via VITE_PUBLIC_URL (required for social card scrapers) (01-03)
 
 ### Pending Todos
 
@@ -63,5 +67,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 01-01-PLAN.md (react-helmet-async, HelmetProvider, LandingPageHelmet, DefaultHelmet)
+Stopped at: Completed 01-03-PLAN.md (sitemap.xml, robots.txt, OG tags, Twitter card tags)
 Resume file: None

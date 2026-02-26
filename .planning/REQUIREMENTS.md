@@ -10,13 +10,13 @@
 - [ ] **SEO-01**: Page title contains primary keyword "Drone Photography & Aerial Inspections" and location "Hampton Roads VA"
 - [ ] **SEO-02**: Meta description contains service keywords, location, and unique selling points (veteran owned, LAANC authorized, 48 hour turnaround)
 - [ ] **SEO-03**: Canonical URL set to production domain
-- [ ] **SEO-04**: Open Graph tags (og:title, og:description, og:image, og:url, og:type) render correctly for social sharing
-- [ ] **SEO-05**: Twitter card tags with summary_large_image and hero photo
+- [x] **SEO-04**: Open Graph tags (og:title, og:description, og:image, og:url, og:type) render correctly for social sharing
+- [x] **SEO-05**: Twitter card tags with summary_large_image and hero photo
 - [ ] **SEO-06**: JSON-LD LocalBusiness schema with name, address, phone, email, service area, price range, credentials
 - [ ] **SEO-07**: JSON-LD Service schema for each service type with pricing
 - [ ] **SEO-08**: JSON-LD FAQPage schema wrapping FAQ section content
-- [ ] **SEO-09**: sitemap.xml generated and accessible at /sitemap.xml
-- [ ] **SEO-10**: robots.txt blocks /admin/*, /pilot/*, /auth and includes Sitemap directive
+- [x] **SEO-09**: sitemap.xml generated and accessible at /sitemap.xml
+- [x] **SEO-10**: robots.txt blocks /admin/*, /pilot/*, /auth and includes Sitemap directive
 - [ ] **SEO-11**: react-helmet-async installed and managing per route meta tags
 
 ### Semantic HTML & Accessibility
@@ -118,13 +118,13 @@
 | SEO-01 | Phase 1: SEO Foundation | Pending |
 | SEO-02 | Phase 1: SEO Foundation | Pending |
 | SEO-03 | Phase 1: SEO Foundation | Pending |
-| SEO-04 | Phase 1: SEO Foundation | Pending |
-| SEO-05 | Phase 1: SEO Foundation | Pending |
+| SEO-04 | Phase 1: SEO Foundation | Complete |
+| SEO-05 | Phase 1: SEO Foundation | Complete |
 | SEO-06 | Phase 1: SEO Foundation | Pending |
 | SEO-07 | Phase 1: SEO Foundation | Pending |
 | SEO-08 | Phase 1: SEO Foundation | Pending |
-| SEO-09 | Phase 1: SEO Foundation | Pending |
-| SEO-10 | Phase 1: SEO Foundation | Pending |
+| SEO-09 | Phase 1: SEO Foundation | Complete |
+| SEO-10 | Phase 1: SEO Foundation | Complete |
 | SEO-11 | Phase 1: SEO Foundation | Pending |
 | HTML-01 | Phase 1: SEO Foundation | Pending |
 | HTML-02 | Phase 1: SEO Foundation | Pending |
