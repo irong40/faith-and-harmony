@@ -12,9 +12,9 @@
 - [ ] **SEO-03**: Canonical URL set to production domain
 - [x] **SEO-04**: Open Graph tags (og:title, og:description, og:image, og:url, og:type) render correctly for social sharing
 - [x] **SEO-05**: Twitter card tags with summary_large_image and hero photo
-- [ ] **SEO-06**: JSON-LD LocalBusiness schema with name, address, phone, email, service area, price range, credentials
-- [ ] **SEO-07**: JSON-LD Service schema for each service type with pricing
-- [ ] **SEO-08**: JSON-LD FAQPage schema wrapping FAQ section content
+- [x] **SEO-06**: JSON-LD LocalBusiness schema with name, address, phone, email, service area, price range, credentials
+- [x] **SEO-07**: JSON-LD Service schema for each service type with pricing
+- [x] **SEO-08**: JSON-LD FAQPage schema wrapping FAQ section content
 - [x] **SEO-09**: sitemap.xml generated and accessible at /sitemap.xml
 - [x] **SEO-10**: robots.txt blocks /admin/*, /pilot/*, /auth and includes Sitemap directive
 - [ ] **SEO-11**: react-helmet-async installed and managing per route meta tags
@@ -120,9 +120,9 @@
 | SEO-03 | Phase 1: SEO Foundation | Pending |
 | SEO-04 | Phase 1: SEO Foundation | Complete |
 | SEO-05 | Phase 1: SEO Foundation | Complete |
-| SEO-06 | Phase 1: SEO Foundation | Pending |
-| SEO-07 | Phase 1: SEO Foundation | Pending |
-| SEO-08 | Phase 1: SEO Foundation | Pending |
+| SEO-06 | Phase 1: SEO Foundation | Complete |
+| SEO-07 | Phase 1: SEO Foundation | Complete |
+| SEO-08 | Phase 1: SEO Foundation | Complete |
 | SEO-09 | Phase 1: SEO Foundation | Complete |
 | SEO-10 | Phase 1: SEO Foundation | Complete |
 | SEO-11 | Phase 1: SEO Foundation | Pending |

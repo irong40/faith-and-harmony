@@ -49,6 +49,8 @@ Recent decisions affecting current work:
 - VITE_PUBLIC_URL env var drives canonical URL, fallback is sentinelaerial.faithandharmonyllc.com (01-01)
 - DefaultHelmet uses noindex/nofollow to prevent admin and pilot routes from competing with landing page (01-01)
 - OG and Twitter card tags added to LandingPageHelmet in plan 01-01 instead of 01-03 (pre-existing implementation decision, satisfies 01-03 early)
+- FAQPage JSON-LD uses real FAQ_ITEMS from FAQSection instead of placeholder stubs; Phase 4 FAQ edits update both UI and schema by editing one file (01-02)
+- JSON-LD uses inline dangerouslySetInnerHTML script tags rather than react-helmet-async, keeping structured data in the component tree (01-02)
 - sitemap.xml lists only the landing page root URL; all private and authenticated routes excluded (01-03)
 - robots.txt uses single User-agent wildcard block with 7 Disallow entries covering all private route prefixes (01-03)
 - twitter:card is summary_large_image (not summary) to match 1200x630 hero banner aspect ratio (01-03)
