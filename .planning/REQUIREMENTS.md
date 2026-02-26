@@ -115,19 +115,59 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SEO-01 through SEO-11 | Phase 1 | Pending |
-| HTML-01 through HTML-06 | Phase 1 | Pending |
-| IMG-01 through IMG-05 | Phase 2 | Pending |
-| PAGE-01 through PAGE-13 | Phase 3 | Pending |
-| CONV-01 through CONV-05 | Phase 3 | Pending |
-| PERF-01 through PERF-03 | Phase 4 | Pending |
-| MOBL-01 through MOBL-04 | Phase 4 | Pending |
+| SEO-01 | Phase 1: SEO Foundation | Pending |
+| SEO-02 | Phase 1: SEO Foundation | Pending |
+| SEO-03 | Phase 1: SEO Foundation | Pending |
+| SEO-04 | Phase 1: SEO Foundation | Pending |
+| SEO-05 | Phase 1: SEO Foundation | Pending |
+| SEO-06 | Phase 1: SEO Foundation | Pending |
+| SEO-07 | Phase 1: SEO Foundation | Pending |
+| SEO-08 | Phase 1: SEO Foundation | Pending |
+| SEO-09 | Phase 1: SEO Foundation | Pending |
+| SEO-10 | Phase 1: SEO Foundation | Pending |
+| SEO-11 | Phase 1: SEO Foundation | Pending |
+| HTML-01 | Phase 1: SEO Foundation | Pending |
+| HTML-02 | Phase 1: SEO Foundation | Pending |
+| HTML-03 | Phase 1: SEO Foundation | Pending |
+| HTML-04 | Phase 1: SEO Foundation | Pending |
+| HTML-05 | Phase 1: SEO Foundation | Pending |
+| HTML-06 | Phase 1: SEO Foundation | Pending |
+| IMG-01 | Phase 2: Image Optimization | Pending |
+| IMG-02 | Phase 2: Image Optimization | Pending |
+| IMG-03 | Phase 2: Image Optimization | Pending |
+| IMG-04 | Phase 2: Image Optimization | Pending |
+| IMG-05 | Phase 2: Image Optimization | Pending |
+| PAGE-01 | Phase 3: Above-Fold Content | Pending |
+| PAGE-02 | Phase 3: Above-Fold Content | Pending |
+| PAGE-03 | Phase 3: Above-Fold Content | Pending |
+| PAGE-04 | Phase 3: Above-Fold Content | Pending |
+| PAGE-05 | Phase 3: Above-Fold Content | Pending |
+| PAGE-06 | Phase 3: Above-Fold Content | Pending |
+| CONV-01 | Phase 3: Above-Fold Content | Pending |
+| CONV-02 | Phase 3: Above-Fold Content | Pending |
+| CONV-04 | Phase 3: Above-Fold Content | Pending |
+| CONV-05 | Phase 3: Above-Fold Content | Pending |
+| PAGE-07 | Phase 4: Below-Fold Content | Pending |
+| PAGE-08 | Phase 4: Below-Fold Content | Pending |
+| PAGE-09 | Phase 4: Below-Fold Content | Pending |
+| PAGE-10 | Phase 4: Below-Fold Content | Pending |
+| PAGE-11 | Phase 4: Below-Fold Content | Pending |
+| PAGE-12 | Phase 4: Below-Fold Content | Pending |
+| PAGE-13 | Phase 4: Below-Fold Content | Pending |
+| CONV-03 | Phase 4: Below-Fold Content | Pending |
+| PERF-01 | Phase 5: Performance and Mobile | Pending |
+| PERF-02 | Phase 5: Performance and Mobile | Pending |
+| PERF-03 | Phase 5: Performance and Mobile | Pending |
+| MOBL-01 | Phase 5: Performance and Mobile | Pending |
+| MOBL-02 | Phase 5: Performance and Mobile | Pending |
+| MOBL-03 | Phase 5: Performance and Mobile | Pending |
+| MOBL-04 | Phase 5: Performance and Mobile | Pending |
 
 **Coverage:**
-- v1 requirements: 38 total
-- Mapped to phases: 38
+- v1 requirements: 47 total
+- Mapped to phases: 47
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-26*
-*Last updated: 2026-02-26 after initial definition*
+*Last updated: 2026-02-26 after roadmap creation*
