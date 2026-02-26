@@ -1,48 +1,60 @@
 # Session Handoff
-**Date:** 2026-02-20
+**Date:** 2026-02-26
 **Branch:** main
 
-## Accomplished
-- Wired offline sync into weather briefing, airspace auth, equipment, and flight logging hooks
-- Code-split all 40+ routes with React.lazy (each page loads as separate chunk)
-- Added accessories selection to EquipmentSelector with compatibility filtering
-- Created retainers migration + mission_equipment accessory_ids column + nearest_weather_station column
-- Applied all 3 migrations to Supabase (retainers, accessory_ids, weather_station)
-- Set Vercel env vars for preview and development environments
-- Fixed SQL dollar-quoting in battery_mission_tracking and airframe_flight_history migrations
-- Enabled moddatetime extension for retainers trigger
-- **QA review found and fixed 7 pilot portal issues:**
-  1. Fixed dead "Change Equipment" button (added isEditing state bypass)
-  2. Added offline sync to flight logging (was direct Supabase with no fallback)
-  3. Added nearest_weather_station column to drone_jobs
-  4. Added completed mission summary (equipment/weather/airspace recap)
-  5. Wired per-mission syncStatus into MissionCard (pending/offline/synced icons)
-  6. Grouped dashboard missions into Today / Upcoming / Past sections
-  7. Renamed misleading Fleet "Log" button to "History"
+## Accomplished This Session
+
+### Landing Page SEO & Conversion Overhaul (GSD Planning Complete)
+
+**Research phase:**
+- Two parallel agents audited the entire landing page for SEO and conversion gaps
+- SEO audit found 18 critical issues (title says "Trestle", meta describes internal tool, no structured data, no sitemap, 1MB logo, auth gate blocking Googlebot)
+- Competitive research analyzed Hampton Roads drone market, identified target keywords, found uncontested ranking opportunities (military airspace expertise, AI QA pipeline)
+
+**GSD planning initialized:**
+- `.planning/PROJECT.md` with full business context, pricing, constraints
+- `.planning/config.json` (YOLO, standard depth, parallel, balanced models)
+- `.planning/REQUIREMENTS.md` with 47 v1 requirements across 7 categories
+- `.planning/ROADMAP.md` with 5 phases, 18 plans total
+- All 18 PLAN.md files created and committed
+
+### Phase Plan Summary
+
+| Phase | Plans | Waves | Key Deliverables |
+|-------|-------|-------|------------------|
+| 1: SEO Foundation | 4 | 2 | react-helmet-async, JSON-LD schemas, sitemap, robots.txt, semantic HTML |
+| 2: Image Optimization | 2 | 1 | Logo compression (<100KB), hero img conversion, lazy loading |
+| 3: Above-Fold Content | 4 | 4 | StickyNav, Hero rebuild, TrustBar, Pricing (6 packages), Portfolio grid |
+| 4: Below-Fold Content | 4 | 1 | Military airspace section, FAQ (10 Qs), Quote form + edge function, Service area |
+| 5: Performance & Mobile | 4 | 2 | Animation disable, breakpoints, hamburger nav, security headers |
 
 ## Commits This Session
-- `4e2d8b8` fix: resolve 7 QA issues in pilot portal
-- `45afaa4` fix: repair SQL dollar-quoting and enable moddatetime for migrations
-- `d7ca47b` feat: offline sync, code-splitting, accessories, and retainers
-- `bb3aed2` feat: add accessories UI, offline sync wiring, pricing page, and production PWA icons
+- `500db91` chore: add GSD project config for landing page overhaul
+- `60f1a65` docs: initialize project and define v1 requirements (38 reqs)
+- `30124d8` docs: create roadmap (5 phases, 47 requirements mapped)
+- `5e63c35` docs: create all phase plans (18 plans across 5 phases)
 
 ## Next Steps
-- End-to-end test offline queue with actual network disconnection
-- Fix battery_mission_tracking and airframe_flight_history migrations (marked as applied but views reference non-existent columns like b.battery_id, b.compatible_aircraft_models, b.health_percent — need schema alignment)
-- Add proper PNG icons designed by a designer (current ones are programmatic rasters)
-- DroneCRMDashboard chunk is 419 KB — could be further split
-- Populate nearest_weather_station on drone_jobs (admin UI or geocoding function)
-- PricingEngine component uses inline styles (not Tailwind)
+1. `/clear` for fresh context
+2. `cd D:\Projects\FaithandHarmony`
+3. `/gsd:execute-phase 1` to start building
 
-## Known Issues
-- Two older migrations (battery_mission_tracking, airframe_flight_history) are marked "applied" in Supabase but were NOT actually executed — their views/functions reference columns that don't exist on the remote batteries/aircraft tables. They need schema alignment before they can work.
-- Supabase service role key was exposed in chat — **MUST BE ROTATED** at Dashboard > Settings > API
+### Pre-Execution Blockers
+1. **Portfolio photos (Phase 3)** Only 3 aerial "after" photos. Need 6+ for grid. Can use before/after pairs.
+2. **Quote form endpoint (Phase 4)** New edge function `quote-request` using Resend. Verify RESEND_API_KEY set and sender domain verified.
+3. **Plan checker not run** due to context limits. Can skip or run at start of next session.
 
-## Key Decisions
-- Used isEditing flag (not query invalidation) for Change Equipment button — simpler, no network round-trip
-- Flight logging queues two separate sync items (insert_flight_log + update_mission_status) rather than a compound action
-- Mission grouping uses date-fns isToday/isBefore for Today/Upcoming/Past buckets
-- Completed mission summary fetches equipment/weather/auth data only when status === "complete" (conditional query enable)
+## Previous Session Notes (2026-02-20)
+- Wired offline sync, code-split 40+ routes, fixed 7 pilot portal QA issues
+- Two older migrations (battery_mission_tracking, airframe_flight_history) still need schema alignment
+- Supabase service role key was exposed in chat and MUST BE ROTATED
+
+## GSD Config
+- Mode: YOLO (auto-approve)
+- Research: OFF (already done)
+- Plan Check: ON
+- Verifier: ON
+- Models: Balanced (Sonnet)
 
 ## Uncommitted Changes
-None — all changes committed and pushed.
+None. All changes committed.
