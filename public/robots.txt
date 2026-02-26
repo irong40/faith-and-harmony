@@ -1,14 +1,10 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
-Allow: /
+Disallow: /admin/
+Disallow: /pilot/
+Disallow: /auth
+Disallow: /proposal/
+Disallow: /invoice/
+Disallow: /drone-upload/
+Disallow: /my-jobs/
+
+Sitemap: https://sentinelaerial.faithandharmonyllc.com/sitemap.xml

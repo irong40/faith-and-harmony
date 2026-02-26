@@ -52,6 +52,7 @@ const PilotMissionDetail = lazy(() => import("./pages/pilot/PilotMissionDetail")
 const FleetOverview = lazy(() => import("./components/pilot/FleetOverview"));
 const MaintenanceHistory = lazy(() => import("./components/pilot/MaintenanceHistory"));
 
+import DefaultHelmet from "./components/seo/DefaultHelmet";
 import PWAUpdatePrompt from "./components/pwa/PWAUpdatePrompt";
 import PWAInstallPrompt from "./components/pwa/PWAInstallPrompt";
 
@@ -101,6 +102,7 @@ const App = () => (
         <PWAUpdatePrompt />
         <PWAInstallPrompt />
         <BrowserRouter>
+          <DefaultHelmet />
           <Suspense fallback={<PageSpinner />}>
             <Routes>
               {/* Root — role-based redirect */}
