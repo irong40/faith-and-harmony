@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 1 of 5 (SEO Foundation)
-Plan: 0 of 4 in current phase
-Status: Ready to plan
-Last activity: 2026-02-26 — Roadmap created, phases derived from 47 v1 requirements
+Current Plan: 2 of 4
+Status: Executing
+Last activity: 2026-02-26 — Plan 01-01 complete (react-helmet-async, HelmetProvider, LandingPageHelmet, DefaultHelmet)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 7%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
+- Total plans completed: 1
 - Average duration: --
 - Total execution time: --
 
@@ -27,10 +27,10 @@ Progress: [░░░░░░░░░░] 0%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-seo-foundation | 1/4 | -- | -- |
 
 **Recent Trend:**
-- Last 5 plans: --
+- Last 5 plans: 01-01
 - Trend: --
 
 *Updated after each plan completion*
@@ -46,6 +46,9 @@ Recent decisions affecting current work:
 - Add react-helmet-async for per-route meta management (Phase 1 installs this)
 - Inline quote form instead of external booking link (Phase 4 implements)
 - Skip SSR, prerendering deferred to v2
+- VITE_PUBLIC_URL env var drives canonical URL, fallback is sentinelaerial.faithandharmonyllc.com (01-01)
+- DefaultHelmet uses noindex/nofollow to prevent admin and pilot routes from competing with landing page (01-01)
+- OG and Twitter card tags added to LandingPageHelmet in plan 01-01 instead of 01-03 (pre-existing implementation decision, satisfies 01-03 early)
 
 ### Pending Todos
 
@@ -60,5 +63,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Roadmap written, STATE.md initialized. Ready to run /gsd:plan-phase 1.
+Stopped at: Completed 01-01-PLAN.md (react-helmet-async, HelmetProvider, LandingPageHelmet, DefaultHelmet)
 Resume file: None
