@@ -24,6 +24,7 @@ import {
   FolderKanban,
   Plus,
   Route,
+  ExternalLink,
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -97,6 +98,15 @@ export default function AdminNav() {
             <Link to="/" className="flex items-center gap-2 text-sm font-semibold text-primary mr-2">
               Sentinel
             </Link>
+            <a
+              href="https://www.faithandharmonyllc.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-primary transition-colors"
+              title="Sentinel Aerial Inspections website"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </a>
             <nav className="flex gap-1">
               {navCategories.map((category) => (
                 <DropdownMenu key={category.label}>
