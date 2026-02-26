@@ -12,7 +12,7 @@ The existing landing page misidentifies as "Trestle" and hides behind an auth ch
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: SEO Foundation** - Install react-helmet-async, fix page identity, add structured data, sitemap, robots.txt, and semantic HTML markup
+- [x] **Phase 1: SEO Foundation** - Install react-helmet-async, fix page identity, add structured data, sitemap, robots.txt, and semantic HTML markup (completed 2026-02-26)
 - [ ] **Phase 2: Image Optimization** - Compress logo, add WebP variants, fix dimensions, optimize hero delivery
 - [ ] **Phase 3: Above-Fold Content** - Sticky nav, hero, trust bar, services, pricing, and portfolio sections with conversion CTAs
 - [ ] **Phase 4: Below-Fold Content** - Military airspace differentiator, FAQ with schema, inline quote form, service area, about, contact, and footer
@@ -114,7 +114,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. SEO Foundation | 3/4 | In Progress|  |
+| 1. SEO Foundation | 4/4 | Complete   | 2026-02-26 |
 | 2. Image Optimization | 0/2 | Not started | - |
 | 3. Above-Fold Content | 0/4 | Not started | - |
 | 4. Below-Fold Content | 0/4 | Not started | - |
