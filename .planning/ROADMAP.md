@@ -105,7 +105,7 @@ Plans:
 - [ ] 05-01-PLAN.md — Disable lp-flicker, lp-scanline, lp-gridPulse, and lp-shimmer via prefers-reduced-motion and 768px mobile media query; verify landing.css uses only Saira Condensed and Share Tech Mono
 - [x] 05-02-PLAN.md — Add tablet breakpoint (769px to 1024px) and small mobile breakpoint (below 480px) to landing.css with forward-declarations for Phase 3/4 component classes
 - [ ] 05-03-PLAN.md — Add hamburger toggle state to StickyNav.tsx with aria support and outside-click close; add hamburger CSS and verify pricing card stacking at 480px
-- [ ] 05-04-PLAN.md — Add security headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Strict-Transport-Security, Permissions-Policy) to vercel.json
+- [x] 05-04-PLAN.md — Add security headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Strict-Transport-Security, Permissions-Policy) to vercel.json (completed 2026-02-27)
 
 ## Progress
 
@@ -118,4 +118,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Image Optimization | 2/2 | Complete   | 2026-02-26 |
 | 3. Above-Fold Content | 4/4 | Complete   | 2026-02-27 |
 | 4. Below-Fold Content | 4/4 | Complete   | 2026-02-27 |
-| 5. Performance and Mobile | 2/4 | In Progress|  |
+| 5. Performance and Mobile | 4/4 | Complete   | 2026-02-27 |

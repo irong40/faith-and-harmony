@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** Prospective clients find Sentinel via search, understand the offering, see pricing, and submit a quote request without leaving the page.
-**Current focus:** Phase 5 — Performance and Mobile
+**Current focus:** Phase 5 — Performance and Mobile (COMPLETE)
 
 ## Current Position
 
 Phase: 5 of 5 (Performance and Mobile)
-Current Plan: 2 of 4 (COMPLETE)
-Status: Phase 5 Plan 2 COMPLETE
-Last activity: 2026-02-27 — Plan 05-02 complete (tablet breakpoint 769px/1024px and small mobile breakpoint 480px added to landing.css, MOBL-01 and MOBL-02 satisfied)
+Current Plan: 4 of 4 (COMPLETE)
+Status: Phase 5 ALL PLANS COMPLETE
+Last activity: 2026-02-27 — Plan 05-04 complete (security response headers added to vercel.json, PERF-03 satisfied)
 
 Progress: [████████████] 100%
 
@@ -31,7 +31,7 @@ Progress: [████████████] 100%
 | 02-image-optimization | 1/2 | ~2 min | ~2 min |
 | 03-above-fold-content | 4/4 | ~8 min | ~2 min |
 | 04-below-fold-content | 3/4 | ~5 min | ~2.5 min |
-| 05-performance-and-mobile | 2/4 | ~8 min | ~4 min |
+| 05-performance-and-mobile | 4/4 | ~10 min | ~2.5 min |
 
 **Recent Trend:**
 - Last 5 plans: 03-03, 03-04, 04-01, 04-02, 04-03
@@ -104,6 +104,9 @@ Recent decisions affecting current work:
 - [Phase 05-02]: Tablet block targets existing lp- classes plus forward-declared Phase 3/4 class names; Phase 3/4 plans update selectors if actual class names differ
 - [Phase 05-02]: Small mobile breakpoint uses max-width: 480px to cover the gap where 768px breakpoint still leaves font sizes and padding too large for smaller phones
 - [Phase 05-02]: Two new breakpoint blocks appended after Plan 05-01 animation block without modifying any existing rules
+- [Phase 05-04]: No Content-Security-Policy added; landing page loads Google Fonts and cdn.gpteng.co scripts; a permissive CSP would be ineffective and a restrictive one requires dedicated testing before deployment; deferred to v2
+- [Phase 05-04]: HSTS max-age 63072000 (2 years) with includeSubDomains and preload; Faith and Harmony LLC operates exclusively over HTTPS
+- [Phase 05-04]: Permissions-Policy disables camera, microphone, and geolocation; landing page uses none of these APIs
 
 ### Pending Todos
 
@@ -119,5 +122,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 05-02-PLAN.md (tablet and small mobile breakpoints added to landing.css, MOBL-01 and MOBL-02 satisfied).
+Stopped at: Completed 05-04-PLAN.md (security response headers added to vercel.json, PERF-03 satisfied). Phase 5 all plans complete.
 Resume file: None
