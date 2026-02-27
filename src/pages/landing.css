@@ -1524,3 +1524,18 @@
   .landing-page .lp-footer-badges { flex-direction: column; align-items: center; }
   .landing-page .lp-sticky-nav__links { display: none; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-page .lp-scanline-overlay {
+    animation: none;
+  }
+  .landing-page .lp-scanline-bar {
+    animation: none;
+  }
+  .landing-page .lp-grid-bg {
+    animation: none;
+  }
+  .landing-page .lp-veteran-badge::before {
+    animation: none;
+  }
+}
