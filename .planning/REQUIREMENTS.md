@@ -54,8 +54,8 @@
 
 ### Image Optimization
 
-- [ ] **IMG-01**: sentinel-logo.png compressed from 1.06 MB to under 100 KB
-- [ ] **IMG-02**: All landing page images have explicit width and height attributes
+- [x] **IMG-01**: sentinel-logo.png compressed from 1.06 MB to under 100 KB
+- [x] **IMG-02**: All landing page images have explicit width and height attributes
 - [x] **IMG-03**: Below fold images use loading="lazy"
 - [x] **IMG-04**: Hero image uses fetchpriority="high" or is preloaded
 - [x] **IMG-05**: Hero banner moved from CSS background-image to img tag for SEO indexing
@@ -132,8 +132,8 @@
 | HTML-04 | Phase 1: SEO Foundation | Complete |
 | HTML-05 | Phase 1: SEO Foundation | Complete |
 | HTML-06 | Phase 1: SEO Foundation | Complete |
-| IMG-01 | Phase 2: Image Optimization | Pending |
-| IMG-02 | Phase 2: Image Optimization | Pending |
+| IMG-01 | Phase 2: Image Optimization | Complete |
+| IMG-02 | Phase 2: Image Optimization | Complete |
 | IMG-03 | Phase 2: Image Optimization | Complete |
 | IMG-04 | Phase 2: Image Optimization | Complete |
 | IMG-05 | Phase 2: Image Optimization | Complete |

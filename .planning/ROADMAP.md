@@ -50,7 +50,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Compress sentinel-logo.png to under 100 KB, generate WebP variant, add width/height to logo img tag
+- [x] 02-01-PLAN.md — Compress sentinel-logo.png to under 100 KB, generate WebP variant, add width/height to logo img tag (completed 2026-02-26)
 - [ ] 02-02-PLAN.md — Convert hero CSS background-image to img element with fetchpriority="high", add width/height and loading="lazy" to all landing page images
 
 ### Phase 3: Above-Fold Content
@@ -115,7 +115,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. SEO Foundation | 4/4 | Complete   | 2026-02-26 |
-| 2. Image Optimization | 0/2 | Not started | - |
+| 2. Image Optimization | 1/2 | In Progress | - |
 | 3. Above-Fold Content | 0/4 | Not started | - |
 | 4. Below-Fold Content | 0/4 | Not started | - |
 | 5. Performance and Mobile | 0/4 | Not started | - |

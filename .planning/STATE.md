@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** Prospective clients find Sentinel via search, understand the offering, see pricing, and submit a quote request without leaving the page.
-**Current focus:** Phase 1 — SEO Foundation
+**Current focus:** Phase 2 — Image Optimization
 
 ## Current Position
 
-Phase: 1 of 5 (SEO Foundation)
-Current Plan: 4 of 4 (COMPLETE)
-Status: Phase 1 Complete
-Last activity: 2026-02-26 — Plan 01-04 complete (semantic HTML: main, nav, aria-labels, H1 keyword placement, img dimensions)
+Phase: 2 of 5 (Image Optimization)
+Current Plan: 1 of 2 (COMPLETE)
+Status: Phase 2 In Progress
+Last activity: 2026-02-26 — Plan 02-01 complete (logo PNG compressed 1.1 MB to 33 KB, WebP variant generated, img dimensions corrected to 300x300)
 
-Progress: [████░░░░░░] 28%
+Progress: [█████░░░░░] 33%
 
 ## Performance Metrics
 
@@ -28,10 +28,11 @@ Progress: [████░░░░░░] 28%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-seo-foundation | 4/4 | ~18 min | ~4.5 min |
+| 02-image-optimization | 1/2 | ~2 min | ~2 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01, 01-02, 01-03, 01-04
-- Trend: Consistent (all pre-existing work verification)
+- Last 5 plans: 01-01, 01-02, 01-03, 01-04, 02-01
+- Trend: Consistent
 
 *Updated after each plan completion*
 | Phase 10-quote-lifecycle P03 | 10 | 3 tasks | 4 files |
@@ -65,6 +66,9 @@ Recent decisions affecting current work:
 - [Phase 10-03]: quote_requests.status set to reviewed (not quoted) on draft creation; quoted status applied in Plan 04 when quote is sent
 - [Phase 02-image-optimization]: Hero img placed as first child inside .lp-hero with absolute positioning; CSS gradient layers paint above it by default stacking order preserving dark overlay
 - [Phase 02-image-optimization]: hero-banner.jpg used twice: above-fold in HeroSection (fetchPriority='high', no lazy) and below-fold in equipment section (loading='lazy'); each instance has attributes correct for its fold position
+- [Phase 02-01]: PNG quality flag has no effect on lossless PNG; use compressionLevel 9 and effort 6 for max compression with sharp-cli
+- [Phase 02-01]: sentinel-logo.png resized to 300x300 (was 400px plan target); necessary to reach under-100-KB target
+- [Phase 02-01]: WebP variant generated from compressed PNG, not original 1.1 MB source
 
 ### Pending Todos
 
@@ -75,10 +79,10 @@ None yet.
 - ~~Hero image source unknown~~: RESOLVED (01-04). HeroSection.tsx already uses img element for hero-banner.jpg at /assets/landing/hero-banner.jpg. Phase 2 can proceed.
 - Portfolio photos: Phase 3 (PAGE-06) requires 6 to 9 representative aerial photos in /public/assets/landing/. Confirm what exists before planning Phase 3. PortfolioGrid.tsx has 6 photos in /assets/aerial/ (3 before, 3 after) already in the codebase.
 - Quote form endpoint: Phase 4 (PAGE-09) needs a decision on whether the inline form submits to an existing Supabase edge function or a new email endpoint. No new tables allowed per PROJECT.md constraints. QuoteForm.tsx already submits to /functions/v1/quote-request.
-- img dimensions are approximate placeholders: sentinel-logo.png (400x400), matrice-4e.png (600x400), hero-banner.jpg (1920x1080). Phase 2 confirms actual dimensions.
+- ~~img dimensions are approximate placeholders: sentinel-logo.png (400x400), matrice-4e.png (600x400), hero-banner.jpg (1920x1080)~~: RESOLVED (02-01). sentinel-logo.png is 300x300 (compressed from 1.1 MB to 33 KB). matrice-4e.png and hero-banner.jpg dimensions TBD in 02-02.
 
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 01-04-PLAN.md (semantic HTML: main, nav, aria-labels, H1 keyword placement, img dimensions). Phase 1 SEO Foundation COMPLETE.
+Stopped at: Completed 02-01-PLAN.md (logo PNG compressed to 33 KB, WebP variant generated, img dimensions corrected to 300x300).
 Resume file: None
