@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** Prospective clients find Sentinel via search, understand the offering, see pricing, and submit a quote request without leaving the page.
-**Current focus:** Phase 3 — Above Fold Content
+**Current focus:** Phase 4 — Below Fold Content
 
 ## Current Position
 
-Phase: 3 of 5 (Above Fold Content)
-Current Plan: 4 of 4 (COMPLETE)
-Status: Phase 3 Complete
-Last activity: 2026-02-27 — Plan 03-04 complete (PortfolioGrid inline 3-column aerial photo grid with 6 photos and service type label overlays, replacing external gallery link)
+Phase: 4 of 5 (Below Fold Content)
+Current Plan: 2 of 4 (COMPLETE)
+Status: Phase 4 In Progress
+Last activity: 2026-02-27 — Plan 04-02 complete (FAQSection with 10 Q&A pairs using shared FAQ_ITEMS array driving both visible list and FAQPage JSON-LD schema)
 
-Progress: [█████████░] 60%
+Progress: [█████████░] 65%
 
 ## Performance Metrics
 
@@ -83,6 +83,9 @@ Recent decisions affecting current work:
 - [Phase 03-04]: PortfolioGrid owns id="portfolio" on its section element, each component manages its own section identity
 - [Phase 03-04]: Aerial photo dimensions placeholder 1200x800; Phase 5 image optimization will verify actual pixel dimensions and correct width/height attributes if needed
 - [Phase 03-04]: PORTFOLIO_ITEMS array is module-level const (not inside component) to avoid recreation on each render
+- [Phase 04-02]: FAQ_ITEMS exported from FAQSection.tsx and imported in LandingPageJsonLd.tsx; single edit propagates to both visible content and JSON-LD schema simultaneously
+- [Phase 04-02]: Static list render chosen over accordion; all FAQ content visible and indexable without JavaScript interaction
+- [Phase 04-02]: Shared data export pattern established for FAQ: export const DATA_ARRAY from UI component, import in schema component
 
 ### Pending Todos
 
@@ -98,5 +101,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 03-04-PLAN.md (PortfolioGrid inline 3-column aerial photo grid with 6 photos and service type label overlays, replacing external gallery link). Phase 3 complete.
+Stopped at: Completed 04-02-PLAN.md (FAQSection with 10 Q&A pairs using shared FAQ_ITEMS array driving both visible list and FAQPage JSON-LD schema). Phase 4 Plan 02 complete.
 Resume file: None
