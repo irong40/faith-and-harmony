@@ -56,9 +56,9 @@
 
 - [ ] **IMG-01**: sentinel-logo.png compressed from 1.06 MB to under 100 KB
 - [ ] **IMG-02**: All landing page images have explicit width and height attributes
-- [ ] **IMG-03**: Below fold images use loading="lazy"
-- [ ] **IMG-04**: Hero image uses fetchpriority="high" or is preloaded
-- [ ] **IMG-05**: Hero banner moved from CSS background-image to img tag for SEO indexing
+- [x] **IMG-03**: Below fold images use loading="lazy"
+- [x] **IMG-04**: Hero image uses fetchpriority="high" or is preloaded
+- [x] **IMG-05**: Hero banner moved from CSS background-image to img tag for SEO indexing
 
 ### Performance
 
@@ -134,9 +134,9 @@
 | HTML-06 | Phase 1: SEO Foundation | Complete |
 | IMG-01 | Phase 2: Image Optimization | Pending |
 | IMG-02 | Phase 2: Image Optimization | Pending |
-| IMG-03 | Phase 2: Image Optimization | Pending |
-| IMG-04 | Phase 2: Image Optimization | Pending |
-| IMG-05 | Phase 2: Image Optimization | Pending |
+| IMG-03 | Phase 2: Image Optimization | Complete |
+| IMG-04 | Phase 2: Image Optimization | Complete |
+| IMG-05 | Phase 2: Image Optimization | Complete |
 | PAGE-01 | Phase 3: Above-Fold Content | Pending |
 | PAGE-02 | Phase 3: Above-Fold Content | Pending |
 | PAGE-03 | Phase 3: Above-Fold Content | Pending |

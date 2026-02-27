@@ -34,6 +34,7 @@ Progress: [████░░░░░░] 28%
 - Trend: Consistent (all pre-existing work verification)
 
 *Updated after each plan completion*
+| Phase 10-quote-lifecycle P03 | 10 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -59,6 +60,11 @@ Recent decisions affecting current work:
 - H1 text is Drone Photography and Aerial Inspections / Hampton Roads VA, not the all-caps version in the plan spec; keyword intent is equivalent (01-04)
 - Brand name in header uses div.lp-logo-heading, not H1 or any heading element (01-04)
 - Hero banner is already an img element (not CSS background-image); Phase 2 blocker resolved (01-04)
+- [Phase 10-03]: quotes table absent from generated Supabase types; cast line_items via unknown to Json to satisfy TS without regenerating types
+- [Phase 10-03]: Status filter implemented client-side over full query result; quote request volumes are small enough that client-side filtering avoids cache fragmentation
+- [Phase 10-03]: quote_requests.status set to reviewed (not quoted) on draft creation; quoted status applied in Plan 04 when quote is sent
+- [Phase 02-image-optimization]: Hero img placed as first child inside .lp-hero with absolute positioning; CSS gradient layers paint above it by default stacking order preserving dark overlay
+- [Phase 02-image-optimization]: hero-banner.jpg used twice: above-fold in HeroSection (fetchPriority='high', no lazy) and below-fold in equipment section (loading='lazy'); each instance has attributes correct for its fold position
 
 ### Pending Todos
 
