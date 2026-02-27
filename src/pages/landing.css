@@ -1617,3 +1617,89 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Small mobile (below 480px) */
+@media (max-width: 480px) {
+  .landing-page .lp-container {
+    padding: 0 16px;
+  }
+  .landing-page .lp-hero {
+    padding: 60px 0;
+  }
+  .landing-page .lp-hero h2 {
+    font-size: 36px;
+    letter-spacing: 2px;
+  }
+  .landing-page .lp-hero h2 span {
+    font-size: 26px;
+  }
+  .landing-page .lp-hero p {
+    font-size: 12px;
+  }
+  .landing-page .lp-cta-button {
+    font-size: 16px;
+    padding: 16px 32px;
+  }
+  .landing-page .lp-section-title {
+    font-size: 28px;
+    margin-bottom: 40px;
+    letter-spacing: 2px;
+  }
+  .landing-page .lp-service-card {
+    padding: 24px;
+  }
+  .landing-page .lp-service-card h3 {
+    font-size: 22px;
+  }
+  .landing-page .lp-logo-text h1 {
+    font-size: 22px;
+    letter-spacing: 2px;
+  }
+  .landing-page .lp-logo-section img {
+    height: 48px;
+  }
+  .landing-page .lp-veteran-badge {
+    font-size: 13px;
+    padding: 8px 16px;
+  }
+  .landing-page .lp-features-list li {
+    padding: 16px 16px 16px 40px;
+  }
+  .landing-page .lp-vets-content h2 {
+    font-size: 28px;
+    letter-spacing: 2px;
+  }
+  .landing-page .lp-vets-subtitle {
+    font-size: 20px;
+  }
+  .landing-page .lp-about-content h3 {
+    font-size: 26px;
+  }
+  .landing-page .lp-contact-item {
+    min-width: unset;
+    width: 100%;
+  }
+  /* Phase 3/4 components — small mobile rules */
+  .landing-page .lp-pricing-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .landing-page .lp-pricing-card {
+    padding: 24px;
+  }
+  .landing-page .lp-portfolio-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .landing-page .lp-trust-bar {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .landing-page .lp-military-grid {
+    grid-template-columns: 1fr;
+  }
+  .landing-page .lp-quote-form {
+    padding: 24px 16px;
+  }
+}
