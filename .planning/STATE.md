@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** Prospective clients find Sentinel via search, understand the offering, see pricing, and submit a quote request without leaving the page.
-**Current focus:** Phase 2 — Image Optimization
+**Current focus:** Phase 3 — Above Fold Content
 
 ## Current Position
 
-Phase: 2 of 5 (Image Optimization)
-Current Plan: 1 of 2 (COMPLETE)
-Status: Phase 2 In Progress
-Last activity: 2026-02-26 — Plan 02-01 complete (logo PNG compressed 1.1 MB to 33 KB, WebP variant generated, img dimensions corrected to 300x300)
+Phase: 3 of 5 (Above Fold Content)
+Current Plan: 1 of 4 (COMPLETE)
+Status: Phase 3 In Progress
+Last activity: 2026-02-27 — Plan 03-01 complete (StickyNav component with scroll detection, section anchor IDs, phone number 760.575.4876 and Get a Quote CTA)
 
-Progress: [█████░░░░░] 33%
+Progress: [██████░░░░] 40%
 
 ## Performance Metrics
 
@@ -69,6 +69,10 @@ Recent decisions affecting current work:
 - [Phase 02-01]: PNG quality flag has no effect on lossless PNG; use compressionLevel 9 and effort 6 for max compression with sharp-cli
 - [Phase 02-01]: sentinel-logo.png resized to 300x300 (was 400px plan target); necessary to reach under-100-KB target
 - [Phase 02-01]: WebP variant generated from compressed PNG, not original 1.1 MB source
+- [Phase 03-01]: StickyNav uses plain anchor tags (not React Router Link) because targets are page section IDs, not routes
+- [Phase 03-01]: PricingSection.tsx owns id="pricing" and QuoteForm.tsx owns id="quote" as each component manages its own section identity
+- [Phase 03-01]: Sticky nav z-index 2000 ensures it renders above scanline overlays at z-index 1000/1001
+- [Phase 03-01]: Mobile breakpoint at 768px hides nav links but keeps phone and CTA visible
 
 ### Pending Todos
 
@@ -83,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-26
-Stopped at: Completed 02-01-PLAN.md (logo PNG compressed to 33 KB, WebP variant generated, img dimensions corrected to 300x300).
+Last session: 2026-02-27
+Stopped at: Completed 03-01-PLAN.md (StickyNav component with scroll-triggered visibility, section anchor IDs, phone and CTA).
 Resume file: None
