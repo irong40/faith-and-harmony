@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** Prospective clients find Sentinel via search, understand the offering, see pricing, and submit a quote request without leaving the page.
-**Current focus:** Phase 4 — Below Fold Content
+**Current focus:** Phase 5 — Performance and Mobile
 
 ## Current Position
 
 Phase: 5 of 5 (Performance and Mobile)
-Current Plan: 1 of 1 (COMPLETE)
-Status: Phase 5 Plan 1 COMPLETE
-Last activity: 2026-02-27 — Plan 05-01 complete (prefers-reduced-motion and mobile animation disable blocks added to landing.css, PERF-02 verified satisfied)
+Current Plan: 2 of 4 (COMPLETE)
+Status: Phase 5 Plan 2 COMPLETE
+Last activity: 2026-02-27 — Plan 05-02 complete (tablet breakpoint 769px/1024px and small mobile breakpoint 480px added to landing.css, MOBL-01 and MOBL-02 satisfied)
 
 Progress: [████████████] 100%
 
@@ -31,7 +31,7 @@ Progress: [████████████] 100%
 | 02-image-optimization | 1/2 | ~2 min | ~2 min |
 | 03-above-fold-content | 4/4 | ~8 min | ~2 min |
 | 04-below-fold-content | 3/4 | ~5 min | ~2.5 min |
-| 05-performance-and-mobile | 1/1 | ~3 min | ~3 min |
+| 05-performance-and-mobile | 2/4 | ~8 min | ~4 min |
 
 **Recent Trend:**
 - Last 5 plans: 03-03, 03-04, 04-01, 04-02, 04-03
@@ -101,6 +101,9 @@ Recent decisions affecting current work:
 - [Phase 05-01]: PERF-02 satisfied without touching index.html — landing.css uses only Saira Condensed and Share Tech Mono; index.html loads 4 families for shared admin/pilot portal routes
 - [Phase 05-01]: Second 768px block appended separately (not merged into first at line 817) to keep animation overrides distinct from layout rules
 - [Phase 05-01]: Entry animations (lp-fadeInUp, lp-slideInLeft, lp-slideInRight) excluded from override blocks — they fire once with fill-mode backwards and do not loop
+- [Phase 05-02]: Tablet block targets existing lp- classes plus forward-declared Phase 3/4 class names; Phase 3/4 plans update selectors if actual class names differ
+- [Phase 05-02]: Small mobile breakpoint uses max-width: 480px to cover the gap where 768px breakpoint still leaves font sizes and padding too large for smaller phones
+- [Phase 05-02]: Two new breakpoint blocks appended after Plan 05-01 animation block without modifying any existing rules
 
 ### Pending Todos
 
@@ -116,5 +119,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 05-01-PLAN.md (prefers-reduced-motion and mobile animation disable blocks, PERF-02 verified). Phase 5 complete.
+Stopped at: Completed 05-02-PLAN.md (tablet and small mobile breakpoints added to landing.css, MOBL-01 and MOBL-02 satisfied).
 Resume file: None
