@@ -31,8 +31,8 @@ export default function LandingPage() {
               <img
                 src="/assets/landing/sentinel-logo.png"
                 alt="Sentinel Aerial Inspections Logo"
-                width={400}
-                height={400}
+                width={300}
+                height={300}
               />
               <div className="lp-logo-text">
                 <div className="lp-logo-heading">SENTINEL AERIAL INSPECTIONS</div>
