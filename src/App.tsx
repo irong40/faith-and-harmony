@@ -45,6 +45,7 @@ const Clients = lazy(() => import("./pages/admin/Clients"));
 const JobIntake = lazy(() => import("./pages/admin/JobIntake"));
 const ProcessingTemplates = lazy(() => import("./pages/admin/ProcessingTemplates"));
 const DeliveryReview = lazy(() => import("./pages/admin/DeliveryReview"));
+const QuoteRequests = lazy(() => import("./pages/admin/QuoteRequests"));
 
 // Lazy — pilot pages
 const PilotDashboard = lazy(() => import("./pages/pilot/PilotDashboard"));
@@ -138,6 +139,7 @@ const App = () => (
               <Route path="/admin/clients" element={<AdminRoute><Clients /></AdminRoute>} />
               <Route path="/admin/jobs/new" element={<AdminRoute><JobIntake /></AdminRoute>} />
               <Route path="/admin/processing-templates" element={<AdminRoute><ProcessingTemplates /></AdminRoute>} />
+              <Route path="/admin/quote-requests" element={<AdminRoute><QuoteRequests /></AdminRoute>} />
 
               {/* Pilot portal routes */}
               <Route path="/pilot" element={<PilotRoute><PilotDashboard /></PilotRoute>} />
