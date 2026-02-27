@@ -1601,7 +1601,7 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 24px;
   }
-  .landing-page .lp-portfolio-grid {
+  .landing-page .lp-portfolio-grid__grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
   }
@@ -1687,7 +1687,7 @@
   .landing-page .lp-pricing-card {
     padding: 24px;
   }
-  .landing-page .lp-portfolio-grid {
+  .landing-page .lp-portfolio-grid__grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
