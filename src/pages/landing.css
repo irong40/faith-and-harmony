@@ -1539,3 +1539,18 @@
     animation: none;
   }
 }
+
+@media (max-width: 768px) {
+  .landing-page .lp-scanline-overlay {
+    animation: none;
+  }
+  .landing-page .lp-scanline-bar {
+    animation: none;
+  }
+  .landing-page .lp-grid-bg {
+    animation: none;
+  }
+  .landing-page .lp-veteran-badge::before {
+    animation: none;
+  }
+}
