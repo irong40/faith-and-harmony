@@ -62,8 +62,8 @@
 
 ### Performance
 
-- [ ] **PERF-01**: Permanent CSS animations (scanline overlay, grid pulse) disabled on mobile via prefers-reduced-motion or media query
-- [ ] **PERF-02**: Google Fonts reduced to 2 families max or self hosted
+- [x] **PERF-01**: Permanent CSS animations (scanline overlay, grid pulse) disabled on mobile via prefers-reduced-motion or media query
+- [x] **PERF-02**: Google Fonts reduced to 2 families max or self hosted
 - [ ] **PERF-03**: Security headers added to vercel.json (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Strict-Transport-Security)
 
 ### Mobile Responsive
@@ -155,8 +155,8 @@
 | PAGE-12 | Phase 4: Below-Fold Content | Complete |
 | PAGE-13 | Phase 4: Below-Fold Content | Complete |
 | CONV-03 | Phase 4: Below-Fold Content | Complete |
-| PERF-01 | Phase 5: Performance and Mobile | Pending |
-| PERF-02 | Phase 5: Performance and Mobile | Pending |
+| PERF-01 | Phase 5: Performance and Mobile | Complete |
+| PERF-02 | Phase 5: Performance and Mobile | Complete |
 | PERF-03 | Phase 5: Performance and Mobile | Pending |
 | MOBL-01 | Phase 5: Performance and Mobile | Pending |
 | MOBL-02 | Phase 5: Performance and Mobile | Pending |
