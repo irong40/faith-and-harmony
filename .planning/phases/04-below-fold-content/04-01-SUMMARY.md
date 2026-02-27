@@ -100,6 +100,17 @@ None - no external service configuration required.
 - Page structure ready for 04-02 FAQSection plan
 - No blockers
 
+## Self-Check: PASSED
+
+- FOUND: src/components/landing/MilitaryAirspace.tsx
+- FOUND: .planning/phases/04-below-fold-content/04-01-SUMMARY.md
+- FOUND commit: 2a64a40 (implementation)
+- FOUND commit: 0f057fc (plan metadata)
+- Build: PASSED (npm run build)
+- Typecheck: PASSED (npm run typecheck)
+- All three installation names confirmed in component: Norfolk Naval Station, NAS Oceana, Langley Air Force Base
+- No dashes found in component prose
+
 ---
 *Phase: 04-below-fold-content*
 *Completed: 2026-02-27*
