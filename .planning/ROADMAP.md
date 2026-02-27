@@ -34,9 +34,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Install react-helmet-async, fix index.html, add HelmetProvider, create LandingPageHelmet and DefaultHelmet components
-- [ ] 01-02-PLAN.md — Add JSON-LD structured data (LocalBusiness, Service schemas per service type, FAQPage schema stub)
-- [ ] 01-03-PLAN.md — Generate sitemap.xml, update robots.txt, wire Open Graph and Twitter card tags into LandingPageHelmet
-- [ ] 01-04-PLAN.md — Apply semantic HTML corrections (main, nav, aria-labels, H1 keyword, heading hierarchy, image width/height)
+- [x] 01-02-PLAN.md — Add JSON-LD structured data (LocalBusiness, Service schemas per service type, FAQPage schema stub)
+- [x] 01-03-PLAN.md — Generate sitemap.xml, update robots.txt, wire Open Graph and Twitter card tags into LandingPageHelmet
+- [x] 01-04-PLAN.md — Apply semantic HTML corrections (main, nav, aria-labels, H1 keyword, heading hierarchy, image width/height)
 
 ### Phase 2: Image Optimization
 **Goal**: Landing page images load fast, have correct dimensions, and serve modern formats
@@ -51,7 +51,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Compress sentinel-logo.png to under 100 KB, generate WebP variant, add width/height to logo img tag (completed 2026-02-26)
-- [ ] 02-02-PLAN.md — Convert hero CSS background-image to img element with fetchpriority="high", add width/height and loading="lazy" to all landing page images
+- [x] 02-02-PLAN.md — Convert hero CSS background-image to img element with fetchpriority="high", add width/height and loading="lazy" to all landing page images (completed 2026-02-26)
 
 ### Phase 3: Above-Fold Content
 **Goal**: Visitors arriving from search land on a page that immediately communicates who Sentinel is, what it costs, and how to start
@@ -66,10 +66,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Build StickyNav component with scroll detection, section anchors, phone number, and Get a Quote CTA
-- [ ] 03-02-PLAN.md — Rebuild hero section (H1 keyword phrase, subheadline, phone, Get a Quote CTA) and add TrustBar component
-- [ ] 03-03-PLAN.md — Build PricingSection with all 6 packages, deliverables, add-ons, and per-card CTAs; reframe services copy around client outcomes
-- [ ] 03-04-PLAN.md — Build PortfolioGrid component with inline photos and service type labels replacing external gallery link
+- [x] 03-01-PLAN.md — Build StickyNav component with scroll detection, section anchors, phone number, and Get a Quote CTA (completed 2026-02-27)
+- [x] 03-02-PLAN.md — Rebuild hero section (H1 keyword phrase, subheadline, phone, Get a Quote CTA) and add TrustBar component (completed 2026-02-27)
+- [x] 03-03-PLAN.md — Build PricingSection with all 6 packages, deliverables, add-ons, and per-card CTAs; reframe services copy around client outcomes (completed 2026-02-27)
+- [x] 03-04-PLAN.md — Build PortfolioGrid component with inline photos and service type labels replacing external gallery link (completed 2026-02-27)
 
 ### Phase 4: Below-Fold Content
 **Goal**: Visitors who scroll past pricing find the answers they need to commit to a quote request and can submit without leaving the page
@@ -85,9 +85,9 @@ Plans:
 
 Plans:
 - [x] 04-01-PLAN.md — Build MilitaryAirspace component with Norfolk Naval Station, NAS Oceana, and Langley Air Force Base installation cards (completed 2026-02-27)
-- [ ] 04-02-PLAN.md — Build FAQSection with 10 questions and update LandingPageJsonLd FAQPage schema from Phase 1 stub to real content via shared FAQ_ITEMS array
-- [ ] 04-03-PLAN.md — Build QuoteForm with service pre-selection via URL hash and quote-request Supabase edge function sending to Resend
-- [ ] 04-04-PLAN.md — Build ServiceArea and AboutFounder components, update contact section, update footer with certification badges, remove lp-vets section
+- [x] 04-02-PLAN.md — Build FAQSection with 10 questions and update LandingPageJsonLd FAQPage schema from Phase 1 stub to real content via shared FAQ_ITEMS array (completed 2026-02-27)
+- [x] 04-03-PLAN.md — Build QuoteForm with service pre-selection via URL hash and quote-request Supabase edge function sending to Resend (completed 2026-02-27)
+- [x] 04-04-PLAN.md — Build ServiceArea and AboutFounder components, update contact section, update footer with certification badges, remove lp-vets section (completed 2026-02-27)
 
 ### Phase 5: Performance and Mobile
 **Goal**: The page loads fast on mobile, animations do not drain battery on small screens, and security headers protect all visitors
@@ -115,7 +115,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. SEO Foundation | 4/4 | Complete   | 2026-02-26 |
-| 2. Image Optimization | 1/2 | In Progress | - |
+| 2. Image Optimization | 2/2 | Complete   | 2026-02-26 |
 | 3. Above-Fold Content | 4/4 | Complete   | 2026-02-27 |
 | 4. Below-Fold Content | 4/4 | Complete   | 2026-02-27 |
 | 5. Performance and Mobile | 0/4 | Not started | - |
