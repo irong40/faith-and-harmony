@@ -84,7 +84,7 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Build MilitaryAirspace component with Norfolk Naval Station, NAS Oceana, and Langley Air Force Base installation cards
+- [x] 04-01-PLAN.md — Build MilitaryAirspace component with Norfolk Naval Station, NAS Oceana, and Langley Air Force Base installation cards (completed 2026-02-27)
 - [ ] 04-02-PLAN.md — Build FAQSection with 10 questions and update LandingPageJsonLd FAQPage schema from Phase 1 stub to real content via shared FAQ_ITEMS array
 - [ ] 04-03-PLAN.md — Build QuoteForm with service pre-selection via URL hash and quote-request Supabase edge function sending to Resend
 - [ ] 04-04-PLAN.md — Build ServiceArea and AboutFounder components, update contact section, update footer with certification badges, remove lp-vets section

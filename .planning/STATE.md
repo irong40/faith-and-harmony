@@ -19,7 +19,7 @@ Progress: [█████████░] 65%
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
+- Total plans completed: 8
 - Average duration: ~3 min
 - Total execution time: ~20 min
 
@@ -30,6 +30,7 @@ Progress: [█████████░] 65%
 | 01-seo-foundation | 4/4 | ~18 min | ~4.5 min |
 | 02-image-optimization | 1/2 | ~2 min | ~2 min |
 | 03-above-fold-content | 4/4 | ~8 min | ~2 min |
+| 04-below-fold-content | 1/4 | ~3 min | ~3 min |
 
 **Recent Trend:**
 - Last 5 plans: 01-04, 02-01, 03-01, 03-02, 03-03, 03-04
@@ -83,6 +84,8 @@ Recent decisions affecting current work:
 - [Phase 03-04]: PortfolioGrid owns id="portfolio" on its section element, each component manages its own section identity
 - [Phase 03-04]: Aerial photo dimensions placeholder 1200x800; Phase 5 image optimization will verify actual pixel dimensions and correct width/height attributes if needed
 - [Phase 03-04]: PORTFOLIO_ITEMS array is module-level const (not inside component) to avoid recreation on each render
+- [Phase 04-01]: MilitaryAirspace positioned after PortfolioGrid and before FAQSection in LandingPage.tsx page flow
+- [Phase 04-01]: Closing statement uses "mission analysis" (not "pre-mission analysis") to avoid colon-adjacent phrasing that would violate writing rules
 - [Phase 04-02]: FAQ_ITEMS exported from FAQSection.tsx and imported in LandingPageJsonLd.tsx; single edit propagates to both visible content and JSON-LD schema simultaneously
 - [Phase 04-02]: Static list render chosen over accordion; all FAQ content visible and indexable without JavaScript interaction
 - [Phase 04-02]: Shared data export pattern established for FAQ: export const DATA_ARRAY from UI component, import in schema component
