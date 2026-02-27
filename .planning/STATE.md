@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 3 of 5 (Above Fold Content)
-Current Plan: 1 of 4 (COMPLETE)
+Current Plan: 2 of 4 (COMPLETE)
 Status: Phase 3 In Progress
-Last activity: 2026-02-27 — Plan 03-01 complete (StickyNav component with scroll detection, section anchor IDs, phone number 760.575.4876 and Get a Quote CTA)
+Last activity: 2026-02-27 — Plan 03-02 complete (HeroSection with H1 keyword phrase, phone, Get a Quote CTA, and TrustBar with four proof badges)
 
-Progress: [██████░░░░] 40%
+Progress: [███████░░░] 45%
 
 ## Performance Metrics
 
@@ -73,6 +73,9 @@ Recent decisions affecting current work:
 - [Phase 03-01]: PricingSection.tsx owns id="pricing" and QuoteForm.tsx owns id="quote" as each component manages its own section identity
 - [Phase 03-01]: Sticky nav z-index 2000 ensures it renders above scanline overlays at z-index 1000/1001
 - [Phase 03-01]: Mobile breakpoint at 768px hides nav links but keeps phone and CTA visible
+- [Phase 03-02]: H1 text splits across two spans for visual hierarchy; the containing h1 element preserves the full keyword phrase for SEO
+- [Phase 03-02]: Logo text in header uses div.lp-logo-heading (not h1) so HeroSection owns the single document H1
+- [Phase 03-02]: HeroSection includes img.lp-hero-bg-img absolute-positioned background image carried forward from Phase 2 image optimization
 
 ### Pending Todos
 
@@ -88,5 +91,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 03-01-PLAN.md (StickyNav component with scroll-triggered visibility, section anchor IDs, phone and CTA).
+Stopped at: Completed 03-02-PLAN.md (HeroSection with H1 keyword phrase, phone number, Get a Quote CTA, and TrustBar with four proof badges).
 Resume file: None

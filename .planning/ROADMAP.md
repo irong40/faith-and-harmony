@@ -116,6 +116,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. SEO Foundation | 4/4 | Complete   | 2026-02-26 |
 | 2. Image Optimization | 1/2 | In Progress | - |
-| 3. Above-Fold Content | 1/4 | In Progress|  |
+| 3. Above-Fold Content | 2/4 | In Progress|  |
 | 4. Below-Fold Content | 0/4 | Not started | - |
 | 5. Performance and Mobile | 0/4 | Not started | - |
