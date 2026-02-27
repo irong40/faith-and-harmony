@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-26)
 ## Current Position
 
 Phase: 4 of 5 (Below Fold Content)
-Current Plan: 2 of 4 (COMPLETE)
-Status: Phase 4 In Progress
-Last activity: 2026-02-27 — Plan 04-02 complete (FAQSection with 10 Q&A pairs using shared FAQ_ITEMS array driving both visible list and FAQPage JSON-LD schema)
+Current Plan: 4 of 4 (COMPLETE)
+Status: Phase 4 COMPLETE
+Last activity: 2026-02-27 — Plan 04-04 complete (ServiceArea and AboutFounder components, updated contact section and footer with credential badges, lp-vets removed)
 
-Progress: [█████████░] 65%
+Progress: [██████████] 75%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: ~3 min
-- Total execution time: ~20 min
+- Total execution time: ~22 min
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [█████████░] 65%
 | 01-seo-foundation | 4/4 | ~18 min | ~4.5 min |
 | 02-image-optimization | 1/2 | ~2 min | ~2 min |
 | 03-above-fold-content | 4/4 | ~8 min | ~2 min |
-| 04-below-fold-content | 1/4 | ~3 min | ~3 min |
+| 04-below-fold-content | 3/4 | ~5 min | ~2.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-04, 02-01, 03-01, 03-02, 03-03, 03-04
+- Last 5 plans: 03-03, 03-04, 04-01, 04-02, 04-03
 - Trend: Consistent
 
 *Updated after each plan completion*
@@ -89,6 +89,14 @@ Recent decisions affecting current work:
 - [Phase 04-02]: FAQ_ITEMS exported from FAQSection.tsx and imported in LandingPageJsonLd.tsx; single edit propagates to both visible content and JSON-LD schema simultaneously
 - [Phase 04-02]: Static list render chosen over accordion; all FAQ content visible and indexable without JavaScript interaction
 - [Phase 04-02]: Shared data export pattern established for FAQ: export const DATA_ARRAY from UI component, import in schema component
+- [Phase 04-03]: Edge function uses plain text email body (not HTML) for internal inquiry notification
+- [Phase 04-03]: Hash format #quote?service={value} established in Phase 3 and consumed correctly by QuoteForm useEffect on mount
+- [Phase 04-03]: inquiries@sentinelaerial.com from address requires Resend domain verification; documented in function comment
+- [Phase 04-03]: apikey header used for public edge function fetch (consistent with other edge function calls in codebase)
+- [Phase 04-04]: ServiceArea and AboutFounder positioned after QuoteForm in page flow, completing below-fold structure
+- [Phase 04-04]: lp-vets section removed entirely from LandingPage.tsx per PROJECT.md scope constraints
+- [Phase 04-04]: Footer updated with three badge spans: FAA Part 107, licensed and insured, veteran owned (highlighted in orange)
+- [Phase 04-04]: Founder bio uses "Field Artillery" and "Information Systems Management" without compound hyphens per CLAUDE.md writing rules
 
 ### Pending Todos
 
@@ -104,5 +112,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 04-02-PLAN.md (FAQSection with 10 Q&A pairs using shared FAQ_ITEMS array driving both visible list and FAQPage JSON-LD schema). Phase 4 Plan 02 complete.
+Stopped at: Completed 04-04-PLAN.md (ServiceArea and AboutFounder components, updated contact section and footer, lp-vets removed). Phase 4 complete.
 Resume file: None
