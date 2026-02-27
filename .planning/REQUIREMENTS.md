@@ -35,7 +35,7 @@
 - [x] **PAGE-03**: Trust bar strip below hero showing FAA Part 107, $1M Insurance, Veteran Owned, 48 Hour Turnaround badges
 - [x] **PAGE-04**: Services section reframed around client outcomes (realtors, property owners, developers)
 - [x] **PAGE-05**: Pricing section displaying all 6 packages with deliverables, add ons listed below
-- [ ] **PAGE-06**: Inline portfolio grid showing 6 to 9 representative photos with service type labels
+- [x] **PAGE-06**: Inline portfolio grid showing 6 to 9 representative photos with service type labels
 - [ ] **PAGE-07**: Military airspace differentiator section with Norfolk Naval Station, NAS Oceana, Langley AFB named in heading or subheading
 - [ ] **PAGE-08**: FAQ section with 8 to 10 questions covering LAANC, turnaround, weather, service area, pricing, insurance, equipment
 - [ ] **PAGE-09**: Inline quote request form (name, email, phone, service type dropdown, preferred date, message) that submits without leaving page
@@ -50,7 +50,7 @@
 - [x] **CONV-02**: Phone number visible in header and hero section
 - [ ] **CONV-03**: Quote form accessible from sticky nav CTA button
 - [x] **CONV-04**: Each pricing card has its own CTA linking to the quote form with service type pre-selected
-- [ ] **CONV-05**: Portfolio section embedded inline (not external link only)
+- [x] **CONV-05**: Portfolio section embedded inline (not external link only)
 
 ### Image Optimization
 
@@ -142,11 +142,11 @@
 | PAGE-03 | Phase 3: Above-Fold Content | Complete |
 | PAGE-04 | Phase 3: Above-Fold Content | Complete |
 | PAGE-05 | Phase 3: Above-Fold Content | Complete |
-| PAGE-06 | Phase 3: Above-Fold Content | Pending |
+| PAGE-06 | Phase 3: Above-Fold Content | Complete |
 | CONV-01 | Phase 3: Above-Fold Content | Complete |
 | CONV-02 | Phase 3: Above-Fold Content | Complete |
 | CONV-04 | Phase 3: Above-Fold Content | Complete |
-| CONV-05 | Phase 3: Above-Fold Content | Pending |
+| CONV-05 | Phase 3: Above-Fold Content | Complete |
 | PAGE-07 | Phase 4: Below-Fold Content | Pending |
 | PAGE-08 | Phase 4: Below-Fold Content | Pending |
 | PAGE-09 | Phase 4: Below-Fold Content | Pending |
