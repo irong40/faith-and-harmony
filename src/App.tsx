@@ -21,6 +21,7 @@ const CustomerProposal = lazy(() => import("./pages/CustomerProposal"));
 const CustomerInvoice = lazy(() => import("./pages/CustomerInvoice"));
 const DroneUpload = lazy(() => import("./pages/DroneUpload"));
 const ClientJobPortal = lazy(() => import("./pages/ClientJobPortal"));
+const QuoteAcceptancePage = lazy(() => import("./pages/QuoteAcceptancePage"));
 
 // Lazy — admin pages
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
@@ -115,6 +116,7 @@ const App = () => (
               <Route path="/invoice/:token" element={<ErrorBoundary><CustomerInvoice /></ErrorBoundary>} />
               <Route path="/drone-upload/:token" element={<ErrorBoundary><DroneUpload /></ErrorBoundary>} />
               <Route path="/my-jobs/:token" element={<ErrorBoundary><ClientJobPortal /></ErrorBoundary>} />
+              <Route path="/quote/:token" element={<ErrorBoundary><QuoteAcceptancePage /></ErrorBoundary>} />
 
               {/* Admin routes */}
               <Route path="/admin/dashboard" element={<AdminRoute><Dashboard /></AdminRoute>} />
