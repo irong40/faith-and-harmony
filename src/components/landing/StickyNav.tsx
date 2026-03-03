@@ -29,7 +29,7 @@ export default function StickyNav() {
           <a href="#contact" onClick={() => setIsMenuOpen(false)}>Contact</a>
         </div>
         <div className="lp-sticky-nav__actions">
-          <a href="tel:7605754876" className="lp-sticky-nav__phone">760.575.4876</a>
+          <a href="tel:7578438772" className="lp-sticky-nav__phone">757.843.8772</a>
           <a href="#quote" className="lp-cta-button lp-sticky-nav__cta">Get a Quote</a>
         </div>
         <button

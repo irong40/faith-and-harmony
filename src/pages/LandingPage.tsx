@@ -126,7 +126,7 @@ export default function LandingPage() {
             <div className="lp-contact-info">
               <div className="lp-contact-item">
                 <h4>PHONE</h4>
-                <p><a href="tel:7605754876">760.575.4876</a></p>
+                <p><a href="tel:7578438772">757.843.8772</a></p>
               </div>
               <div className="lp-contact-item">
                 <h4>EMAIL</h4>
