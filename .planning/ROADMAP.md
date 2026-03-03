@@ -63,6 +63,10 @@ Plans:
   5. A successfully created request shows the correct status to enter the quote workflow
 **Plans**: 2 plans
 
+Plans:
+- [ ] 03-01-PLAN.md — n8n workflow JSON and Vapi analysisPlan configuration
+- [ ] 03-02-PLAN.md — Import workflow, configure credentials, validate pipeline
+
 ### Phase 4: Scheduling and Availability
 **Goal**: The bot can check and offer available dates during calls, and the admin manages availability through a calendar interface
 **Depends on**: Phase 1 (database foundation)
