@@ -84,6 +84,11 @@ Plans:
   5. The Vapi bot can call the availability endpoint mid-conversation and tell the caller which dates are open
 **Plans**: 3 plans
 
+Plans:
+- [ ] 04-01-PLAN.md — Database migrations and availability-check edge function (three tables, RLS, seeded weekday slots, GET endpoint)
+- [ ] 04-02-PLAN.md — Admin scheduling page (calendar with modifiers, weekly slots, blackout management, nav wiring)
+- [ ] 04-03-PLAN.md — Vapi check_availability tool definition and system prompt additions
+
 ### Phase 5: Weather Operations
 **Goal**: The system checks weather forecasts against flight parameters and alerts the admin when scheduled jobs face unsafe conditions
 **Depends on**: Phase 4 (needs scheduled jobs to check against)
