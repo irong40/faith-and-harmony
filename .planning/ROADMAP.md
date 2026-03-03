@@ -51,6 +51,11 @@ Plans:
 **Plans**: 3 plans
 **External prerequisites**: Vapi account created, ElevenLabs API key added to Vapi, 757 number provisioned in Vapi dashboard
 
+Plans:
+- [ ] 02-01-PLAN.md — System prompt and tool definition JSON (Paula voice bot prompt, pricing and transfer tool schemas)
+- [ ] 02-02-PLAN.md — vapi-tool-handler pricing handler (get_package_pricing branch, natural language response, deploy)
+- [ ] 02-03-PLAN.md — Dashboard setup guide and verification (assistant config, setup instructions, 757 number provisioning, live test)
+
 ### Phase 3: n8n Vapi Pipeline
 **Goal**: When a Vapi call ends, n8n automatically processes the call data and creates a request in the system without manual intervention
 **Depends on**: Phase 1 (intake API), Phase 2 (Vapi sends webhooks)
