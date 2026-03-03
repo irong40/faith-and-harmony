@@ -1,0 +1,52 @@
+{
+  "_comment": "Apply this analysisPlan to the Vapi assistant via dashboard or API PATCH. The structuredDataSchema fields map directly to the intake-lead edge function payload. The n8n workflow (wf5) reads from body.message.analysis.structuredData.",
+  "analysisPlan": {
+    "structuredDataPrompt": "Extract the following from the call transcript. Use null for any field the caller did not provide.",
+    "structuredDataSchema": {
+      "type": "object",
+      "properties": {
+        "caller_name": {
+          "type": "string",
+          "description": "Full name of the caller"
+        },
+        "caller_phone": {
+          "type": "string",
+          "description": "Phone number provided by caller (if different from caller ID)"
+        },
+        "caller_email": {
+          "type": "string",
+          "description": "Email address if provided, else null"
+        },
+        "service_type": {
+          "type": "string",
+          "enum": ["re_basic", "re_standard", "re_premium", "construction", "inspection", "site_survey"],
+          "description": "Service package the caller is interested in"
+        },
+        "job_description": {
+          "type": "string",
+          "description": "Description of the job or property"
+        },
+        "property_address": {
+          "type": "string",
+          "description": "Property address if provided"
+        },
+        "preferred_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Preferred service date in YYYY-MM-DD format"
+        },
+        "qualification_status": {
+          "type": "string",
+          "enum": ["qualified", "declined", "transferred", "pending"],
+          "description": "Outcome of the qualification conversation"
+        },
+        "sentiment": {
+          "type": "string",
+          "enum": ["positive", "neutral", "negative"],
+          "description": "Overall caller sentiment"
+        }
+      },
+      "required": ["caller_name", "caller_phone", "service_type", "job_description"]
+    }
+  }
+}
