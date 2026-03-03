@@ -1,0 +1,316 @@
+{
+  "name": "WF5 - Vapi Intake Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vapi-intake",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-5001-5001-5001-000000000001",
+      "name": "Vapi Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "webhookId": "vapi-intake"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ received: true, call_id: $json.body?.message?.call?.id || 'unknown' }) }}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-5002-5002-5002-000000000002",
+      "name": "Respond Accepted",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [440, 160]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "filter-eocr",
+              "leftValue": "={{ $json.body.message.type }}",
+              "rightValue": "end-of-call-report",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-5003-5003-5003-000000000003",
+      "name": "Filter End of Call",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "result",
+              "value": "=skipped: not end-of-call-report (type={{ $json.body.message.type }})"
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-5004-5004-5004-000000000004",
+      "name": "Skip",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [900, 460]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract structured call data from Vapi end-of-call-report payload\nconst webhookBody = $('Vapi Webhook').item.json.body;\nconst msg = webhookBody.message || {};\nconst call = msg.call || {};\nconst analysis = msg.analysis || {};\nconst sd = analysis.structuredData || {};\nconst customer = call.customer || {};\n\n// Build intake payload with null-safe fallbacks\nconst intake = {\n  // Required fields\n  caller_name:          sd.caller_name || customer.name || null,\n  caller_phone:         sd.caller_phone || customer.number || null,\n  service_type:         sd.service_type || null,\n  job_description:      sd.job_description || analysis.summary || null,\n  call_id:              call.id || null,\n\n  // Optional fields\n  caller_email:         sd.caller_email || null,\n  property_address:     sd.property_address || null,\n  preferred_date:       sd.preferred_date || null,\n  qualification_status: sd.qualification_status || 'pending',\n  sentiment:            sd.sentiment || null,\n};\n\n// Validate required fields before calling intake\nconst missing = ['caller_name', 'caller_phone', 'service_type', 'job_description', 'call_id']\n  .filter(f => !intake[f]);\n\nreturn [{\n  json: {\n    ...intake,\n    _validation_errors: missing,\n    _can_proceed: missing.length === 0,\n  }\n}];"
+      },
+      "id": "a1b2c3d4-5005-5005-5005-000000000005",
+      "name": "Extract Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 240]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-valid",
+              "leftValue": "={{ $json._can_proceed }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-5006-5006-5006-000000000006",
+      "name": "Check Valid",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1120, 240]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/functions/v1/intake-lead",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-webhook-secret",
+              "value": "={{ $env.INTAKE_WEBHOOK_SECRET }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify(Object.fromEntries(Object.entries($json).filter(([k]) => !k.startsWith('_')))) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "a1b2c3d4-5007-5007-5007-000000000007",
+      "name": "Call Intake Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 160],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-status",
+              "leftValue": "={{ $response.statusCode }}",
+              "rightValue": 300,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-5008-5008-5008-000000000008",
+      "name": "Check Status",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1560, 160]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "result",
+              "value": "=Intake created: qr={{ $json.quote_request_id }}, lead={{ $json.lead_id }}"
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-5009-5009-5009-000000000009",
+      "name": "Log Success",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [1780, 80]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Resend email payload for admin failure notification\nconst extractedData = $('Extract Fields').item.json;\nconst httpResponse = $json;\n\n// Determine error source\nlet errorDetail = '';\nif (extractedData._validation_errors && extractedData._validation_errors.length > 0) {\n  errorDetail = 'Missing required fields: ' + extractedData._validation_errors.join(', ');\n} else if (httpResponse.error) {\n  errorDetail = 'Intake API error: ' + (httpResponse.error || JSON.stringify(httpResponse));\n} else {\n  errorDetail = 'HTTP ' + ($response?.statusCode || 'unknown') + ': ' + JSON.stringify(httpResponse);\n}\n\nconst emailPayload = {\n  from: 'n8n-alerts@sentinelaerial.com',\n  to: ['contact@sentinelaerial.com'],\n  subject: 'ALERT: Vapi intake failed',\n  text: [\n    'A Vapi voice bot call failed to create an intake.',\n    '',\n    'Call ID: ' + (extractedData.call_id || 'unknown'),\n    'Caller Phone: ' + (extractedData.caller_phone || 'unknown'),\n    'Caller Name: ' + (extractedData.caller_name || 'unknown'),\n    '',\n    'Error: ' + errorDetail,\n    '',\n    'Timestamp: ' + new Date().toISOString(),\n    '',\n    'Check n8n execution history for full details.'\n  ].join('\\n')\n};\n\nreturn [{ json: emailPayload }];"
+      },
+      "id": "a1b2c3d4-5010-5010-5010-000000000010",
+      "name": "Build Error Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 320]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.RESEND_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "a1b2c3d4-5011-5011-5011-000000000011",
+      "name": "Send Admin Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 320]
+    }
+  ],
+  "connections": {
+    "Vapi Webhook": {
+      "main": [
+        [
+          { "node": "Respond Accepted", "type": "main", "index": 0 },
+          { "node": "Filter End of Call", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Respond Accepted": {
+      "main": []
+    },
+    "Filter End of Call": {
+      "main": [
+        [
+          { "node": "Extract Fields", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Skip", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Extract Fields": {
+      "main": [
+        [
+          { "node": "Check Valid", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Check Valid": {
+      "main": [
+        [
+          { "node": "Call Intake Lead", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Build Error Email", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Call Intake Lead": {
+      "main": [
+        [
+          { "node": "Check Status", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Check Status": {
+      "main": [
+        [
+          { "node": "Log Success", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Build Error Email", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Build Error Email": {
+      "main": [
+        [
+          { "node": "Send Admin Alert", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "sentinel-local"
+  },
+  "id": "wf5-vapi-intake-pipeline",
+  "tags": [
+    { "name": "sentinel" },
+    { "name": "vapi" },
+    { "name": "intake" }
+  ]
+}
