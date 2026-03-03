@@ -17,7 +17,43 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { PACKAGES } from "../pricing-lookup/index.ts";
+
+// Package pricing data — canonical values from CLAUDE.md.
+// Duplicated here rather than imported from pricing-lookup to avoid that module's
+// top-level serve() call conflicting with this function's handler.
+const PACKAGES: Record<string, { name: string; price: number; unit?: string; deliverables: string[] }> = {
+  re_basic: {
+    name: 'Listing Lite',
+    price: 225,
+    deliverables: ['10 photos', 'Sky replacement', 'Next day delivery'],
+  },
+  re_standard: {
+    name: 'Listing Pro',
+    price: 450,
+    deliverables: ['25 photos', '60 second reel', '2D boundary overlay', '48 hour turnaround'],
+  },
+  re_premium: {
+    name: 'Luxury Listing',
+    price: 750,
+    deliverables: ['40+ photos', '2 minute cinematic video', 'Twilight shoot', '24 hour priority'],
+  },
+  construction: {
+    name: 'Construction Progress',
+    price: 450,
+    unit: '/visit',
+    deliverables: ['Orthomosaic', 'Site overview', 'Date stamped archive'],
+  },
+  commercial: {
+    name: 'Commercial Marketing',
+    price: 850,
+    deliverables: ['4K video', '3D model', 'Raw footage', 'Perpetual license'],
+  },
+  inspection: {
+    name: 'Inspection Data',
+    price: 1200,
+    deliverables: ['Inspection grid photography', 'Annotated report', 'Exportable data'],
+  },
+};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
