@@ -93,7 +93,11 @@ Plans:
   2. Flight parameters are configurable: max sustained wind, max gust, max precipitation probability, min visibility, min cloud ceiling
   3. A scheduled check (n8n cron or edge function) runs daily and flags any job in the next 48 hours with conditions outside safe parameters
   4. The admin weather view shows current conditions and a 48-hour forecast with pass/fail indicators against flight parameters
-**Plans**: 3 plans
+**Plans**: 2 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — NWS weather pipeline (forecast cache table, weather-forecast-fetch edge function, pg_cron schedule, drone_jobs weather flagging)
+- [ ] 05-02-PLAN.md — Admin weather operations page (48-hour forecast grid, flagged jobs, manual refresh)
 
 ### Phase 6: Integration and Edge Cases
 **Goal**: The complete pipeline works end-to-end and handles real-world edge cases gracefully
@@ -117,5 +121,5 @@ Phases execute in numeric order: 1 > 2 > 3 > 4 > 5 > 6
 | 2. Vapi Voice Bot | 0/3 | Not started | — |
 | 3. n8n Vapi Pipeline | 0/2 | Not started | — |
 | 4. Scheduling and Availability | 0/3 | Not started | — |
-| 5. Weather Operations | 0/3 | Not started | — |
+| 5. Weather Operations | 0/2 | Not started | — |
 | 6. Integration and Edge Cases | 0/3 | Not started | — |
