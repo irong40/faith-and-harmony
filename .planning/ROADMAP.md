@@ -113,7 +113,11 @@ Plans:
   2. An out-of-service-area caller receives a polite decline with a suggestion to search for local providers
   3. The admin call log page shows recent calls with: timestamp, caller name, duration, outcome (qualified, declined, transferred), and a link to the transcript
   4. The admin leads page shows bot-sourced leads with qualification status and whether they converted to a quote
-**Plans**: 3 plans
+**Plans**: 2 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Admin call log and leads pages (RLS migration, CallLogs page, Leads page, nav and route wiring)
+- [ ] 06-02-PLAN.md — End-to-end pipeline validation and edge case verification (system check, live test calls)
 
 ## Progress
 
@@ -127,4 +131,4 @@ Phases execute in numeric order: 1 > 2 > 3 > 4 > 5 > 6
 | 3. n8n Vapi Pipeline | 0/2 | Not started | — |
 | 4. Scheduling and Availability | 0/3 | Not started | — |
 | 5. Weather Operations | 0/2 | Not started | — |
-| 6. Integration and Edge Cases | 0/3 | Not started | — |
+| 6. Integration and Edge Cases | 0/2 | Not started | — |
