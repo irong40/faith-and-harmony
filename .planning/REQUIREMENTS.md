@@ -11,7 +11,7 @@
 - [x] **INTAKE-02**: Call logs table stores Vapi call ID, transcript, duration, sentiment, and outcome
 - [x] **INTAKE-03**: Edge function receives structured call data from n8n and creates or matches a client record plus a quote request
 - [x] **INTAKE-04**: Edge function returns package pricing and deliverables for mid-call bot queries
-- [ ] **INTAKE-05**: Bot-created requests feed into existing quote request to invoice workflow without manual re-entry
+- [x] **INTAKE-05**: Bot-created requests feed into existing quote request to invoice workflow without manual re-entry
 
 ### Voice Bot
 
@@ -25,10 +25,10 @@
 
 ### Middleware
 
-- [ ] **MWARE-01**: n8n workflow receives Vapi end-of-call webhook with call summary and extracted fields
-- [ ] **MWARE-02**: n8n transforms Vapi payload into intake API format and calls edge function
-- [ ] **MWARE-03**: Failed intakes trigger admin notification via existing messaging or email
-- [ ] **MWARE-04**: Successful qualified intakes trigger the request-to-quote flow automatically
+- [x] **MWARE-01**: n8n workflow receives Vapi end-of-call webhook with call summary and extracted fields
+- [x] **MWARE-02**: n8n transforms Vapi payload into intake API format and calls edge function
+- [x] **MWARE-03**: Failed intakes trigger admin notification via existing messaging or email
+- [x] **MWARE-04**: Successful qualified intakes trigger the request-to-quote flow automatically
 
 ### Scheduling
 
@@ -73,7 +73,7 @@
 | INTAKE-02 | Phase 1: Intake API and Lead Tracking | Complete |
 | INTAKE-03 | Phase 1: Intake API and Lead Tracking | Complete |
 | INTAKE-04 | Phase 1: Intake API and Lead Tracking | Complete |
-| INTAKE-05 | Phase 3: n8n Vapi Pipeline | Pending |
+| INTAKE-05 | Phase 3: n8n Vapi Pipeline | Complete |
 | VBOT-01 | Phase 2: Vapi Voice Bot | Complete |
 | VBOT-02 | Phase 2: Vapi Voice Bot | Complete |
 | VBOT-03 | Phase 2: Vapi Voice Bot | Complete |
@@ -81,10 +81,10 @@
 | VBOT-05 | Phase 2: Vapi Voice Bot | Complete |
 | VBOT-06 | Phase 2: Vapi Voice Bot | Complete |
 | VBOT-07 | Phase 2: Vapi Voice Bot | Complete |
-| MWARE-01 | Phase 3: n8n Vapi Pipeline | Pending |
-| MWARE-02 | Phase 3: n8n Vapi Pipeline | Pending |
-| MWARE-03 | Phase 3: n8n Vapi Pipeline | Pending |
-| MWARE-04 | Phase 3: n8n Vapi Pipeline | Pending |
+| MWARE-01 | Phase 3: n8n Vapi Pipeline | Complete |
+| MWARE-02 | Phase 3: n8n Vapi Pipeline | Complete |
+| MWARE-03 | Phase 3: n8n Vapi Pipeline | Complete |
+| MWARE-04 | Phase 3: n8n Vapi Pipeline | Complete |
 | SCHED-01 | Phase 4: Scheduling and Availability | Pending |
 | SCHED-02 | Phase 4: Scheduling and Availability | Pending |
 | SCHED-03 | Phase 4: Scheduling and Availability | Pending |

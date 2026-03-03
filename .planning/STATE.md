@@ -9,14 +9,14 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 ## Current Position
 
-Phase: 4 of 6 (complete), Phase 3 blocked on n8n debug
-Plan: All 3 plans in Phase 4 complete. Phase 3 not started (n8n workflow debug blocker).
-Status: Phases 1, 2, 4 complete. Phase 3 blocked. Phase 5 depends on Phase 4 (now unblocked). Phase 6 depends on all.
-Last activity: 2026-03-03 — Executed Phase 4 in parallel with Phase 3 blocker. Created 3 tables, deployed availability-check edge function, built admin Scheduling page, created Vapi tool config.
+Phase: 3 of 6 (in progress), Plan 03-01 COMPLETE, Plan 03-02 next
+Plan: 03-01 committed (wf5 workflow 2fd2c01, analysisPlan b5a0f8c). Ready to import into n8n and test.
+Status: Phases 1, 2, 4 complete. Phase 3 in progress (03-01 done). Phase 5 ready. Phase 6 depends on all.
+Last activity: 2026-03-03 — 03-01 execution confirmed, artifacts verified and committed.
 
 ## Progress
 
-[██████░░░░] 60% (9/15 plans executed, 6 remaining across 3 phases)
+[███████░░░] 67% (10/15 plans executed, 5 remaining across 3 phases)
 
 ## Accumulated Context
 
@@ -74,10 +74,16 @@ All 5 phases shipped. Landing page live at sentinelaerial domain. Phase artifact
 - Append system-prompt-additions.md content to Paula bot system prompt in Vapi
 - Browser verify the admin Scheduling page (04-02 Task 3 checkpoint)
 
+### Decisions (03-01)
+
+- Parallel connection from Vapi Webhook to both Respond Accepted and Filter End of Call: matches wf1 pattern, ensures immediate HTTP ACK while processing continues
+- Build Error Email handles both validation failures and API failures, routes both to shared Send Admin Alert node
+- Internal fields (_can_proceed, _validation_errors) stripped from intake-lead payload via Object.fromEntries filter expression
+
 ### Blockers/Concerns
 
-- Phase 3 (n8n Vapi Pipeline) blocked on n8n workflow execution error (errors after Extract Call Data node)
-- RESEND_API_KEY not in n8n container env
+- Phase 3 Plan 03-02: wf5 needs import into n8n, activation, and test with a real Vapi call
+- analysisPlan from vapi/analysis-plan.json needs to be applied to Paula bot in Vapi dashboard
 - NWS API station confirmed: AKQ/90,52 (Wakefield VA office, Hampton Roads grid)
 - Always use --use-api flag for supabase functions deploy on this machine (local bundler cache locked by Windows ACL)
 - Iron's actual phone number is stored in Vapi dashboard transferToSpecialist tool only (not in version-controlled files)
@@ -85,6 +91,6 @@ All 5 phases shipped. Landing page live at sentinelaerial domain. Phase artifact
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Phase 4 complete. Phase 3 still blocked on n8n debug. Phase 5 now unblocked.
+Stopped at: Completed 03-01-PLAN.md. Both artifacts verified and committed.
 Resume file: None
-Resume signal: Debug n8n workflow (Phase 3) or begin Phase 5 (Weather Operations)
+Resume signal: Run 03-02 (n8n import, activation, end-to-end test with real Vapi call)
