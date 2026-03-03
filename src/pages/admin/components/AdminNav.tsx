@@ -26,6 +26,7 @@ import {
   Route,
   ExternalLink,
   Inbox,
+  Satellite,
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -56,6 +57,7 @@ const navCategories: NavCategory[] = [
       { href: "/admin/pilots", label: "Pilots", icon: Users },
       { href: "/pilot", label: "Pilot Portal", icon: Target },
       { href: "/admin/processing-templates", label: "Templates", icon: Route },
+      { href: "/admin/land-monitor", label: "Land Monitor", icon: Satellite },
     ],
   },
   {
