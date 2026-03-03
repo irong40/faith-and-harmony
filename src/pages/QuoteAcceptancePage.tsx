@@ -30,6 +30,20 @@ interface LineItem {
   unit_price: number;
 }
 
+interface BrandPayload {
+  company_name: string;
+  legal_name: string;
+  dba: string | null;
+  tagline: string;
+  color_primary: string;
+  color_accent: string;
+  color_cta: string;
+  color_light: string;
+  reply_to: string;
+  phone: string | null;
+  website: string | null;
+}
+
 interface QuotePayload {
   id: string;
   status: string;
@@ -40,6 +54,7 @@ interface QuotePayload {
   expires_at: string | null;
   customer_name: string | null;
   job_type: string | null;
+  brand?: BrandPayload | null;
 }
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
@@ -164,6 +179,21 @@ export default function QuoteAcceptancePage() {
   const isActionable = quote && ACTIONABLE_STATUSES.includes(quote.status);
   const isExpired = quote?.expires_at ? new Date(quote.expires_at) < new Date() : false;
 
+  // Resolve brand with SAI fallbacks
+  const brand: BrandPayload = quote?.brand ?? {
+    company_name: "Sentinel Aerial Inspections",
+    legal_name: "Faith & Harmony LLC",
+    dba: "Sentinel Aerial Inspections",
+    tagline: "Professional Drone Services — Hampton Roads",
+    color_primary: "#1C1C1C",
+    color_accent: "#FF6B35",
+    color_cta: "#FF6B35",
+    color_light: "#F5F5F0",
+    reply_to: "contact@sentinelaerial.com",
+    phone: "760.575.4876",
+    website: "sentinelaerial.com",
+  };
+
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
@@ -189,7 +219,7 @@ export default function QuoteAcceptancePage() {
             <h2 className="text-xl font-semibold mb-2">Quote Not Found</h2>
             <p className="text-muted-foreground">
               This link may be invalid or the quote may no longer be available.
-              Contact us at inquiries@sentinelaerialinspections.com for help.
+              Please contact us for assistance.
             </p>
           </CardContent>
         </Card>
@@ -223,12 +253,12 @@ export default function QuoteAcceptancePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-[#2b0a3d] text-white py-8">
+      <header className="text-white py-8" style={{ backgroundColor: brand.color_primary }}>
         <div className="container max-w-4xl mx-auto px-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-[#dfae62]">
-            Sentinel Aerial Inspections
+          <h1 className="text-2xl md:text-3xl font-bold" style={{ color: brand.color_accent }}>
+            {brand.company_name}
           </h1>
-          <p className="text-white/80 text-sm mt-1">Veteran-Owned Aerial Services</p>
+          <p className="text-white/80 text-sm mt-1">{brand.tagline}</p>
         </div>
       </header>
 
@@ -378,12 +408,12 @@ export default function QuoteAcceptancePage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#2b0a3d] text-white py-6 mt-12">
+      <footer className="text-white py-6 mt-12" style={{ backgroundColor: brand.color_primary }}>
         <div className="container max-w-4xl mx-auto px-4 text-center">
-          <p className="text-[#dfae62] font-semibold">Sentinel Aerial Inspections</p>
-          <p className="text-sm text-white/60 mt-1">inquiries@sentinelaerialinspections.com</p>
+          <p className="font-semibold" style={{ color: brand.color_accent }}>{brand.company_name}</p>
+          <p className="text-sm text-white/60 mt-1">{brand.reply_to}</p>
           <p className="text-xs text-white/40 mt-2">
-            &copy; {new Date().getFullYear()} Faith &amp; Harmony LLC DBA Sentinel Aerial Inspections. All rights reserved.
+            &copy; {new Date().getFullYear()} {brand.legal_name}{brand.dba ? ` DBA ${brand.dba}` : ""}. All rights reserved.
           </p>
         </div>
       </footer>

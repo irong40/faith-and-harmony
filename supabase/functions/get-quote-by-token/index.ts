@@ -46,7 +46,20 @@ serve(async (req) => {
         expires_at,
         quote_requests (
           name,
-          job_type
+          job_type,
+          brands (
+            company_name,
+            legal_name,
+            dba,
+            tagline,
+            color_primary,
+            color_accent,
+            color_cta,
+            color_light,
+            reply_to,
+            phone,
+            website
+          )
         )
       `)
       .eq("acceptance_token", token)
@@ -72,6 +85,39 @@ serve(async (req) => {
       ? quote.quote_requests[0]
       : quote.quote_requests;
 
+    // Resolve brand from nested join, with SAI fallbacks
+    const brandRow = request?.brands
+      ? (Array.isArray(request.brands) ? request.brands[0] : request.brands)
+      : null;
+
+    const brand = brandRow
+      ? {
+          company_name: brandRow.company_name,
+          legal_name: brandRow.legal_name,
+          dba: brandRow.dba ?? null,
+          tagline: brandRow.tagline,
+          color_primary: brandRow.color_primary,
+          color_accent: brandRow.color_accent,
+          color_cta: brandRow.color_cta,
+          color_light: brandRow.color_light,
+          reply_to: brandRow.reply_to,
+          phone: brandRow.phone ?? null,
+          website: brandRow.website ?? null,
+        }
+      : {
+          company_name: "Sentinel Aerial Inspections",
+          legal_name: "Faith & Harmony LLC",
+          dba: "Sentinel Aerial Inspections",
+          tagline: "Professional Drone Services — Hampton Roads",
+          color_primary: "#1C1C1C",
+          color_accent: "#FF6B35",
+          color_cta: "#FF6B35",
+          color_light: "#F5F5F0",
+          reply_to: "contact@sentinelaerial.com",
+          phone: "760.575.4876",
+          website: "sentinelaerial.com",
+        };
+
     // Safe payload — no token, no email echoed back
     const payload = {
       id: quote.id,
@@ -83,6 +129,7 @@ serve(async (req) => {
       expires_at: quote.expires_at ?? null,
       customer_name: request?.name ?? null,
       job_type: request?.job_type ?? null,
+      brand,
     };
 
     return new Response(

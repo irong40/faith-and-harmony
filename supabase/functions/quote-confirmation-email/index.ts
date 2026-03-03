@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
@@ -6,16 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BRAND = {
-  navy: "#0f1e36",
-  sky: "#3b82f6",
-  accent: "#f59e0b",
-  light: "#f0f4f8",
-  companyName: "Sentinel Aerial Inspections",
-  tagline: "Veteran-Owned Aerial Services — Hampton Roads, VA",
-  fromEmail: "quotes@sentinelaerialinspections.com",
-  replyTo: "inquiries@sentinelaerialinspections.com",
-};
+// Brand resolved from DB at runtime — see below
 
 interface ConfirmationRequest {
   request_id: string;
@@ -23,6 +15,7 @@ interface ConfirmationRequest {
   email: string;
   job_type?: string;
   description?: string;
+  brand_slug?: string;
 }
 
 serve(async (req) => {
@@ -41,7 +34,7 @@ serve(async (req) => {
 
   try {
     const body: ConfirmationRequest = await req.json();
-    const { request_id, name, email, job_type, description } = body;
+    const { request_id, name, email, job_type, description, brand_slug } = body;
 
     if (!request_id || !name || !email) {
       return new Response(
@@ -49,6 +42,32 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Resolve brand from DB by slug (default to 'sai')
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    const { data: brandRow, error: brandErr } = await supabase
+      .from("brands")
+      .select("company_name, tagline, color_primary, color_accent, color_cta, color_light, from_email, reply_to")
+      .eq("slug", brand_slug ?? "sai")
+      .maybeSingle();
+
+    if (brandErr) {
+      console.error("Failed to load brand, falling back to SAI defaults:", brandErr.message);
+    }
+
+    const BRAND = {
+      navy: brandRow?.color_primary ?? "#1C1C1C",
+      sky: brandRow?.color_cta ?? "#FF6B35",
+      accent: brandRow?.color_accent ?? "#FF6B35",
+      light: brandRow?.color_light ?? "#F5F5F0",
+      companyName: brandRow?.company_name ?? "Sentinel Aerial Inspections",
+      tagline: brandRow?.tagline ?? "Professional Drone Services — Hampton Roads",
+      fromEmail: brandRow?.from_email ?? "quotes@sentinelaerialinspections.com",
+      replyTo: brandRow?.reply_to ?? "contact@sentinelaerial.com",
+    };
 
     const resend = new Resend(RESEND_API_KEY);
 
@@ -84,7 +103,7 @@ serve(async (req) => {
               <tr><td style="color:#374151;font-size:14px;padding-top:4px;line-height:1.6;">${description}</td></tr>
             </table>` : ""}
             <p style="color:#374151;margin:0 0 8px;line-height:1.6;">Questions? Reply to this email or call us directly.</p>
-            <p style="color:#374151;margin:0;line-height:1.6;">Thank you for considering Sentinel Aerial Inspections.</p>
+            <p style="color:#374151;margin:0;line-height:1.6;">Thank you for considering ${BRAND.companyName}.</p>
           </td>
         </tr>
         <tr>
@@ -103,7 +122,7 @@ serve(async (req) => {
       from: `${BRAND.companyName} <${BRAND.fromEmail}>`,
       to: [email],
       reply_to: BRAND.replyTo,
-      subject: "Quote Request Received — Sentinel Aerial Inspections",
+      subject: `Quote Request Received — ${BRAND.companyName}`,
       html: emailHtml,
     });
 

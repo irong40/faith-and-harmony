@@ -7,17 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BRAND = {
-  navy: "#0f1e36",
-  sky: "#3b82f6",
-  accent: "#f59e0b",
-  light: "#f0f4f8",
-  companyName: "Sentinel Aerial Inspections",
-  tagline: "Veteran-Owned Aerial Services — Hampton Roads, VA",
-  fromEmail: "quotes@sentinelaerialinspections.com",
-  replyTo: "inquiries@sentinelaerialinspections.com",
-  baseUrl: "https://faithandharmonyllc.com",
-};
+// Brand resolved from DB at runtime — see below
 
 interface LineItem {
   description: string;
@@ -72,7 +62,19 @@ serve(async (req) => {
         quote_requests (
           name,
           email,
-          job_type
+          job_type,
+          brands (
+            slug,
+            company_name,
+            tagline,
+            color_primary,
+            color_accent,
+            color_cta,
+            color_light,
+            from_email,
+            reply_to,
+            base_url
+          )
         )
       `)
       .eq("id", quote_id)
@@ -99,6 +101,22 @@ serve(async (req) => {
         { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Resolve brand from nested join with SAI fallbacks
+    const brandRow = request?.brands
+      ? (Array.isArray(request.brands) ? request.brands[0] : request.brands)
+      : null;
+    const BRAND = {
+      navy: brandRow?.color_primary ?? "#1C1C1C",
+      sky: brandRow?.color_cta ?? "#FF6B35",
+      accent: brandRow?.color_accent ?? "#FF6B35",
+      light: brandRow?.color_light ?? "#F5F5F0",
+      companyName: brandRow?.company_name ?? "Sentinel Aerial Inspections",
+      tagline: brandRow?.tagline ?? "Professional Drone Services — Hampton Roads",
+      fromEmail: brandRow?.from_email ?? "quotes@sentinelaerialinspections.com",
+      replyTo: brandRow?.reply_to ?? "contact@sentinelaerial.com",
+      baseUrl: brandRow?.base_url ?? "https://faithandharmonyllc.com",
+    };
 
     const lineItems: LineItem[] = Array.isArray(quote.line_items) ? quote.line_items : [];
     const acceptanceUrl = `${BRAND.baseUrl}/quote/${quote.acceptance_token}`;
@@ -209,7 +227,7 @@ serve(async (req) => {
       from: `${BRAND.companyName} <${BRAND.fromEmail}>`,
       to: [request.email],
       reply_to: BRAND.replyTo,
-      subject: `Your Quote from Sentinel Aerial Inspections`,
+      subject: `Your Quote from ${BRAND.companyName}`,
       html: emailHtml,
     });
 
