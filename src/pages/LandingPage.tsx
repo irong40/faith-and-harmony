@@ -1,155 +1,208 @@
 import { Link } from "react-router-dom";
 import LandingPageHelmet from "@/components/seo/LandingPageHelmet";
 import LandingPageJsonLd from "@/components/seo/LandingPageJsonLd";
-import StickyNav from "@/components/landing/StickyNav";
-import HeroSection from "@/components/landing/HeroSection";
-import TrustBar from "@/components/landing/TrustBar";
-import PricingSection from "@/components/landing/PricingSection";
-import PortfolioGrid from "@/components/landing/PortfolioGrid";
-import MilitaryAirspace from "@/components/landing/MilitaryAirspace";
-import FAQSection from "@/components/landing/FAQSection";
 import QuoteForm from "@/components/landing/QuoteForm";
-import ServiceArea from "@/components/landing/ServiceArea";
-import AboutFounder from "@/components/landing/AboutFounder";
 import "./landing.css";
 
 export default function LandingPage() {
   return (
-    <div className="landing-page">
+    <div className="fh-landing">
       <LandingPageHelmet />
       <LandingPageJsonLd />
-      <StickyNav />
-      <div className="lp-scanline-overlay" />
-      <div className="lp-scanline-bar" />
-      <div className="lp-grid-bg" />
 
-      {/* Header */}
-      <header className="lp-header">
-        <div className="lp-container">
-          <div className="lp-header-content">
-            <div className="lp-logo-section">
-              <img
-                src="/assets/landing/sentinel-logo.png"
-                alt="Sentinel Aerial Inspections Logo"
-                width={300}
-                height={300}
-              />
-              <div className="lp-logo-text">
-                <div className="lp-logo-heading">SENTINEL AERIAL INSPECTIONS</div>
-                <p className="lp-subtitle">Faith &amp; Harmony LLC</p>
-              </div>
+      {/* Nav */}
+      <nav className="fh-nav">
+        <div className="fh-container fh-nav-inner">
+          <div className="fh-nav-brand">
+            <span className="fh-nav-logo">Faith &amp; Harmony</span>
+            <span className="fh-nav-llc">LLC</span>
+          </div>
+          <div className="fh-nav-links">
+            <a href="#services">Services</a>
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
+            <span className="fh-nav-phone">757.843.8772</span>
+            <Link to="/auth" className="fh-nav-login">Login</Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <header className="fh-hero">
+        <div className="fh-hero-glow" />
+        <div className="fh-container fh-hero-content">
+          <h1 className="fh-hero-title">
+            Faith &amp; Harmony
+            <br />
+            <span className="fh-hero-accent">LLC</span>
+          </h1>
+          <p className="fh-hero-subtitle">Veteran-Owned Professional Services</p>
+          <p className="fh-hero-desc">
+            Technology-driven solutions for real estate, construction, and property
+            management — headquartered in Hampton Roads, Virginia.
+          </p>
+          <div className="fh-hero-actions">
+            <a href="#contact" className="fh-btn fh-btn-primary">Get Started</a>
+            <a href="tel:7578438772" className="fh-btn fh-btn-outline">757.843.8772</a>
+          </div>
+        </div>
+        <div className="fh-divider" />
+      </header>
+
+      {/* Trust Bar */}
+      <section className="fh-trust">
+        <div className="fh-container fh-trust-inner">
+          {["Veteran Owned", "FAA Part 107", "$1M Insurance", "Hampton Roads VA"].map((b) => (
+            <span key={b} className="fh-trust-badge">{b}</span>
+          ))}
+        </div>
+      </section>
+
+      {/* Divisions */}
+      <section id="services" className="fh-section fh-section-dark">
+        <div className="fh-container">
+          <h2 className="fh-section-title">Our Divisions</h2>
+          <div className="fh-title-bar" />
+          <div className="fh-cards-grid">
+            <div className="fh-card fh-card-featured">
+              <div className="fh-card-badge">Flagship</div>
+              <h3 className="fh-card-title">Sentinel Aerial Inspections</h3>
+              <p className="fh-card-desc">
+                Professional drone services for real estate, construction, and property
+                inspection. Aerial photography, orthomosaic mapping, thermal imaging, and
+                construction progress monitoring with enterprise-grade equipment.
+              </p>
+              <ul className="fh-card-list">
+                <li>Aerial Photography &amp; Video</li>
+                <li>Roof &amp; Property Inspections</li>
+                <li>Orthomosaic Mapping &amp; 3D Models</li>
+                <li>Construction Progress Documentation</li>
+                <li>Thermal Imaging &amp; Analysis</li>
+              </ul>
+              <a
+                href="https://sentinelaerialinspections.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fh-btn fh-btn-primary"
+              >
+                Visit Sentinel Aerial
+              </a>
             </div>
-            <div className="lp-header-right">
-              <nav aria-label="Site navigation">
-                <Link to="/auth" className="lp-login-link">Pilot Login</Link>
-              </nav>
-              <div className="lp-veteran-badge">100% VETERAN OWNED</div>
+            <div className="fh-card">
+              <h3 className="fh-card-title">Technology Services</h3>
+              <p className="fh-card-desc">
+                Custom software development, workflow automation, and AI-powered business
+                tools. We build the systems that run our own operations — and yours.
+              </p>
+              <ul className="fh-card-list">
+                <li>Business Process Automation</li>
+                <li>AI Workflow Integration</li>
+                <li>Custom Web Applications</li>
+              </ul>
+              <a href="#contact" className="fh-btn fh-btn-outline-gold">Inquire</a>
+            </div>
+            <div className="fh-card">
+              <h3 className="fh-card-title">Consulting</h3>
+              <p className="fh-card-desc">
+                Drone program development, Part 107 compliance guidance, and
+                operational consulting for businesses entering the UAS industry.
+              </p>
+              <ul className="fh-card-list">
+                <li>Drone Program Setup</li>
+                <li>Part 107 Compliance</li>
+                <li>Operational Workflows</li>
+              </ul>
+              <a href="#contact" className="fh-btn fh-btn-outline-gold">Inquire</a>
             </div>
           </div>
         </div>
-      </header>
+      </section>
 
-      <main className="lp-main">
-        <HeroSection />
-        <TrustBar />
-
-        {/* Services */}
-        <section className="lp-services" id="services" aria-label="Services">
-          <div className="lp-container">
-            <h2 className="lp-section-title">OUR SERVICES</h2>
-            <div className="lp-services-grid">
-              <div className="lp-service-card">
-                <h3>Real Estate Agents</h3>
-                <p>You get aerial photos your listings need to stand out. Sentinel delivers edited shots the next business day. Every image goes through automated quality checks before it reaches you.</p>
-              </div>
-              <div className="lp-service-card">
-                <h3>Property Owners</h3>
-                <p>Roof and structure inspections without putting anyone on a ladder. You get an annotated report with grid photography you can share with your insurance carrier or contractor.</p>
-              </div>
-              <div className="lp-service-card">
-                <h3>Contractors and Developers</h3>
-                <p>Construction progress documentation, orthomosaics, and 3D models from survey grade equipment. Date stamped archives you can use to track changes across the full build cycle.</p>
-              </div>
+      {/* About */}
+      <section id="about" className="fh-section fh-section-darker">
+        <div className="fh-container">
+          <h2 className="fh-section-title">About</h2>
+          <div className="fh-title-bar" />
+          <div className="fh-about-grid">
+            <div className="fh-about-text">
+              <p>
+                Faith &amp; Harmony LLC is a veteran-owned company based in Hampton Roads,
+                Virginia. Founded by Adam Pierce, a U.S. military veteran, we bring
+                discipline, precision, and integrity to everything we do.
+              </p>
+              <p>
+                Our flagship division, Sentinel Aerial Inspections, provides professional
+                drone services across coastal Virginia and northeast North Carolina. We
+                operate enterprise-grade equipment including the DJI Matrice 4E, Mavic 3
+                Enterprise, and Mini 4 Pro — delivering data our clients can act on.
+              </p>
+              <p>
+                Every project benefits from our in-house technology stack: automated
+                processing pipelines, AI-assisted quality control, and a client portal
+                built for transparency.
+              </p>
             </div>
-          </div>
-        </section>
-
-        <PricingSection />
-
-        {/* Equipment */}
-        <section className="lp-equipment" aria-label="Equipment">
-          <div className="lp-container">
-            <h2 className="lp-section-title">ENTERPRISE EQUIPMENT</h2>
-            <div className="lp-equipment-grid">
-              <div className="lp-equipment-item">
-                <img
-                  src="/assets/landing/matrice-4e.png"
-                  alt="DJI Matrice 4E Enterprise Drone"
-                  width={600}
-                  height={400}
-                  loading="lazy"
-                />
-                <div className="lp-equipment-caption">
-                  <h3>DJI MATRICE 4E</h3>
-                  <p>MECHANICAL SHUTTER / RTK POSITIONING / 49 MIN ENDURANCE / SURVEY GRADE ACCURACY</p>
+            <div className="fh-about-stats">
+              {[
+                { value: "3", label: "Enterprise Drones" },
+                { value: "HR", label: "Hampton Roads Based" },
+                { value: "24h", label: "Standard Turnaround" },
+                { value: "100%", label: "Veteran Owned" },
+              ].map((s) => (
+                <div key={s.label} className="fh-stat">
+                  <div className="fh-stat-value">{s.value}</div>
+                  <div className="fh-stat-label">{s.label}</div>
                 </div>
-              </div>
-              <div className="lp-equipment-item">
-                <img
-                  src="/assets/landing/hero-banner.jpg"
-                  alt="DJI Matrice 4 Fleet"
-                  width={1920}
-                  height={1080}
-                  loading="lazy"
-                />
-                <div className="lp-equipment-caption">
-                  <h3>DUAL AIRCRAFT FLEET</h3>
-                  <p>ZERO DOWNTIME / ENTERPRISE BACKUP / MISSION REDUNDANCY / PROFESSIONAL RELIABILITY</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <PortfolioGrid />
-        <MilitaryAirspace />
-        <FAQSection />
-        <QuoteForm />
-        <ServiceArea />
-        <AboutFounder />
-
-        {/* Contact */}
-        <section className="lp-contact" aria-label="Contact information" id="contact">
-          <div className="lp-container">
-            <h2 className="lp-section-title">GET IN TOUCH</h2>
-            <p className="lp-contact-subtitle">Call or email directly. Response within one business day.</p>
-            <div className="lp-contact-info">
-              <div className="lp-contact-item">
-                <h4>PHONE</h4>
-                <p><a href="tel:7578438772">757.843.8772</a></p>
-              </div>
-              <div className="lp-contact-item">
-                <h4>EMAIL</h4>
-                <p><a href="mailto:contact@sentinelaerial.com">contact@sentinelaerial.com</a></p>
-              </div>
-              <div className="lp-contact-item">
-                <h4>SERVICE AREA</h4>
-                <p>HAMPTON ROADS, VA<br />MARYLAND &amp; NORTHERN NC</p>
-              </div>
-            </div>
+      {/* Service Area */}
+      <section className="fh-section fh-section-dark">
+        <div className="fh-container" style={{ textAlign: "center" }}>
+          <h2 className="fh-section-title">Service Area</h2>
+          <div className="fh-title-bar" />
+          <p className="fh-section-subtitle">
+            Based in Hampton Roads, Virginia. Serving the entire coastal Virginia region.
+          </p>
+          <div className="fh-cities">
+            {[
+              "Norfolk", "Virginia Beach", "Chesapeake", "Hampton",
+              "Newport News", "Suffolk", "Portsmouth", "Williamsburg",
+              "Outer Banks", "Richmond",
+            ].map((c) => (
+              <span key={c} className="fh-city">{c}</span>
+            ))}
           </div>
-        </section>
-      </main>
+        </div>
+      </section>
+
+      {/* Contact */}
+      <section id="contact" className="fh-section fh-section-darker">
+        <div className="fh-container">
+          <h2 className="fh-section-title">Get in Touch</h2>
+          <div className="fh-title-bar" />
+          <p className="fh-section-subtitle">
+            Tell us about your project and we'll get back to you within one business day.
+          </p>
+          <QuoteForm />
+        </div>
+      </section>
 
       {/* Footer */}
-      <footer className="lp-footer" aria-label="Site footer">
-        <div className="lp-container">
-          <div className="lp-footer-badges">
-            <span className="lp-footer-badge">FAA PART 107 CERTIFIED</span>
-            <span className="lp-footer-badge">LICENSED &amp; INSURED</span>
-            <span className="lp-footer-badge lp-footer-badge-veteran">VETERAN OWNED SMALL BUSINESS</span>
+      <footer className="fh-footer">
+        <div className="fh-container fh-footer-inner">
+          <div>
+            <div className="fh-footer-brand">Faith &amp; Harmony LLC</div>
+            <p className="fh-footer-sub">Hampton Roads, Virginia</p>
           </div>
-          <p className="lp-footer-copy">&copy; 2026 SENTINEL AERIAL INSPECTIONS | FAITH &amp; HARMONY LLC | ALL RIGHTS RESERVED</p>
+          <div className="fh-footer-right">
+            <p><a href="tel:7578438772">757.843.8772</a></p>
+            <p><a href="mailto:info@faithandharmonyllc.com">info@faithandharmonyllc.com</a></p>
+            <p>&copy; {new Date().getFullYear()} Faith &amp; Harmony LLC. All rights reserved.</p>
+          </div>
         </div>
       </footer>
     </div>
