@@ -7,6 +7,9 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
 type QuoteAction = "accept" | "decline";
 
 interface RespondRequest {
@@ -30,8 +33,6 @@ serve(async (req) => {
     );
   }
 
-  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-  const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   try {
@@ -108,6 +109,21 @@ serve(async (req) => {
         JSON.stringify({ error: "Failed to update quote" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Trigger deposit invoice creation (fire and don't block the response)
+    if (action === "accept") {
+      const depositUrl = `${SUPABASE_URL}/functions/v1/create-deposit-invoice`;
+      fetch(depositUrl, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ quote_id: quote.id }),
+      }).catch((err) => {
+        console.error("Failed to trigger deposit invoice creation:", err);
+      });
     }
 
     console.log(`Quote ${quote.id} ${action}ed via token`);
