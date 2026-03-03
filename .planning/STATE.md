@@ -5,14 +5,18 @@
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** A prospective client can find Sentinel through search or phone, get qualified, receive a quote, and book a drone job without Iron personally fielding the call.
-**Current focus:** Defining requirements for v1.1 Voice Bot + Automated Intake Pipeline
+**Current focus:** v1.1 Voice Bot + Automated Intake Pipeline
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-28 — Milestone v1.1 started
+Phase: 1 of 6 - Intake API and Lead Tracking
+Plan: 01-02 complete, starting 01-03
+Status: Wave 1 complete (01-01 migrations + 01-02 pricing-lookup). Executing Wave 2.
+Last activity: 2026-03-03 — Plans 01-01 and 01-02 executed. Migrations applied, pricing-lookup deployed.
+
+## Progress
+
+[█░░░░░░░░░] 12% (2/17 plans across 6 phases)
 
 ## Accumulated Context
 
@@ -25,12 +29,20 @@ Recent decisions affecting current work:
 - n8n as middleware between Vapi and F&H app (already running for FHContent)
 - Existing invoice flow stays unchanged (request to invoice to deposit to delivery to final payment)
 - 757 area code phone number for local Hampton Roads presence
-- Weather API integration for automated flight availability checking
+- Weather API integration for automated flight availability checking (NWS API, free)
 - Bot handles qualification and intake; Iron reviews before invoice goes out (initially)
 
 ### v1.0 Landing Page (Complete)
 
-All 5 phases shipped: SEO foundation, image optimization, above-fold content, below-fold content, performance and mobile. 9 plans executed in ~22 minutes total. Landing page live at sentinelaerial domain.
+All 5 phases shipped. Landing page live at sentinelaerial domain. Phase artifacts archived to .planning/phases/_v1.0-complete/.
+
+### Existing Infrastructure (from codebase exploration)
+
+- 40 edge functions following Deno + CORS + serve() pattern
+- 56 Supabase migrations, quote_requests and clients tables already exist
+- n8n self-hosted with Cloudflare tunnel, heartbeat monitoring, n8n-relay edge function
+- 23 admin pages including QuoteRequests, Clients, DroneJobs
+- Intake edge function will follow existing patterns (quote-request, send-service-request-emails)
 
 ### Pending Todos
 
@@ -38,14 +50,13 @@ None yet.
 
 ### Blockers/Concerns
 
-- Vapi account not yet created
-- 757 phone number not yet provisioned
-- F&H app intake API endpoint does not exist yet (to be built)
-- Scheduling feature not yet designed or built in the app
-- Weather API provider not yet selected (Tomorrow.io, OpenWeatherMap, or NWS)
+- Vapi account not yet created (needed before Phase 2)
+- 757 phone number not yet provisioned (needed before Phase 2)
+- ElevenLabs API key needs to be added to Vapi (needed before Phase 2)
+- NWS API station selection for Hampton Roads (Phase 5)
 
 ## Session Continuity
 
-Last session: 2026-02-28
-Stopped at: Starting v1.1 milestone, gathering requirements
+Last session: 2026-03-03
+Stopped at: v1.1 roadmap created, ready to plan or execute Phase 1
 Resume file: None
