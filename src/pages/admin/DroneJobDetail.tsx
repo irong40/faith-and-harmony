@@ -31,9 +31,8 @@ import QAAssetGrid from "@/components/drone/QAAssetGrid";
 import AdminAssetUpload from "@/components/drone/AdminAssetUpload";
 import type { Database, Json } from "@/integrations/supabase/types";
 import type { DroneAsset, QAResults, ProcessingProfile } from "@/types/drone";
-import { useMissionSteps, useProcessingJob, useTriggerPipeline, useResumeManualEdit } from "@/hooks/usePipeline";
+import { useProcessingJob, useTriggerPipeline, useResumeManualEdit } from "@/hooks/usePipeline";
 import type { ProcessingJobStep } from "@/hooks/usePipeline";
-import PipelineStepRow from "@/components/pipeline/PipelineStepRow";
 import PipelineStepper from "@/components/pipeline/PipelineStepper";
 
 type DroneJobStatus = Database["public"]["Enums"]["drone_job_status"];
@@ -91,24 +90,6 @@ const STATUS_CONFIG: Record<DroneJobStatus, { label: string; color: string }> = 
 const STATUS_ORDER: DroneJobStatus[] = [
   "intake", "scheduled", "captured", "uploaded", "complete", "processing", "review_pending", "qa", "revision", "delivered"
 ];
-
-function PipelineSteps({ missionId }: { missionId: string | undefined }) {
-  const { data: steps = [] } = useMissionSteps(missionId);
-  if (steps.length === 0) return null;
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Legacy Pipeline Steps
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <PipelineStepRow steps={steps} />
-      </CardContent>
-    </Card>
-  );
-}
 
 function ProcessingJobCard({ missionId, processingTemplateId }: {
   missionId: string;
@@ -881,8 +862,6 @@ export default function DroneJobDetail() {
                 />
               )}
 
-              {/* Legacy processing_steps (kept for backward compat) */}
-              <PipelineSteps missionId={id} />
               {/* Premium Review Approval UI */}
               {job.status === "review_pending" && (
                 <Card className="border-violet-500/50 bg-violet-500/5">

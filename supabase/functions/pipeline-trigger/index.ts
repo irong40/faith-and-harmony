@@ -34,12 +34,37 @@ async function generateIdempotencyKey(
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+interface StepDefinition {
+  name: string;
+  label?: string;
+  script?: string | null;
+  manual?: boolean;
+}
+
 /**
- * Build the initial steps array from a processing_template's default_steps JSONB.
+ * Build the initial steps array from a processing_template.
+ * Prefers step_definitions (rich objects) over default_steps (string array).
  */
 function buildStepsFromTemplate(
+  stepDefinitions: StepDefinition[] | null,
   defaultSteps: string[],
 ): Array<Record<string, unknown>> {
+  // Prefer step_definitions when available
+  if (Array.isArray(stepDefinitions) && stepDefinitions.length > 0) {
+    return stepDefinitions.map((def) => ({
+      name: def.name,
+      label: def.label ?? def.name,
+      script: def.script ?? null,
+      manual: def.manual ?? false,
+      status: "pending",
+      started_at: null,
+      completed_at: null,
+      error: null,
+      output: null,
+    }));
+  }
+
+  // Fallback to default_steps (string array) for backward compat
   return defaultSteps.map((stepName) => ({
     name: stepName,
     script: null,
@@ -145,7 +170,7 @@ serve(async (req) => {
     // Fetch the processing template with its steps
     const { data: template, error: templateError } = await supabase
       .from("processing_templates")
-      .select("id, display_name, path_code, default_steps")
+      .select("id, display_name, path_code, default_steps, step_definitions")
       .eq("id", processing_template_id)
       .single();
 
@@ -156,12 +181,15 @@ serve(async (req) => {
       );
     }
 
-    // Build steps array from template's default_steps JSONB
+    // Build steps array from template — prefer step_definitions, fallback to default_steps
+    const stepDefinitions = Array.isArray(template.step_definitions)
+      ? template.step_definitions as StepDefinition[]
+      : null;
     const defaultSteps = Array.isArray(template.default_steps)
       ? template.default_steps as string[]
       : [];
 
-    const steps = buildStepsFromTemplate(defaultSteps);
+    const steps = buildStepsFromTemplate(stepDefinitions, defaultSteps);
     const firstStep = steps[0] ?? null;
 
     // Create the processing_jobs record

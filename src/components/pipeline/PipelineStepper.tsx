@@ -25,7 +25,9 @@ export type StepStatus =
 
 export interface PipelineStep {
   name: string;
+  label?: string;
   script?: string;
+  manual?: boolean;
   status: StepStatus;
   started_at?: string | null;
   completed_at?: string | null;
@@ -152,7 +154,7 @@ export default function PipelineStepper({
                         step.status === 'pending' && 'text-muted-foreground',
                       )}
                     >
-                      {step.name}
+                      {step.label ?? step.name}
                     </span>
                     {step.script && (
                       <span className="font-mono text-xs text-muted-foreground">

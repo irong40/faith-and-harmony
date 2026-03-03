@@ -1,55 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { ProcessingStep, ProcessingTemplate, DeliveryLog, PipelineJob } from '@/types/pipeline';
+import type {
+  ProcessingJob,
+  ProcessingJobStep,
+  ProcessingTemplate,
+  DeliveryLog,
+  PipelineJobRow,
+} from '@/types/pipeline';
+
+// Re-export types that components import from here
+export type { ProcessingJob, ProcessingJobStep, PipelineJobRow };
 
 // ─── Queries ───────────────────────────────────────────────────────
-
-/**
- * Missions currently in pipeline-relevant statuses with their processing steps.
- * 15s poll fallback for environments without realtime.
- */
-export function usePipelineJobs() {
-  return useQuery({
-    queryKey: ['pipeline-jobs'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('drone_jobs')
-        .select(`
-          id, job_number, property_address, status, scheduled_date,
-          customers(name, email),
-          drone_packages(name, code),
-          processing_steps(*)
-        `)
-        .in('status', ['processing', 'complete', 'qa', 'failed', 'uploaded', 'review_pending'])
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as PipelineJob[];
-    },
-    refetchInterval: 15_000,
-  });
-}
-
-/**
- * Ordered processing steps for a single mission.
- */
-export function useMissionSteps(missionId: string | undefined) {
-  return useQuery({
-    queryKey: ['mission-steps', missionId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('processing_steps')
-        .select('*')
-        .eq('mission_id', missionId!)
-        .order('step_order', { ascending: true });
-
-      if (error) throw error;
-      return data as ProcessingStep[];
-    },
-    enabled: !!missionId,
-  });
-}
 
 /**
  * Active processing template for a package. Long staleTime since templates rarely change.
@@ -93,38 +56,122 @@ export function useDeliveryLogs(missionId: string | undefined) {
   });
 }
 
+// ─── Processing Jobs (Model 2 — single source of truth) ────────────
+
 /**
- * Steps where qa_gate or coverage_check have failed — admin hold points.
+ * Active processing_job for a specific mission.
+ * Returns the most recent job that is not cancelled.
  */
-export function useHoldPointJobs() {
+export function useProcessingJob(missionId: string | undefined) {
   return useQuery({
-    queryKey: ['pipeline-hold-points'],
+    queryKey: ['processing-job', missionId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('processing_steps')
+        .from('processing_jobs')
+        .select('*')
+        .eq('mission_id', missionId!)
+        .not('status', 'eq', 'cancelled')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data as ProcessingJob | null;
+    },
+    enabled: !!missionId,
+    refetchInterval: 10_000,
+  });
+}
+
+/**
+ * All active processing_jobs (pending, running, awaiting_manual_edit)
+ * with joined drone_jobs data for the Pipeline admin page.
+ */
+export function useActiveProcessingJobs() {
+  return useQuery({
+    queryKey: ['processing-jobs-active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('processing_jobs')
         .select(`
           *,
           drone_jobs:mission_id(
             id, job_number, property_address, status,
-            customers(name)
+            customers(name, email),
+            drone_packages(name, code)
           )
         `)
-        .in('step_name', ['qa_gate', 'coverage_check'])
-        .eq('status', 'failed')
+        .in('status', ['pending', 'running', 'awaiting_manual_edit'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as PipelineJobRow[];
     },
-    refetchInterval: 15_000,
+    refetchInterval: 10_000,
+  });
+}
+
+/**
+ * Completed/failed/cancelled processing_jobs with joined drone_jobs data.
+ * Used by the Pipeline History tab.
+ */
+export function useCompletedProcessingJobs() {
+  return useQuery({
+    queryKey: ['processing-jobs-completed'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('processing_jobs')
+        .select(`
+          *,
+          drone_jobs:mission_id(
+            id, job_number, property_address, status,
+            customers(name, email),
+            drone_packages(name, code)
+          )
+        `)
+        .in('status', ['complete', 'failed', 'cancelled'])
+        .order('completed_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      return data as PipelineJobRow[];
+    },
+    refetchInterval: 30_000,
+  });
+}
+
+/**
+ * Processing jobs awaiting manual edit — admin hold points.
+ */
+export function useHoldPointJobs() {
+  return useQuery({
+    queryKey: ['processing-jobs-hold'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('processing_jobs')
+        .select(`
+          *,
+          drone_jobs:mission_id(
+            id, job_number, property_address, status,
+            customers(name, email),
+            drone_packages(name, code)
+          )
+        `)
+        .eq('status', 'awaiting_manual_edit')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as PipelineJobRow[];
+    },
+    refetchInterval: 10_000,
   });
 }
 
 // ─── Realtime ──────────────────────────────────────────────────────
 
 /**
- * Subscribe to processing_steps and drone_jobs changes.
- * Invalidates relevant query caches on updates.
+ * Subscribe to processing_jobs changes.
+ * Invalidates all pipeline query caches on updates.
  */
 export function usePipelineRealtime() {
   const queryClient = useQueryClient();
@@ -134,18 +181,12 @@ export function usePipelineRealtime() {
       .channel('pipeline-realtime')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'processing_steps' },
+        { event: '*', schema: 'public', table: 'processing_jobs' },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['pipeline-jobs'] });
-          queryClient.invalidateQueries({ queryKey: ['mission-steps'] });
-          queryClient.invalidateQueries({ queryKey: ['pipeline-hold-points'] });
-        },
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'drone_jobs' },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['pipeline-jobs'] });
+          queryClient.invalidateQueries({ queryKey: ['processing-jobs-active'] });
+          queryClient.invalidateQueries({ queryKey: ['processing-jobs-completed'] });
+          queryClient.invalidateQueries({ queryKey: ['processing-jobs-hold'] });
+          queryClient.invalidateQueries({ queryKey: ['processing-job'] });
         },
       )
       .subscribe();
@@ -193,15 +234,14 @@ export function useQAOverride() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pipeline-jobs'] });
-      queryClient.invalidateQueries({ queryKey: ['pipeline-hold-points'] });
+      queryClient.invalidateQueries({ queryKey: ['processing-jobs-active'] });
+      queryClient.invalidateQueries({ queryKey: ['processing-jobs-hold'] });
     },
   });
 }
 
 /**
  * Resume the pipeline after admin review (QA or coverage hold).
- * Calls the n8n QA Resume webhook via a Supabase edge function or direct HTTP.
  */
 export function useResumePipeline() {
   const queryClient = useQueryClient();
@@ -221,84 +261,10 @@ export function useResumePipeline() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pipeline-jobs'] });
-      queryClient.invalidateQueries({ queryKey: ['pipeline-hold-points'] });
-      queryClient.invalidateQueries({ queryKey: ['mission-steps'] });
+      queryClient.invalidateQueries({ queryKey: ['processing-jobs-active'] });
+      queryClient.invalidateQueries({ queryKey: ['processing-jobs-hold'] });
+      queryClient.invalidateQueries({ queryKey: ['processing-job'] });
     },
-  });
-}
-
-// ─── Processing Jobs (new table) ───────────────────────────────────
-
-export interface ProcessingJobStep {
-  name: string;
-  script?: string;
-  status: 'pending' | 'running' | 'complete' | 'failed' | 'awaiting_manual_edit';
-  started_at?: string | null;
-  completed_at?: string | null;
-  error?: string | null;
-  output?: string | null;
-}
-
-export interface ProcessingJob {
-  id: string;
-  mission_id: string;
-  processing_template_id: string | null;
-  status: 'pending' | 'running' | 'awaiting_manual_edit' | 'complete' | 'failed' | 'cancelled';
-  current_step: string | null;
-  steps: ProcessingJobStep[];
-  started_at: string | null;
-  completed_at: string | null;
-  error_message: string | null;
-  triggered_by: string | null;
-  idempotency_key: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-/**
- * Active processing_job for a specific mission.
- * Returns the most recent job that is not cancelled.
- */
-export function useProcessingJob(missionId: string | undefined) {
-  return useQuery({
-    queryKey: ['processing-job', missionId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('processing_jobs')
-        .select('*')
-        .eq('mission_id', missionId!)
-        .not('status', 'eq', 'cancelled')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) throw error;
-      return data as ProcessingJob | null;
-    },
-    enabled: !!missionId,
-    refetchInterval: 10_000,
-  });
-}
-
-/**
- * All active processing_jobs (pending, running, awaiting_manual_edit).
- * Used by the Pipeline admin page.
- */
-export function useActiveProcessingJobs() {
-  return useQuery({
-    queryKey: ['processing-jobs'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('processing_jobs')
-        .select('*')
-        .in('status', ['pending', 'running', 'awaiting_manual_edit'])
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as ProcessingJob[];
-    },
-    refetchInterval: 10_000,
   });
 }
 
@@ -321,15 +287,11 @@ export function useTriggerPipeline() {
       });
 
       if (error) {
-        // Detect 409 conflict: pipeline already active for this mission today
-        // Supabase FunctionsHttpError includes the response status via error.context
         const isConflict =
           (error as { context?: { status?: number } }).context?.status === 409 ||
           error.message?.includes('409');
 
         if (isConflict) {
-          // Return a conflict sentinel instead of throwing
-          // The calling component shows a specific warning toast for this case
           return { conflict: true, processing_job_id: null } as {
             conflict: true;
             processing_job_id: null;
@@ -342,14 +304,13 @@ export function useTriggerPipeline() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['processing-job', variables.missionId] });
-      queryClient.invalidateQueries({ queryKey: ['processing-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['processing-jobs-active'] });
     },
   });
 }
 
 /**
- * Resume pipeline after V5 manual edit step.
- * Calls pipeline-manual-edit-complete edge function.
+ * Resume pipeline after manual edit step.
  */
 export function useResumeManualEdit() {
   const queryClient = useQueryClient();
@@ -376,7 +337,8 @@ export function useResumeManualEdit() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['processing-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['processing-jobs-active'] });
+      queryClient.invalidateQueries({ queryKey: ['processing-jobs-hold'] });
       queryClient.invalidateQueries({ queryKey: ['processing-job'] });
     },
   });
