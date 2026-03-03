@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Intake API and Lead Tracking** - Create leads and call_logs tables, build intake edge function that receives structured call data and creates client + request, build pricing lookup edge function for mid-call queries
 - [x] **Phase 2: Vapi Voice Bot** - Configure Vapi assistant with ElevenLabs TTS, author system prompt covering packages and service area and qualification flow, define tool schemas for mid-call API queries, provision 757 number (completed 2026-03-03)
 - [ ] **Phase 3: n8n Vapi Pipeline** - Build n8n workflow receiving Vapi end-of-call webhook, transform payload to intake API format, wire successful intakes into existing request-to-quote flow, add error notifications
-- [ ] **Phase 4: Scheduling and Availability** - Create availability_slots and blackout_dates tables, build admin scheduling UI, build availability check edge function, connect bot to offer dates during calls
+- [x] **Phase 4: Scheduling and Availability** - Create availability_slots and blackout_dates tables, build admin scheduling UI, build availability check edge function, connect bot to offer dates during calls (completed 2026-03-03)
 - [ ] **Phase 5: Weather Operations** - Integrate NWS weather API, validate flight parameters against forecasts, automate 48-hour pre-flight checks for scheduled jobs, add admin weather conditions view
 - [ ] **Phase 6: Integration and Edge Cases** - Validate end-to-end call-to-invoice flow, implement edge case routing (out of area, complex jobs, payment questions), build admin call log and lead management views
 
@@ -85,9 +85,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Database migrations and availability-check edge function (three tables, RLS, seeded weekday slots, GET endpoint)
-- [ ] 04-02-PLAN.md — Admin scheduling page (calendar with modifiers, weekly slots, blackout management, nav wiring)
-- [ ] 04-03-PLAN.md — Vapi check_availability tool definition and system prompt additions
+- [x] 04-01-PLAN.md — Database migrations and availability-check edge function (three tables, RLS, seeded weekday slots, GET endpoint)
+- [x] 04-02-PLAN.md — Admin scheduling page (calendar with modifiers, weekly slots, blackout management, nav wiring)
+- [x] 04-03-PLAN.md — Vapi check_availability tool definition and system prompt additions
 
 ### Phase 5: Weather Operations
 **Goal**: The system checks weather forecasts against flight parameters and alerts the admin when scheduled jobs face unsafe conditions
@@ -129,6 +129,6 @@ Phases execute in numeric order: 1 > 2 > 3 > 4 > 5 > 6
 | 1. Intake API and Lead Tracking | 3/3 | Complete | 2026-03-03 |
 | 2. Vapi Voice Bot | 3/3 | Complete   | 2026-03-03 |
 | 3. n8n Vapi Pipeline | 0/2 | Not started | — |
-| 4. Scheduling and Availability | 0/3 | Not started | — |
+| 4. Scheduling and Availability | 3/3 | Complete | 2026-03-03 |
 | 5. Weather Operations | 0/2 | Not started | — |
 | 6. Integration and Edge Cases | 0/2 | Not started | — |

@@ -9,14 +9,14 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 ## Current Position
 
-Phase: 2 of 6 - Vapi Voice Bot (complete)
-Plan: 02-03 complete. All 3 plans in Phase 2 complete.
-Status: Phase 2 complete. All plans executed. Ready to begin Phase 3.
-Last activity: 2026-03-03 — Completed 02-03 (Vapi dashboard setup, 757 number provisioned, Paula bot verified). Phase 2 done.
+Phase: 4 of 6 (complete), Phase 3 blocked on n8n debug
+Plan: All 3 plans in Phase 4 complete. Phase 3 not started (n8n workflow debug blocker).
+Status: Phases 1, 2, 4 complete. Phase 3 blocked. Phase 5 depends on Phase 4 (now unblocked). Phase 6 depends on all.
+Last activity: 2026-03-03 — Executed Phase 4 in parallel with Phase 3 blocker. Created 3 tables, deployed availability-check edge function, built admin Scheduling page, created Vapi tool config.
 
 ## Progress
 
-[████░░░░░░] 40% (6/15 plans executed, 9 remaining across 4 phases)
+[██████░░░░] 60% (9/15 plans executed, 6 remaining across 3 phases)
 
 ## Accumulated Context
 
@@ -60,12 +60,24 @@ All 5 phases shipped. Landing page live at sentinelaerial domain. Phase artifact
 - Inline PACKAGES constant in vapi-tool-handler rather than import from pricing-lookup (cross-function import of a module with top-level serve() call overwrites the active handler in Deno edge runtime)
 - Use --use-api flag for Supabase CLI deploy to bypass locked Windows temp directory issue with bundler cache
 
+### Decisions (04)
+
+- availability_slots uses day_of_week 0-6 matching PostgreSQL EXTRACT(DOW) and JavaScript getDay()
+- availability-check edge function deployed with --no-verify-jwt (public read, same as pricing-lookup)
+- Supabase hooks use `as never` cast for new table names (generated types not yet regenerated)
+- check-availability.json Vapi tool ready for dashboard paste
+- system-prompt-additions.md ready to append to Phase 2 system prompt
+
 ### Pending Todos
 
-None yet.
+- Paste check-availability.json tool into Vapi dashboard assistant config
+- Append system-prompt-additions.md content to Paula bot system prompt in Vapi
+- Browser verify the admin Scheduling page (04-02 Task 3 checkpoint)
 
 ### Blockers/Concerns
 
+- Phase 3 (n8n Vapi Pipeline) blocked on n8n workflow execution error (errors after Extract Call Data node)
+- RESEND_API_KEY not in n8n container env
 - NWS API station confirmed: AKQ/90,52 (Wakefield VA office, Hampton Roads grid)
 - Always use --use-api flag for supabase functions deploy on this machine (local bundler cache locked by Windows ACL)
 - Iron's actual phone number is stored in Vapi dashboard transferToSpecialist tool only (not in version-controlled files)
@@ -73,6 +85,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 02-03-PLAN.md — Phase 2 Vapi Voice Bot complete
+Stopped at: Phase 4 complete. Phase 3 still blocked on n8n debug. Phase 5 now unblocked.
 Resume file: None
-Resume signal: Begin Phase 3 intake pipeline planning
+Resume signal: Debug n8n workflow (Phase 3) or begin Phase 5 (Weather Operations)
