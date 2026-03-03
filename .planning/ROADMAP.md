@@ -13,7 +13,7 @@ The landing page converts visitors to quote requests. This milestone adds a seco
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Intake API and Lead Tracking** - Create leads and call_logs tables, build intake edge function that receives structured call data and creates client + request, build pricing lookup edge function for mid-call queries
-- [ ] **Phase 2: Vapi Voice Bot** - Configure Vapi assistant with ElevenLabs TTS, author system prompt covering packages and service area and qualification flow, define tool schemas for mid-call API queries, provision 757 number
+- [x] **Phase 2: Vapi Voice Bot** - Configure Vapi assistant with ElevenLabs TTS, author system prompt covering packages and service area and qualification flow, define tool schemas for mid-call API queries, provision 757 number (completed 2026-03-03)
 - [ ] **Phase 3: n8n Vapi Pipeline** - Build n8n workflow receiving Vapi end-of-call webhook, transform payload to intake API format, wire successful intakes into existing request-to-quote flow, add error notifications
 - [ ] **Phase 4: Scheduling and Availability** - Create availability_slots and blackout_dates tables, build admin scheduling UI, build availability check edge function, connect bot to offer dates during calls
 - [ ] **Phase 5: Weather Operations** - Integrate NWS weather API, validate flight parameters against forecasts, automate 48-hour pre-flight checks for scheduled jobs, add admin weather conditions view
@@ -127,7 +127,7 @@ Phases execute in numeric order: 1 > 2 > 3 > 4 > 5 > 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Intake API and Lead Tracking | 3/3 | Complete | 2026-03-03 |
-| 2. Vapi Voice Bot | 2/3 | In Progress|  |
+| 2. Vapi Voice Bot | 3/3 | Complete   | 2026-03-03 |
 | 3. n8n Vapi Pipeline | 0/2 | Not started | — |
 | 4. Scheduling and Availability | 0/3 | Not started | — |
 | 5. Weather Operations | 0/2 | Not started | — |

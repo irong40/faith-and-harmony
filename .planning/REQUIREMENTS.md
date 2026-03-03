@@ -15,8 +15,8 @@
 
 ### Voice Bot
 
-- [ ] **VBOT-01**: Vapi assistant configured with ElevenLabs TTS voice and natural conversation flow
-- [ ] **VBOT-02**: 757 area code phone number provisioned and connected to Vapi assistant
+- [x] **VBOT-01**: Vapi assistant configured with ElevenLabs TTS voice and natural conversation flow
+- [x] **VBOT-02**: 757 area code phone number provisioned and connected to Vapi assistant
 - [x] **VBOT-03**: System prompt covers all 6 service packages with pricing and deliverables
 - [x] **VBOT-04**: System prompt includes Hampton Roads service area and surrounding coverage (MD, Northern NC)
 - [x] **VBOT-05**: Bot qualifies callers by service type, location, timeline, and property type
@@ -74,8 +74,8 @@
 | INTAKE-03 | Phase 1: Intake API and Lead Tracking | Complete |
 | INTAKE-04 | Phase 1: Intake API and Lead Tracking | Complete |
 | INTAKE-05 | Phase 3: n8n Vapi Pipeline | Pending |
-| VBOT-01 | Phase 2: Vapi Voice Bot | Pending |
-| VBOT-02 | Phase 2: Vapi Voice Bot | Pending |
+| VBOT-01 | Phase 2: Vapi Voice Bot | Complete |
+| VBOT-02 | Phase 2: Vapi Voice Bot | Complete |
 | VBOT-03 | Phase 2: Vapi Voice Bot | Complete |
 | VBOT-04 | Phase 2: Vapi Voice Bot | Complete |
 | VBOT-05 | Phase 2: Vapi Voice Bot | Complete |
