@@ -21,7 +21,7 @@
 - [x] **VBOT-04**: System prompt includes Hampton Roads service area and surrounding coverage (MD, Northern NC)
 - [x] **VBOT-05**: Bot qualifies callers by service type, location, timeline, and property type
 - [x] **VBOT-06**: Bot routes edge cases to Iron (out of service area, commercial inspections over $1200, payment disputes, existing client follow-ups)
-- [ ] **VBOT-07**: Bot queries pricing and availability mid-conversation via Vapi tool calls
+- [x] **VBOT-07**: Bot queries pricing and availability mid-conversation via Vapi tool calls
 
 ### Middleware
 
@@ -80,7 +80,7 @@
 | VBOT-04 | Phase 2: Vapi Voice Bot | Complete |
 | VBOT-05 | Phase 2: Vapi Voice Bot | Complete |
 | VBOT-06 | Phase 2: Vapi Voice Bot | Complete |
-| VBOT-07 | Phase 2: Vapi Voice Bot | Pending |
+| VBOT-07 | Phase 2: Vapi Voice Bot | Complete |
 | MWARE-01 | Phase 3: n8n Vapi Pipeline | Pending |
 | MWARE-02 | Phase 3: n8n Vapi Pipeline | Pending |
 | MWARE-03 | Phase 3: n8n Vapi Pipeline | Pending |

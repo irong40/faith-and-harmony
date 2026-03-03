@@ -10,13 +10,13 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 Phase: 2 of 6 - Vapi Voice Bot (executing)
-Plan: 02-01 complete. Ready to execute 02-02.
-Status: Phase 2 Plan 1 complete. Plans 02-02 and 02-03 remaining in Phase 2.
-Last activity: 2026-03-03 — Executed 02-01 (system prompt and tool definitions for Paula voice bot).
+Plan: 02-02 complete. Ready to execute 02-03.
+Status: Phase 2 Plans 1 and 2 complete. Plan 02-03 remaining in Phase 2.
+Last activity: 2026-03-03 — Executed 02-02 (get_package_pricing handler deployed to vapi-tool-handler).
 
 ## Progress
 
-[███░░░░░░░] 25% (4/15 plans executed, 11 remaining across 5 phases)
+[████░░░░░░] 33% (5/15 plans executed, 10 remaining across 5 phases)
 
 ## Accumulated Context
 
@@ -52,6 +52,11 @@ All 5 phases shipped. Landing page live at sentinelaerial domain. Phase artifact
 - SUPABASE_ANON_KEY_PLACEHOLDER in version-controlled tools.json; actual value goes in Vapi dashboard
 - System prompt instructs bot to trust tool response price over static prices
 
+### Decisions (02-02)
+
+- Inline PACKAGES constant in vapi-tool-handler rather than import from pricing-lookup (cross-function import of a module with top-level serve() call overwrites the active handler in Deno edge runtime)
+- Use --use-api flag for Supabase CLI deploy to bypass locked Windows temp directory issue with bundler cache
+
 ### Pending Todos
 
 None yet.
@@ -63,10 +68,10 @@ None yet.
 - ElevenLabs API key needs to be added to Vapi (needed before Phase 2 Plan 3)
 - Iron's actual phone number needed to replace +1IRON_PHONE_PLACEHOLDER in tools.json
 - NWS API station confirmed: AKQ/90,52 (Wakefield VA office, Hampton Roads grid)
-- vapi-tool-handler needs get_package_pricing handler branch (covered in a later plan)
+- Always use --use-api flag for supabase functions deploy on this machine (local bundler cache locked by Windows ACL)
 
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 02-01-PLAN.md (system prompt and tool definitions for Paula voice bot)
+Stopped at: Completed 02-02-PLAN.md (get_package_pricing handler deployed to vapi-tool-handler)
 Resume file: None
