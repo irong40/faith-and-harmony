@@ -12,7 +12,7 @@ The landing page converts visitors to quote requests. This milestone adds a seco
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Intake API and Lead Tracking** - Create leads and call_logs tables, build intake edge function that receives structured call data and creates client + request, build pricing lookup edge function for mid-call queries
+- [x] **Phase 1: Intake API and Lead Tracking** - Create leads and call_logs tables, build intake edge function that receives structured call data and creates client + request, build pricing lookup edge function for mid-call queries
 - [ ] **Phase 2: Vapi Voice Bot** - Configure Vapi assistant with ElevenLabs TTS, author system prompt covering packages and service area and qualification flow, define tool schemas for mid-call API queries, provision 757 number
 - [ ] **Phase 3: n8n Vapi Pipeline** - Build n8n workflow receiving Vapi end-of-call webhook, transform payload to intake API format, wire successful intakes into existing request-to-quote flow, add error notifications
 - [ ] **Phase 4: Scheduling and Availability** - Create availability_slots and blackout_dates tables, build admin scheduling UI, build availability check edge function, connect bot to offer dates during calls
@@ -34,9 +34,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Database migrations (leads table, vapi_call_logs enhancements, quote_requests source tracking)
-- [ ] 01-02-PLAN.md — Pricing lookup edge function (static package data for mid-call queries)
-- [ ] 01-03-PLAN.md — Intake lead edge function (client upsert, quote request, lead creation)
+- [x] 01-01-PLAN.md — Database migrations (leads table, vapi_call_logs enhancements, quote_requests source tracking)
+- [x] 01-02-PLAN.md — Pricing lookup edge function (static package data for mid-call queries)
+- [x] 01-03-PLAN.md — Intake lead edge function (client upsert, quote request, lead creation)
 
 ### Phase 2: Vapi Voice Bot
 **Goal**: A caller dialing the 757 number reaches a voice bot that sounds natural, knows Sentinel packages and service area, qualifies the caller, and can look up pricing mid-conversation
@@ -104,7 +104,7 @@ Phases execute in numeric order: 1 > 2 > 3 > 4 > 5 > 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Intake API and Lead Tracking | 0/3 | Not started | — |
+| 1. Intake API and Lead Tracking | 3/3 | Complete | 2026-03-03 |
 | 2. Vapi Voice Bot | 0/3 | Not started | — |
 | 3. n8n Vapi Pipeline | 0/2 | Not started | — |
 | 4. Scheduling and Availability | 0/3 | Not started | — |

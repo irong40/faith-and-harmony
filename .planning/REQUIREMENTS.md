@@ -1,173 +1,108 @@
-# Requirements: Sentinel Landing Page Overhaul
+# Requirements: v1.1 Voice Bot + Automated Intake Pipeline
 
-**Defined:** 2026-02-26
-**Core Value:** Prospective clients find Sentinel via search, understand the offering, see pricing, and submit a quote request without leaving the page.
+**Defined:** 2026-03-03
+**Core Value:** A prospective client can call a 757 number, get qualified by a voice bot, receive pricing, and have their request automatically created in the system without Iron fielding the call.
 
-## v1 Requirements
+## v1.1 Requirements
 
-### SEO Infrastructure
+### Intake Pipeline
 
-- [ ] **SEO-01**: Page title contains primary keyword "Drone Photography & Aerial Inspections" and location "Hampton Roads VA"
-- [ ] **SEO-02**: Meta description contains service keywords, location, and unique selling points (veteran owned, LAANC authorized, 48 hour turnaround)
-- [ ] **SEO-03**: Canonical URL set to production domain
-- [x] **SEO-04**: Open Graph tags (og:title, og:description, og:image, og:url, og:type) render correctly for social sharing
-- [x] **SEO-05**: Twitter card tags with summary_large_image and hero photo
-- [x] **SEO-06**: JSON-LD LocalBusiness schema with name, address, phone, email, service area, price range, credentials
-- [x] **SEO-07**: JSON-LD Service schema for each service type with pricing
-- [x] **SEO-08**: JSON-LD FAQPage schema wrapping FAQ section content
-- [x] **SEO-09**: sitemap.xml generated and accessible at /sitemap.xml
-- [x] **SEO-10**: robots.txt blocks /admin/*, /pilot/*, /auth and includes Sitemap directive
-- [ ] **SEO-11**: react-helmet-async installed and managing per route meta tags
+- [x] **INTAKE-01**: Leads table stores caller info, qualification status, source channel, and links to call log
+- [x] **INTAKE-02**: Call logs table stores Vapi call ID, transcript, duration, sentiment, and outcome
+- [x] **INTAKE-03**: Edge function receives structured call data from n8n and creates or matches a client record plus a quote request
+- [x] **INTAKE-04**: Edge function returns package pricing and deliverables for mid-call bot queries
+- [ ] **INTAKE-05**: Bot-created requests feed into existing quote request to invoice workflow without manual re-entry
 
-### Semantic HTML & Accessibility
+### Voice Bot
 
-- [x] **HTML-01**: Landing page wrapped in main element
-- [x] **HTML-02**: Header contains nav element wrapping navigation links
-- [x] **HTML-03**: All section elements have aria-label attributes
-- [x] **HTML-04**: H1 tag contains primary keyword phrase (not brand name)
-- [x] **HTML-05**: Heading hierarchy flows H1 > H2 > H3 without skipping levels
-- [x] **HTML-06**: All images have descriptive alt text, width, and height attributes
+- [ ] **VBOT-01**: Vapi assistant configured with ElevenLabs TTS voice and natural conversation flow
+- [ ] **VBOT-02**: 757 area code phone number provisioned and connected to Vapi assistant
+- [ ] **VBOT-03**: System prompt covers all 6 service packages with pricing and deliverables
+- [ ] **VBOT-04**: System prompt includes Hampton Roads service area and surrounding coverage (MD, Northern NC)
+- [ ] **VBOT-05**: Bot qualifies callers by service type, location, timeline, and property type
+- [ ] **VBOT-06**: Bot routes edge cases to Iron (out of service area, commercial inspections over $1200, payment disputes, existing client follow-ups)
+- [ ] **VBOT-07**: Bot queries pricing and availability mid-conversation via Vapi tool calls
 
-### Page Structure & Content
+### Middleware
 
-- [x] **PAGE-01**: Sticky navigation bar with section anchor links and "Get a Quote" CTA button
-- [x] **PAGE-02**: Hero section with H1 keyword headline, subheadline addressing client types, phone number visible, conversion CTA
-- [x] **PAGE-03**: Trust bar strip below hero showing FAA Part 107, $1M Insurance, Veteran Owned, 48 Hour Turnaround badges
-- [x] **PAGE-04**: Services section reframed around client outcomes (realtors, property owners, developers)
-- [x] **PAGE-05**: Pricing section displaying all 6 packages with deliverables, add ons listed below
-- [x] **PAGE-06**: Inline portfolio grid showing 6 to 9 representative photos with service type labels
-- [x] **PAGE-07**: Military airspace differentiator section with Norfolk Naval Station, NAS Oceana, Langley AFB named in heading or subheading
-- [x] **PAGE-08**: FAQ section with 8 to 10 questions covering LAANC, turnaround, weather, service area, pricing, insurance, equipment
-- [x] **PAGE-09**: Inline quote request form (name, email, phone, service type dropdown, preferred date, message) that submits without leaving page
-- [x] **PAGE-10**: Service area section listing Hampton Roads cities (Virginia Beach, Norfolk, Chesapeake, Portsmouth, Newport News, Hampton, Suffolk, Williamsburg) plus Maryland and Northern NC
-- [x] **PAGE-11**: Compressed About/founder section connecting military background to operational reliability
-- [x] **PAGE-12**: Contact section with phone, email, service area (keep existing)
-- [x] **PAGE-13**: Footer with copyright, certifications, veteran owned badge
+- [ ] **MWARE-01**: n8n workflow receives Vapi end-of-call webhook with call summary and extracted fields
+- [ ] **MWARE-02**: n8n transforms Vapi payload into intake API format and calls edge function
+- [ ] **MWARE-03**: Failed intakes trigger admin notification via existing messaging or email
+- [ ] **MWARE-04**: Successful qualified intakes trigger the request-to-quote flow automatically
 
-### Conversion Optimization
+### Scheduling
 
-- [x] **CONV-01**: Primary CTA above the fold is "Get a Quote" or "Book a Flight" (not "View Our Work")
-- [x] **CONV-02**: Phone number visible in header and hero section
-- [x] **CONV-03**: Quote form accessible from sticky nav CTA button
-- [x] **CONV-04**: Each pricing card has its own CTA linking to the quote form with service type pre-selected
-- [x] **CONV-05**: Portfolio section embedded inline (not external link only)
+- [ ] **SCHED-01**: Availability slots table with day-of-week defaults and date-specific overrides
+- [ ] **SCHED-02**: Blackout dates table for weather holds, holidays, and maintenance days
+- [ ] **SCHED-03**: Admin UI page for managing weekly availability and blackout dates
+- [ ] **SCHED-04**: Edge function returns available dates for a service type and date range
+- [ ] **SCHED-05**: Bot offers available dates during call and captures preferred date
 
-### Image Optimization
+### Weather Operations
 
-- [x] **IMG-01**: sentinel-logo.png compressed from 1.06 MB to under 100 KB
-- [x] **IMG-02**: All landing page images have explicit width and height attributes
-- [x] **IMG-03**: Below fold images use loading="lazy"
-- [x] **IMG-04**: Hero image uses fetchpriority="high" or is preloaded
-- [x] **IMG-05**: Hero banner moved from CSS background-image to img tag for SEO indexing
+- [ ] **WTHR-01**: Weather API integration fetching 48-hour forecasts for Hampton Roads
+- [ ] **WTHR-02**: Flight parameter validation: max wind (sustained and gusts), precipitation probability, visibility minimum, cloud ceiling minimum
+- [ ] **WTHR-03**: Automated check runs against scheduled jobs and flags unsafe conditions
+- [ ] **WTHR-04**: Admin weather view showing current conditions and upcoming forecast against flight parameters
 
-### Performance
+### Integration
 
-- [x] **PERF-01**: Permanent CSS animations (scanline overlay, grid pulse) disabled on mobile via prefers-reduced-motion or media query
-- [x] **PERF-02**: Google Fonts reduced to 2 families max or self hosted
-- [x] **PERF-03**: Security headers added to vercel.json (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Strict-Transport-Security)
-
-### Mobile Responsive
-
-- [ ] **MOBL-01**: Tablet breakpoint added (768px to 1024px)
-- [ ] **MOBL-02**: Small mobile breakpoint added (below 480px)
-- [ ] **MOBL-03**: Sticky nav collapses to hamburger menu on mobile
-- [ ] **MOBL-04**: Pricing cards stack vertically on mobile with clear hierarchy
-
-## v2 Requirements
-
-### Analytics & Tracking
-
-- **ANLYT-01**: Google Analytics 4 or Plausible integration
-- **ANLYT-02**: UTM parameters on all external links
-- **ANLYT-03**: Form submission tracking as conversion events
-
-### Content Expansion
-
-- **CONT-01**: Testimonials section with real client quotes
-- **CONT-02**: Case study pages for completed projects
-- **CONT-03**: Service area sub pages for individual cities (Virginia Beach, Norfolk, etc.)
-- **CONT-04**: Blog for content marketing and organic SEO
-
-### Prerendering
-
-- **PREND-01**: Static HTML prerendering for landing page via vite-ssg or react-snap
-- **PREND-02**: Prerendered sitemap with all public routes
-
-### Veteran Outreach
-
-- **VETS-01**: Dedicated /veterans route for Vets to Drones content
-- **VETS-02**: Separate conversion goal and CTA for veteran recruitment
+- [ ] **INTG-01**: End-to-end flow works: phone call to bot to webhook to n8n to intake to request to invoice
+- [ ] **INTG-02**: Edge cases route correctly: out of area declines politely, complex jobs offer callback, payment questions redirect
+- [ ] **INTG-03**: Admin call log page showing recent calls with transcript, outcome, and linked request
+- [ ] **INTG-04**: Admin leads page showing bot-sourced leads with qualification status and conversion tracking
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Admin portal changes | Existing system, not part of landing page overhaul |
-| Pilot portal changes | Existing system, not part of landing page overhaul |
-| New Supabase tables | Landing page uses existing infrastructure only |
-| Full SSR migration | Architectural change beyond scope. Prerendering deferred to v2 |
-| Payment processing | Square integration is external, not on landing page |
-| Google Business Profile | External setup, not part of codebase |
-| Blog/content pages | Future milestone, requires content strategy |
-| Real time chat widget | High complexity, low priority for initial launch |
+| Outbound calling | Inbound intake only for v1.1 |
+| SMS or chat bot | Phone voice only for v1.1 |
+| Custom voice cloning | Use existing ElevenLabs catalog voices |
+| Multi-language support | English only for Hampton Roads market |
+| Real-time availability on landing page | Future milestone |
+| Admin portal redesign | Existing pages extended, not rebuilt |
+| Pilot portal changes | Not affected by intake pipeline |
+| Landing page changes | v1.0 complete, no modifications needed |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SEO-01 | Phase 1: SEO Foundation | Pending |
-| SEO-02 | Phase 1: SEO Foundation | Pending |
-| SEO-03 | Phase 1: SEO Foundation | Pending |
-| SEO-04 | Phase 1: SEO Foundation | Complete |
-| SEO-05 | Phase 1: SEO Foundation | Complete |
-| SEO-06 | Phase 1: SEO Foundation | Complete |
-| SEO-07 | Phase 1: SEO Foundation | Complete |
-| SEO-08 | Phase 1: SEO Foundation | Complete |
-| SEO-09 | Phase 1: SEO Foundation | Complete |
-| SEO-10 | Phase 1: SEO Foundation | Complete |
-| SEO-11 | Phase 1: SEO Foundation | Pending |
-| HTML-01 | Phase 1: SEO Foundation | Complete |
-| HTML-02 | Phase 1: SEO Foundation | Complete |
-| HTML-03 | Phase 1: SEO Foundation | Complete |
-| HTML-04 | Phase 1: SEO Foundation | Complete |
-| HTML-05 | Phase 1: SEO Foundation | Complete |
-| HTML-06 | Phase 1: SEO Foundation | Complete |
-| IMG-01 | Phase 2: Image Optimization | Complete |
-| IMG-02 | Phase 2: Image Optimization | Complete |
-| IMG-03 | Phase 2: Image Optimization | Complete |
-| IMG-04 | Phase 2: Image Optimization | Complete |
-| IMG-05 | Phase 2: Image Optimization | Complete |
-| PAGE-01 | Phase 3: Above-Fold Content | Complete |
-| PAGE-02 | Phase 3: Above-Fold Content | Complete |
-| PAGE-03 | Phase 3: Above-Fold Content | Complete |
-| PAGE-04 | Phase 3: Above-Fold Content | Complete |
-| PAGE-05 | Phase 3: Above-Fold Content | Complete |
-| PAGE-06 | Phase 3: Above-Fold Content | Complete |
-| CONV-01 | Phase 3: Above-Fold Content | Complete |
-| CONV-02 | Phase 3: Above-Fold Content | Complete |
-| CONV-04 | Phase 3: Above-Fold Content | Complete |
-| CONV-05 | Phase 3: Above-Fold Content | Complete |
-| PAGE-07 | Phase 4: Below-Fold Content | Complete |
-| PAGE-08 | Phase 4: Below-Fold Content | Complete |
-| PAGE-09 | Phase 4: Below-Fold Content | Complete |
-| PAGE-10 | Phase 4: Below-Fold Content | Complete |
-| PAGE-11 | Phase 4: Below-Fold Content | Complete |
-| PAGE-12 | Phase 4: Below-Fold Content | Complete |
-| PAGE-13 | Phase 4: Below-Fold Content | Complete |
-| CONV-03 | Phase 4: Below-Fold Content | Complete |
-| PERF-01 | Phase 5: Performance and Mobile | Complete |
-| PERF-02 | Phase 5: Performance and Mobile | Complete |
-| PERF-03 | Phase 5: Performance and Mobile | Complete |
-| MOBL-01 | Phase 5: Performance and Mobile | Pending |
-| MOBL-02 | Phase 5: Performance and Mobile | Pending |
-| MOBL-03 | Phase 5: Performance and Mobile | Pending |
-| MOBL-04 | Phase 5: Performance and Mobile | Pending |
+| INTAKE-01 | Phase 1: Intake API and Lead Tracking | Complete |
+| INTAKE-02 | Phase 1: Intake API and Lead Tracking | Complete |
+| INTAKE-03 | Phase 1: Intake API and Lead Tracking | Complete |
+| INTAKE-04 | Phase 1: Intake API and Lead Tracking | Complete |
+| INTAKE-05 | Phase 3: n8n Vapi Pipeline | Pending |
+| VBOT-01 | Phase 2: Vapi Voice Bot | Pending |
+| VBOT-02 | Phase 2: Vapi Voice Bot | Pending |
+| VBOT-03 | Phase 2: Vapi Voice Bot | Pending |
+| VBOT-04 | Phase 2: Vapi Voice Bot | Pending |
+| VBOT-05 | Phase 2: Vapi Voice Bot | Pending |
+| VBOT-06 | Phase 2: Vapi Voice Bot | Pending |
+| VBOT-07 | Phase 2: Vapi Voice Bot | Pending |
+| MWARE-01 | Phase 3: n8n Vapi Pipeline | Pending |
+| MWARE-02 | Phase 3: n8n Vapi Pipeline | Pending |
+| MWARE-03 | Phase 3: n8n Vapi Pipeline | Pending |
+| MWARE-04 | Phase 3: n8n Vapi Pipeline | Pending |
+| SCHED-01 | Phase 4: Scheduling and Availability | Pending |
+| SCHED-02 | Phase 4: Scheduling and Availability | Pending |
+| SCHED-03 | Phase 4: Scheduling and Availability | Pending |
+| SCHED-04 | Phase 4: Scheduling and Availability | Pending |
+| SCHED-05 | Phase 4: Scheduling and Availability | Pending |
+| WTHR-01 | Phase 5: Weather Operations | Pending |
+| WTHR-02 | Phase 5: Weather Operations | Pending |
+| WTHR-03 | Phase 5: Weather Operations | Pending |
+| WTHR-04 | Phase 5: Weather Operations | Pending |
+| INTG-01 | Phase 6: Integration and Edge Cases | Pending |
+| INTG-02 | Phase 6: Integration and Edge Cases | Pending |
+| INTG-03 | Phase 6: Integration and Edge Cases | Pending |
+| INTG-04 | Phase 6: Integration and Edge Cases | Pending |
 
 **Coverage:**
-- v1 requirements: 47 total
-- Mapped to phases: 47
+- v1.1 requirements: 29 total
+- Mapped to phases: 29
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-02-26*
-*Last updated: 2026-02-26 after roadmap creation*
+*Requirements defined: 2026-03-03*
