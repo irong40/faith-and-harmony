@@ -1,0 +1,69 @@
+[
+  {
+    "type": "function",
+    "async": false,
+    "function": {
+      "name": "get_package_pricing",
+      "description": "Look up the exact price and deliverables for a Sentinel Aerial Inspections service package. Call this when the caller asks about the cost of a specific service.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "service_type": {
+            "type": "string",
+            "enum": [
+              "re_basic",
+              "re_standard",
+              "re_premium",
+              "construction",
+              "commercial",
+              "inspection"
+            ],
+            "description": "The internal service type code. Map from what the caller says: 'listing lite' maps to re_basic, 'listing pro' maps to re_standard, 'luxury listing' maps to re_premium, 'construction progress' maps to construction, 'commercial marketing' maps to commercial, 'inspection data' maps to inspection."
+          }
+        },
+        "required": ["service_type"]
+      }
+    },
+    "server": {
+      "url": "https://qjpujskwqaehxnqypxzu.supabase.co/functions/v1/vapi-tool-handler",
+      "headers": {
+        "apikey": "SUPABASE_ANON_KEY_PLACEHOLDER",
+        "Content-Type": "application/json"
+      }
+    },
+    "messages": [
+      {
+        "type": "request-start",
+        "content": "Let me look that up for you."
+      },
+      {
+        "type": "request-failed",
+        "content": "I am having trouble looking that up right now. Based on our standard pricing, I can give you an estimate."
+      }
+    ]
+  },
+  {
+    "type": "transferCall",
+    "destinations": [
+      {
+        "type": "number",
+        "number": "+1IRON_PHONE_PLACEHOLDER",
+        "message": "Let me connect you with someone who can help directly. Please hold for just a moment."
+      }
+    ],
+    "function": {
+      "name": "transferToSpecialist",
+      "description": "Transfer the caller to a Sentinel specialist. Use this when the caller is outside the service area, has a commercial job over twelve hundred dollars, has a payment question, or is an existing client following up.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Why you are transferring this caller."
+          }
+        },
+        "required": ["reason"]
+      }
+    }
+  }
+]
