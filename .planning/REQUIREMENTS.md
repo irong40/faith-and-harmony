@@ -17,10 +17,10 @@
 
 - [ ] **VBOT-01**: Vapi assistant configured with ElevenLabs TTS voice and natural conversation flow
 - [ ] **VBOT-02**: 757 area code phone number provisioned and connected to Vapi assistant
-- [ ] **VBOT-03**: System prompt covers all 6 service packages with pricing and deliverables
-- [ ] **VBOT-04**: System prompt includes Hampton Roads service area and surrounding coverage (MD, Northern NC)
-- [ ] **VBOT-05**: Bot qualifies callers by service type, location, timeline, and property type
-- [ ] **VBOT-06**: Bot routes edge cases to Iron (out of service area, commercial inspections over $1200, payment disputes, existing client follow-ups)
+- [x] **VBOT-03**: System prompt covers all 6 service packages with pricing and deliverables
+- [x] **VBOT-04**: System prompt includes Hampton Roads service area and surrounding coverage (MD, Northern NC)
+- [x] **VBOT-05**: Bot qualifies callers by service type, location, timeline, and property type
+- [x] **VBOT-06**: Bot routes edge cases to Iron (out of service area, commercial inspections over $1200, payment disputes, existing client follow-ups)
 - [ ] **VBOT-07**: Bot queries pricing and availability mid-conversation via Vapi tool calls
 
 ### Middleware
@@ -76,10 +76,10 @@
 | INTAKE-05 | Phase 3: n8n Vapi Pipeline | Pending |
 | VBOT-01 | Phase 2: Vapi Voice Bot | Pending |
 | VBOT-02 | Phase 2: Vapi Voice Bot | Pending |
-| VBOT-03 | Phase 2: Vapi Voice Bot | Pending |
-| VBOT-04 | Phase 2: Vapi Voice Bot | Pending |
-| VBOT-05 | Phase 2: Vapi Voice Bot | Pending |
-| VBOT-06 | Phase 2: Vapi Voice Bot | Pending |
+| VBOT-03 | Phase 2: Vapi Voice Bot | Complete |
+| VBOT-04 | Phase 2: Vapi Voice Bot | Complete |
+| VBOT-05 | Phase 2: Vapi Voice Bot | Complete |
+| VBOT-06 | Phase 2: Vapi Voice Bot | Complete |
 | VBOT-07 | Phase 2: Vapi Voice Bot | Pending |
 | MWARE-01 | Phase 3: n8n Vapi Pipeline | Pending |
 | MWARE-02 | Phase 3: n8n Vapi Pipeline | Pending |

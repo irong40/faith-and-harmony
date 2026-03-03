@@ -9,14 +9,14 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 ## Current Position
 
-Phase: 1 of 6 - Intake API and Lead Tracking (COMPLETE)
-Plan: All 3 plans complete. Verification passed.
-Status: Phase 1 complete. 4/4 requirements verified. Ready for Phase 2.
-Last activity: 2026-03-03 — Phase 1 complete (3 migrations, 2 edge functions, 5/5 success criteria passed).
+Phase: 2 of 6 - Vapi Voice Bot (executing)
+Plan: 02-01 complete. Ready to execute 02-02.
+Status: Phase 2 Plan 1 complete. Plans 02-02 and 02-03 remaining in Phase 2.
+Last activity: 2026-03-03 — Executed 02-01 (system prompt and tool definitions for Paula voice bot).
 
 ## Progress
 
-[██░░░░░░░░] 18% (3/17 plans across 6 phases)
+[███░░░░░░░] 25% (4/15 plans executed, 11 remaining across 5 phases)
 
 ## Accumulated Context
 
@@ -44,19 +44,29 @@ All 5 phases shipped. Landing page live at sentinelaerial domain. Phase artifact
 - 23 admin pages including QuoteRequests, Clients, DroneJobs
 - Intake edge function will follow existing patterns (quote-request, send-service-request-emails)
 
+### Decisions (02-01)
+
+- Route get_package_pricing through vapi-tool-handler not pricing-lookup directly (POST vs GET method mismatch)
+- Spell all prices in words in system prompt (TTS dollar sign notation issue)
+- Iron phone number stored only in tools.json as IRON_PHONE_PLACEHOLDER (not in system prompt)
+- SUPABASE_ANON_KEY_PLACEHOLDER in version-controlled tools.json; actual value goes in Vapi dashboard
+- System prompt instructs bot to trust tool response price over static prices
+
 ### Pending Todos
 
 None yet.
 
 ### Blockers/Concerns
 
-- Vapi account not yet created (needed before Phase 2)
-- 757 phone number not yet provisioned (needed before Phase 2)
-- ElevenLabs API key needs to be added to Vapi (needed before Phase 2)
-- NWS API station selection for Hampton Roads (Phase 5)
+- Vapi account not yet created (needed before Phase 2 Plan 3 dashboard setup)
+- 757 phone number not yet provisioned (needed before Phase 2 Plan 3)
+- ElevenLabs API key needs to be added to Vapi (needed before Phase 2 Plan 3)
+- Iron's actual phone number needed to replace +1IRON_PHONE_PLACEHOLDER in tools.json
+- NWS API station confirmed: AKQ/90,52 (Wakefield VA office, Hampton Roads grid)
+- vapi-tool-handler needs get_package_pricing handler branch (covered in a later plan)
 
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: v1.1 roadmap created, ready to plan or execute Phase 1
+Stopped at: Completed 02-01-PLAN.md (system prompt and tool definitions for Paula voice bot)
 Resume file: None
