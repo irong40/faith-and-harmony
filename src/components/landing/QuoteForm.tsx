@@ -6,7 +6,10 @@ const SERVICE_OPTIONS = [
   { value: 'luxury-listing', label: 'Luxury Listing ($750)' },
   { value: 'construction-progress', label: 'Construction Progress ($450/visit)' },
   { value: 'commercial-marketing', label: 'Commercial Marketing ($850)' },
-  { value: 'inspection-data', label: 'Inspection Data ($1,200)' },
+  { value: 'roof-inspection', label: 'Roof Inspection (Quote)' },
+  { value: 'land-survey', label: 'Land Survey & Mapping (Quote)' },
+  { value: 'insurance-documentation', label: 'Insurance Documentation (Quote)' },
+  { value: 'solar-inspection', label: 'Solar Panel Inspection (Quote)' },
 ];
 
 interface FormData {

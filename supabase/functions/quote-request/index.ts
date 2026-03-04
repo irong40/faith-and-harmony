@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
@@ -34,8 +35,45 @@ serve(async (req) => {
       );
     }
 
+    // Insert into quote_requests table (service role bypasses RLS)
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const { data: quoteRow, error: dbError } = await supabase
+      .from("quote_requests")
+      .insert({
+        name,
+        email,
+        phone,
+        address: null,
+        job_type: service_type,
+        description: message || `${service_type} — preferred date: ${preferred_date}`,
+        source: "web",
+        status: "new",
+        brand_slug: "sai",
+      })
+      .select("id")
+      .single();
+
+    if (dbError) {
+      console.error("Failed to insert quote_request:", dbError);
+      // Continue to send email even if DB insert fails — don't lose the lead
+    } else {
+      console.log("Quote request saved:", quoteRow.id);
+    }
+
+    // Send notification email
     if (!RESEND_API_KEY) {
       console.error("RESEND_API_KEY not configured");
+      // If DB insert succeeded, still return success — the quote is saved
+      if (quoteRow) {
+        return new Response(
+          JSON.stringify({ success: true, quote_request_id: quoteRow.id, email_sent: false }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       return new Response(
         JSON.stringify({ error: "Email service not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -52,7 +90,7 @@ Phone: ${phone}
 Service Type: ${service_type}
 Preferred Date: ${preferred_date}
 Message: ${message || "(none)"}
-
+${quoteRow ? `\nQuote Request ID: ${quoteRow.id}` : ""}
 Reply directly to this email to respond to the prospect.`;
 
     const emailResponse = await resend.emails.send({
@@ -66,13 +104,17 @@ Reply directly to this email to respond to the prospect.`;
     console.log("Quote request email sent:", emailResponse);
 
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({
+        success: true,
+        quote_request_id: quoteRow?.id || null,
+        email_sent: true,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Quote request error:", error);
     return new Response(
-      JSON.stringify({ error: "Failed to send notification" }),
+      JSON.stringify({ error: "Failed to process quote request" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

@@ -3,7 +3,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Video, FileImage, Clock, Info } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Camera, Video, FileImage, Clock, Info, MessageSquareQuote } from "lucide-react";
 import type { MetadataValue } from "../ConditionalFields";
 
 interface FieldProps {
@@ -11,54 +12,82 @@ interface FieldProps {
   onMetadataChange: (key: string, value: MetadataValue) => void;
 }
 
+interface PackageDef {
+  code: string;
+  name: string;
+  price: number; // 0 = quote-based
+  turnaround: string;
+  photos: number;
+  videos: number;
+  raw: boolean;
+  description: string;
+  features?: string[];
+}
+
 const WORK_CATEGORIES = [
   { value: 'real_estate', label: 'Real Estate' },
-  { value: 'construction', label: 'Construction' }
+  { value: 'construction', label: 'Construction' },
+  { value: 'inspection', label: 'Property Inspection' },
+  { value: 'survey', label: 'Land Survey and Mapping' },
+  { value: 'insurance', label: 'Insurance Documentation' },
 ];
 
-const REAL_ESTATE_PACKAGES = [
+const REAL_ESTATE_PACKAGES: PackageDef[] = [
   {
-    code: 'PHOTO_299',
-    name: 'Aerial Photo Pack',
-    price: 299,
-    turnaround: '48 hours',
-    photos: 12,
+    code: 'LISTING_LITE_225',
+    name: 'Listing Lite',
+    price: 225,
+    turnaround: 'Next day',
+    photos: 10,
     videos: 0,
     raw: false,
-    description: '12 edited photos in MLS-ready and high-resolution formats'
+    description: '10 edited photos with sky replacement in MLS-ready formats',
   },
   {
-    code: 'PHOTO_VIDEO_699',
-    name: 'Aerial Photo + Highlight Video',
-    price: 699,
-    turnaround: '72 hours',
-    photos: 20,
+    code: 'LISTING_PRO_450',
+    name: 'Listing Pro',
+    price: 450,
+    turnaround: '48 hours',
+    photos: 25,
     videos: 1,
     raw: false,
-    description: '20 photos + 60-90 second highlight video'
+    description: '25 photos + 60s highlight reel + 2D property overlay',
+    features: ['Sky replacement', '2D overlay'],
   },
   {
-    code: 'PREMIUM_1250',
-    name: 'Premium Listing Media',
-    price: 1250,
-    turnaround: '3-4 business days',
-    photos: 30,
+    code: 'LUXURY_750',
+    name: 'Luxury Listing',
+    price: 750,
+    turnaround: '24hr priority',
+    photos: 40,
     videos: 1,
-    raw: true,
-    description: '30 photos (aerial + ground) + 2-3 minute video + raw footage'
-  }
+    raw: false,
+    description: '40+ photos + 2-minute cinematic video + twilight session',
+    features: ['Twilight included', 'Premium color grading'],
+  },
 ];
 
-const CONSTRUCTION_PACKAGES = [
+const CONSTRUCTION_PACKAGES: PackageDef[] = [
   {
-    code: 'PROGRESS_450',
+    code: 'CONSTRUCTION_450',
     name: 'Progress Visit (Single)',
     price: 450,
     turnaround: '48 hours',
     photos: 25,
     videos: 4,
     raw: false,
-    description: '25 labeled photos + 4 short video clips'
+    description: '25 labeled photos + 4 short video clips with compass bearings',
+  },
+  {
+    code: 'COMMERCIAL_850',
+    name: 'Commercial Marketing',
+    price: 850,
+    turnaround: '48 hours',
+    photos: 30,
+    videos: 1,
+    raw: false,
+    description: '30+ photos + 90s highlight video for commercial properties',
+    features: ['Property boundary overlay', 'Premium color grading'],
   },
   {
     code: 'RETAINER_1_MONTH',
@@ -68,7 +97,7 @@ const CONSTRUCTION_PACKAGES = [
     photos: 25,
     videos: 4,
     raw: false,
-    description: 'Same deliverables per visit, committed scheduling'
+    description: 'Same deliverables per visit, committed scheduling',
   },
   {
     code: 'RETAINER_2_MONTH',
@@ -78,7 +107,7 @@ const CONSTRUCTION_PACKAGES = [
     photos: 25,
     videos: 4,
     raw: false,
-    description: 'Same deliverables per visit, committed scheduling'
+    description: 'Same deliverables per visit, committed scheduling',
   },
   {
     code: 'RETAINER_WEEKLY',
@@ -88,24 +117,93 @@ const CONSTRUCTION_PACKAGES = [
     photos: 25,
     videos: 4,
     raw: false,
-    description: '4 visits/month, same deliverables per visit'
-  }
+    description: '4 visits/month, same deliverables per visit',
+  },
 ];
+
+const INSPECTION_PACKAGES: PackageDef[] = [
+  {
+    code: 'ROOF_INSPECTION',
+    name: 'Roof Inspection',
+    price: 0,
+    turnaround: 'Varies',
+    photos: 0,
+    videos: 0,
+    raw: false,
+    description: 'Systematic roof inspection with grid photography and annotated damage report',
+    features: ['GPS-tagged images', 'Annotated report', 'Close-up details'],
+  },
+  {
+    code: 'SOLAR_INSPECTION',
+    name: 'Solar Panel Inspection',
+    price: 0,
+    turnaround: 'Varies',
+    photos: 0,
+    videos: 0,
+    raw: false,
+    description: 'Thermal + visual inspection for hotspots, defects, and panel-level mapping',
+    features: ['Thermal imaging', 'Hotspot detection', 'Temperature differential analysis'],
+  },
+];
+
+const SURVEY_PACKAGES: PackageDef[] = [
+  {
+    code: 'LAND_SURVEY',
+    name: 'Land Survey and Mapping',
+    price: 0,
+    turnaround: 'Varies',
+    photos: 0,
+    videos: 0,
+    raw: false,
+    description: 'Photogrammetry mapping with orthomosaic, point cloud, and optional 3D mesh output',
+    features: ['GeoTIFF export', 'Point cloud', 'GCP integration'],
+  },
+];
+
+const INSURANCE_PACKAGES: PackageDef[] = [
+  {
+    code: 'INSURANCE_DOC',
+    name: 'Insurance Documentation',
+    price: 0,
+    turnaround: 'Varies',
+    photos: 0,
+    videos: 0,
+    raw: true,
+    description: 'Evidence-grade documentation with RAW capture, GPS metadata, and thermal imaging',
+    features: ['RAW + JPEG capture', 'Evidence chain', 'Timestamped photos', 'Thermal available'],
+  },
+];
+
+const PACKAGES_BY_CATEGORY: Record<string, PackageDef[]> = {
+  real_estate: REAL_ESTATE_PACKAGES,
+  construction: CONSTRUCTION_PACKAGES,
+  inspection: INSPECTION_PACKAGES,
+  survey: SURVEY_PACKAGES,
+  insurance: INSURANCE_PACKAGES,
+};
 
 const ADD_ONS = [
   { code: 'CHANGE_ORDER', name: 'Change-order support photo set', price: 150, description: 'Extra 10 labeled photos' },
-  { code: 'RECAP_VIDEO', name: 'End-of-month recap video', price: 350, description: '60-90 second recap' }
+  { code: 'RECAP_VIDEO', name: 'End-of-month recap video', price: 350, description: '60-90 second recap' },
+];
+
+const DAMAGE_TYPES = [
+  { value: 'storm', label: 'Storm' },
+  { value: 'wind', label: 'Wind' },
+  { value: 'hail', label: 'Hail' },
+  { value: 'fire', label: 'Fire' },
+  { value: 'flood', label: 'Flood' },
+  { value: 'tree', label: 'Tree Damage' },
 ];
 
 export function AerialFields({ metadata, onMetadataChange }: FieldProps) {
-  const workCategory = metadata.workCategory || '';
-  const selectedPackageCode = metadata.selectedPackage || '';
-  const selectedAddOns: string[] = metadata.addOns || [];
+  const workCategory = (metadata.workCategory || '') as string;
+  const selectedPackageCode = (metadata.selectedPackage || '') as string;
+  const selectedAddOns: string[] = (metadata.addOns || []) as string[];
 
-  const packages = workCategory === 'real_estate' ? REAL_ESTATE_PACKAGES :
-    workCategory === 'construction' ? CONSTRUCTION_PACKAGES : [];
-
+  const packages = PACKAGES_BY_CATEGORY[workCategory] || [];
   const selectedPackage = packages.find(p => p.code === selectedPackageCode);
+  const isQuoteBased = selectedPackage?.price === 0;
 
   // Calculate estimated total
   const packagePrice = selectedPackage?.price || 0;
@@ -115,12 +213,12 @@ export function AerialFields({ metadata, onMetadataChange }: FieldProps) {
   }, 0);
   const estimatedTotal = packagePrice + addOnsPrice;
 
-  // Update estimated total when it changes
   const handlePackageChange = (code: string) => {
     onMetadataChange('selectedPackage', code);
     const pkg = packages.find(p => p.code === code);
     if (pkg) {
-      onMetadataChange('estimatedTotal', pkg.price + addOnsPrice);
+      onMetadataChange('estimatedTotal', pkg.price === 0 ? 0 : pkg.price + addOnsPrice);
+      onMetadataChange('isQuoteRequest', pkg.price === 0);
     }
   };
 
@@ -137,12 +235,12 @@ export function AerialFields({ metadata, onMetadataChange }: FieldProps) {
     onMetadataChange('estimatedTotal', packagePrice + newAddOnsPrice);
   };
 
-  // Clear package when category changes
   const handleCategoryChange = (value: string) => {
     onMetadataChange('workCategory', value);
     onMetadataChange('selectedPackage', '');
     onMetadataChange('addOns', []);
     onMetadataChange('estimatedTotal', 0);
+    onMetadataChange('isQuoteRequest', false);
   };
 
   return (
@@ -175,7 +273,7 @@ export function AerialFields({ metadata, onMetadataChange }: FieldProps) {
             <SelectContent>
               {packages.map(pkg => (
                 <SelectItem key={pkg.code} value={pkg.code}>
-                  {pkg.name} — ${pkg.price.toLocaleString()}
+                  {pkg.name}{pkg.price > 0 ? ` — $${pkg.price.toLocaleString()}` : ' — Request a Quote'}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -191,14 +289,23 @@ export function AerialFields({ metadata, onMetadataChange }: FieldProps) {
               <p className="font-semibold text-primary">{selectedPackage.name}</p>
               <p className="text-sm text-muted-foreground">{selectedPackage.description}</p>
             </div>
-            <span className="text-xl font-bold text-primary">${selectedPackage.price.toLocaleString()}</span>
+            {isQuoteBased ? (
+              <Badge variant="secondary" className="text-sm font-semibold whitespace-nowrap">
+                <MessageSquareQuote className="w-3.5 h-3.5 mr-1" />
+                Request a Quote
+              </Badge>
+            ) : (
+              <span className="text-xl font-bold text-primary">${selectedPackage.price.toLocaleString()}</span>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-3 pt-2 border-t border-border">
-            <div className="flex items-center gap-1.5 text-sm">
-              <Camera className="w-4 h-4 text-accent" />
-              <span>{selectedPackage.photos} photos</span>
-            </div>
+            {selectedPackage.photos > 0 && (
+              <div className="flex items-center gap-1.5 text-sm">
+                <Camera className="w-4 h-4 text-accent" />
+                <span>{selectedPackage.photos}+ photos</span>
+              </div>
+            )}
             {selectedPackage.videos > 0 && (
               <div className="flex items-center gap-1.5 text-sm">
                 <Video className="w-4 h-4 text-accent" />
@@ -216,6 +323,15 @@ export function AerialFields({ metadata, onMetadataChange }: FieldProps) {
               <span>{selectedPackage.turnaround}</span>
             </div>
           </div>
+
+          {/* Feature badges for quote-based packages */}
+          {selectedPackage.features && selectedPackage.features.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border">
+              {selectedPackage.features.map(f => (
+                <Badge key={f} variant="outline" className="text-xs">{f}</Badge>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -242,8 +358,8 @@ export function AerialFields({ metadata, onMetadataChange }: FieldProps) {
         </div>
       )}
 
-      {/* Estimated Total */}
-      {selectedPackage && (
+      {/* Estimated Total (priced packages only) */}
+      {selectedPackage && !isQuoteBased && (
         <div className="bg-accent/10 border border-accent/30 rounded-xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Info className="w-5 h-5 text-accent" />
@@ -253,11 +369,136 @@ export function AerialFields({ metadata, onMetadataChange }: FieldProps) {
         </div>
       )}
 
+      {/* Category-Specific Fields: Inspection */}
+      {workCategory === 'inspection' && selectedPackageCode && (
+        <div className="space-y-4 p-4 bg-muted/30 rounded-xl border border-border">
+          <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Inspection Details</h4>
+          <div className="space-y-2">
+            <Label>Property type</Label>
+            <Select
+              value={(metadata.propertyType || '') as string}
+              onValueChange={(v) => onMetadataChange('propertyType', v)}
+            >
+              <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="residential">Residential</SelectItem>
+                <SelectItem value="commercial">Commercial</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {selectedPackageCode === 'ROOF_INSPECTION' && (
+            <div className="space-y-2">
+              <Label>Number of roof sections</Label>
+              <Input
+                type="number"
+                min="1"
+                value={(metadata.roofSections || '') as string}
+                onChange={(e) => onMetadataChange('roofSections', e.target.value)}
+                placeholder="e.g., 4"
+              />
+            </div>
+          )}
+          <div className="flex items-center gap-3">
+            <Checkbox
+              id="thermal_requested"
+              checked={!!metadata.thermalRequested}
+              onCheckedChange={(checked) => onMetadataChange('thermalRequested', checked as boolean)}
+            />
+            <label htmlFor="thermal_requested" className="text-sm cursor-pointer">
+              Include thermal imaging (if available)
+            </label>
+          </div>
+        </div>
+      )}
+
+      {/* Category-Specific Fields: Survey */}
+      {workCategory === 'survey' && selectedPackageCode && (
+        <div className="space-y-4 p-4 bg-muted/30 rounded-xl border border-border">
+          <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Survey Details</h4>
+          <div className="space-y-2">
+            <Label>Estimated acreage</Label>
+            <Input
+              type="number"
+              min="0.1"
+              step="0.1"
+              value={(metadata.acreage || '') as string}
+              onChange={(e) => onMetadataChange('acreage', e.target.value)}
+              placeholder="e.g., 5.0"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>GCP availability</Label>
+            <Select
+              value={(metadata.gcpAvailability || '') as string}
+              onValueChange={(v) => onMetadataChange('gcpAvailability', v)}
+            >
+              <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="client_provided">Client will provide GCPs</SelectItem>
+                <SelectItem value="sentinel_provided">Sentinel will deploy GCPs</SelectItem>
+                <SelectItem value="none">No GCPs needed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Accuracy requirement</Label>
+            <Select
+              value={(metadata.accuracyRequirement || '') as string}
+              onValueChange={(v) => onMetadataChange('accuracyRequirement', v)}
+            >
+              <SelectTrigger><SelectValue placeholder="Select accuracy" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">Standard (5-10cm)</SelectItem>
+                <SelectItem value="high">High (2-5cm)</SelectItem>
+                <SelectItem value="survey_grade">Survey Grade (&lt;2cm)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
+
+      {/* Category-Specific Fields: Insurance */}
+      {workCategory === 'insurance' && selectedPackageCode && (
+        <div className="space-y-4 p-4 bg-muted/30 rounded-xl border border-border">
+          <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Insurance Details</h4>
+          <div className="space-y-2">
+            <Label>Claim number (optional)</Label>
+            <Input
+              value={(metadata.claimNumber || '') as string}
+              onChange={(e) => onMetadataChange('claimNumber', e.target.value)}
+              placeholder="e.g., CLM-2026-12345"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Date of loss</Label>
+            <Input
+              type="date"
+              value={(metadata.dateOfLoss || '') as string}
+              onChange={(e) => onMetadataChange('dateOfLoss', e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Damage type</Label>
+            <Select
+              value={(metadata.damageType || '') as string}
+              onValueChange={(v) => onMetadataChange('damageType', v)}
+            >
+              <SelectTrigger><SelectValue placeholder="Select damage type" /></SelectTrigger>
+              <SelectContent>
+                {DAMAGE_TYPES.map(dt => (
+                  <SelectItem key={dt.value} value={dt.value}>{dt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
+
       {/* Property Address */}
       <div className="space-y-2">
         <Label>Property or site address</Label>
         <Input
-          value={metadata.propertyAddress || ''}
+          value={(metadata.propertyAddress || '') as string}
           onChange={(e) => onMetadataChange('propertyAddress', e.target.value)}
           placeholder="Enter the address where the shoot will take place"
         />
@@ -269,7 +510,7 @@ export function AerialFields({ metadata, onMetadataChange }: FieldProps) {
         <Input
           type="number"
           min="1"
-          value={metadata.locationCount || '1'}
+          value={(metadata.locationCount || '1') as string}
           onChange={(e) => onMetadataChange('locationCount', e.target.value)}
           placeholder="1"
         />
@@ -281,7 +522,7 @@ export function AerialFields({ metadata, onMetadataChange }: FieldProps) {
         <Label>Preferred shoot date (optional)</Label>
         <Input
           type="date"
-          value={metadata.shootDatePreference || ''}
+          value={(metadata.shootDatePreference || '') as string}
           onChange={(e) => onMetadataChange('shootDatePreference', e.target.value)}
         />
         <p className="text-xs text-muted-foreground">We'll confirm availability and weather conditions</p>
@@ -290,10 +531,11 @@ export function AerialFields({ metadata, onMetadataChange }: FieldProps) {
       {/* Special requirements */}
       <div className="space-y-2">
         <Label>Special requirements or notes (optional)</Label>
-        <Input
-          value={metadata.specialRequirements || ''}
+        <Textarea
+          value={(metadata.specialRequirements || '') as string}
           onChange={(e) => onMetadataChange('specialRequirements', e.target.value)}
           placeholder="e.g., specific angles needed, access instructions, timing constraints"
+          rows={3}
         />
       </div>
     </div>

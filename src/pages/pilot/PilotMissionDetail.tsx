@@ -16,6 +16,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import SOPChecklist from "@/components/pilot/SOPChecklist";
+import ShotListPanel from "@/components/pilot/ShotListPanel";
 import GatekeeperButton from "@/components/pilot/GatekeeperButton";
 import PreFlightAccordion from "@/components/pilot/PreFlightAccordion";
 import { getCertificationStatus } from "@/types/pilot";
@@ -328,6 +329,14 @@ export default function PilotMissionDetail() {
                     </CardContent>
                 </Card>
 
+                {/* Shot List Reference Panel */}
+                {!isComplete && mission.shot_manifest && (
+                    <ShotListPanel
+                        shotManifest={mission.shot_manifest}
+                        packageName={mission.package_name}
+                    />
+                )}
+
                 {/* Completed Mission Summary */}
                 {isComplete && (
                     <Card>
@@ -406,6 +415,7 @@ export default function PilotMissionDetail() {
                                 missionId={mission.id}
                                 packageId={mission.package_id}
                                 packageCode={mission.package_code}
+                                requiresThermal={mission.requires_thermal}
                                 latitude={mission.latitude}
                                 longitude={mission.longitude}
                                 nearestStation={mission.nearest_weather_station}
@@ -424,6 +434,7 @@ export default function PilotMissionDetail() {
                         <CardContent>
                             <SOPChecklist
                                 missionId={mission.id}
+                                packageCode={mission.package_code}
                                 disabled={!canLogFlights}
                                 preFlightData={preFlightData}
                                 onComplete={(data) => {

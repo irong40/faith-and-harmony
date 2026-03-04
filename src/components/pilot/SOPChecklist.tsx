@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { SOP_CHECKLIST_ITEMS } from "@/types/pilot";
+import { SOP_CHECKLIST_ITEMS, getChecklistItemsForPackage } from "@/types/pilot";
 import type { ChecklistData, ChecklistItem, PreFlightData } from "@/types/pilot";
 import { Shield, Cloud, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 
 interface SOPChecklistProps {
     missionId: string;
+    packageCode?: string | null;
     onComplete: (data: ChecklistData) => void;
     onIncomplete: () => void;
     disabled?: boolean;
@@ -16,6 +17,7 @@ interface SOPChecklistProps {
 
 export default function SOPChecklist({
     missionId,
+    packageCode,
     onComplete,
     onIncomplete,
     disabled = false,
@@ -24,13 +26,29 @@ export default function SOPChecklist({
     const [items, setItems] = useState<Record<string, ChecklistItem>>({});
     const storageKey = `trestle_checklist_${missionId}`;
 
-    // Initialize checklist state from localStorage
+    // Resolve checklist items for this mission type
+    const checklistItems = getChecklistItemsForPackage(packageCode ?? null);
+    const checklistVersion = checklistItems.length > SOP_CHECKLIST_ITEMS.length ? "3.0" : "2.0";
+
+    // Initialize checklist state from localStorage, merging with current checklistItems
+    // to handle version upgrades (e.g., mission-specific extras added after initial save)
     useEffect(() => {
         const stored = localStorage.getItem(storageKey);
         if (stored) {
             try {
                 const parsed = JSON.parse(stored);
-                setItems(parsed.items || {});
+                const restored = parsed.items || {};
+                // Merge: start with fresh items for all current keys, overlay with restored state
+                const merged: Record<string, ChecklistItem> = {};
+                checklistItems.forEach(item => {
+                    merged[item.key] = restored[item.key] || {
+                        key: item.key,
+                        label: item.label,
+                        checked: false,
+                        checked_at: null,
+                    };
+                });
+                setItems(merged);
             } catch {
                 initializeItems();
             }
@@ -41,7 +59,7 @@ export default function SOPChecklist({
 
     const initializeItems = () => {
         const initial: Record<string, ChecklistItem> = {};
-        SOP_CHECKLIST_ITEMS.forEach(item => {
+        checklistItems.forEach(item => {
             initial[item.key] = {
                 key: item.key,
                 label: item.label,
@@ -54,11 +72,11 @@ export default function SOPChecklist({
 
     // Check completion status whenever items change
     useEffect(() => {
-        const allChecked = SOP_CHECKLIST_ITEMS.every(item => items[item.key]?.checked);
+        const allChecked = checklistItems.every(item => items[item.key]?.checked);
 
         if (allChecked && Object.keys(items).length > 0) {
             const checklistData: ChecklistData = {
-                version: "2.0",
+                version: checklistVersion,
                 completed_at: new Date().toISOString(),
                 items,
                 equipment_id: preFlightData?.equipment?.id || null,
@@ -109,7 +127,7 @@ export default function SOPChecklist({
 
         // Persist to localStorage
         const checklistData: ChecklistData = {
-            version: "2.0",
+            version: checklistVersion,
             completed_at: null,
             items: newItems,
         };
@@ -163,7 +181,7 @@ export default function SOPChecklist({
 
     return (
         <div className="space-y-3">
-            {SOP_CHECKLIST_ITEMS.map((item, index) => {
+            {checklistItems.map((item, index) => {
                 const checkItem = items[item.key];
                 const isChecked = checkItem?.checked || false;
                 const itemDisabled = isItemDisabled(item.key);

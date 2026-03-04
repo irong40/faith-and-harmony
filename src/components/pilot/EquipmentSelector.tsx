@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Plane, Battery, Gamepad2, Package, CheckCircle2 } from 'lucide-react';
+import { Loader2, Plane, Battery, Gamepad2, Package, CheckCircle2, AlertTriangle, Thermometer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useActiveAircraft, useActiveBatteries, useActiveControllers, useAircraftCapabilities, useAllAccessories } from '@/hooks/useFleet';
 import { useMissionEquipment, useUpsertMissionEquipment } from '@/hooks/useMissionEquipment';
@@ -14,14 +14,19 @@ interface EquipmentSelectorProps {
   missionId: string;
   packageId: string | null;
   packageCode: string | null;
+  requiresThermal?: boolean;
   onEquipmentSelected: (data: { id: string; aircraft_model: string }) => void;
   onEquipmentCleared: () => void;
 }
+
+// Known thermal-capable aircraft models
+const THERMAL_CAPABLE_MODELS = ['DJI Matrice 4T', 'DJI Mavic 3T', 'DJI Mavic 3 Enterprise'];
 
 export default function EquipmentSelector({
   missionId,
   packageId,
   packageCode,
+  requiresThermal = false,
   onEquipmentSelected,
   onEquipmentCleared,
 }: EquipmentSelectorProps) {
@@ -226,6 +231,20 @@ export default function EquipmentSelector({
           </Select>
         )}
       </div>
+
+      {/* Thermal Warning */}
+      {requiresThermal && selectedAircraftId && selectedAircraft && !THERMAL_CAPABLE_MODELS.includes(selectedAircraft.model) && (
+        <div className="flex items-center gap-2 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10">
+          <Thermometer className="h-4 w-4 text-amber-500 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-amber-600">Thermal Camera Recommended</p>
+            <p className="text-xs text-muted-foreground">
+              This mission type requires thermal imaging. The selected aircraft ({selectedAircraft.model}) may not have a built-in thermal sensor. Verify an aftermarket thermal attachment is available.
+            </p>
+          </div>
+          <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+        </div>
+      )}
 
       {/* Battery Selection */}
       {selectedAircraftId && (

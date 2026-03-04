@@ -17,6 +17,9 @@ interface PilotMission {
   package_id: string | null;
   package_name: string | null;
   package_code: string | null;
+  shot_manifest: any[] | null;
+  requires_thermal: boolean;
+  requires_raw: boolean;
   latitude: number | null;
   longitude: number | null;
   nearest_weather_station: string | null;
@@ -34,7 +37,7 @@ export function usePilotMissions() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('drone_jobs')
-        .select('id, job_number, customers(name), property_address, scheduled_date, status, drone_packages(id, name, code)')
+        .select('id, job_number, customers(name), property_address, scheduled_date, status, drone_packages(id, name, code, shot_manifest, requires_thermal, requires_raw)')
         .eq('pilot_id', user!.id)
         .neq('status', 'canceled')
         .order('scheduled_date', { ascending: true });
@@ -51,6 +54,9 @@ export function usePilotMissions() {
         package_name: job.drone_packages?.name || null,
         package_code: job.drone_packages?.code || null,
         package_id: job.drone_packages?.id || null,
+        shot_manifest: job.drone_packages?.shot_manifest || null,
+        requires_thermal: job.drone_packages?.requires_thermal ?? false,
+        requires_raw: job.drone_packages?.requires_raw ?? false,
       }));
     },
     enabled: !!user?.id,
@@ -68,7 +74,7 @@ export function usePilotMission(missionId: string | undefined) {
     queryFn: async (): Promise<PilotMission> => {
       const { data, error } = await supabase
         .from('drone_jobs')
-        .select('*, customers(name), drone_packages(id, name, code)')
+        .select('*, customers(name), drone_packages(id, name, code, shot_manifest, requires_thermal, requires_raw)')
         .eq('id', missionId!)
         .single();
 
@@ -89,6 +95,9 @@ export function usePilotMission(missionId: string | undefined) {
         package_id: data.drone_packages?.id || null,
         package_name: data.drone_packages?.name || null,
         package_code: data.drone_packages?.code || null,
+        shot_manifest: data.drone_packages?.shot_manifest || null,
+        requires_thermal: data.drone_packages?.requires_thermal ?? false,
+        requires_raw: data.drone_packages?.requires_raw ?? false,
         latitude: data.latitude ?? null,
         longitude: data.longitude ?? null,
         nearest_weather_station: data.nearest_weather_station ?? null,

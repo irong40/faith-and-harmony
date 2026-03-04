@@ -16,6 +16,7 @@ interface PreFlightAccordionProps {
   missionId: string;
   packageId: string | null;
   packageCode: string | null;
+  requiresThermal?: boolean;
   latitude: number | null;
   longitude: number | null;
   nearestStation: string | null;
@@ -26,6 +27,7 @@ export default function PreFlightAccordion({
   missionId,
   packageId,
   packageCode,
+  requiresThermal = false,
   latitude,
   longitude,
   nearestStation,
@@ -108,6 +110,7 @@ export default function PreFlightAccordion({
             missionId={missionId}
             packageId={packageId}
             packageCode={packageCode}
+            requiresThermal={requiresThermal}
             onEquipmentSelected={handleEquipmentSelected}
             onEquipmentCleared={handleEquipmentCleared}
           />

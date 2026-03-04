@@ -313,7 +313,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Route processing by package_code\nconst body = $json;\nconst code = (body.package_code || '').toUpperCase();\n\nlet path = 'A'; // default real estate\nif (['PROGRESS_800', 'INSPECTION'].includes(code)) {\n  path = 'B'; // construction\n} else if (['SITE_SURVEY', 'MAPPING'].includes(code)) {\n  path = 'C'; // WebODM\n}\n\nreturn [{ json: { ...body, processing_path: path } }];"
+        "jsCode": "// Route processing by package_code\n// Supports both legacy and new package codes for backward compatibility\nconst body = $json;\nconst code = (body.package_code || '').toUpperCase();\n\nconst ROUTE_MAP = {\n  // Real estate → Path A\n  LISTING_LITE_225: 'A', LISTING_PRO_450: 'A', LUXURY_750: 'A',\n  PHOTO_495: 'A', PHOTO_VIDEO_795: 'A', PREMIUM_1250: 'A',\n  COMMERCIAL_850: 'A',\n  // Construction → Path B\n  CONSTRUCTION_450: 'B', PROGRESS_800: 'B',\n  // Survey → Path C\n  LAND_SURVEY: 'C',\n  // Inspection → Path D\n  ROOF_INSPECTION: 'D', INSURANCE_DOC: 'D', INSPECTION_1200: 'D',\n  // Solar → Path D+T\n  SOLAR_INSPECTION: 'D+T',\n};\n\nconst VIDEO_PACKAGES = ['LISTING_PRO_450', 'LUXURY_750', 'COMMERCIAL_850', 'PHOTO_VIDEO_795', 'PREMIUM_1250'];\n\nconst path = ROUTE_MAP[code] || 'A';\nconst include_video = VIDEO_PACKAGES.includes(code);\n\nreturn [{ json: { ...body, processing_path: path, include_video } }];"
       },
       "id": "route-by-package",
       "name": "Route by Package Code",
