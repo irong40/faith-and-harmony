@@ -76,52 +76,34 @@ ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admin can read payments"
   ON public.payments FOR SELECT
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE profiles.id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
+  USING (has_role(auth.uid(), 'admin'::app_role));
 
 -- Admin users can insert payments (for manual adjustments)
 CREATE POLICY "Admin can insert payments"
   ON public.payments FOR INSERT
   TO authenticated
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE profiles.id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
+  WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
 
 -- Admin users can update payments
 CREATE POLICY "Admin can update payments"
   ON public.payments FOR UPDATE
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE profiles.id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
+  USING (has_role(auth.uid(), 'admin'::app_role));
 
 -- Service role bypasses RLS (used by edge functions via service key)
 -- No additional policy needed; service_role key bypasses RLS by default.
 
 -- Daily overdue check: mark balance payments past due_date as overdue
--- Runs at 6 AM UTC daily
-SELECT cron.schedule(
-  'payments-overdue-check',
-  '0 6 * * *',
-  $$
-    UPDATE public.payments
-    SET status = 'overdue'
-    WHERE payment_type = 'balance'
-      AND status = 'pending'
-      AND due_date IS NOT NULL
-      AND due_date < now();
-  $$
-);
+-- Runs at 6 AM UTC daily (requires pg_cron extension)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
+    PERFORM cron.schedule(
+      'payments-overdue-check',
+      '0 6 * * *',
+      'UPDATE public.payments SET status = ''overdue'' WHERE payment_type = ''balance'' AND status = ''pending'' AND due_date IS NOT NULL AND due_date < now();'
+    );
+  ELSE
+    RAISE NOTICE 'pg_cron not available — skipping payments-overdue-check cron job';
+  END IF;
+END $$;
