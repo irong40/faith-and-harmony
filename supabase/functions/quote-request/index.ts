@@ -28,7 +28,7 @@ serve(async (req) => {
     const { name, email, phone, service_type, preferred_date, message } =
       (await req.json()) as QuoteRequest;
 
-    if (!name || !email || !phone || !service_type || !preferred_date) {
+    if (!name || !email || !service_type) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -49,7 +49,7 @@ serve(async (req) => {
         phone,
         address: null,
         job_type: service_type,
-        description: message || `${service_type} — preferred date: ${preferred_date}`,
+        description: message || `${service_type}${preferred_date ? ` — preferred date: ${preferred_date}` : ''}`,
         source: "web",
         status: "new",
         brand_slug: "sai",
