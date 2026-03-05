@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Billing, Equipment, and Production Readiness
-status: ready_to_plan
-stopped_at: null
-last_updated: "2026-03-05T18:00:00.000Z"
-last_activity: 2026-03-05 — v2.0 roadmap created (Phases 7-11)
+status: executing
+stopped_at: "Completed 10-01-PLAN.md"
+last_updated: "2026-03-05T18:18:00Z"
+last_activity: 2026-03-05 — Completed Phase 10 Plan 01 (Sync Infrastructure Foundation)
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 3
+  completed_plans: 2
 ---
 
 # Project State
@@ -25,11 +25,11 @@ See: .planning/PROJECT.md (updated 2026-03-05)
 ## Current Position
 
 Phase: 7 of 11 (Foundation and Quick Wins)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-03-05 -- v2.0 roadmap created (Phases 7-11, 19 requirements mapped)
+Plan: 1 of 3 in current phase
+Status: Executing
+Last activity: 2026-03-05 -- Completed Plan 07-01 (Admin Accessories CRUD)
 
-Progress: [..........] 0% (v2.0 milestone)
+Progress: [==........] 20% (v2.0 milestone)
 
 ## Accumulated Context
 
@@ -42,6 +42,9 @@ Recent decisions affecting current work:
 - Supabase row inserted BEFORE Square API call to prevent orphaned invoices
 - Separate storage buckets for watermarked previews vs originals
 - Dead letter store replaces silent deletion after max sync retries
+- Database function for deletion guard instead of application check (prevents deletion from any client)
+- Admin form uses checkbox multi-select from aircraft table, pilot form unchanged for offline compatibility
+- compatible_aircraft stored as text array of model names, not UUIDs, preserving EquipmentSelector filtering
 
 ### v1.0 Landing Page (Complete)
 
@@ -68,12 +71,12 @@ Key infrastructure from v1.1:
 
 - n8n pipeline watermark step needs investigation during Phase 8 planning
 - Deposit amount may be 25% not 50% in existing code (verify during Phase 7)
-- Accessory deletion with orphaned mission_equipment references needs design decision
+- Accessory deletion guard resolved: delete_accessory_safe RPC function checks mission_equipment references
 - imagemagick_deno is pre-1.0 (pin version, verify API at build time)
 
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: v2.0 roadmap created, ready to plan Phase 7
+Stopped at: Completed 07-01-PLAN.md (Admin Accessories CRUD)
 Resume file: None
-Resume signal: Run /gsd:plan-phase 7 to begin
+Resume signal: Execute 07-02-PLAN.md or 07-03-PLAN.md next

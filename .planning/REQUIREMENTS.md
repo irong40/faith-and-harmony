@@ -18,9 +18,9 @@
 
 ### Equipment
 
-- [ ] **EQUIP-01**: Admin can create, edit, and delete accessories with type, name, serial number, and status
-- [ ] **EQUIP-02**: Admin can assign compatible aircraft to each accessory
-- [ ] **EQUIP-03**: Mission equipment selection filters accessories by selected aircraft compatibility
+- [x] **EQUIP-01**: Admin can create, edit, and delete accessories with type, name, serial number, and status
+- [x] **EQUIP-02**: Admin can assign compatible aircraft to each accessory
+- [x] **EQUIP-03**: Mission equipment selection filters accessories by selected aircraft compatibility
 
 ### Offline
 
@@ -77,9 +77,9 @@
 | BILL-06 | Phase 9 | Pending |
 | BILL-07 | Phase 9 | Pending |
 | BILL-08 | Phase 9 | Pending |
-| EQUIP-01 | Phase 7 | Pending |
-| EQUIP-02 | Phase 7 | Pending |
-| EQUIP-03 | Phase 7 | Pending |
+| EQUIP-01 | Phase 7 | Complete |
+| EQUIP-02 | Phase 7 | Complete |
+| EQUIP-03 | Phase 7 | Complete |
 | DEPLOY-01 | Phase 7 | Pending |
 | DEPLOY-02 | Phase 11 | Pending |
 | DEPLOY-03 | Phase 11 | Pending |
