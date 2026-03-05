@@ -40,9 +40,9 @@
 
 ### Weather Operations
 
-- [ ] **WTHR-01**: Weather API integration fetching 48-hour forecasts for Hampton Roads
-- [ ] **WTHR-02**: Flight parameter validation: max wind (sustained and gusts), precipitation probability, visibility minimum, cloud ceiling minimum
-- [ ] **WTHR-03**: Automated check runs against scheduled jobs and flags unsafe conditions
+- [x] **WTHR-01**: Weather API integration fetching 48-hour forecasts for Hampton Roads
+- [x] **WTHR-02**: Flight parameter validation: max wind (sustained and gusts), precipitation probability, visibility minimum, cloud ceiling minimum
+- [x] **WTHR-03**: Automated check runs against scheduled jobs and flags unsafe conditions
 - [ ] **WTHR-04**: Admin weather view showing current conditions and upcoming forecast against flight parameters
 
 ### Integration
@@ -90,9 +90,9 @@
 | SCHED-03 | Phase 4: Scheduling and Availability | Pending |
 | SCHED-04 | Phase 4: Scheduling and Availability | Pending |
 | SCHED-05 | Phase 4: Scheduling and Availability | Pending |
-| WTHR-01 | Phase 5: Weather Operations | Pending |
-| WTHR-02 | Phase 5: Weather Operations | Pending |
-| WTHR-03 | Phase 5: Weather Operations | Pending |
+| WTHR-01 | Phase 5: Weather Operations | Complete |
+| WTHR-02 | Phase 5: Weather Operations | Complete |
+| WTHR-03 | Phase 5: Weather Operations | Complete |
 | WTHR-04 | Phase 5: Weather Operations | Pending |
 | INTG-01 | Phase 6: Integration and Edge Cases | Pending |
 | INTG-02 | Phase 6: Integration and Edge Cases | Pending |

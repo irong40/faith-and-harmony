@@ -9,14 +9,14 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 ## Current Position
 
-Phase: 3 of 6 (in progress), Plan 03-01 COMPLETE, Plan 03-02 next
-Plan: 03-01 committed (wf5 workflow 2fd2c01, analysisPlan b5a0f8c). Ready to import into n8n and test.
-Status: Phases 1, 2, 4 complete. Phase 3 in progress (03-01 done). Phase 5 ready. Phase 6 depends on all.
-Last activity: 2026-03-03 — 03-01 execution confirmed, artifacts verified and committed.
+Phase: 5 of 6 (in progress), Plan 05-01 COMPLETE, Plan 05-02 next
+Plan: 05-01 committed (weather forecast cache + edge function). Ready for 05-02 admin weather view.
+Status: Phases 1, 2, 4 complete. Phase 3 in progress (03-01 done). Phase 5 in progress (05-01 done). Phase 6 depends on all.
+Last activity: 2026-03-05 — 05-01 execution complete, weather pipeline artifacts verified and committed.
 
 ## Progress
 
-[███████░░░] 67% (10/15 plans executed, 5 remaining across 3 phases)
+[████████░░] 73% (11/15 plans executed, 4 remaining across 3 phases)
 
 ## Accumulated Context
 
@@ -80,6 +80,12 @@ All 5 phases shipped. Landing page live at sentinelaerial domain. Phase artifact
 - Build Error Email handles both validation failures and API failures, routes both to shared Send Admin Alert node
 - Internal fields (_can_proceed, _validation_errors) stripped from intake-lead payload via Object.fromEntries filter expression
 
+### Decisions (05-01)
+
+- Migration timestamps adjusted from plan specified 20260303 to 20260305 to avoid conflicts with existing migrations
+- evaluateWeather logic ported inline into Deno edge function (cannot resolve @/ path aliases)
+- Null ceilingHeight preserved as null (unlimited ceiling) not zero in weather evaluation
+
 ### Blockers/Concerns
 
 - Phase 3 Plan 03-02: wf5 needs import into n8n, activation, and test with a real Vapi call
@@ -90,7 +96,7 @@ All 5 phases shipped. Landing page live at sentinelaerial domain. Phase artifact
 
 ## Session Continuity
 
-Last session: 2026-03-03
-Stopped at: Completed 03-01-PLAN.md. Both artifacts verified and committed.
+Last session: 2026-03-05
+Stopped at: Completed 05-01-PLAN.md. Weather forecast pipeline (2 migrations + edge function) verified and committed.
 Resume file: None
-Resume signal: Run 03-02 (n8n import, activation, end-to-end test with real Vapi call)
+Resume signal: Run 05-02 (admin weather dashboard view) or 03-02 (n8n import and test)
