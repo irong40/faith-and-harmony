@@ -145,10 +145,10 @@ serve(async (req) => {
         delivery_method: "EMAIL",
         invoice_number: `SAI-DEP-${shortId}`,
         title: "Sentinel Aerial Inspections — Deposit Invoice",
-        description: `25% deposit for ${requestInfo.job_type ?? "aerial services"} — Job ${shortId}`,
+        description: `50% deposit for ${requestInfo.job_type ?? "aerial services"} — Job ${shortId}`,
         line_items: [
           {
-            name: `Deposit (25%) — ${requestInfo.job_type ?? "Aerial Services"}`,
+            name: `Deposit (50%) — ${requestInfo.job_type ?? "Aerial Services"}`,
             quantity: "1",
             base_price_money: {
               amount: depositAmountCents,

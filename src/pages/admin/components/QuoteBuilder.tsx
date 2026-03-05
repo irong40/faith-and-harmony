@@ -48,7 +48,7 @@ export default function QuoteBuilder({ request, onClose, onCreated }: QuoteBuild
     0
   );
 
-  const suggestedDeposit = Math.round(total * 0.25 * 100) / 100;
+  const suggestedDeposit = Math.round(total * 0.5 * 100) / 100;
 
   const updateLineItem = (index: number, field: keyof LineItem, value: string | number) => {
     setLineItems((prev) =>
@@ -225,12 +225,12 @@ export default function QuoteBuilder({ request, onClose, onCreated }: QuoteBuild
           step={0.01}
           value={depositAmount}
           onChange={(e) => setDepositAmount(Number(e.target.value))}
-          placeholder={`Suggested 25%: $${suggestedDeposit.toFixed(2)}`}
+          placeholder={`Suggested 50%: $${suggestedDeposit.toFixed(2)}`}
           className="max-w-xs"
         />
         {total > 0 && (
           <p className="text-xs text-muted-foreground">
-            Suggested 25% deposit: ${suggestedDeposit.toFixed(2)}
+            Suggested 50% deposit: ${suggestedDeposit.toFixed(2)}
           </p>
         )}
       </div>
