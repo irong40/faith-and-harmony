@@ -64,7 +64,7 @@ Plans:
   3. A watermark overlay is visible on each preview thumbnail and cannot be cropped out to recover the original
 **Plans**: 2 plans
 Plans:
-- [ ] 08-01-PLAN.md -- Storage bucket migrations (watermark-previews public bucket, drone-jobs private revert, preview_urls column) and QADetailModal fix
+- [x] 08-01-PLAN.md -- Storage bucket migrations (watermark-previews public bucket, drone-jobs private revert, preview_urls column) and QADetailModal fix
 - [ ] 08-02-PLAN.md -- Watermark tile asset generation and n8n WF1 pipeline watermark step
 
 ### Phase 9: Billing Lifecycle
@@ -115,7 +115,7 @@ Phases 7 and 10 are independent and can run in parallel. Phase 8 depends on 7. P
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 7. Foundation and Quick Wins | 2/2 | Complete   | 2026-03-05 | - |
-| 8. Watermark Pipeline | v2.0 | 0/2 | Planned | - |
+| 8. Watermark Pipeline | v2.0 | 1/2 | In Progress | - |
 | 9. Billing Lifecycle | v2.0 | 0/? | Not started | - |
 | 10. Offline Sync Hardening | 3/3 | Complete    | 2026-03-05 | - |
 | 11. Standalone Deployment | v2.0 | 0/2 | Planned | - |
