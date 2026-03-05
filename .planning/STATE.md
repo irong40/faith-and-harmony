@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-02-PLAN.md. Phase 5 weather operations fully done. Admin dashboard committed.
-last_updated: "2026-03-05T15:20:51.963Z"
-last_activity: 2026-03-05 — 05-02 execution complete, weather operations admin dashboard committed.
+stopped_at: Completed 06-01-PLAN.md. Admin Call Logs and Leads pages committed.
+last_updated: "2026-03-05T15:50:23.000Z"
+last_activity: 2026-03-05 — 06-01 execution complete, admin call logs and leads pages committed.
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 15
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # Project State
@@ -24,14 +24,14 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 ## Current Position
 
-Phase: 5 of 6 COMPLETE, Plan 05-02 COMPLETE
-Plan: 05-02 committed (admin weather dashboard). Phase 5 fully done (05-01 + 05-02).
-Status: Phases 1, 2, 4, 5 complete. Phase 3 in progress (03-01 done). Phase 6 depends on all.
-Last activity: 2026-03-05 — 05-02 execution complete, weather operations admin dashboard committed.
+Phase: 6 of 6 IN PROGRESS, Plan 06-01 COMPLETE
+Plan: 06-01 committed (admin call logs and leads pages). Phase 6 plan 01 of 2 done.
+Status: Phases 1, 2, 4, 5 complete. Phase 3 in progress (03-01 done). Phase 6 plan 01 done.
+Last activity: 2026-03-05 — 06-01 execution complete, admin call logs and leads pages committed.
 
 ## Progress
 
-[█████████░] 80% (12/15 plans executed, 3 remaining across 2 phases)
+[████████░░] 87% (13/15 plans executed, 2 remaining across 2 phases)
 
 ## Accumulated Context
 
@@ -106,6 +106,12 @@ All 5 phases shipped. Landing page live at sentinelaerial domain. Phase artifact
 - Used `as never` cast on weather_forecast_cache table query (generated Supabase types not yet regenerated for new table)
 - Weather nav item placed first in Operations category so Iron checks conditions before scheduling
 
+### Decisions (06-01)
+
+- Migration timestamp changed from 20260303200000 to 20260305200000 to avoid collision with existing step_definitions migration
+- Used as never cast on vapi_call_logs and leads queries consistent with project pattern for ungenerated Supabase types
+- OUTCOME_COLORS exported from CallLogs.tsx for shared use across voice pipeline admin pages
+
 ### Blockers/Concerns
 
 - Phase 3 Plan 03-02: wf5 needs import into n8n, activation, and test with a real Vapi call
@@ -117,6 +123,6 @@ All 5 phases shipped. Landing page live at sentinelaerial domain. Phase artifact
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 05-02-PLAN.md. Phase 5 weather operations fully done. Admin dashboard committed.
+Stopped at: Completed 06-01-PLAN.md. Admin Call Logs and Leads pages committed.
 Resume file: None
-Resume signal: Run 03-02 (n8n workflow import and test) or 06-01 (integration testing)
+Resume signal: Run 03-02 (n8n workflow import and test) or 06-02 (remaining integration plans)

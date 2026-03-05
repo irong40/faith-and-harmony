@@ -49,8 +49,8 @@
 
 - [ ] **INTG-01**: End-to-end flow works: phone call to bot to webhook to n8n to intake to request to invoice
 - [ ] **INTG-02**: Edge cases route correctly: out of area declines politely, complex jobs offer callback, payment questions redirect
-- [ ] **INTG-03**: Admin call log page showing recent calls with transcript, outcome, and linked request
-- [ ] **INTG-04**: Admin leads page showing bot-sourced leads with qualification status and conversion tracking
+- [x] **INTG-03**: Admin call log page showing recent calls with transcript, outcome, and linked request
+- [x] **INTG-04**: Admin leads page showing bot-sourced leads with qualification status and conversion tracking
 
 ## Out of Scope
 
@@ -96,8 +96,8 @@
 | WTHR-04 | Phase 5: Weather Operations | Complete |
 | INTG-01 | Phase 6: Integration and Edge Cases | Pending |
 | INTG-02 | Phase 6: Integration and Edge Cases | Pending |
-| INTG-03 | Phase 6: Integration and Edge Cases | Pending |
-| INTG-04 | Phase 6: Integration and Edge Cases | Pending |
+| INTG-03 | Phase 6: Integration and Edge Cases | Complete |
+| INTG-04 | Phase 6: Integration and Edge Cases | Complete |
 
 **Coverage:**
 - v1.1 requirements: 29 total
