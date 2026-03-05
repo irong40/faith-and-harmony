@@ -99,7 +99,10 @@ Plans:
   1. trestle.sentinelaerial.com loads the pilot portal PWA and is installable on mobile devices
   2. Login at trestle.sentinelaerial.com works correctly with Supabase auth redirect URLs configured for the subdomain
   3. Square production webhook is registered and processes real payments (sandbox data archived, production environment variables set)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 11-01-PLAN.md -- config.toml fix, Vercel project creation, DNS, and Supabase auth redirects
+- [ ] 11-02-PLAN.md -- Square production cutover and end-to-end deployment verification
 
 ## Progress
 
@@ -112,4 +115,4 @@ Phases 7 and 10 are independent and can run in parallel. Phase 8 depends on 7. P
 | 8. Watermark Pipeline | v2.0 | 0/? | Not started | - |
 | 9. Billing Lifecycle | v2.0 | 0/? | Not started | - |
 | 10. Offline Sync Hardening | 3/3 | Complete    | 2026-03-05 | - |
-| 11. Standalone Deployment | v2.0 | 0/? | Not started | - |
+| 11. Standalone Deployment | v2.0 | 0/2 | Planned | - |
