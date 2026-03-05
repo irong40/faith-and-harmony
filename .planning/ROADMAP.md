@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Intake API and Lead Tracking** - Create leads and call_logs tables, build intake edge function that receives structured call data and creates client + request, build pricing lookup edge function for mid-call queries
 - [x] **Phase 2: Vapi Voice Bot** - Configure Vapi assistant with ElevenLabs TTS, author system prompt covering packages and service area and qualification flow, define tool schemas for mid-call API queries, provision 757 number (completed 2026-03-03)
-- [ ] **Phase 3: n8n Vapi Pipeline** - Build n8n workflow receiving Vapi end-of-call webhook, transform payload to intake API format, wire successful intakes into existing request-to-quote flow, add error notifications
+- [x] **Phase 3: n8n Vapi Pipeline** - Build n8n workflow receiving Vapi end-of-call webhook, transform payload to intake API format, wire successful intakes into existing request-to-quote flow, add error notifications (completed 2026-03-05)
 - [x] **Phase 4: Scheduling and Availability** - Create availability_slots and blackout_dates tables, build admin scheduling UI, build availability check edge function, connect bot to offer dates during calls (completed 2026-03-03)
 - [x] **Phase 5: Weather Operations** - Integrate NWS weather API, validate flight parameters against forecasts, automate 48-hour pre-flight checks for scheduled jobs, add admin weather conditions view (completed 2026-03-05)
 - [x] **Phase 6: Integration and Edge Cases** - Validate end-to-end call-to-invoice flow, implement edge case routing (out of area, complex jobs, payment questions), build admin call log and lead management views (completed 2026-03-05)
@@ -52,9 +52,9 @@ Plans:
 **External prerequisites**: Vapi account created, ElevenLabs API key added to Vapi, 757 number provisioned in Vapi dashboard
 
 Plans:
-- [ ] 02-01-PLAN.md — System prompt and tool definition JSON (Paula voice bot prompt, pricing and transfer tool schemas)
-- [ ] 02-02-PLAN.md — vapi-tool-handler pricing handler (get_package_pricing branch, natural language response, deploy)
-- [ ] 02-03-PLAN.md — Dashboard setup guide and verification (assistant config, setup instructions, 757 number provisioning, live test)
+- [x] 02-01-PLAN.md — System prompt and tool definition JSON (Paula voice bot prompt, pricing and transfer tool schemas)
+- [x] 02-02-PLAN.md — vapi-tool-handler pricing handler (get_package_pricing branch, natural language response, deploy)
+- [x] 02-03-PLAN.md — Dashboard setup guide and verification (assistant config, setup instructions, 757 number provisioning, live test)
 
 ### Phase 3: n8n Vapi Pipeline
 **Goal**: When a Vapi call ends, n8n automatically processes the call data and creates a request in the system without manual intervention
@@ -70,7 +70,7 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md — n8n workflow JSON and Vapi analysisPlan configuration
-- [ ] 03-02-PLAN.md — Import workflow, configure credentials, validate pipeline
+- [x] 03-02-PLAN.md — Import workflow, configure credentials, validate pipeline
 
 ### Phase 4: Scheduling and Availability
 **Goal**: The bot can check and offer available dates during calls, and the admin manages availability through a calendar interface
@@ -116,8 +116,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Admin call log and leads pages (RLS migration, CallLogs page, Leads page, nav and route wiring)
-- [ ] 06-02-PLAN.md — End-to-end pipeline validation and edge case verification (system check, live test calls)
+- [x] 06-01-PLAN.md — Admin call log and leads pages (RLS migration, CallLogs page, Leads page, nav and route wiring)
+- [x] 06-02-PLAN.md — End-to-end pipeline validation and edge case verification (system check, live test calls)
 
 ## Progress
 
@@ -128,7 +128,7 @@ Phases execute in numeric order: 1 > 2 > 3 > 4 > 5 > 6
 |-------|----------------|--------|-----------|
 | 1. Intake API and Lead Tracking | 3/3 | Complete | 2026-03-03 |
 | 2. Vapi Voice Bot | 3/3 | Complete   | 2026-03-03 |
-| 3. n8n Vapi Pipeline | 1/2 | In progress | — |
+| 3. n8n Vapi Pipeline | 2/2 | Complete | 2026-03-05 |
 | 4. Scheduling and Availability | 3/3 | Complete | 2026-03-03 |
 | 5. Weather Operations | 2/2 | Complete    | 2026-03-05 |
 | 6. Integration and Edge Cases | 2/2 | Complete    | 2026-03-05 |
