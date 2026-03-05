@@ -3,12 +3,17 @@ import {
   getSyncQueue,
   removeSyncItem,
   updateSyncItem,
+  moveToDeadLetter,
+  getDeadLetterCount,
   putAll,
   STORES,
 } from './db';
 import type { SyncQueueItem } from './db';
+import { isNetworkAvailable } from './network-probe';
 
 const MAX_RETRIES = 5;
+
+let processingQueue = false;
 
 export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline';
 
@@ -93,51 +98,65 @@ async function executeAction(item: SyncQueueItem): Promise<boolean> {
 }
 
 export async function processQueue(): Promise<number> {
-  if (!navigator.onLine) {
+  if (!(await isNetworkAvailable())) {
     notify('offline', 0);
     return 0;
   }
 
-  const queue = await getSyncQueue();
-  if (queue.length === 0) {
-    notify('idle', 0);
-    return 0;
-  }
+  if (processingQueue) return 0;
+  processingQueue = true;
 
-  notify('syncing', queue.length);
-  let processed = 0;
+  try {
+    const queue = await getSyncQueue();
+    if (queue.length === 0) {
+      notify('idle', 0);
+      return 0;
+    }
 
-  for (const item of queue) {
-    if (!item.id) continue;
+    notify('syncing', queue.length);
+    let processed = 0;
+    let movedToDeadLetter = false;
 
-    try {
-      const success = await executeAction(item);
-      if (success) {
-        await removeSyncItem(item.id);
-        processed++;
-      }
-    } catch (error: any) {
-      const retries = item.retries + 1;
-      if (retries >= MAX_RETRIES) {
-        console.error(`Sync item ${item.id} exceeded max retries, removing:`, error.message);
-        await removeSyncItem(item.id);
-      } else {
-        await updateSyncItem({
-          ...item,
-          retries,
-          last_error: error.message || 'Unknown error',
-        });
+    for (const item of queue) {
+      if (!item.id) continue;
+
+      try {
+        const success = await executeAction(item);
+        if (success) {
+          await removeSyncItem(item.id);
+          processed++;
+        }
+      } catch (error: any) {
+        const retries = item.retries + 1;
+        if (retries >= MAX_RETRIES) {
+          console.error(`Sync item ${item.id} exceeded max retries, moving to dead letter`);
+          await moveToDeadLetter(item, error.message || 'Unknown error');
+          await removeSyncItem(item.id);
+          movedToDeadLetter = true;
+        } else {
+          await updateSyncItem({
+            ...item,
+            retries,
+            last_error: error.message || 'Unknown error',
+          });
+        }
       }
     }
-  }
 
-  const remaining = (await getSyncQueue()).length;
-  notify(remaining > 0 ? 'error' : 'idle', remaining);
-  return processed;
+    if (movedToDeadLetter) {
+      await getDeadLetterCount();
+    }
+
+    const remaining = (await getSyncQueue()).length;
+    notify(remaining > 0 ? 'error' : 'idle', remaining);
+    return processed;
+  } finally {
+    processingQueue = false;
+  }
 }
 
 export async function pullMissions(pilotId: string): Promise<void> {
-  if (!navigator.onLine) return;
+  if (!(await isNetworkAvailable())) return;
 
   const { data, error } = await supabase
     .from('drone_jobs')
@@ -153,7 +172,7 @@ export async function pullMissions(pilotId: string): Promise<void> {
 }
 
 export async function pullFleet(): Promise<void> {
-  if (!navigator.onLine) return;
+  if (!(await isNetworkAvailable())) return;
 
   const [aircraft, batteries, controllers, accessories] = await Promise.all([
     supabase.from('aircraft').select('*').order('model'),
