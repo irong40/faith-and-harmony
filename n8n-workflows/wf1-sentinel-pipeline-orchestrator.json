@@ -36,7 +36,7 @@
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify([\n  { mission_id: $json.body.job_id, step_name: 'file_detect', step_order: 1, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'exif_extract', step_order: 2, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'coverage_check', step_order: 3, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'lightroom_edit', step_order: 4, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'qa_gate', step_order: 5, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'packaging', step_order: 6, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'delivery', step_order: 7, status: 'waiting' }\n]) }}",
+        "jsonBody": "={{ JSON.stringify([\n  { mission_id: $json.body.job_id, step_name: 'file_detect', step_order: 1, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'exif_extract', step_order: 2, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'coverage_check', step_order: 3, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'lightroom_edit', step_order: 4, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'qa_gate', step_order: 5, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'watermark_preview', step_order: 6, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'packaging', step_order: 7, status: 'waiting' },\n  { mission_id: $json.body.job_id, step_name: 'delivery', step_order: 8, status: 'waiting' }\n]) }}",
         "options": {
           "redirect": { "redirect": {} }
         },
@@ -749,6 +749,119 @@
     {
       "parameters": {
         "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $json.job_id }}&step_name=eq.watermark_preview",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'running', started_at: new Date().toISOString() }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "step6-start",
+      "name": "Step 6 Start - Watermark Preview",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [5720, -200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Select top 2-3 images by QA score for watermark previews\nconst jobId = $json.job_id;\nconst supabaseUrl = $env.SUPABASE_URL;\nconst serviceKey = $env.SUPABASE_SERVICE_KEY;\n\ntry {\n  const resp = await fetch(\n    `${supabaseUrl}/rest/v1/drone_assets?mission_id=eq.${jobId}&processing_status=in.(processed,exported)&file_type=eq.image&order=qa_score.desc&limit=3`,\n    {\n      headers: {\n        'apikey': serviceKey,\n        'Authorization': `Bearer ${serviceKey}`\n      }\n    }\n  );\n  const candidates = await resp.json();\n\n  if (!candidates || candidates.length === 0) {\n    return [{ json: { ...$json, watermark_candidates: [], watermark_skipped: true } }];\n  }\n\n  return [{ json: { ...$json, watermark_candidates: candidates, watermark_skipped: false } }];\n} catch (e) {\n  return [{ json: { ...$json, watermark_candidates: [], watermark_skipped: true, watermark_error: e.message } }];\n}"
+      },
+      "id": "select-preview-images",
+      "name": "Select Preview Images",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [5940, -200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "has-candidates",
+              "leftValue": "={{ $json.watermark_skipped }}",
+              "rightValue": false,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-has-previews",
+      "name": "Has Preview Candidates?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [6160, -200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build watermark commands for each candidate image\n// Uses ImageMagick on the processing rig\nconst candidates = $json.watermark_candidates || [];\nconst jobId = $json.job_id;\nconst supabaseUrl = $env.SUPABASE_URL;\nconst serviceKey = $env.SUPABASE_SERVICE_KEY;\nconst watermarkTile = '/opt/sentinel/assets/watermark-tile.png';\nconst previewUrls = [];\n\nfor (let i = 0; i < candidates.length; i++) {\n  const asset = candidates[i];\n  const idx = String(i + 1).padStart(2, '0');\n  const inputPath = `/tmp/watermark_input_${jobId}_${idx}.jpg`;\n  const outputPath = `/tmp/watermark_output_${jobId}_${idx}.jpg`;\n  const storagePath = `${jobId}/preview_${idx}.jpg`;\n\n  // Download original from private drone-jobs bucket using signed URL\n  const signResp = await fetch(\n    `${supabaseUrl}/storage/v1/object/sign/drone-jobs/${asset.source_path || asset.file_path}`,\n    {\n      method: 'POST',\n      headers: {\n        'apikey': serviceKey,\n        'Authorization': `Bearer ${serviceKey}`,\n        'Content-Type': 'application/json'\n      },\n      body: JSON.stringify({ expiresIn: 300 })\n    }\n  );\n  const signData = await signResp.json();\n  const downloadUrl = `${supabaseUrl}/storage/v1${signData.signedURL}`;\n\n  // Download to local file\n  const dlResp = await fetch(downloadUrl);\n  const buffer = Buffer.from(await dlResp.arrayBuffer());\n  const fs = require('fs');\n  fs.writeFileSync(inputPath, buffer);\n\n  // Resize, strip EXIF, apply watermark overlay\n  const { execSync } = require('child_process');\n  execSync(`magick \"${inputPath}\" -resize 1200x -strip \"${inputPath}_resized.jpg\"`);\n  execSync(`magick \"${inputPath}_resized.jpg\" \"${watermarkTile}\" -gravity center -compose dissolve -define compose:args=35 -composite \"${outputPath}\"`);\n\n  // Upload to watermark-previews bucket\n  const previewData = fs.readFileSync(outputPath);\n  const uploadResp = await fetch(\n    `${supabaseUrl}/storage/v1/object/watermark-previews/${storagePath}`,\n    {\n      method: 'POST',\n      headers: {\n        'apikey': serviceKey,\n        'Authorization': `Bearer ${serviceKey}`,\n        'Content-Type': 'image/jpeg',\n        'x-upsert': 'true'\n      },\n      body: previewData\n    }\n  );\n\n  // Build public URL\n  const publicUrl = `${supabaseUrl}/storage/v1/object/public/watermark-previews/${storagePath}`;\n  previewUrls.push(publicUrl);\n\n  // Cleanup temp files\n  try {\n    fs.unlinkSync(inputPath);\n    fs.unlinkSync(`${inputPath}_resized.jpg`);\n    fs.unlinkSync(outputPath);\n  } catch (e) { /* ignore cleanup errors */ }\n}\n\nreturn [{ json: { ...$json, preview_urls: previewUrls, watermark_count: previewUrls.length } }];"
+      },
+      "id": "resize-and-watermark",
+      "name": "Resize and Watermark",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [6380, -300]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/drone_jobs?id=eq.{{ $json.job_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ preview_urls: $json.preview_urls || [] }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "save-preview-urls",
+      "name": "Save Preview URLs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [6600, -300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/processing_steps?mission_id=eq.{{ $json.job_id }}&step_name=eq.watermark_preview",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'complete', completed_at: new Date().toISOString(), items_processed: $json.watermark_count || 0 }) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "id": "step6-complete",
+      "name": "Step 6 Complete",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [6820, -200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
         "url": "={{ $env.SUPABASE_URL }}/rest/v1/drone_jobs?id=eq.{{ $json.job_id }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
@@ -941,8 +1054,39 @@
     },
     "QA Passed?": {
       "main": [
-        [{ "node": "Trigger Delivery Workflow", "type": "main", "index": 0 }],
+        [{ "node": "Step 6 Start - Watermark Preview", "type": "main", "index": 0 }],
         [{ "node": "Set Review Pending (QA)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Step 6 Start - Watermark Preview": {
+      "main": [
+        [{ "node": "Select Preview Images", "type": "main", "index": 0 }]
+      ]
+    },
+    "Select Preview Images": {
+      "main": [
+        [{ "node": "Has Preview Candidates?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Has Preview Candidates?": {
+      "main": [
+        [{ "node": "Resize and Watermark", "type": "main", "index": 0 }],
+        [{ "node": "Step 6 Complete", "type": "main", "index": 0 }]
+      ]
+    },
+    "Resize and Watermark": {
+      "main": [
+        [{ "node": "Save Preview URLs", "type": "main", "index": 0 }]
+      ]
+    },
+    "Save Preview URLs": {
+      "main": [
+        [{ "node": "Step 6 Complete", "type": "main", "index": 0 }]
+      ]
+    },
+    "Step 6 Complete": {
+      "main": [
+        [{ "node": "Trigger Delivery Workflow", "type": "main", "index": 0 }]
       ]
     }
   },
