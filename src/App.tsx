@@ -76,7 +76,12 @@ const TRESTLE_HOST = 'trestle.sentinelaerialinspections.com';
 function RootRedirect() {
   const { user, isAdmin, isPilot, loading } = useAuth();
   if (loading) return <PageSpinner />;
-  if (!user) return <LandingPage />;
+  if (!user) {
+    if (window.location.hostname === TRESTLE_HOST) {
+      return <Navigate to="/auth" replace />;
+    }
+    return <LandingPage />;
+  }
   if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
   if (isPilot) {
     if (window.location.hostname !== TRESTLE_HOST) {
