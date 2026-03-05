@@ -1,108 +1,99 @@
-# Requirements: v1.1 Voice Bot + Automated Intake Pipeline
+# Requirements: v2.0 Billing, Equipment, and Production Readiness
 
-**Defined:** 2026-03-03
-**Core Value:** A prospective client can call a 757 number, get qualified by a voice bot, receive pricing, and have their request automatically created in the system without Iron fielding the call.
+**Defined:** 2026-03-05
+**Core Value:** A prospective client can find Sentinel through search or phone, get qualified, receive a quote, and book a drone job without Iron personally fielding the call or manually creating the request.
 
-## v1.1 Requirements
+## v2.0 Requirements
 
-### Intake Pipeline
+### Billing
 
-- [x] **INTAKE-01**: Leads table stores caller info, qualification status, source channel, and links to call log
-- [x] **INTAKE-02**: Call logs table stores Vapi call ID, transcript, duration, sentiment, and outcome
-- [x] **INTAKE-03**: Edge function receives structured call data from n8n and creates or matches a client record plus a quote request
-- [x] **INTAKE-04**: Edge function returns package pricing and deliverables for mid-call bot queries
-- [x] **INTAKE-05**: Bot-created requests feed into existing quote request to invoice workflow without manual re-entry
+- [ ] **BILL-01**: Deposit amount is fixed at 50% of package price in quote creation
+- [ ] **BILL-02**: Admin can trigger balance invoice creation via Square after job processing completes
+- [ ] **BILL-03**: Watermarked preview thumbnails are generated during the processing pipeline and stored separately from originals
+- [ ] **BILL-04**: Client receives balance due email with 2 to 3 watermarked preview thumbnails and Square payment link
+- [ ] **BILL-05**: Square webhook processes balance payment confirmation and triggers receipt and delivery
+- [ ] **BILL-06**: Client receives receipt email after balance payment clears
+- [ ] **BILL-07**: Full resolution deliverables release automatically after balance payment confirmed
+- [ ] **BILL-08**: Admin payments panel shows deposit and balance status per job with paid, pending, and overdue states
 
-### Voice Bot
+### Equipment
 
-- [x] **VBOT-01**: Vapi assistant configured with ElevenLabs TTS voice and natural conversation flow
-- [x] **VBOT-02**: 757 area code phone number provisioned and connected to Vapi assistant
-- [x] **VBOT-03**: System prompt covers all 6 service packages with pricing and deliverables
-- [x] **VBOT-04**: System prompt includes Hampton Roads service area and surrounding coverage (MD, Northern NC)
-- [x] **VBOT-05**: Bot qualifies callers by service type, location, timeline, and property type
-- [x] **VBOT-06**: Bot routes edge cases to Iron (out of service area, commercial inspections over $1200, payment disputes, existing client follow-ups)
-- [x] **VBOT-07**: Bot queries pricing and availability mid-conversation via Vapi tool calls
+- [ ] **EQUIP-01**: Admin can create, edit, and delete accessories with type, name, serial number, and status
+- [ ] **EQUIP-02**: Admin can assign compatible aircraft to each accessory
+- [ ] **EQUIP-03**: Mission equipment selection filters accessories by selected aircraft compatibility
 
-### Middleware
+### Offline
 
-- [x] **MWARE-01**: n8n workflow receives Vapi end-of-call webhook with call summary and extracted fields
-- [x] **MWARE-02**: n8n transforms Vapi payload into intake API format and calls edge function
-- [x] **MWARE-03**: Failed intakes trigger admin notification via existing messaging or email
-- [x] **MWARE-04**: Successful qualified intakes trigger the request-to-quote flow automatically
+- [ ] **SYNC-01**: Failed sync items move to a dead letter store after max retries instead of being deleted
+- [ ] **SYNC-02**: Pilot sees persistent warning when dead letter items exist
+- [ ] **SYNC-03**: Offline flight log queueing works end to end (log offline, auto-sync on reconnect, data appears in Supabase)
+- [ ] **SYNC-04**: Sync engine uses try/catch fallback pattern instead of navigator.onLine checks
 
-### Scheduling
+### Deployment
 
-- [ ] **SCHED-01**: Availability slots table with day-of-week defaults and date-specific overrides
-- [ ] **SCHED-02**: Blackout dates table for weather holds, holidays, and maintenance days
-- [ ] **SCHED-03**: Admin UI page for managing weekly availability and blackout dates
-- [ ] **SCHED-04**: Edge function returns available dates for a service type and date range
-- [ ] **SCHED-05**: Bot offers available dates during call and captures preferred date
+- [ ] **DEPLOY-01**: Production PWA icons with Sentinel branding replace SVG placeholders (same filenames for cache compatibility)
+- [ ] **DEPLOY-02**: Trestle deployed as standalone Vercel project at trestle.sentinelaerial.com
+- [ ] **DEPLOY-03**: Supabase auth redirect URLs include trestle.sentinelaerial.com
+- [ ] **DEPLOY-04**: Square production environment configured with production webhook registration
 
-### Weather Operations
+## Future Requirements
 
-- [x] **WTHR-01**: Weather API integration fetching 48-hour forecasts for Hampton Roads
-- [x] **WTHR-02**: Flight parameter validation: max wind (sustained and gusts), precipitation probability, visibility minimum, cloud ceiling minimum
-- [x] **WTHR-03**: Automated check runs against scheduled jobs and flags unsafe conditions
-- [x] **WTHR-04**: Admin weather view showing current conditions and upcoming forecast against flight parameters
+### Billing (v2.x)
 
-### Integration
+- **BILL-09**: Overdue payment reminder emails sent automatically via cron
+- **BILL-10**: Payment history and ledger view in admin
+- **BILL-11**: Customer portal shows balance status on token-based delivery page
 
-- [x] **INTG-01**: End-to-end flow works: phone call to bot to webhook to n8n to intake to request to invoice
-- [x] **INTG-02**: Edge cases route correctly: out of area declines politely, complex jobs offer callback, payment questions redirect
-- [x] **INTG-03**: Admin call log page showing recent calls with transcript, outcome, and linked request
-- [x] **INTG-04**: Admin leads page showing bot-sourced leads with qualification status and conversion tracking
+### Equipment (v2.x)
+
+- **EQUIP-04**: Accessory maintenance logging via existing maintenance_log table
+
+### Offline (v2.x)
+
+- **SYNC-05**: Sync status indicator with pending count badge and last sync timestamp
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Outbound calling | Inbound intake only for v1.1 |
-| SMS or chat bot | Phone voice only for v1.1 |
-| Custom voice cloning | Use existing ElevenLabs catalog voices |
-| Multi-language support | English only for Hampton Roads market |
-| Real-time availability on landing page | Future milestone |
-| Admin portal redesign | Existing pages extended, not rebuilt |
-| Pilot portal changes | Not affected by intake pipeline |
-| Landing page changes | v1.0 complete, no modifications needed |
+| Client login portal | Single pilot operation, clients interact via email only |
+| Configurable deposit percentage | Fixed 50% is simple and predictable for both parties |
+| Real-time payment notifications via WebSocket | Square webhooks fire within seconds, no practical benefit |
+| On-demand watermark generation | Generate during pipeline, serve static files, avoid edge function memory limits |
+| Partial payment tracking | Two-invoice model (deposit + balance) is deliberately simple |
+| Multi-currency | Hampton Roads local business, USD only |
+| Outbound calling | v1.1 scope, inbound only |
+| Voice bot changes | v1.1 complete |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INTAKE-01 | Phase 1: Intake API and Lead Tracking | Complete |
-| INTAKE-02 | Phase 1: Intake API and Lead Tracking | Complete |
-| INTAKE-03 | Phase 1: Intake API and Lead Tracking | Complete |
-| INTAKE-04 | Phase 1: Intake API and Lead Tracking | Complete |
-| INTAKE-05 | Phase 3: n8n Vapi Pipeline | Complete |
-| VBOT-01 | Phase 2: Vapi Voice Bot | Complete |
-| VBOT-02 | Phase 2: Vapi Voice Bot | Complete |
-| VBOT-03 | Phase 2: Vapi Voice Bot | Complete |
-| VBOT-04 | Phase 2: Vapi Voice Bot | Complete |
-| VBOT-05 | Phase 2: Vapi Voice Bot | Complete |
-| VBOT-06 | Phase 2: Vapi Voice Bot | Complete |
-| VBOT-07 | Phase 2: Vapi Voice Bot | Complete |
-| MWARE-01 | Phase 3: n8n Vapi Pipeline | Complete |
-| MWARE-02 | Phase 3: n8n Vapi Pipeline | Complete |
-| MWARE-03 | Phase 3: n8n Vapi Pipeline | Complete |
-| MWARE-04 | Phase 3: n8n Vapi Pipeline | Complete |
-| SCHED-01 | Phase 4: Scheduling and Availability | Pending |
-| SCHED-02 | Phase 4: Scheduling and Availability | Pending |
-| SCHED-03 | Phase 4: Scheduling and Availability | Pending |
-| SCHED-04 | Phase 4: Scheduling and Availability | Pending |
-| SCHED-05 | Phase 4: Scheduling and Availability | Pending |
-| WTHR-01 | Phase 5: Weather Operations | Complete |
-| WTHR-02 | Phase 5: Weather Operations | Complete |
-| WTHR-03 | Phase 5: Weather Operations | Complete |
-| WTHR-04 | Phase 5: Weather Operations | Complete |
-| INTG-01 | Phase 6: Integration and Edge Cases | Complete |
-| INTG-02 | Phase 6: Integration and Edge Cases | Complete |
-| INTG-03 | Phase 6: Integration and Edge Cases | Complete |
-| INTG-04 | Phase 6: Integration and Edge Cases | Complete |
+| BILL-01 | — | Pending |
+| BILL-02 | — | Pending |
+| BILL-03 | — | Pending |
+| BILL-04 | — | Pending |
+| BILL-05 | — | Pending |
+| BILL-06 | — | Pending |
+| BILL-07 | — | Pending |
+| BILL-08 | — | Pending |
+| EQUIP-01 | — | Pending |
+| EQUIP-02 | — | Pending |
+| EQUIP-03 | — | Pending |
+| SYNC-01 | — | Pending |
+| SYNC-02 | — | Pending |
+| SYNC-03 | — | Pending |
+| SYNC-04 | — | Pending |
+| DEPLOY-01 | — | Pending |
+| DEPLOY-02 | — | Pending |
+| DEPLOY-03 | — | Pending |
+| DEPLOY-04 | — | Pending |
 
 **Coverage:**
-- v1.1 requirements: 29 total
-- Mapped to phases: 29
-- Unmapped: 0
+- v2.0 requirements: 19 total
+- Mapped to phases: 0
+- Unmapped: 19
 
 ---
-*Requirements defined: 2026-03-03*
+*Requirements defined: 2026-03-05*
+*Last updated: 2026-03-05 after initial definition*
