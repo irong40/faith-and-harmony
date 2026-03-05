@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw, LogOut, Plane, Play, RotateCcw, Cog } from "lucide-react";
+import { RefreshCw, LogOut, Plane, Play, RotateCcw, Cog, LayoutDashboard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isToday, isBefore, startOfDay } from "date-fns";
 import PilotCard from "@/components/pilot/PilotCard";
@@ -15,6 +15,8 @@ import MissionCard from "@/components/pilot/MissionCard";
 import SyncStatusIndicator from "@/components/pilot/SyncStatusIndicator";
 import { usePilotMissions } from "@/hooks/usePilotMissions";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
+import { useDeadLetterCount } from "@/hooks/useDeadLetterCount";
+import { DeadLetterBanner } from "@/components/pilot/DeadLetterBanner";
 
 // -------------------------------------------------------
 // Types
@@ -41,7 +43,7 @@ function QuickActions({ missions }: { missions: any[] }) {
 
     // Find in-progress mission (checklist started)
     const inProgress = useMemo(() => {
-        return missions.find((m) => m.status === "in_progress");
+        return missions.find((m) => m.status === "captured");
     }, [missions]);
 
     if (!nextScheduled && !inProgress) return null;
@@ -139,7 +141,7 @@ function ProcessingStatusCard({ userId }: { userId: string }) {
 // Main PilotDashboard
 // -------------------------------------------------------
 export default function PilotDashboard() {
-    const { pilotProfile, user, signOut } = useAuth();
+    const { pilotProfile, user, isAdmin, signOut } = useAuth();
     const { toast } = useToast();
 
     // TanStack Query for missions (RLS scoped to current pilot)
@@ -147,6 +149,9 @@ export default function PilotDashboard() {
 
     // Offline sync engine
     const { syncStatus, pendingCount, pendingMissionIds, isOnline, syncNow } = useOfflineSync(pilotProfile?.id);
+
+    // Dead letter visibility
+    const { deadLetterCount, retryAll } = useDeadLetterCount();
 
     const handleSync = async () => {
         await syncNow();
@@ -187,7 +192,7 @@ export default function PilotDashboard() {
                 client_name: mission.client_name,
                 address: mission.property_address,
                 scheduled_date: mission.scheduled_date,
-                status: mission.status as "scheduled" | "in_progress" | "complete" | "canceled",
+                status: mission.status as "scheduled" | "captured" | "complete" | "canceled",
                 package_type: mission.package_name || undefined,
             }}
             syncStatus={
@@ -221,6 +226,13 @@ export default function PilotDashboard() {
                             isOnline={isOnline}
                             onSync={handleSync}
                         />
+                        {isAdmin && (
+                            <Link to="/admin/dashboard">
+                                <Button variant="ghost" size="icon" title="Admin Dashboard">
+                                    <LayoutDashboard className="h-5 w-5" />
+                                </Button>
+                            </Link>
+                        )}
                         <Button variant="ghost" size="icon" onClick={handleLogout}>
                             <LogOut className="h-5 w-5" />
                         </Button>
@@ -236,6 +248,9 @@ export default function PilotDashboard() {
                         <PilotCard profile={pilotProfile} />
                     </div>
                 )}
+
+                {/* Dead Letter Warning */}
+                <DeadLetterBanner count={deadLetterCount} onRetry={retryAll} />
 
                 {/* Quick Actions — only when missions loaded */}
                 {!loading && missions.length > 0 && (
