@@ -218,38 +218,105 @@ export function useMissionControl(configOverrides?: Partial<MissionControlConfig
     a => !dismissedAnnouncements.has(a.id)
   );
 
+  // Auto-register if no API key but bootstrap secret is available
+  const autoRegister = useCallback(async (): Promise<string | null> => {
+    if (!config.bootstrapSecret || !config.appCode) return null;
+
+    log('No API key found. Attempting auto-registration...');
+
+    try {
+      const url = `${config.hubUrl}/register`;
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-bootstrap-secret': config.bootstrapSecret,
+        },
+        body: JSON.stringify({
+          name: config.appName || config.appCode,
+          code: config.appCode,
+          url: window.location.origin,
+          version: import.meta.env.VITE_APP_VERSION || '1.0.0',
+        }),
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        log('Auto-registration failed', data);
+        return null;
+      }
+
+      log('Auto-registered successfully. Store this API key in VITE_MISSION_CONTROL_API_KEY:', data.apiKey);
+
+      // Persist the key in localStorage so subsequent page loads use it
+      localStorage.setItem(`mc_api_key_${config.appCode}`, data.apiKey);
+
+      return data.apiKey as string;
+    } catch (error) {
+      log('Auto-registration error', error);
+      return null;
+    }
+  }, [config.bootstrapSecret, config.appCode, config.appName, config.hubUrl, log]);
+
   // Initialize and start heartbeat
   useEffect(() => {
-    if (!config.apiKey) {
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: 'API key not configured',
-      }));
-      return;
-    }
+    let cancelled = false;
 
-    // Initial heartbeat
-    sendHeartbeat().then(() => {
+    async function init() {
+      // Try stored key from localStorage (from previous auto-registration)
+      let activeKey = config.apiKey || localStorage.getItem(`mc_api_key_${config.appCode}`) || '';
+
+      // No key at all? Try auto-registration
+      if (!activeKey && config.bootstrapSecret) {
+        const registered = await autoRegister();
+        if (registered) {
+          activeKey = registered;
+        }
+      }
+
+      if (!activeKey) {
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: 'No API key and no bootstrap secret configured',
+        }));
+        return;
+      }
+
+      // Patch the apiRequest to use the resolved key
+      // (config.apiKey may still be empty if key came from localStorage/registration)
+      if (!config.apiKey && activeKey) {
+        config.apiKey = activeKey;
+      }
+
+      if (cancelled) return;
+
+      // Initial heartbeat
+      await sendHeartbeat();
+      if (cancelled) return;
       setState(prev => ({ ...prev, isLoading: false }));
-    });
 
-    // Fetch initial data
-    fetchTickets();
+      // Fetch initial data
+      fetchTickets();
 
-    // Set up heartbeat interval
-    if (config.heartbeatInterval && config.heartbeatInterval > 0) {
-      heartbeatIntervalRef.current = setInterval(() => {
-        sendHeartbeat();
-      }, config.heartbeatInterval);
+      // Set up heartbeat interval
+      if (config.heartbeatInterval && config.heartbeatInterval > 0) {
+        heartbeatIntervalRef.current = setInterval(() => {
+          sendHeartbeat();
+        }, config.heartbeatInterval);
+      }
     }
+
+    init();
 
     return () => {
+      cancelled = true;
       if (heartbeatIntervalRef.current) {
         clearInterval(heartbeatIntervalRef.current);
       }
     };
-  }, [config.apiKey, config.heartbeatInterval, sendHeartbeat, fetchTickets]);
+  }, [config.apiKey, config.appCode, config.bootstrapSecret, config.heartbeatInterval, sendHeartbeat, fetchTickets, autoRegister]);
 
   return {
     ...state,

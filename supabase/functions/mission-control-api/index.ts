@@ -8,6 +8,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 // All endpoints require API key authentication.
 //
 // Endpoints:
+//   POST /register      - Self-register with bootstrap secret (no API key needed)
 //   POST /heartbeat     - Report app health status
 //   POST /tickets       - Submit new maintenance ticket
 //   GET  /tickets       - Get app's tickets
@@ -22,6 +23,15 @@ const corsHeaders = {
 // ============================================
 // TYPE DEFINITIONS
 // ============================================
+
+interface RegisterRequest {
+  name: string;
+  code: string;
+  url?: string;
+  ownerEmail?: string;
+  ownerName?: string;
+  version?: string;
+}
 
 interface HeartbeatRequest {
   status?: 'online' | 'degraded' | 'offline';
@@ -74,9 +84,14 @@ serve(async (req: Request) => {
 
     console.log(`Mission Control API: ${req.method} /${endpoint}`);
 
+    // Registration endpoint uses bootstrap secret instead of API key
+    if (endpoint === 'register' && req.method === 'POST') {
+      return await handleRegister(supabase, req);
+    }
+
     // Extract and validate API key
     const apiKey = req.headers.get('x-api-key');
-    
+
     if (!apiKey) {
       return jsonResponse({ error: 'Missing API key. Include x-api-key header.' }, 401);
     }
@@ -333,6 +348,75 @@ async function handleGetAnnouncements(
       priority: a.priority,
     })) || [],
   });
+}
+
+/**
+ * POST /register
+ * Self-register a satellite app using the shared bootstrap secret.
+ * Returns a fresh API key the app stores for all future requests.
+ */
+async function handleRegister(
+  supabase: ReturnType<typeof createClient>,
+  req: Request
+): Promise<Response> {
+  const bootstrapSecret = Deno.env.get('MC_BOOTSTRAP_SECRET');
+
+  if (!bootstrapSecret) {
+    console.error('MC_BOOTSTRAP_SECRET not configured');
+    return jsonResponse({ error: 'Registration is not enabled on this hub' }, 503);
+  }
+
+  const providedSecret = req.headers.get('x-bootstrap-secret');
+
+  if (!providedSecret || providedSecret !== bootstrapSecret) {
+    return jsonResponse({ error: 'Invalid bootstrap secret' }, 401);
+  }
+
+  const body: RegisterRequest = await req.json();
+
+  if (!body.name || !body.code) {
+    return jsonResponse({ error: 'name and code are required' }, 400);
+  }
+
+  if (!/^[a-z0-9][a-z0-9_-]*$/.test(body.code)) {
+    return jsonResponse(
+      { error: 'code must be lowercase alphanumeric with hyphens/underscores, starting with a letter or number' },
+      400
+    );
+  }
+
+  const { data, error } = await supabase.rpc('register_app_with_bootstrap', {
+    p_name: body.name,
+    p_code: body.code,
+    p_url: body.url || null,
+    p_owner_email: body.ownerEmail || null,
+    p_owner_name: body.ownerName || null,
+    p_version: body.version || null,
+  });
+
+  if (error) {
+    console.error('Registration failed:', error);
+    const isDuplicate = error.message?.includes('already registered');
+    return jsonResponse(
+      { error: isDuplicate ? error.message : 'Registration failed' },
+      isDuplicate ? 409 : 500
+    );
+  }
+
+  const result = data?.[0];
+
+  if (!result) {
+    return jsonResponse({ error: 'Registration failed unexpectedly' }, 500);
+  }
+
+  console.log(`App registered: ${body.name} (${body.code}) -> ${result.app_id}`);
+
+  return jsonResponse({
+    success: true,
+    appId: result.app_id,
+    apiKey: result.api_key,
+    message: `App "${body.name}" registered. Store the API key securely; it cannot be retrieved again.`,
+  }, 201);
 }
 
 // ============================================
