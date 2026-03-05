@@ -101,3 +101,6 @@ verify_jwt = false
 
 [functions.quote-delivery-email]
 verify_jwt = false
+
+[functions.square-webhook]
+verify_jwt = false
