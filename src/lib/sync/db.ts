@@ -1,10 +1,11 @@
 const DB_NAME = 'trestle_offline';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export const STORES = {
   SYNC_QUEUE: 'sync_queue',
   MISSIONS: 'missions_cache',
   FLEET: 'fleet_cache',
+  DEAD_LETTER: 'dead_letter',
 } as const;
 
 export type SyncAction =
@@ -27,6 +28,17 @@ export interface SyncQueueItem {
   last_error: string | null;
 }
 
+export interface DeadLetterItem {
+  id?: number;
+  action: SyncAction;
+  table: string;
+  payload: Record<string, unknown>;
+  original_created_at: string;
+  moved_at: string;
+  error_message: string;
+  original_retries: number;
+}
+
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -45,6 +57,14 @@ function openDB(): Promise<IDBDatabase> {
 
       if (!db.objectStoreNames.contains(STORES.FLEET)) {
         db.createObjectStore(STORES.FLEET, { keyPath: 'id' });
+      }
+
+      if (!db.objectStoreNames.contains(STORES.DEAD_LETTER)) {
+        const store = db.createObjectStore(STORES.DEAD_LETTER, {
+          keyPath: 'id',
+          autoIncrement: true,
+        });
+        store.createIndex('moved_at', 'moved_at', { unique: false });
       }
     };
 
@@ -124,4 +144,61 @@ export async function removeSyncItem(id: number): Promise<void> {
 
 export async function updateSyncItem(item: SyncQueueItem): Promise<void> {
   await put(STORES.SYNC_QUEUE, item);
+}
+
+export async function moveToDeadLetter(item: SyncQueueItem, errorMessage: string): Promise<void> {
+  const deadLetterItem: DeadLetterItem = {
+    action: item.action,
+    table: item.table,
+    payload: item.payload,
+    original_created_at: item.created_at,
+    moved_at: new Date().toISOString(),
+    error_message: errorMessage,
+    original_retries: item.retries,
+  };
+  await put(STORES.DEAD_LETTER, deadLetterItem);
+}
+
+export async function getDeadLetterCount(): Promise<number> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORES.DEAD_LETTER, 'readonly');
+    const store = tx.objectStore(STORES.DEAD_LETTER);
+    const request = store.count();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+export async function getDeadLetterItems(): Promise<DeadLetterItem[]> {
+  return getAll<DeadLetterItem>(STORES.DEAD_LETTER);
+}
+
+export async function retryDeadLetterItems(): Promise<number> {
+  const deadItems = await getDeadLetterItems();
+  if (deadItems.length === 0) return 0;
+
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([STORES.SYNC_QUEUE, STORES.DEAD_LETTER], 'readwrite');
+    const syncStore = tx.objectStore(STORES.SYNC_QUEUE);
+    const deadStore = tx.objectStore(STORES.DEAD_LETTER);
+
+    for (const deadItem of deadItems) {
+      const syncItem: Omit<SyncQueueItem, 'id'> = {
+        action: deadItem.action,
+        table: deadItem.table,
+        payload: deadItem.payload,
+        created_at: deadItem.original_created_at,
+        retries: 0,
+        last_error: null,
+      };
+      syncStore.add(syncItem);
+    }
+
+    deadStore.clear();
+
+    tx.oncomplete = () => resolve(deadItems.length);
+    tx.onerror = () => reject(tx.error);
+  });
 }
