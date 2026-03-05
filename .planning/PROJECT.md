@@ -8,17 +8,16 @@ The operations platform for Sentinel Aerial Inspections (Faith & Harmony LLC), a
 
 A prospective client can find Sentinel through search or phone, get qualified, receive a quote, and book a drone job without Iron personally fielding the call or manually creating the request.
 
-## Current Milestone: v1.1 Voice Bot + Automated Intake Pipeline
+## Current Milestone: v2.0 Billing, Equipment, and Production Readiness
 
-**Goal:** Replace manual phone intake with a Vapi voice bot that qualifies callers, captures job details, creates requests in the F&H app via API, and triggers the existing invoice workflow. Add scheduling and weather-aware flight availability.
+**Goal:** Close all remaining gaps to make the platform production ready with automated billing, complete equipment tracking, reliable offline operations, and standalone Trestle deployment.
 
 **Target features:**
-- Vapi voice bot with ElevenLabs TTS and 757 area code number
-- Intake API endpoint on F&H app for structured call data
-- n8n middleware workflow (Vapi webhook to F&H API)
-- Scheduling and availability management
-- Weather-aware flight operations (forecast checks against flight parameters)
-- End-to-end automated flow: phone call to request to invoice to payment
+- Billing/payment flow (Square 50% deposit, watermarked previews with balance due, auto receipts via Resend)
+- Accessories management UI (all gear: props, RTK, chargers, tablets, SD cards)
+- Full end to end offline flight log queueing integration
+- Production PWA icons (replace SVG placeholders)
+- Standalone Vercel deployment at trestle.sentinelaerial.com
 
 ## Requirements
 
@@ -38,39 +37,36 @@ A prospective client can find Sentinel through search or phone, get qualified, r
 
 ### Active
 
-- [ ] Vapi voice bot with ElevenLabs integration and 757 phone number
-- [ ] System prompt trained on Faith & Harmony packages, service area, and FAQs
-- [ ] Intake API endpoint receiving structured call data and creating requests
-- [ ] n8n workflow connecting Vapi webhook to F&H app API
-- [ ] Scheduling and availability management in the app
-- [ ] Weather API integration for flight parameter checking
-- [ ] Automated request-to-invoice flow triggered by bot intake
-- [ ] Edge case routing (out of service area, complex jobs, payment questions)
+- [ ] Billing/payment flow with Square integration (50% deposit, balance after delivery)
+- [ ] Watermarked preview delivery with balance due email
+- [ ] Automatic receipt and full resolution delivery after final payment
+- [ ] Accessories management UI for all equipment types
+- [ ] End to end offline flight log queueing with sync
+- [ ] Production PWA icons
+- [ ] Standalone Vercel deployment at trestle.sentinelaerial.com
 
 ### Out of Scope
 
-- Admin portal changes (existing, untouched) — stable
-- Pilot portal changes (existing, untouched) — stable
-- Landing page redesign — v1.0 complete, no changes needed
-- Custom voice cloning — use existing ElevenLabs voices
-- Multi-language support — English only for Hampton Roads market
-- Outbound calling — inbound intake only for v1.1
-- SMS/chat bot — phone voice only for v1.1
+- Client portal — clients interact via email only, no login
+- Landing page redesign — v1.0 complete
+- Voice bot changes — v1.1 complete
+- Multi pilot support — single pilot operation
+- Mobile native app — PWA covers mobile needs
 - Real-time availability display on landing page — future milestone
 
 ## Context
 
-### Existing Invoice Flow
+### Billing Flow (v2.0)
+
+Client accepts proposal. Payment request sent for 50% deposit with option to pay in full. Deposit triggers pilot workflow (mission can be scheduled). Mission complete, processing done. Balance due email sent with 2 to 3 watermarked preview thumbnails and Square payment link. Client pays balance. Full resolution deliverables released automatically. Final receipt sent via Resend. No client portal. All communication via automated email.
+
+### Existing Invoice Flow (v1.0/v1.1)
 
 A request is submitted. From the request, an invoice is created and sent to the customer. The customer accepts it, then payment is requested to continue. Deposit is made, receipt for deposit is issued, work is completed, email invoice is sent due upon receipt. Deliverables are not released until final payment.
 
-### Voice Bot Architecture
+### Equipment Fleet
 
-Vapi handles telephony, STT, conversation orchestration, and routes to ElevenLabs for TTS. Mid-conversation tool calls can query the F&H API for pricing and availability. On call completion, Vapi fires a webhook to n8n, which transforms the data and calls the F&H intake endpoint. The intake endpoint creates the client record and request, which feeds into the existing invoice workflow.
-
-### Weather Operations
-
-Drone flights are weather dependent. Key parameters: wind speed (sustained and gusts), precipitation probability, visibility, and cloud ceiling. The system checks forecasts 48 hours before scheduled jobs and flags conditions that fall outside safe flight parameters. Weather data available from OpenWeatherMap, Tomorrow.io, or NWS API (free).
+Aircraft: DJI Matrice 4E (primary), Mavic 3 Enterprise (secondary), Mini 4 Pro (current ops). Supporting equipment includes Emlid Reach RS3 RTK, TB65 batteries, DJI RC Plus 2 controller, props, cases, filters, chargers, tablets, SD cards. Accessories table exists in schema but has no frontend UI.
 
 ### Service Packages (from CLAUDE.md)
 
@@ -78,19 +74,20 @@ Residential: Listing Lite $225, Listing Pro $450, Luxury Listing $750
 Commercial: Construction Progress $450/visit, Commercial Marketing $850, Inspection Data $1,200
 Add ons: Rush Premium (+25%/+50%), Raw File Buyout (+$250), Brokerage Retainer $1,500/month
 
-### Service Area
+### Offline Architecture
 
-Hampton Roads, Virginia: Norfolk, Virginia Beach, Chesapeake, Newport News, Hampton, Suffolk, Portsmouth, Williamsburg. Military airspace operations near NAS Oceana, Norfolk Naval Station, Langley AFB with LAANC authorization.
+IndexedDB sync queue with sync_queue, missions_cache, fleet_cache stores. Sync engine with auto retry, conflict detection, background sync. Flight log queueing exists partially but needs full end to end integration with the sync engine.
 
 ## Constraints
 
 - **Tech stack**: React 18 + Vite + TypeScript. No framework migration.
-- **Shared codebase**: Voice bot integration lives in same repo. API endpoints follow existing patterns.
-- **Supabase project**: Shared across F&H products (qjpujskwqaehxnqypxzu). New tables allowed for leads, scheduling, weather.
-- **n8n**: Self-hosted on Docker/WSL2, already running for FHContent workflows. Vapi webhook is a new workflow.
-- **Vapi**: Cloud service, no self-hosting. API key and webhook configuration only.
-- **ElevenLabs**: Existing account. API key needed in Vapi dashboard.
-- **Square**: Already connected for payment processing. Invoice creation via API.
+- **Shared codebase**: All features live in same repo. API endpoints follow existing edge function patterns.
+- **Supabase project**: Shared across F&H products (qjpujskwqaehxnqypxzu). Accessories table exists, billing tables needed.
+- **Square**: Already connected for payment processing. Deposit and balance payment via Square API.
+- **Resend**: Already connected for email delivery. Automated receipts, previews, and delivery notifications.
+- **Deposit**: Fixed 50% of package price. No configurable amounts.
+- **Delivery gate**: Watermarked previews with balance due, full resolution after payment clears.
+- **Domain**: trestle.sentinelaerial.com for pilot PWA deployment.
 - **Writing constraints**: No dashes, semicolons, emojis, asterisks, colons in prose, cliches, marketing language, AI filler. Active voice. Direct address.
 
 ## Key Decisions
@@ -101,9 +98,12 @@ Hampton Roads, Virginia: Norfolk, Virginia Beach, Chesapeake, Newport News, Hamp
 | Add react-helmet-async for meta tags | Per route meta management without SSR. | ✓ Good |
 | Inline quote form instead of external booking link | Captures leads on page, no leakage to droneinvoice.com | ✓ Good |
 | Skip SSR, prerendering deferred | Full SSR migration is out of scope for v1.0 | ✓ Good |
-| Vapi over custom Twilio build | Higher level abstraction, faster to production, ElevenLabs native support | -- Pending |
-| n8n as middleware between Vapi and F&H app | Decouples bot from app, easier to debug and modify, already running | -- Pending |
-| Weather API for flight availability | Automates the biggest operational variable for drone work | -- Pending |
+| Vapi over custom Twilio build | Higher level abstraction, faster to production, ElevenLabs native support | Good |
+| n8n as middleware between Vapi and F&H app | Decouples bot from app, easier to debug and modify, already running | Good |
+| Weather API for flight availability | Automates the biggest operational variable for drone work | Good |
+| Fixed 50% deposit | Simple, predictable for clients and business | Pending |
+| Watermarked previews with balance due | Builds client confidence, protects deliverables before payment | Pending |
+| trestle.sentinelaerial.com | Brand aligned subdomain for pilot PWA | Pending |
 
 ---
-*Last updated: 2026-02-28 after v1.1 milestone start*
+*Last updated: 2026-03-05 after v2.0 milestone start*
