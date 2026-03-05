@@ -82,7 +82,11 @@ See v1.0 roadmap archive.
   2. After max retries, failed sync items move to a dead letter store instead of being silently deleted
   3. Pilot sees a persistent warning banner when dead letter items exist, with the count of stuck items
   4. Sync engine uses try/catch with actual network requests instead of navigator.onLine checks to detect connectivity
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 10-01-PLAN.md — Network probe function and IndexedDB dead letter store infrastructure
+- [ ] 10-02-PLAN.md — Sync engine hardening and always-queue flight log pattern
+- [ ] 10-03-PLAN.md — Dead letter warning banner and pilot dashboard integration
 
 ### Phase 11: Standalone Deployment
 **Goal**: Trestle is deployed as a standalone app at trestle.sentinelaerial.com with production payment processing
@@ -104,5 +108,5 @@ Phases 7 and 10 are independent and can run in parallel. Phase 8 depends on 7. P
 | 7. Foundation and Quick Wins | v2.0 | 0/? | Not started | - |
 | 8. Watermark Pipeline | v2.0 | 0/? | Not started | - |
 | 9. Billing Lifecycle | v2.0 | 0/? | Not started | - |
-| 10. Offline Sync Hardening | v2.0 | 0/? | Not started | - |
+| 10. Offline Sync Hardening | v2.0 | 0/3 | Planned | - |
 | 11. Standalone Deployment | v2.0 | 0/? | Not started | - |
