@@ -34,7 +34,7 @@ See v1.0 roadmap archive.
 - [x] **Phase 7: Foundation and Quick Wins** - PWA icons, accessories admin page, deposit amount verification (completed 2026-03-05)
 - [ ] **Phase 8: Watermark Pipeline** - Watermarked preview generation and separate storage buckets
 - [ ] **Phase 9: Billing Lifecycle** - Balance invoice, balance due email, payment webhook, receipt, delivery gate, admin payments panel
-- [ ] **Phase 10: Offline Sync Hardening** - Dead letter store, persistent warnings, end-to-end flight log sync, try/catch fallback
+- [x] **Phase 10: Offline Sync Hardening** - Dead letter store, persistent warnings, end-to-end flight log sync, try/catch fallback (completed 2026-03-05)
 - [ ] **Phase 11: Standalone Deployment** - Vercel subdomain, Supabase auth redirects, Square production cutover
 
 ## Phase Details
@@ -87,9 +87,9 @@ Plans:
   4. Sync engine uses try/catch with actual network requests instead of navigator.onLine checks to detect connectivity
 **Plans**: 3 plans
 Plans:
-- [ ] 10-01-PLAN.md -- Network probe function and IndexedDB dead letter store infrastructure
-- [ ] 10-02-PLAN.md -- Sync engine hardening and always-queue flight log pattern
-- [ ] 10-03-PLAN.md -- Dead letter warning banner and pilot dashboard integration
+- [x] 10-01-PLAN.md -- Network probe function and IndexedDB dead letter store infrastructure
+- [x] 10-02-PLAN.md -- Sync engine hardening and always-queue flight log pattern
+- [x] 10-03-PLAN.md -- Dead letter warning banner and pilot dashboard integration
 
 ### Phase 11: Standalone Deployment
 **Goal**: Trestle is deployed as a standalone app at trestle.sentinelaerial.com with production payment processing
@@ -111,5 +111,5 @@ Phases 7 and 10 are independent and can run in parallel. Phase 8 depends on 7. P
 | 7. Foundation and Quick Wins | 2/2 | Complete   | 2026-03-05 | - |
 | 8. Watermark Pipeline | v2.0 | 0/? | Not started | - |
 | 9. Billing Lifecycle | v2.0 | 0/? | Not started | - |
-| 10. Offline Sync Hardening | 1/3 | In Progress|  | - |
+| 10. Offline Sync Hardening | 3/3 | Complete   | 2026-03-05 | - |
 | 11. Standalone Deployment | v2.0 | 0/? | Not started | - |

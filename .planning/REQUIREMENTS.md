@@ -26,7 +26,7 @@
 
 - [x] **SYNC-01**: Failed sync items move to a dead letter store after max retries instead of being deleted
 - [ ] **SYNC-02**: Pilot sees persistent warning when dead letter items exist
-- [ ] **SYNC-03**: Offline flight log queueing works end to end (log offline, auto-sync on reconnect, data appears in Supabase)
+- [x] **SYNC-03**: Offline flight log queueing works end to end (log offline, auto-sync on reconnect, data appears in Supabase)
 - [x] **SYNC-04**: Sync engine uses try/catch fallback pattern instead of navigator.onLine checks
 
 ### Deployment
@@ -86,7 +86,7 @@
 | DEPLOY-04 | Phase 11 | Pending |
 | SYNC-01 | Phase 10 | Complete |
 | SYNC-02 | Phase 10 | Pending |
-| SYNC-03 | Phase 10 | Pending |
+| SYNC-03 | Phase 10 | Complete |
 | SYNC-04 | Phase 10 | Complete |
 
 **Coverage:**
