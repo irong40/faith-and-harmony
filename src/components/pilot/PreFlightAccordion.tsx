@@ -11,6 +11,8 @@ import EquipmentSelector from './EquipmentSelector';
 import AirspacePanel from './AirspacePanel';
 import WeatherBriefingPanel from './WeatherBriefingPanel';
 import type { PreFlightData } from '@/types/pilot';
+import { useDeleteMissionWeatherLogs } from '@/hooks/useWeatherBriefing';
+import { useDeleteMissionAuthorization } from '@/hooks/useAirspaceAuth';
 
 interface PreFlightAccordionProps {
   missionId: string;
@@ -37,6 +39,9 @@ export default function PreFlightAccordion({
   const [authorization, setAuthorization] = useState<PreFlightData['authorization']>(null);
   const [weatherLog, setWeatherLog] = useState<PreFlightData['weatherLog']>(null);
 
+  const deleteWeatherLogs = useDeleteMissionWeatherLogs();
+  const deleteAuthorization = useDeleteMissionAuthorization();
+
   const notifyParent = useCallback(
     (eq: typeof equipment, auth: typeof authorization, wx: typeof weatherLog) => {
       onPreFlightData({ equipment: eq, weatherLog: wx, authorization: auth });
@@ -52,8 +57,12 @@ export default function PreFlightAccordion({
 
   const handleEquipmentCleared = () => {
     setEquipment(null);
-    setWeatherLog(null); // Weather depends on equipment
-    notifyParent(null, authorization, null);
+    setAuthorization(null);
+    setWeatherLog(null);
+    notifyParent(null, null, null);
+    // Clean up orphaned DB rows
+    deleteWeatherLogs.mutate(missionId);
+    deleteAuthorization.mutate(missionId);
   };
 
   const handleAuthorizationReady = (data: { id: string; airspace_class: string; requires_laanc: boolean }) => {

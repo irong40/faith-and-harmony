@@ -42,7 +42,7 @@ export default function ProtectedRoute({
     );
   }
 
-  if (requirePilot && !isPilot) {
+  if (requirePilot && !isPilot && !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center max-w-md px-4">

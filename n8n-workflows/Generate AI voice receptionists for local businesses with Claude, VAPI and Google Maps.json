@@ -1,0 +1,961 @@
+{
+  "name": "Generate AI voice receptionists for local businesses with Claude, VAPI and Google Maps",
+  "nodes": [
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-20250514",
+          "cachedResultName": "claude-sonnet-4-20250514"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=={{ JSON.stringify($json) }}\n\nHAIR SALON / BARBER:\n\n'HAIR SALON TEMPLATE:\\n\\n' +\n'SYSTEM MESSAGE:\\n' +\n'You are the receptionist at ' + $('Business Parameters').item.json[\"Business Name\"] + ', ' + $('Scrape Local Businesses').item.json.categoryName + ', located at ' + $('Business Parameters').item.json[\"Street\"] + ', ' + $('Business Parameters').item.json[\"City\"] + '.\\n\\n' +\n'ROLE: Handle calls, schedule appointments, provide service information.\\n\\n' +\n'STANDARD SERVICES:\\n' +\n'- Men\\'s/Women\\'s haircuts\\n' +\n'- Hair coloring\\n' +\n'- Hair treatments\\n' +\n'- Beard grooming (if barber)\\n\\n' +\n'APPOINTMENT BOOKING:\\n' +\n'1. Ask for: first name, service type, preferred date\\n' +\n'2. Offer 2 available time slots\\n' +\n'3. Confirm phone number\\n\\n' +\n'HOURS:\\n' + JSON.stringify($('Business Parameters').item.json[\"Opening Hours\"]) + '\\n\\n' +\n'RULES:\\n' +\n'- Short responses (2-3 sentences max)\\n' +\n'- One question at a time\\n' +\n'- Wait for customer response\\n' +\n'- If complex request: offer callback\\n' +\n'- Stay professional\\n\\n' +\n'FIRST MESSAGE: \"Hello, ' + $('Business Parameters').item.json[\"Business Name\"] + '. How may I help you?\"\\n\\n' +\n'VOICEMAIL MESSAGE: \"Hello, you\\'ve reached ' + $('Business Parameters').item.json[\"Business Name\"] + '. We are currently closed. Please leave a message with your contact details.\"\\n\\n' +\n'END CALL MESSAGE: \"Thank you for contacting ' + $('Business Parameters').item.json[\"Business Name\"] + '. Goodbye.\"'\n\nDENTIST\n\n'DENTAL OFFICE TEMPLATE:\\n\\n' +\n'SYSTEM MESSAGE:\\n' +\n'You are the receptionist at ' + $('Business Parameters').item.json[\"Business Name\"] + ' dental office, located at ' + $('Business Parameters').item.json[\"Street\"] + ', ' + $('Business Parameters').item.json[\"City\"] + '.\\n\\n' +\n'ROLE: Handle calls, schedule appointments, assess emergencies.\\n\\n' +\n'STANDARD SERVICES:\\n' +\n'- General consultations\\n' +\n'- Dental care\\n' +\n'- Teeth cleaning\\n' +\n'- Dental emergencies\\n\\n' +\n'APPOINTMENT BOOKING:\\n' +\n'1. Ask for: last name, first name, reason for visit\\n' +\n'2. If emergency: assess severity (pain, trauma)\\n' +\n'3. Offer appropriate time slots\\n' +\n'4. Confirm phone number\\n\\n' +\n'EMERGENCIES: For intense pain or trauma, offer appointment within 24-48h.\\n\\n' +\n'HOURS:\\n' + JSON.stringify($('Business Parameters').item.json[\"Opening Hours\"]) + '\\n\\n' +\n'RULES:\\n' +\n'- Reassuring and professional tone\\n' +\n'- Short responses (2-3 sentences)\\n' +\n'- One question at a time\\n' +\n'- For medical questions: suggest practitioner consultation\\n\\n' +\n'FIRST MESSAGE: \"Hello, ' + $('Business Parameters').item.json[\"Business Name\"] + ' dental office. How may I help you?\"\\n\\n' +\n'VOICEMAIL MESSAGE: \"Hello, you\\'ve reached ' + $('Business Parameters').item.json[\"Business Name\"] + ' dental office. For emergencies, please call the dental emergency line. Otherwise, leave a message.\"\\n\\n' +\n'END CALL MESSAGE: \"Thank you for contacting ' + $('Business Parameters').item.json[\"Business Name\"] + '. Have a great day.\"'\n\nRESTAURANT\n\n'RESTAURANT TEMPLATE:\\n\\n' +\n'SYSTEM MESSAGE:\\n' +\n'You are the receptionist at ' + $('Business Parameters').item.json[\"Business Name\"] + ' restaurant, located at ' + $('Business Parameters').item.json[\"Street\"] + ', ' + $('Business Parameters').item.json[\"City\"] + '.\\n\\n' +\n'ROLE: Manage reservations, provide menu information.\\n\\n' +\n'SERVICES:\\n' +\n'- Lunch and dinner reservations\\n' +\n'- Menu information\\n' +\n'- Private events\\n\\n' +\n'RESERVATION BOOKING:\\n' +\n'1. Ask for: name, party size, date, time\\n' +\n'2. Offer available time slots\\n' +\n'3. Note special requests (allergies, birthday)\\n' +\n'4. Confirm phone number\\n\\n' +\n'HOURS:\\n' + JSON.stringify($('Business Parameters').item.json[\"Opening Hours\"]) + '\\n\\n' +\n'RULES:\\n' +\n'- Welcoming and professional tone\\n' +\n'- Short responses (2-3 sentences)\\n' +\n'- One question at a time\\n' +\n'- For groups of 10+: transfer to manager\\n\\n' +\n'FIRST MESSAGE: \"Hello, ' + $('Business Parameters').item.json[\"Business Name\"] + ' restaurant. How may I help you?\"\\n\\n' +\n'VOICEMAIL MESSAGE: \"Hello, you\\'ve reached ' + $('Business Parameters').item.json[\"Business Name\"] + ' restaurant. Please leave your contact details for a reservation.\"\\n\\n' +\n'END CALL MESSAGE: \"Thank you for contacting ' + $('Business Parameters').item.json[\"Business Name\"] + ' restaurant. Goodbye.\"'\n\nSPA / WELLNESS\n\n'SPA / WELLNESS TEMPLATE:\\n\\n' +\n'SYSTEM MESSAGE:\\n' +\n'You are the receptionist at ' + $('Business Parameters').item.json[\"Business Name\"] + ' spa, located at ' + $('Business Parameters').item.json[\"Street\"] + ', ' + $('Business Parameters').item.json[\"City\"] + '.\\n\\n' +\n'ROLE: Schedule appointments, advise on treatments.\\n\\n' +\n'SERVICES:\\n' +\n'- Massages\\n' +\n'- Facial and body treatments\\n' +\n'- Relaxation packages\\n\\n' +\n'APPOINTMENT BOOKING:\\n' +\n'1. Ask for: first name, treatment type, preferred date\\n' +\n'2. Recommend based on needs\\n' +\n'3. Inform about total duration\\n' +\n'4. Confirm phone number\\n\\n' +\n'HOURS:\\n' + JSON.stringify($('Business Parameters').item.json[\"Opening Hours\"]) + '\\n\\n' +\n'RULES:\\n' +\n'- Calm and professional tone\\n' +\n'- Short responses (2-3 sentences)\\n' +\n'- One question at a time\\n' +\n'- For medical questions: transfer to practitioner\\n\\n' +\n'FIRST MESSAGE: \"Hello, ' + $('Business Parameters').item.json[\"Business Name\"] + ' spa. How may I help you?\"\\n\\n' +\n'VOICEMAIL MESSAGE: \"Hello, you\\'ve reached ' + $('Business Parameters').item.json[\"Business Name\"] + ' spa. Please leave your contact details, we will call you back.\"\\n\\n' +\n'END CALL MESSAGE: \"Thank you for contacting ' + $('Business Parameters').item.json[\"Business Name\"] + '. Have a great day.\"'\n\n{{\n`\n\nINTELLIGENT CUSTOMIZATION:\n\nAnalyze the provided data and intelligently adapt:\n\n1. **COMMUNICATION TONE**:\n   - If \"premium\" category: slightly more refined tone\n   - If modern barber: relaxed but professional tone\n   - If medical office: reassuring and empathetic tone\n   - If fine dining restaurant: elegant tone\n\n2. **SERVICES TO HIGHLIGHT**:\n   - Extract services mentioned on the website\n   - Use keywords from customer reviews if available\n   - Adapt based on Google Maps category\n\n3. **LOCAL SPECIFICS**:\n   - Mention the neighborhood if recognized (e.g., \"in the heart of...\")\n   - Adapt if parking available, wheelchair accessible\n   - Mention if kid-friendly, LGBTQ+ friendly (based on Info)\n\n4. **FIRSTMESSAGE CUSTOMIZATION**:\n   - If high-end salon: \"Hello, welcome to [Name]...\"\n   - If quick service: \"Hello, [Name]. I'm listening.\"\n   - Keep simple by default: \"Hello, [Name]. How may I help you?\"\n\n5. **HOURS ADAPTATION**:\n   - If closed Sunday/Monday: specify in system message\n   - If extended hours (8pm+): mention availability\n   - If unusual hours: adapt voicemailMessage\n\nSTRICT JSON OUTPUT FORMAT:\n\n{\n  \"system_message\": \"[The complete customized system prompt of 400-600 words]\",\n  \"firstMessage\": \"[Short and adapted welcome message]\",\n  \"voicemailMessage\": \"[Voicemail message]\",\n  \"endCallMessage\": \"[Short end call message]\"\n}\n\nIMPORTANT: Reply ONLY with the JSON, no text before or after.\n`\n}}"
+            }
+          ]
+        },
+        "options": {
+          "system": "You are an expert in creating messages for professional AI voice agents.\nYou must generate 4 distinct messages for a voice reception agent:\n1. **system_message**: Complete system prompt (300-500 words)\n2. **firstMessage**: Welcome greeting (1 short sentence)\n3. **voicemailMessage**: Voicemail message (1-4 words MAX)\n4. **endCallMessage**: End call message (1-4 words MAX)\n\nSTRICT RULES:\n- Formal and professional tone\n- No emojis, no familiarity\n- Perfect English\n- Short messages (except system_message)\n- No line breaks in your outputs\n\nReply ONLY in strict JSON format."
+        }
+      },
+      "id": "4db698dc-7ecd-4248-8e82-c4d4676c0a8e",
+      "name": "Generate Agent Messages",
+      "type": "@n8n/n8n-nodes-langchain.anthropic",
+      "position": [
+        3312,
+        576
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "anthropicApi": {
+          "id": "8n3FxvQr3PHm0OgB",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.first().json.content[0].text;\n\nconst startIndex = inputData.indexOf('{');\nconst endIndex = inputData.lastIndexOf('}') + 1;\nconst jsonString = inputData.substring(startIndex, endIndex);\n\nconst jsonContent = JSON.parse(jsonString);\n\nconst messagesArray = [\n  {\n    type: \"system_message\",\n    content: jsonContent.system_message\n  },\n  {\n    type: \"first_message\",\n    content: jsonContent.firstMessage\n  },\n  {\n    type: \"voicemail_message\",\n    content: jsonContent.voicemailMessage\n  }\n];\n\nreturn [{\n  json: {\n    messages: messagesArray\n  }\n}];"
+      },
+      "id": "ff69a612-48c4-4fd7-8598-78f03f1bf7b4",
+      "name": "Parse Agent Responses",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        3632,
+        576
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/assistant",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"name\": \"{{ $('Scrape Local Businesses').item.json.title }}\",\n  \"voice\": {\n    \"model\": \"eleven_turbo_v2_5\",\n    \"voiceId\": \"Qrl71rx6Yg8RvyPYRGCQ\",\n    \"provider\": \"11labs\",\n    \"stability\": 0.7,\n    \"similarityBoost\": 0.8,\n    \"optimizeStreamingLatency\": 3\n  },\n  \"model\": {\n    \"model\": \"gpt-4o-mini\",\n    \"messages\": [\n      {\n        \"role\": \"system\",\n        \"content\": \"{{ $json.messages[0].content }}\"\n      }\n    ],\n    \"provider\": \"openai\",\n    \"maxTokens\": 200,\n    \"temperature\": 0.5\n  },\n  \"firstMessage\": \"{{ $json.messages[1].content }}\",\n  \"voicemailMessage\": \"{{ $json.messages[2].content }}\",\n  \"endCallMessage\": \"Merci de votre appel, à bientôt chez {{ $('Scrape Local Businesses').item.json.title }}\",\n  \"transcriber\": {\n    \"model\": \"nova-2\",\n    \"language\": \"fr\",\n    \"provider\": \"deepgram\",\n    \"endpointing\": 150,\n    \"smartFormat\": true\n  },\n  \"firstMessageMode\": \"assistant-speaks-first\",\n  \"silenceTimeoutSeconds\": 30,\n  \"responseDelaySeconds\": 0.3,\n  \"backgroundDenoisingEnabled\": true\n}",
+        "options": {}
+      },
+      "id": "4a019ffe-c8a2-474d-a182-de2616441426",
+      "name": "Create Vapi Assistant",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        3856,
+        576
+      ],
+      "typeVersion": 4.1,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "=[PASTE URL HERE]"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "=[PASTE ID HERE]"
+        },
+        "columns": {
+          "value": {
+            "Agent ID": "={{ $json.id }}",
+            "Agent URL": "=https://dashboard.vapi.ai/assistants/{{ $json.id }}",
+            "Nom du business": "={{ $json.name }}"
+          },
+          "schema": [
+            {
+              "id": "Agent URL",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "Agent URL",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Nom du business",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "Nom du business",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Catégorie",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "Catégorie",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Rue",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "Rue",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ville",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "Ville",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Code postal",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "Code postal",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Site web",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "Site web",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "N° Tél",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "N° Tél",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Opening Hours",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "Opening Hours",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Infos",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "Infos",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Site Web Data",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "Site Web Data",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent ID",
+              "type": "string",
+              "display": true,
+              "removed": false,
+              "required": false,
+              "displayName": "Agent ID",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "Nom du business"
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "fc2f5adb-627f-41ed-b5b1-d6f021c3be2c",
+      "name": "Log Agent to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        4064,
+        688
+      ],
+      "typeVersion": 4.7
+    },
+    {
+      "parameters": {
+        "actorId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "nwua9Gu5YrADL7ZDj",
+          "cachedResultUrl": "https://console.apify.com/actors/nwua9Gu5YrADL7ZDj/input",
+          "cachedResultName": "Google Maps Scraper (compass/crawler-google-places)"
+        },
+        "operation": "Run actor and get dataset",
+        "customBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "25a6d8eb-72d2-4ab3-a8be-2bc2854c15a1",
+      "name": "Scrape Local Businesses",
+      "type": "@apify/n8n-nodes-apify.apify",
+      "position": [
+        1888,
+        688
+      ],
+      "typeVersion": 1,
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "32940446-3a74-453d-9707-c84d3e23ae05",
+      "name": "Process Businesses",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        2192,
+        576
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.website.match(/https:\\/\\/.*/)[0] }}",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "timeout": 10000
+        }
+      },
+      "id": "9beba509-5cfd-455c-ba23-c3f23f664466",
+      "name": "Fetch Website",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        2464,
+        592
+      ],
+      "typeVersion": 4.1,
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "Nom du business",
+              "stringValue": "={{ $('Scrape Local Businesses').item.json.title }}"
+            },
+            {
+              "name": "Catégorie",
+              "stringValue": "={{ $('Scrape Local Businesses').item.json.categoryName }}"
+            },
+            {
+              "name": "Rue",
+              "stringValue": "={{ $('Scrape Local Businesses').item.json.street }}"
+            },
+            {
+              "name": "Ville",
+              "stringValue": "={{ $('Scrape Local Businesses').item.json.city }}"
+            },
+            {
+              "name": "Code postal",
+              "stringValue": "={{ $('Scrape Local Businesses').item.json.postalCode }}"
+            },
+            {
+              "name": "Site web",
+              "stringValue": "={{ $('Scrape Local Businesses').item.json.website }}"
+            },
+            {
+              "name": "N° Tél",
+              "stringValue": "={{ $('Scrape Local Businesses').item.json.phone }}"
+            },
+            {
+              "name": "Opening Hours",
+              "type": "arrayValue",
+              "arrayValue": "={{ $('Scrape Local Businesses').item.json.openingHours }}"
+            },
+            {
+              "name": "Infos",
+              "type": "objectValue",
+              "objectValue": "={{ $('Scrape Local Businesses').item.json.additionalInfo }}"
+            },
+            {
+              "name": "Site Web Data",
+              "stringValue": "={{ $json.output['Texte clean'] }}"
+            }
+          ]
+        },
+        "include": "none",
+        "options": {
+          "ignoreConversionErrors": true
+        }
+      },
+      "id": "794a9b18-dc09-42d1-b6fb-681b83c45c9b",
+      "name": "Format Business Data",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        2944,
+        576
+      ],
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.data || \"Aucun//tu peux output un item qui dit que le site n'était pas accesible\" }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "Clean Text",
+              "description": "Text without HTML tags.",
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e292ee23-24d3-44a0-a434-35557bb25b29",
+      "name": "Extract Website Text / Clean",
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "position": [
+        2640,
+        576
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "=[PASTE URL HERE]"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "id",
+          "value": "=[PASTE ID HERE]"
+        },
+        "columns": {
+          "value": {
+            "Rue": "={{ $json.Street }}",
+            "Infos": "={{ $json.Infos }}",
+            "Ville": "={{ $json.City }}",
+            "N° Tél": "={{ $json[\"Phone Number\"].replace(/[\\s+]/g, '') }}",
+            "Site web": "={{ $json[\"Website\"] }}",
+            "Catégorie": "={{ $json[\"Category\"] }}",
+            "Code postal": "={{ $json[\"ZIPCODE\"] }}",
+            "Opening Hours": "={{ $json[\"Opening Hours\"] }}",
+            "Site Web Data": "={{ $json[\"Website Data\"] }}",
+            "Nom du business": "={{ $json[\"Business Name\"] }}"
+          },
+          "schema": [
+            {
+              "id": "Agent URL",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "Agent URL",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Nom du business",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "Nom du business",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Catégorie",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "Catégorie",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Rue",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "Rue",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ville",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "Ville",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Code postal",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "Code postal",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Site web",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "Site web",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "N° Tél",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "N° Tél",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Opening Hours",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "Opening Hours",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Infos",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "Infos",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Site Web Data",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "Site Web Data",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Agent ID",
+              "type": "string",
+              "display": true,
+              "removed": true,
+              "required": false,
+              "displayName": "Agent ID",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "c8803aae-257b-485e-a3b9-d4350918a4c6",
+      "name": "Sync to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        3120,
+        576
+      ],
+      "typeVersion": 4.7
+    },
+    {
+      "parameters": {
+        "formTitle": "AI Voice Agent Generator",
+        "formDescription": "Enter the location parameters where the businesses are located for which you want to generate AI Voice Agents.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "City",
+              "placeholder": "Paris",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "State / Region",
+              "placeholder": "Île-de-France",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "ZIPCODE",
+              "fieldType": "number",
+              "placeholder": "75001",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Number of businesses to do",
+              "fieldType": "number",
+              "placeholder": "3",
+              "defaultValue": "1",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Keywords (separated by comma)",
+              "placeholder": "barbier,barber,coiffeur,salon de coiffure,salon capillaire",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {
+          "appendAttribution": false,
+          "buttonLabel": "Generate Agents",
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "Voici l'URL de votre Agent IA vocal :"
+            }
+          },
+          "customCss": ":root {\n\t--font-family: 'Open Sans', sans-serif;\n\t--font-weight-normal: 400;\n\t--font-weight-bold: 600;\n\t--font-size-body: 12px;\n\t--font-size-label: 14px;\n\t--font-size-test-notice: 12px;\n\t--font-size-input: 14px;\n\t--font-size-header: 20px;\n\t--font-size-paragraph: 14px;\n\t--font-size-link: 12px;\n\t--font-size-error: 12px;\n\t--font-size-html-h1: 28px;\n\t--font-size-html-h2: 20px;\n\t--font-size-html-h3: 16px;\n\t--font-size-html-h4: 14px;\n\t--font-size-html-h5: 12px;\n\t--font-size-html-h6: 10px;\n\t--font-size-subheader: 14px;\n\t\n\t/* Colors - Palette Tech Violet/Bleu */\n\t--color-background: #0f0f1e;\n\t--color-test-notice-text: #a78bfa;\n\t--color-test-notice-bg: #1a1a2e;\n\t--color-test-notice-border: #4c1d95;\n\t--color-card-bg: #1a1a2e;\n\t--color-card-border: #2d2d4a;\n\t--color-card-shadow: rgba(139, 92, 246, 0.15);\n\t--color-link: #a78bfa;\n\t--color-header: #e5e7eb;\n\t--color-label: #d1d5db;\n\t--color-input-border: #3b3b5c;\n\t--color-input-text: #9ca3af;\n\t--color-focus-border: #8b5cf6;\n\t--color-submit-btn-bg: #00d9ff;\n\t--color-submit-btn-text: #0a0a14;\n\t--color-submit-btn-shadow: rgba(0, 217, 255, 0.4);\n\t--color-error: #f87171;\n\t--color-required: #a78bfa;\n\t--color-clear-button-bg: #4b5563;\n\t--color-html-text: #d1d5db;\n\t--color-html-link: #8b5cf6;\n\t--color-header-subtext: #9ca3af;\n\t\n\t/* Border Radii */\n\t--border-radius-card: 12px;\n\t--border-radius-input: 8px;\n\t--border-radius-clear-btn: 50%;\n\t--card-border-radius: 12px;\n\t\n\t/* Spacing */\n\t--padding-container-top: 24px;\n\t--padding-card: 28px;\n\t--padding-test-notice-vertical: 14px;\n\t--padding-test-notice-horizontal: 24px;\n\t--margin-bottom-card: 20px;\n\t--padding-form-input: 14px;\n\t--card-padding: 28px;\n\t--card-margin-bottom: 20px;\n\t\n\t/* Dimensions */\n\t--container-width: 448px;\n\t--submit-btn-height: 52px;\n\t--checkbox-size: 20px;\n\t\n\t/* Others */\n\t--box-shadow-card: 0px 8px 24px 0px var(--color-card-shadow), 0px 0px 1px 0px rgba(139, 92, 246, 0.3);\n\t--box-shadow-submit-btn: 0px 4px 20px var(--color-submit-btn-shadow), 0px 0px 40px rgba(0, 217, 255, 0.2);\n\t--opacity-placeholder: 0.4;\n}"
+        }
+      },
+      "id": "8cf203d7-7307-43ae-a96a-93e8ef772835",
+      "name": "Form Trigger - Business Location Input",
+      "type": "n8n-nodes-base.formTrigger",
+      "position": [
+        1344,
+        688
+      ],
+      "webhookId": "06f02645-a88c-42df-b5cf-43e8a412c930",
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {
+        "jsCode": "const formData = $('Form Trigger - Business Location Input').first().json;\n\nconst searchStringsArray = formData['Keywords (separated by comma)']\n  .split(',')\n  .map(keyword => keyword.trim())\n  .filter(keyword => keyword.length > 0);\n\nreturn [{\n  json: {\n    city: formData['City'],\n    countryCode: \"[Change here]\",\n    county: formData['State / Region'],\n    includeWebResults: true,\n    language: \"[Input your Language here]\",\n    locationQuery: `${formData['City']}, [Input Here your country]`,\n    maxCrawledPlacesPerSearch: formData['Number of businesses to do'],\n    maxImages: 0,\n    maximumLeadsEnrichmentRecords: 400,\n    postalCode: String(formData['ZIPCODE']),\n    scrapeContacts: true,\n    scrapeDirectories: true,\n    scrapeImageAuthors: false,\n    scrapePlaceDetailPage: true,\n    scrapeReviewsPersonalData: true,\n    scrapeTableReservationProvider: true,\n    searchMatching: \"all\",\n    searchStringsArray: searchStringsArray,\n    skipClosedPlaces: false,\n    website: \"withWebsite\"\n  }\n}];"
+      },
+      "id": "028b875f-fe79-44a6-91c1-0bc167157122",
+      "name": "Build Apify Request",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1552,
+        688
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Your AI Voice Agent - {{ $json[\"Business Name\"] }}</title>\n    <link href=\"https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap\" rel=\"stylesheet\">\n    <style>\n        :root {\n            --font-family: 'Open Sans', sans-serif;\n            --font-weight-normal: 400;\n            --font-weight-bold: 600;\n            --font-size-body: 12px;\n            --font-size-label: 14px;\n            --font-size-input: 14px;\n            --font-size-header: 24px;\n            --font-size-subheader: 16px;\n            --font-size-paragraph: 14px;\n            \n            --color-background: #0f0f1e;\n            --color-card-bg: #1a1a2e;\n            --color-card-border: #2d2d4a;\n            --color-card-shadow: rgba(139, 92, 246, 0.15);\n            --color-header: #e5e7eb;\n            --color-label: #d1d5db;\n            --color-text: #9ca3af;\n            --color-accent: #8b5cf6;\n            --color-accent-hover: #7c3aed;\n            --color-btn-primary: #00d9ff;\n            --color-btn-primary-hover: #00b8d4;\n            --color-btn-text: #0a0a14;\n            --color-code-bg: #0a0a14;\n            --color-code-border: #3b3b5c;\n            \n            --border-radius-card: 12px;\n            --border-radius-btn: 8px;\n            --padding-card: 28px;\n            --margin-bottom-card: 20px;\n            \n            --box-shadow-card: 0px 8px 24px 0px var(--color-card-shadow), 0px 0px 1px 0px rgba(139, 92, 246, 0.3);\n            --box-shadow-btn: 0px 4px 20px rgba(0, 217, 255, 0.4), 0px 0px 40px rgba(0, 217, 255, 0.2);\n        }\n        \n        * {\n            margin: 0;\n            padding: 0;\n            box-sizing: border-box;\n        }\n        \n        body {\n            font-family: var(--font-family);\n            font-size: var(--font-size-body);\n            background-color: var(--color-background);\n            color: var(--color-text);\n            padding: 24px;\n            line-height: 1.6;\n        }\n        \n        .container {\n            max-width: 800px;\n            margin: 0 auto;\n        }\n        \n        .header {\n            text-align: center;\n            margin-bottom: 32px;\n        }\n        \n        .header h1 {\n            font-size: var(--font-size-header);\n            font-weight: var(--font-weight-bold);\n            color: var(--color-header);\n            margin-bottom: 8px;\n        }\n        \n        .header p {\n            font-size: var(--font-size-paragraph);\n            color: var(--color-text);\n        }\n        \n        .card {\n            background: var(--color-card-bg);\n            border: 1px solid var(--color-card-border);\n            border-radius: var(--border-radius-card);\n            padding: var(--padding-card);\n            margin-bottom: var(--margin-bottom-card);\n            box-shadow: var(--box-shadow-card);\n        }\n        \n        .card h2 {\n            font-size: var(--font-size-subheader);\n            font-weight: var(--font-weight-bold);\n            color: var(--color-header);\n            margin-bottom: 16px;\n            display: flex;\n            align-items: center;\n            gap: 8px;\n        }\n        \n        .card h2::before {\n            content: \"→\";\n            color: var(--color-accent);\n        }\n        \n        .param-group {\n            margin-bottom: 20px;\n        }\n        \n        .param-label {\n            font-size: var(--font-size-label);\n            font-weight: var(--font-weight-bold);\n            color: var(--color-label);\n            margin-bottom: 8px;\n            display: block;\n        }\n        \n        .param-value {\n            background: var(--color-code-bg);\n            border: 1px solid var(--color-code-border);\n            border-radius: 6px;\n            padding: 12px;\n            font-family: 'Courier New', monospace;\n            font-size: 13px;\n            color: #a78bfa;\n            overflow-x: auto;\n            white-space: pre-wrap;\n            word-break: break-all;\n        }\n        \n        .param-grid {\n            display: grid;\n            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n            gap: 16px;\n            margin-top: 16px;\n        }\n        \n        .param-item {\n            background: var(--color-code-bg);\n            border: 1px solid var(--color-code-border);\n            border-radius: 6px;\n            padding: 12px;\n        }\n        \n        .param-item-label {\n            font-size: 11px;\n            text-transform: uppercase;\n            color: var(--color-text);\n            margin-bottom: 4px;\n        }\n        \n        .param-item-value {\n            font-size: var(--font-size-label);\n            color: var(--color-accent);\n            font-weight: var(--font-weight-bold);\n        }\n        \n        .btn {\n            display: inline-block;\n            padding: 14px 28px;\n            border-radius: var(--border-radius-btn);\n            font-size: var(--font-size-label);\n            font-weight: var(--font-weight-bold);\n            text-decoration: none;\n            cursor: pointer;\n            border: none;\n            transition: all 0.3s ease;\n            text-align: center;\n        }\n        \n        .btn-primary {\n            background: var(--color-btn-primary);\n            color: var(--color-btn-text);\n            box-shadow: var(--box-shadow-btn);\n        }\n        \n        .btn-primary:hover {\n            background: var(--color-btn-primary-hover);\n            transform: translateY(-2px);\n        }\n        \n        .btn-secondary {\n            background: transparent;\n            color: var(--color-accent);\n            border: 2px solid var(--color-accent);\n        }\n        \n        .btn-secondary:hover {\n            background: var(--color-accent);\n            color: white;\n        }\n        \n        .action-buttons {\n            display: flex;\n            gap: 12px;\n            margin-top: 24px;\n            flex-wrap: wrap;\n            justify-content: center;\n        }\n        \n        .info-box {\n            background: rgba(139, 92, 246, 0.1);\n            border: 1px solid var(--color-accent);\n            border-radius: 8px;\n            padding: 16px;\n            margin-bottom: 20px;\n        }\n        \n        .info-box p {\n            font-size: var(--font-size-paragraph);\n            color: var(--color-label);\n            margin-bottom: 8px;\n        }\n        \n        .info-box p:last-child {\n            margin-bottom: 0;\n        }\n        \n        .highlight {\n            color: var(--color-accent);\n            font-weight: var(--font-weight-bold);\n        }\n        \n        code {\n            background: var(--color-code-bg);\n            padding: 2px 6px;\n            border-radius: 4px;\n            font-family: 'Courier New', monospace;\n            font-size: 12px;\n            color: #a78bfa;\n        }\n        \n        .message-preview {\n            background: var(--color-code-bg);\n            border-left: 3px solid var(--color-accent);\n            padding: 12px 16px;\n            margin: 12px 0;\n            border-radius: 4px;\n        }\n        \n        .message-type {\n            font-size: 11px;\n            text-transform: uppercase;\n            color: var(--color-accent);\n            margin-bottom: 6px;\n            font-weight: var(--font-weight-bold);\n        }\n        \n        .message-content {\n            color: var(--color-label);\n            font-size: var(--font-size-paragraph);\n            line-height: 1.5;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>🎙️ Your AI Voice Agent</h1>\n            <p>Custom configuration for <span class=\"highlight\">{{ $json[\"Business Name\"] }}</span></p>\n        </div>\n        \n        <div class=\"info-box\">\n            <p>🎉 Your intelligent voice agent is ready to be deployed!</p>\n            <p>We have generated an optimized configuration for your business. Follow the steps below to activate your AI phone assistant.</p>\n        </div>\n        \n        <!-- Messages Configuration -->\n        <div class=\"card\">\n            <h2>Agent Messages</h2>\n            \n            <div class=\"message-preview\">\n                <div class=\"message-type\">Welcome Message</div>\n                <div class=\"message-content\">{{ $('Parse Agent Responses').item.json.messages[1].content }}</div>\n            </div>\n            \n            <div class=\"message-preview\">\n                <div class=\"message-type\">Voicemail Message</div>\n                <div class=\"message-content\">{{ $('Parse Agent Responses').item.json.messages[2].content }}</div>\n            </div>\n            \n            <div class=\"message-preview\">\n                <div class=\"message-type\">End Call Message</div>\n                <div class=\"message-content\">Thank you for your call, see you soon at {{ $json[\"Business Name\"] }}</div>\n            </div>\n        </div>\n        \n        <!-- Voice Configuration -->\n        <div class=\"card\">\n            <h2>Voice Configuration</h2>\n            <div class=\"param-grid\">\n                <div class=\"param-item\">\n                    <div class=\"param-item-label\">Provider</div>\n                    <div class=\"param-item-value\">ElevenLabs</div>\n                </div>\n                <div class=\"param-item\">\n                    <div class=\"param-item-label\">Model</div>\n                    <div class=\"param-item-value\">Turbo v2.5</div>\n                </div>\n                <div class=\"param-item\">\n                    <div class=\"param-item-label\">Stability</div>\n                    <div class=\"param-item-value\">0.7</div>\n                </div>\n                <div class=\"param-item\">\n                    <div class=\"param-item-label\">Similarity</div>\n                    <div class=\"param-item-value\">0.8</div>\n                </div>\n            </div>\n        </div>\n        \n        <!-- AI Model Configuration -->\n        <div class=\"card\">\n            <h2>AI Configuration</h2>\n            <div class=\"param-grid\">\n                <div class=\"param-item\">\n                    <div class=\"param-item-label\">LLM Model</div>\n                    <div class=\"param-item-value\">GPT-4o Mini</div>\n                </div>\n                <div class=\"param-item\">\n                    <div class=\"param-item-label\">Provider</div>\n                    <div class=\"param-item-value\">OpenAI</div>\n                </div>\n                <div class=\"param-item\">\n                    <div class=\"param-item-label\">Max Tokens</div>\n                    <div class=\"param-item-value\">200</div>\n                </div>\n                <div class=\"param-item\">\n                    <div class=\"param-item-label\">Temperature</div>\n                    <div class=\"param-item-value\">0.5</div>\n                </div>\n            </div>\n        </div>\n        \n        <!-- Transcription Configuration -->\n        <div class=\"card\">\n            <h2>Transcription Configuration</h2>\n            <div class=\"param-grid\">\n                <div class=\"param-item\">\n                    <div class=\"param-item-label\">Provider</div>\n                    <div class=\"param-item-value\">Deepgram</div>\n                </div>\n                <div class=\"param-item\">\n                    <div class=\"param-item-label\">Model</div>\n                    <div class=\"param-item-value\">Nova-2</div>\n                </div>\n                <div class=\"param-item\">\n                    <div class=\"param-item-label\">Language</div>\n                    <div class=\"param-item-value\">English</div>\n                </div>\n                <div class=\"param-item\">\n                    <div class=\"param-item-label\">Smart Format</div>\n                    <div class=\"param-item-value\">Enabled</div>\n                </div>\n            </div>\n        </div>\n        \n        <!-- System Prompt -->\n        <div class=\"card\">\n            <h2>System Prompt</h2>\n            <div class=\"param-group\">\n                <label class=\"param-label\">Complete agent instructions</label>\n                <div class=\"param-value\">{{ $('Parse Agent Responses').item.json.messages[0].content }}</div>\n            </div>\n        </div>\n        \n        <!-- Complete JSON Configuration -->\n        <div class=\"card\">\n            <h2>Complete JSON Configuration</h2>\n            <div class=\"param-group\">\n                <label class=\"param-label\">Copy-paste this configuration into VAPI</label>\n                <div class=\"param-value\">{\n  \"name\": \"{{ $json[\"Business Name\"] }}\",\n  \"voice\": {\n    \"model\": \"eleven_turbo_v2_5\",\n    \"voiceId\": \"YOUR_ELEVENLABS_VOICE_ID\",\n    \"provider\": \"11labs\",\n    \"stability\": 0.7,\n    \"similarityBoost\": 0.8,\n    \"optimizeStreamingLatency\": 3\n  },\n  \"model\": {\n    \"model\": \"gpt-4o-mini\",\n    \"messages\": [\n      {\n        \"role\": \"system\",\n        \"content\": \"{{ $('Parse Agent Responses').item.json.messages[0].content }}\"\n      }\n    ],\n    \"provider\": \"openai\",\n    \"maxTokens\": 200,\n    \"temperature\": 0.5\n  },\n  \"firstMessage\": \"{{ $('Parse Agent Responses').item.json.messages[1].content }}\",\n  \"voicemailMessage\": \"{{ $('Parse Agent Responses').item.json.messages[2].content }}\",\n  \"endCallMessage\": \"Thank you for your call, see you soon at {{ $json[\"Business Name\"] }}\",\n  \"transcriber\": {\n    \"model\": \"nova-2\",\n    \"language\": \"en\",\n    \"provider\": \"deepgram\",\n    \"endpointing\": 150,\n    \"smartFormat\": true\n  },\n  \"firstMessageMode\": \"assistant-speaks-first\",\n  \"silenceTimeoutSeconds\": 30,\n  \"responseDelaySeconds\": 0.3,\n  \"backgroundDenoisingEnabled\": true\n}</div>\n            </div>\n        </div>\n        \n        <!-- Actions -->\n        <div class=\"card\">\n            <h2>Next Steps</h2>\n            \n            <div class=\"info-box\">\n                <p><strong>Don't have a VAPI account yet?</strong></p>\n                <p>Create your free account and get <span class=\"highlight\">10 free conversation minutes</span> to test your agent.</p>\n            </div>\n            \n            <div class=\"action-buttons\">\n                <a href=\"https://vapi.ai\" target=\"_blank\" class=\"btn btn-secondary\">\n                    Create VAPI Account\n                </a>\n                <a href=\"https://dashboard.vapi.ai/assistants/{{ $('Create Vapi Assistant').item.json.id }}\" target=\"_blank\" class=\"btn btn-primary\">\n                    Access Your Agent\n                </a>\n            </div>\n            \n            <div style=\"margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--color-card-border);\">\n                <p style=\"color: var(--color-text); font-size: var(--font-size-paragraph); margin-bottom: 12px;\">\n                    <strong>How to deploy your agent:</strong>\n                </p>\n                <ol style=\"color: var(--color-text); font-size: var(--font-size-paragraph); padding-left: 20px; line-height: 1.8;\">\n                    <li>Log in to your VAPI dashboard</li>\n                    <li>Click \"Access Your Agent\" or create a new assistant</li>\n                    <li>Copy-paste the complete JSON configuration above</li>\n                    <li>Test your agent with the built-in simulator</li>\n                    <li>Connect a phone number to receive calls</li>\n                </ol>\n            </div>\n        </div>\n    </div>\n</body>\n</html>"
+      },
+      "id": "05911965-2e42-4475-8ff3-b4883cc1a44c",
+      "name": "Display Results Page",
+      "type": "n8n-nodes-base.form",
+      "position": [
+        2704,
+        288
+      ],
+      "webhookId": "f39fe583-5947-4467-a27a-87909e632b5a",
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {},
+      "id": "809b9d89-ab30-461d-aadf-70081dc4d28c",
+      "name": "Limit to 1st result for preview",
+      "type": "n8n-nodes-base.limit",
+      "position": [
+        2480,
+        288
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "model": "x-ai/grok-4-fast",
+        "options": {}
+      },
+      "id": "b3459595-8b0d-4999-bf81-c859c9c67e33",
+      "name": "Grok-4-fast",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "position": [
+        2768,
+        800
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "**⚠️ CONFIGURE FOR YOUR COUNTRY**\n\nUpdate:\n- `countryCode`: \"us\" (or your country)\n- `language`: \"en\" (or your language)\n- `locationQuery`: \"${city}, United States\" (or your country)",
+        "height": 320,
+        "width": 384,
+        "color": 3
+      },
+      "id": "271c0ee1-0b4c-474e-b988-549e10593122",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1728,
+        528
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 1. Data Collection & Scraping\n\nCaptures user input via form and scrapes matching businesses from Google Maps using Apify.",
+        "height": 448,
+        "width": 896,
+        "color": 7
+      },
+      "id": "d333a6a4-11a3-464c-9149-f758f2c1a699",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1248,
+        416
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## AI Voice Agent Generator for Local Businesses\n\nAutomatically create personalized AI voice receptionist agents for local businesses using VAPI, by scraping Google Maps data and analyzing their websites.\n\n### How it works\n1. **Form input**: User submits city, region, postal code, and business keywords\n2. **Google Maps scraping**: Apify scrapes local businesses matching criteria\n3. **Website analysis**: LLM extracts relevant content from each business website\n4. **AI prompt generation**: Claude generates customized system prompts, greetings, and voicemail messages based on business type\n5. **VAPI provisioning**: Automatically creates voice agents via VAPI API\n6. **Logging**: Stores all generated agents in Google Sheets for tracking\n\n### Setup steps\n1. Connect **Apify** credentials (Google Maps Scraper actor)\n2. Connect **Anthropic** API key\n3. Connect **OpenRouter** API key (for website analysis)\n4. Add your **VAPI API key** in the HTTP Request node\n5. Connect **Google Sheets** OAuth\n6. Activate the workflow\n\n### Customization\n- Modify business category templates in the \"Generate Agent Messages\" node\n- Adjust voice settings (stability, similarity) in the VAPI provisioning node\n- Change the LLM model for prompt generation (default: Claude Sonnet)",
+        "height": 624,
+        "width": 870
+      },
+      "id": "01ccd84e-d1c6-4299-b623-62639739181a",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        368,
+        240
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 2. Business Analysis\nFetches each business website and extracts relevant text content using LLM.",
+        "height": 256,
+        "width": 480,
+        "color": 7
+      },
+      "id": "9cd0dd96-970a-480e-abb8-12094fb01cb4",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2416,
+        480
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 3. Agent Generation\nUses Claude to generate customized voice agent prompts based on business type and data.",
+        "height": 256,
+        "width": 288,
+        "color": 7
+      },
+      "id": "3287f7f6-b291-48ea-b164-6781950d61f2",
+      "name": "Sticky Note4",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3280,
+        448
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 4. VAPI Deployment\nCreates the voice assistant via VAPI API and logs details to Google Sheets.",
+        "height": 448,
+        "width": 432,
+        "color": 7
+      },
+      "id": "be2fa8ff-f587-450e-bd32-cd9c4b4b78a7",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3728,
+        432
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "**⚠️ REQUIRED:** Add your VAPI API key in the Authorization header",
+        "height": 208,
+        "color": 3
+      },
+      "id": "9edc3ce5-7ec3-4cbf-9da9-f085deeb7cfc",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3792,
+        528
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "resource": "base",
+        "operation": "getSchema",
+        "base": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        4272,
+        688
+      ],
+      "id": "adf1057f-385e-4285-b517-640d3e9a4bf1",
+      "name": "Get base schema"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Grok-4-fast": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Website Text / Clean",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Website": {
+      "main": [
+        [
+          {
+            "node": "Extract Website Text / Clean",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Agent to Sheet": {
+      "main": [
+        [
+          {
+            "node": "Process Businesses",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get base schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Businesses": {
+      "main": [
+        [
+          {
+            "node": "Limit to 1st result for preview",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Apify Request": {
+      "main": [
+        [
+          {
+            "node": "Scrape Local Businesses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Display Results Page": {
+      "main": [
+        []
+      ]
+    },
+    "Format Business Data": {
+      "main": [
+        [
+          {
+            "node": "Sync to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync to Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Generate Agent Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Vapi Assistant": {
+      "main": [
+        [
+          {
+            "node": "Log Agent to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Agent Responses": {
+      "main": [
+        [
+          {
+            "node": "Create Vapi Assistant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Agent Messages": {
+      "main": [
+        [
+          {
+            "node": "Parse Agent Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Local Businesses": {
+      "main": [
+        [
+          {
+            "node": "Process Businesses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Website Text / Clean": {
+      "main": [
+        [
+          {
+            "node": "Format Business Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit to 1st result for preview": {
+      "main": [
+        [
+          {
+            "node": "Display Results Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Form Trigger - Business Location Input": {
+      "main": [
+        [
+          {
+            "node": "Build Apify Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "4790d74a-792c-4a92-aa27-3ce31c7a354f",
+  "meta": {
+    "templateId": "12956",
+    "instanceId": "48dda85c62f7d7f1da3288051b29efc904d01d63443c4393b53511abd0497c45"
+  },
+  "id": "XzPxPwKqrZM4Td8W",
+  "tags": []
+}

@@ -55,6 +55,39 @@ export function useMissionWeatherLog(missionId: string | undefined) {
   });
 }
 
+/**
+ * Delete weather logs for a mission (used when equipment is cleared).
+ */
+export function useDeleteMissionWeatherLogs() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (missionId: string) => {
+      if (!navigator.onLine) {
+        await addToSyncQueue({
+          action: 'delete_weather_logs',
+          table: 'mission_weather_logs',
+          payload: { mission_id: missionId },
+          created_at: new Date().toISOString(),
+          retries: 0,
+          last_error: null,
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('mission_weather_logs')
+        .delete()
+        .eq('mission_id', missionId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, missionId) => {
+      queryClient.invalidateQueries({ queryKey: ['mission-weather-log', missionId] });
+    },
+  });
+}
+
 interface CreateWeatherBriefingInput {
   mission_id: string;
   metar_station: string | null;

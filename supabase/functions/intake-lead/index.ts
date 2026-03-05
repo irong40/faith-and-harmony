@@ -80,7 +80,7 @@ async function findOrCreateClient(
     .select('id')
     .or(`phone.eq.${phone},phone.eq.${normalizedPhone}`)
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (existing) {
     return { client_id: existing.id, created: false };

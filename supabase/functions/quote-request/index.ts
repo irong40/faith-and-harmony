@@ -50,6 +50,7 @@ serve(async (req) => {
         address: null,
         job_type: service_type,
         description: message || `${service_type}${preferred_date ? ` — preferred date: ${preferred_date}` : ''}`,
+        preferred_date: preferred_date || null,
         source: "web",
         status: "new",
         brand_slug: "sai",

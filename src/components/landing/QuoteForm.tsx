@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 const SERVICE_OPTIONS = [
   { value: 'listing-lite', label: 'Listing Lite ($225)' },
@@ -50,10 +49,15 @@ export default function QuoteForm() {
     e.preventDefault();
     setStatus('submitting');
     try {
-      const { error } = await supabase.functions.invoke('quote-request', {
-        body: formData,
-      });
-      if (!error) {
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/quote-request`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        }
+      );
+      if (res.ok) {
         setStatus('success');
       } else {
         setStatus('error');

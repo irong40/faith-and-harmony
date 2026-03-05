@@ -140,6 +140,39 @@ export function useMissionAuthorization(missionId: string | undefined) {
   });
 }
 
+/**
+ * Delete authorization for a mission (used when equipment is cleared).
+ */
+export function useDeleteMissionAuthorization() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (missionId: string) => {
+      if (!navigator.onLine) {
+        await addToSyncQueue({
+          action: 'delete_authorization',
+          table: 'mission_authorizations',
+          payload: { mission_id: missionId },
+          created_at: new Date().toISOString(),
+          retries: 0,
+          last_error: null,
+        });
+        return;
+      }
+
+      const { error } = await supabase
+        .from('mission_authorizations')
+        .delete()
+        .eq('mission_id', missionId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, missionId) => {
+      queryClient.invalidateQueries({ queryKey: ['mission-authorization', missionId] });
+    },
+  });
+}
+
 interface SaveAuthorizationInput {
   mission_id: string;
   airspace_class: string;

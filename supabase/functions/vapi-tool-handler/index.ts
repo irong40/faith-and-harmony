@@ -3,10 +3,12 @@
  *
  * Handles VAPI custom tool calls for the Paula AI assistants.
  * Currently supports:
- *   - lookup_customer: Look up existing customer by phone number,
- *     return their active jobs, quotes, invoices, and status.
+ *   - lookup_customer: Look up existing client by phone number,
+ *     return their active jobs, quotes, and status.
  *   - get_package_pricing: Return natural language pricing and deliverables
  *     for a given service_type so the bot can speak the answer aloud.
+ *   - check_availability: Check available dates for scheduling via the
+ *     availability-check edge function.
  *
  * VAPI sends tool-call requests as POST with:
  *   { message: { type: "tool-calls", toolCallList: [...] } }
@@ -109,6 +111,9 @@ serve(async (req) => {
       } else if (name === "get_package_pricing") {
         const result = await handleGetPackagePricing(args);
         results.push({ toolCallId: id, result });
+      } else if (name === "check_availability") {
+        const result = await handleCheckAvailability(args);
+        results.push({ toolCallId: id, result });
       } else {
         results.push({
           toolCallId: id,
@@ -135,59 +140,46 @@ async function handleLookupCustomer(
   // Search with both normalized and raw formats
   const phoneLike = normalized.slice(-10); // last 10 digits
 
-  // Look up customer by phone (partial match on last 10 digits)
-  const { data: customers } = await supabase
-    .from("customers")
-    .select("id, name, email, phone, company_name")
+  // Look up client by phone (partial match on last 10 digits)
+  const { data: clients } = await supabase
+    .from("clients")
+    .select("id, name, email, phone, company")
     .or(`phone.ilike.%${phoneLike}`)
     .limit(1);
 
-  if (!customers || customers.length === 0) {
+  if (!clients || clients.length === 0) {
     return "No existing customer found with that phone number. This appears to be a new caller.";
   }
 
-  const customer = customers[0];
-  const customerId = customer.id;
+  const client = clients[0];
+  const clientId = client.id;
 
-  // Fetch active drone jobs
+  // Fetch active drone jobs (uses client_id FK to clients table)
   const { data: jobs } = await supabase
     .from("drone_jobs")
     .select(
       "job_number, status, property_address, property_type, scheduled_date, delivered_at"
     )
-    .eq("customer_id", customerId)
+    .eq("client_id", clientId)
     .not("status", "eq", "cancelled")
     .order("created_at", { ascending: false })
     .limit(5);
 
-  // Fetch invoices
-  const { data: invoices } = await supabase
-    .from("invoices")
-    .select(
-      "invoice_number, status, total, balance_due, issue_date, due_date"
-    )
-    .eq("customer_id", customerId)
-    .order("created_at", { ascending: false })
-    .limit(5);
-
-  // Fetch service requests (active inquiries)
-  const { data: serviceRequests } = await supabase
-    .from("service_requests")
-    .select("id, project_title, status, created_at")
-    .or(
-      `client_phone.ilike.%${phoneLike},client_email.eq.${customer.email || "none"}`
-    )
-    .not("status", "in", '("closed","declined")')
+  // Fetch recent quote requests by phone match
+  const { data: quoteRequests } = await supabase
+    .from("quote_requests")
+    .select("id, job_type, status, created_at")
+    .or(`phone.ilike.%${phoneLike}`)
     .order("created_at", { ascending: false })
     .limit(5);
 
   // Build summary
   const lines: string[] = [];
   lines.push(
-    `Customer: ${customer.name}${customer.company_name ? ` (${customer.company_name})` : ""}`
+    `Customer: ${client.name}${client.company ? ` (${client.company})` : ""}`
   );
-  lines.push(`Phone: ${customer.phone || phone}`);
-  if (customer.email) lines.push(`Email: ${customer.email}`);
+  lines.push(`Phone: ${client.phone || phone}`);
+  if (client.email) lines.push(`Email: ${client.email}`);
 
   if (jobs && jobs.length > 0) {
     lines.push(`\nActive Jobs (${jobs.length}):`);
@@ -201,22 +193,11 @@ async function handleLookupCustomer(
     lines.push("\nNo active jobs.");
   }
 
-  if (invoices && invoices.length > 0) {
-    lines.push(`\nInvoices (${invoices.length}):`);
-    for (const inv of invoices) {
-      const status = inv.status.charAt(0).toUpperCase() + inv.status.slice(1);
-      lines.push(
-        `- ${inv.invoice_number}: ${status} — $${inv.total}${inv.balance_due > 0 ? ` ($${inv.balance_due} due)` : " (paid)"}`
-      );
-    }
-  } else {
-    lines.push("\nNo invoices.");
-  }
-
-  if (serviceRequests && serviceRequests.length > 0) {
-    lines.push(`\nOpen Inquiries (${serviceRequests.length}):`);
-    for (const sr of serviceRequests) {
-      lines.push(`- ${sr.project_title || "Untitled"}: ${sr.status}`);
+  if (quoteRequests && quoteRequests.length > 0) {
+    lines.push(`\nRecent Quote Requests (${quoteRequests.length}):`);
+    for (const qr of quoteRequests) {
+      const status = qr.status.charAt(0).toUpperCase() + qr.status.slice(1);
+      lines.push(`- ${qr.job_type || "General"}: ${status}`);
     }
   }
 
@@ -240,6 +221,40 @@ export function formatPriceAsWords(price: number, unit?: string): string {
   // unit arrives as "/visit" from the PACKAGES data; convert to spoken form
   const spoken = unit.replace(/^\//, "per ");
   return `${base} ${spoken}`;
+}
+
+async function handleCheckAvailability(
+  args: { start_date?: string; end_date?: string; service_type?: string }
+): Promise<string> {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  // Default to next 14 days if no dates provided
+  const today = new Date();
+  const startDate = args.start_date || today.toISOString().slice(0, 10);
+  const futureDate = new Date(today);
+  futureDate.setDate(futureDate.getDate() + 14);
+  const endDate = args.end_date || futureDate.toISOString().slice(0, 10);
+
+  const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
+  if (args.service_type) params.set("service_type", args.service_type);
+
+  const url = `${SUPABASE_URL}/functions/v1/availability-check?${params}`;
+  const resp = await fetch(url, {
+    headers: { Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` },
+  });
+
+  if (!resp.ok) {
+    return "I'm sorry, I wasn't able to check the schedule right now. Please call back or we can have someone reach out to you.";
+  }
+
+  const data = await resp.json();
+
+  if (data.count === 0) {
+    return `I don't see any open dates between ${startDate} and ${endDate}. Would you like me to check a different time range?`;
+  }
+
+  return `We have ${data.count} dates available: ${data.readable_dates}. Which date works best for you?`;
 }
 
 export async function handleGetPackagePricing(

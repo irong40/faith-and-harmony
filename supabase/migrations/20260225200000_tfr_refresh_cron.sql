@@ -10,22 +10,20 @@ ALTER TABLE public.tfr_cache
 -- Replace <service_role_key> with actual key in Supabase Dashboard secrets
 -- Note: Run this manually in SQL editor after enabling pg_cron extension
 
-/*
-SELECT cron.schedule(
-  'tfr-refresh',
-  '*/30 * * * *',
-  $$
-  SELECT net.http_post(
-    url := 'https://qjpujskwqaehxnqypxzu.supabase.co/functions/v1/tfr-refresh',
-    headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key'),
-      'Content-Type', 'application/json'
-    ),
-    body := '{}'::jsonb
-  )
-  $$
-);
-*/
+-- SELECT cron.schedule(
+--   'tfr-refresh',
+--   '*/30 * * * *',
+--   $$
+--   SELECT net.http_post(
+--     url := 'https://qjpujskwqaehxnqypxzu.supabase.co/functions/v1/tfr-refresh',
+--     headers := jsonb_build_object(
+--       'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key'),
+--       'Content-Type', 'application/json'
+--     ),
+--     body := '{}'::jsonb
+--   )
+--   $$
+-- );
 
 -- Create a tfr_refresh_log table to track refresh history
 CREATE TABLE IF NOT EXISTS public.tfr_refresh_log (

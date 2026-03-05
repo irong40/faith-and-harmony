@@ -92,3 +92,12 @@ verify_jwt = false
 
 [functions.invoice-mark-viewed]
 verify_jwt = false
+
+[functions.get-quote-by-token]
+verify_jwt = false
+
+[functions.respond-to-quote]
+verify_jwt = false
+
+[functions.quote-delivery-email]
+verify_jwt = false

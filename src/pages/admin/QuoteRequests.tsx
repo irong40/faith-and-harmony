@@ -21,7 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { RefreshCw, FileText, Inbox, Send, RotateCcw } from "lucide-react";
+import { RefreshCw, FileText, Inbox, Send, RotateCcw, Phone, Globe, PenLine } from "lucide-react";
 
 interface QuoteRequest {
   id: string;
@@ -33,6 +33,8 @@ interface QuoteRequest {
   job_type: string | null;
   description: string;
   status: string;
+  source: "web" | "voice_bot" | "manual" | null;
+  brand_slug: string | null;
 }
 
 interface Quote {
@@ -152,7 +154,7 @@ export default function QuoteRequests() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("quote_requests")
-        .select("id, name, email, phone, address, job_type, description, status, created_at")
+        .select("id, name, email, phone, address, job_type, description, status, created_at, source, brand_slug")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as QuoteRequest[];
@@ -201,7 +203,7 @@ export default function QuoteRequests() {
             <div>
               <h1 className="text-2xl font-bold">Quote Requests</h1>
               <p className="text-sm text-muted-foreground">
-                Incoming requests from sentinelaerialinspections.com
+                Incoming requests from web, voice bot, and manual entry
               </p>
             </div>
           </div>
@@ -245,6 +247,7 @@ export default function QuoteRequests() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Created</TableHead>
+                  <TableHead>Source</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Service</TableHead>
@@ -261,6 +264,21 @@ export default function QuoteRequests() {
                     <TableRow key={request.id}>
                       <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                         {format(new Date(request.created_at), "MMM d, yyyy")}
+                      </TableCell>
+                      <TableCell>
+                        {request.source === "voice_bot" ? (
+                          <Badge variant="outline" className="gap-1 text-xs">
+                            <Phone className="h-3 w-3" /> Bot
+                          </Badge>
+                        ) : request.source === "manual" ? (
+                          <Badge variant="outline" className="gap-1 text-xs">
+                            <PenLine className="h-3 w-3" /> Manual
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="gap-1 text-xs">
+                            <Globe className="h-3 w-3" /> Web
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="font-medium">{request.name}</TableCell>
                       <TableCell className="text-sm">{request.email}</TableCell>

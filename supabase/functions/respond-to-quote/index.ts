@@ -54,10 +54,10 @@ serve(async (req) => {
       );
     }
 
-    // Fetch the quote by token — only select fields needed for status guard
+    // Fetch the quote by token — include request_id for job creation
     const { data: quote, error: fetchError } = await supabase
       .from("quotes")
-      .select("id, status")
+      .select("id, status, request_id")
       .eq("acceptance_token", token)
       .maybeSingle();
 
@@ -111,8 +111,19 @@ serve(async (req) => {
       );
     }
 
-    // Trigger deposit invoice creation (fire and don't block the response)
+    // On acceptance: create drone_job + trigger deposit invoice (fire-and-forget)
     if (action === "accept") {
+      // Create drone_job from quote via DB function
+      const { data: jobResult, error: jobError } = await supabase
+        .rpc("create_drone_job_from_quote", { p_quote_id: quote.id });
+
+      if (jobError) {
+        console.error("Failed to create drone_job from quote:", jobError);
+      } else {
+        console.log(`Drone job created: ${jobResult}`);
+      }
+
+      // Trigger deposit invoice creation
       const depositUrl = `${SUPABASE_URL}/functions/v1/create-deposit-invoice`;
       fetch(depositUrl, {
         method: "POST",

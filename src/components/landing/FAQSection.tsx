@@ -6,7 +6,7 @@ export type FAQItem = {
 export const FAQ_ITEMS: FAQItem[] = [
   {
     question: "Do you need permission to fly near military bases in Hampton Roads?",
-    answer: "Yes. Every flight near Norfolk Naval Station, NAS Oceana, and Langley Air Force Base requires LAANC authorization through the FAA. Sentinel holds active LAANC authorization for controlled airspace surrounding all three installations. We submit authorization requests before every flight and keep records on file.",
+    answer: "Yes. Commercial drone flights near Norfolk Naval Station, NAS Oceana, and Langley Air Force Base require LAANC clearance through the FAA. As a Part 107 certified operator, Sentinel requests airspace clearance for each flight through the LAANC system. Approval is typically near-instant for pre-approved grid altitudes. For operations outside standard grids, we submit further coordination requests in advance.",
   },
   {
     question: "How long does it take to get edited photos after the shoot?",

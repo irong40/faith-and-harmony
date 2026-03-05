@@ -1,0 +1,29 @@
+{
+  "type": "function",
+  "function": {
+    "name": "check_availability",
+    "description": "Check which dates are open for scheduling a drone job. Call this when the caller asks about availability, wants to know when the next opening is, or wants to book a specific date. Returns available dates in the next 14 days by default.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "service_type": {
+          "type": "string",
+          "description": "The service package type if known. One of: re_basic, re_standard, re_premium, construction, commercial, inspection. Leave empty if the caller has not specified a service yet.",
+          "enum": ["re_basic", "re_standard", "re_premium", "construction", "commercial", "inspection"]
+        },
+        "start_date": {
+          "type": "string",
+          "description": "Start of the date range to check, in YYYY-MM-DD format. Use today's date if the caller wants the soonest available."
+        },
+        "end_date": {
+          "type": "string",
+          "description": "End of the date range to check, in YYYY-MM-DD format. Default to 14 days from start_date if the caller does not specify."
+        }
+      },
+      "required": ["start_date", "end_date"]
+    }
+  },
+  "server": {
+    "url": "https://qjpujskwqaehxnqypxzu.supabase.co/functions/v1/availability-check"
+  }
+}

@@ -31,16 +31,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       _user_id: userId,
       _role: "admin",
     });
-    if (!error && data) {
-      setIsAdmin(true);
-    } else {
-      setIsAdmin(false);
-    }
+    setIsAdmin(!error && !!data);
   };
 
   const checkPilotRole = async (userId: string) => {
-    // Check for pilot role using user_roles table directly
-    // Using type assertion since "pilot" role may not be in generated types yet
     const { data, error } = await supabase
       .from("user_roles")
       .select("role")
@@ -48,16 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("role", "pilot")
       .maybeSingle();
 
-    if (!error && data) {
-      setIsPilot(true);
-    } else {
-      setIsPilot(false);
-    }
+    setIsPilot(!error && !!data);
   };
 
-  const fetchPilotProfile = async (userId: string) => {
-    // Query profiles table - using type assertion since Part 107 fields 
-    // may not be in generated types until migrations are run
+  const fetchPilotProfile = async (userId: string, email?: string | null) => {
     const { data, error } = await supabase
       .from("profiles")
       .select("id, full_name, part_107_number, part_107_expiry")
@@ -67,19 +55,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!error && data) {
       setPilotProfile(data);
     } else {
-      // If profiles table doesn't have Part 107 fields yet, create a basic profile
       setPilotProfile({
         id: userId,
-        full_name: user?.email?.split("@")[0] || null,
+        full_name: email?.split("@")[0] || null,
         part_107_number: null,
         part_107_expiry: null,
       });
     }
   };
 
+  // Load all roles + profile, THEN set loading=false
+  const loadUserData = async (userId: string, email?: string | null) => {
+    await Promise.all([
+      checkAdminRole(userId),
+      checkPilotRole(userId),
+      fetchPilotProfile(userId, email),
+    ]);
+    setLoading(false);
+  };
+
   const refreshPilotProfile = async () => {
     if (user) {
-      await fetchPilotProfile(user.id);
+      await fetchPilotProfile(user.id, user.email);
     }
   };
 
@@ -90,19 +87,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
 
-        // Defer role checks with setTimeout to avoid deadlock
         if (session?.user) {
+          // Defer to avoid Supabase auth deadlock, but await all checks before clearing loading
           setTimeout(() => {
-            checkAdminRole(session.user.id);
-            checkPilotRole(session.user.id);
-            fetchPilotProfile(session.user.id);
+            loadUserData(session.user.id, session.user.email);
           }, 0);
         } else {
           setIsAdmin(false);
           setIsPilot(false);
           setPilotProfile(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
@@ -111,11 +106,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        checkAdminRole(session.user.id);
-        checkPilotRole(session.user.id);
-        fetchPilotProfile(session.user.id);
+        loadUserData(session.user.id, session.user.email);
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();

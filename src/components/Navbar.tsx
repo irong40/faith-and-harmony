@@ -60,12 +60,12 @@ export default function Navbar() {
                 </Link>
               </>
             )}
-            {isPilot && (
+            {(isPilot || isAdmin) && (
               <>
                 <Link to="/pilot">
                   <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground">
                     <Plane className="h-4 w-4" />
-                    Missions
+                    {isAdmin ? "Pilot Portal" : "Missions"}
                   </Button>
                 </Link>
                 <Link to="/pilot/fleet">
@@ -120,7 +120,7 @@ export default function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                 )}
-                {isPilot && (
+                {(isPilot || isAdmin) && (
                   <DropdownMenuItem asChild>
                     <Link to="/pilot" className="flex items-center gap-2">
                       <Plane className="h-4 w-4" />
@@ -176,12 +176,12 @@ export default function Navbar() {
                     <DropdownMenuSeparator />
                   </>
                 )}
-                {isPilot && (
+                {(isPilot || isAdmin) && (
                   <>
                     <DropdownMenuItem asChild>
                       <Link to="/pilot" className="flex items-center gap-2">
                         <Plane className="h-4 w-4" />
-                        Missions
+                        {isAdmin ? "Pilot Portal" : "Missions"}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>

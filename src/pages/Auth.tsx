@@ -316,12 +316,12 @@ const Auth = () => {
             </button>
           )}
           
-          {(view === 'login' || view === 'signup') && (
+          {view === 'signup' && (
             <button
-              onClick={() => setView(view === 'login' ? 'signup' : 'login')}
+              onClick={() => setView('login')}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              {view === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+              Already have an account? Sign in
             </button>
           )}
         </div>

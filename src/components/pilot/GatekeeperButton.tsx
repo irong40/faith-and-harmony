@@ -69,9 +69,17 @@ export default function GatekeeperButton({
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
                         onClick={onLogFlight}
-                        className="bg-green-600 hover:bg-green-700"
+                        disabled={loading}
+                        className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
                     >
-                        Confirm & Log Flight
+                        {loading ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Logging...
+                            </>
+                        ) : (
+                            "Confirm & Log Flight"
+                        )}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

@@ -21,7 +21,7 @@ export default function MilitaryAirspace() {
           </div>
         </div>
         <p className="lp-airspace-cta-text">
-          Dr. Pierce flew missions as an Army Captain for nine years. The planning discipline that comes with that background is not something you learn from a weekend certification course. Your property gets the same level of mission analysis that a military operation would receive.
+          Dr. Pierce served as an Army Captain for nine years — Field Artillery officer and Information Systems Manager. The operational planning discipline from that background is not something you pick up from a weekend certification course. Your property gets the same level of detail and preparation that a military operation would receive.
         </p>
       </div>
     </section>

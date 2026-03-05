@@ -4,7 +4,7 @@ import { MapPin, Calendar, Cloud, CloudOff, CloudUpload, AlertTriangle } from "l
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 
-type MissionStatus = "scheduled" | "in_progress" | "complete" | "canceled";
+type MissionStatus = "scheduled" | "captured" | "complete" | "canceled";
 type SyncStatus = "synced" | "pending" | "conflict" | "offline";
 
 interface MissionCardProps {
@@ -21,7 +21,7 @@ interface MissionCardProps {
 
 const STATUS_CONFIG: Record<MissionStatus, { label: string; color: string }> = {
     scheduled: { label: "SCHEDULED", color: "bg-blue-500" },
-    in_progress: { label: "IN PROGRESS", color: "bg-orange-500" },
+    captured: { label: "IN PROGRESS", color: "bg-orange-500" },
     complete: { label: "COMPLETE", color: "bg-green-500" },
     canceled: { label: "CANCELED", color: "bg-gray-500" },
 };
