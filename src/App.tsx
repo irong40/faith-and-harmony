@@ -70,13 +70,21 @@ const PageSpinner = () => (
   </div>
 );
 
+const TRESTLE_HOST = 'trestle.sentinelaerialinspections.com';
+
 // Role-based redirect — logged-in users go to dashboard, guests see landing page
 function RootRedirect() {
   const { user, isAdmin, isPilot, loading } = useAuth();
   if (loading) return <PageSpinner />;
   if (!user) return <LandingPage />;
   if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
-  if (isPilot) return <Navigate to="/pilot" replace />;
+  if (isPilot) {
+    if (window.location.hostname !== TRESTLE_HOST) {
+      window.location.href = `https://${TRESTLE_HOST}/pilot`;
+      return <PageSpinner />;
+    }
+    return <Navigate to="/pilot" replace />;
+  }
   return <Navigate to="/auth" replace />;
 }
 
