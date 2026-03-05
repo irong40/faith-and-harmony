@@ -69,31 +69,31 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BILL-01 | — | Pending |
-| BILL-02 | — | Pending |
-| BILL-03 | — | Pending |
-| BILL-04 | — | Pending |
-| BILL-05 | — | Pending |
-| BILL-06 | — | Pending |
-| BILL-07 | — | Pending |
-| BILL-08 | — | Pending |
-| EQUIP-01 | — | Pending |
-| EQUIP-02 | — | Pending |
-| EQUIP-03 | — | Pending |
-| SYNC-01 | — | Pending |
-| SYNC-02 | — | Pending |
-| SYNC-03 | — | Pending |
-| SYNC-04 | — | Pending |
-| DEPLOY-01 | — | Pending |
-| DEPLOY-02 | — | Pending |
-| DEPLOY-03 | — | Pending |
-| DEPLOY-04 | — | Pending |
+| BILL-01 | Phase 7 | Pending |
+| BILL-02 | Phase 9 | Pending |
+| BILL-03 | Phase 8 | Pending |
+| BILL-04 | Phase 9 | Pending |
+| BILL-05 | Phase 9 | Pending |
+| BILL-06 | Phase 9 | Pending |
+| BILL-07 | Phase 9 | Pending |
+| BILL-08 | Phase 9 | Pending |
+| EQUIP-01 | Phase 7 | Pending |
+| EQUIP-02 | Phase 7 | Pending |
+| EQUIP-03 | Phase 7 | Pending |
+| DEPLOY-01 | Phase 7 | Pending |
+| DEPLOY-02 | Phase 11 | Pending |
+| DEPLOY-03 | Phase 11 | Pending |
+| DEPLOY-04 | Phase 11 | Pending |
+| SYNC-01 | Phase 10 | Pending |
+| SYNC-02 | Phase 10 | Pending |
+| SYNC-03 | Phase 10 | Pending |
+| SYNC-04 | Phase 10 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 19 total
-- Mapped to phases: 0
-- Unmapped: 19
+- Mapped to phases: 19
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-05*
-*Last updated: 2026-03-05 after initial definition*
+*Last updated: 2026-03-05 after roadmap creation*

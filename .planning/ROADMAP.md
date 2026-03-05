@@ -1,134 +1,108 @@
-# Roadmap: v1.1 Voice Bot + Automated Intake Pipeline
+# Roadmap: Faith & Harmony Operations Platform
 
-## Overview
+## Milestones
 
-The landing page converts visitors to quote requests. This milestone adds a second intake channel: a 757 phone number answered by a Vapi voice bot that qualifies callers, quotes prices, and creates requests automatically. Phase 1 builds the database and API foundation. Phase 2 configures the Vapi assistant with a system prompt trained on Sentinel packages and service area. Phase 3 connects Vapi to the app through n8n middleware. Phase 4 adds scheduling so the bot can offer available dates. Phase 5 integrates weather forecasting to flag unsafe flight conditions. Phase 6 validates the end-to-end flow and handles edge cases.
+- v1.0 Landing Page (Phases 1-5) shipped 2026-02
+- v1.1 Voice Bot + Automated Intake Pipeline (Phases 1-6) shipped 2026-03-05
+- v2.0 Billing, Equipment, and Production Readiness (Phases 7-11) in progress
 
 ## Phases
 
-**Phase Numbering:**
-- Integer phases (1, 2, 3): Planned milestone work
-- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+<details>
+<summary>v1.0 Landing Page (Phases 1-5) SHIPPED 2026-02</summary>
 
-Decimal phases appear between their surrounding integers in numeric order.
+See v1.0 roadmap archive.
 
-- [x] **Phase 1: Intake API and Lead Tracking** - Create leads and call_logs tables, build intake edge function that receives structured call data and creates client + request, build pricing lookup edge function for mid-call queries
-- [x] **Phase 2: Vapi Voice Bot** - Configure Vapi assistant with ElevenLabs TTS, author system prompt covering packages and service area and qualification flow, define tool schemas for mid-call API queries, provision 757 number (completed 2026-03-03)
-- [x] **Phase 3: n8n Vapi Pipeline** - Build n8n workflow receiving Vapi end-of-call webhook, transform payload to intake API format, wire successful intakes into existing request-to-quote flow, add error notifications (completed 2026-03-05)
-- [x] **Phase 4: Scheduling and Availability** - Create availability_slots and blackout_dates tables, build admin scheduling UI, build availability check edge function, connect bot to offer dates during calls (completed 2026-03-03)
-- [x] **Phase 5: Weather Operations** - Integrate NWS weather API, validate flight parameters against forecasts, automate 48-hour pre-flight checks for scheduled jobs, add admin weather conditions view (completed 2026-03-05)
-- [x] **Phase 6: Integration and Edge Cases** - Validate end-to-end call-to-invoice flow, implement edge case routing (out of area, complex jobs, payment questions), build admin call log and lead management views (completed 2026-03-05)
+</details>
+
+<details>
+<summary>v1.1 Voice Bot + Automated Intake Pipeline (Phases 1-6) SHIPPED 2026-03-05</summary>
+
+- [x] **Phase 1: Intake API and Lead Tracking** - leads/call_logs tables, intake and pricing edge functions
+- [x] **Phase 2: Vapi Voice Bot** - ElevenLabs TTS, system prompt, tool schemas, 757 number
+- [x] **Phase 3: n8n Vapi Pipeline** - End-of-call webhook, n8n workflow, intake automation
+- [x] **Phase 4: Scheduling and Availability** - Availability slots, blackout dates, admin calendar, bot integration
+- [x] **Phase 5: Weather Operations** - NWS forecast, flight parameter checks, admin weather view
+- [x] **Phase 6: Integration and Edge Cases** - End-to-end validation, call log and leads pages
+
+</details>
+
+### v2.0 Billing, Equipment, and Production Readiness
+
+**Milestone Goal:** Close all remaining gaps to make the platform production ready with automated billing, complete equipment tracking, reliable offline operations, and standalone Trestle deployment.
+
+- [ ] **Phase 7: Foundation and Quick Wins** - PWA icons, accessories admin page, deposit amount verification
+- [ ] **Phase 8: Watermark Pipeline** - Watermarked preview generation and separate storage buckets
+- [ ] **Phase 9: Billing Lifecycle** - Balance invoice, balance due email, payment webhook, receipt, delivery gate, admin payments panel
+- [ ] **Phase 10: Offline Sync Hardening** - Dead letter store, persistent warnings, end-to-end flight log sync, try/catch fallback
+- [ ] **Phase 11: Standalone Deployment** - Vercel subdomain, Supabase auth redirects, Square production cutover
 
 ## Phase Details
 
-### Phase 1: Intake API and Lead Tracking
-**Goal**: The system has an API endpoint that can receive structured call data, create or match a client, and create a quote request that feeds into the existing workflow
-**Depends on**: Nothing (foundation phase)
-**Requirements**: INTAKE-01, INTAKE-02, INTAKE-03, INTAKE-04
+### Phase 7: Foundation and Quick Wins
+**Goal**: Admin can manage all equipment accessories and the PWA uses production branding, establishing the foundation for remaining v2.0 work
+**Depends on**: Nothing (independent of billing pipeline)
+**Requirements**: DEPLOY-01, EQUIP-01, EQUIP-02, EQUIP-03, BILL-01
 **Success Criteria** (what must be TRUE):
-  1. A POST to the intake edge function with caller name, phone, email, service type, and job description creates a row in quote_requests and a row in leads
-  2. A POST with a phone number matching an existing client links the lead to that client instead of creating a duplicate
-  3. A GET to the pricing edge function with a service type returns the correct package name, price, and deliverables list
-  4. The call_logs table stores call ID, transcript text, duration, and outcome for every processed call
-  5. A lead created via the intake endpoint appears in the existing admin Quote Requests page
-**Plans**: 3 plans
+  1. Admin can create an accessory with type, name, serial number, and status, then see it listed on the accessories page
+  2. Admin can edit and delete accessories, with deletion blocked when the accessory is referenced by a mission
+  3. Admin can assign one or more compatible aircraft to an accessory, and mission equipment selection filters accessories by the selected aircraft
+  4. The PWA install prompt on Android and iOS shows the Sentinel branded icon instead of an SVG placeholder
+  5. Quote creation sets the deposit amount to exactly 50% of the package price
+**Plans**: TBD
 
-Plans:
-- [x] 01-01-PLAN.md — Database migrations (leads table, vapi_call_logs enhancements, quote_requests source tracking)
-- [x] 01-02-PLAN.md — Pricing lookup edge function (static package data for mid-call queries)
-- [x] 01-03-PLAN.md — Intake lead edge function (client upsert, quote request, lead creation)
-
-### Phase 2: Vapi Voice Bot
-**Goal**: A caller dialing the 757 number reaches a voice bot that sounds natural, knows Sentinel packages and service area, qualifies the caller, and can look up pricing mid-conversation
-**Depends on**: Phase 1 (bot needs pricing API to query)
-**Requirements**: VBOT-01, VBOT-02, VBOT-03, VBOT-04, VBOT-05, VBOT-06, VBOT-07
+### Phase 8: Watermark Pipeline
+**Goal**: The processing pipeline generates watermarked preview thumbnails stored separately from originals, ready to be included in balance due emails
+**Depends on**: Phase 7 (deposit amount must be correct before billing flow begins)
+**Requirements**: BILL-03
 **Success Criteria** (what must be TRUE):
-  1. Calling the 757 number connects to the Vapi assistant and the caller hears an ElevenLabs voice greeting
-  2. The system prompt file in the repo contains all 6 packages with correct pricing from PROJECT.md
-  3. The bot asks qualifying questions: what service, where is the property, when do you need it, what type of property
-  4. When asked about a service price mid-call, the bot queries the pricing API and responds with the correct amount
-  5. When the caller describes a job outside service area or over $1200 commercial, the bot offers to transfer to Iron or take a callback number
-**Plans**: 3 plans
-**External prerequisites**: Vapi account created, ElevenLabs API key added to Vapi, 757 number provisioned in Vapi dashboard
+  1. After job processing completes, 2 to 3 watermarked preview thumbnails exist in a separate storage bucket (or prefix) from the full resolution originals
+  2. Watermarked preview URLs are accessible without authentication while original file URLs require signed access
+  3. A watermark overlay is visible on each preview thumbnail and cannot be cropped out to recover the original
+**Plans**: TBD
 
-Plans:
-- [x] 02-01-PLAN.md — System prompt and tool definition JSON (Paula voice bot prompt, pricing and transfer tool schemas)
-- [x] 02-02-PLAN.md — vapi-tool-handler pricing handler (get_package_pricing branch, natural language response, deploy)
-- [x] 02-03-PLAN.md — Dashboard setup guide and verification (assistant config, setup instructions, 757 number provisioning, live test)
-
-### Phase 3: n8n Vapi Pipeline
-**Goal**: When a Vapi call ends, n8n automatically processes the call data and creates a request in the system without manual intervention
-**Depends on**: Phase 1 (intake API), Phase 2 (Vapi sends webhooks)
-**Requirements**: INTAKE-05, MWARE-01, MWARE-02, MWARE-03, MWARE-04
+### Phase 9: Billing Lifecycle
+**Goal**: The complete billing flow works end-to-end from balance invoice through payment to automatic receipt and deliverable release
+**Depends on**: Phase 8 (balance due email needs watermarked preview URLs)
+**Requirements**: BILL-02, BILL-04, BILL-05, BILL-06, BILL-07, BILL-08
 **Success Criteria** (what must be TRUE):
-  1. Vapi end-of-call webhook arrives at an n8n webhook node and the workflow executes
-  2. The n8n workflow extracts caller name, phone, service type, job description, and preferred date from the Vapi payload
-  3. The workflow calls the intake edge function and receives a success response with the created request ID
-  4. A failed intake (API error or missing required fields) triggers an admin notification
-  5. A successfully created request shows the correct status to enter the quote workflow
-**Plans**: 2 plans
+  1. Admin triggers balance invoice creation from the job detail page, and the Supabase payments row is created before the Square invoice API call (preventing orphaned invoices)
+  2. Client receives a balance due email with 2 to 3 watermarked preview thumbnails and a Square payment link
+  3. When the client pays the balance via Square, the webhook processes the payment and the job status updates to paid within seconds
+  4. Client receives a receipt email after balance payment clears, and full resolution deliverables are released automatically (download links sent)
+  5. Admin payments panel shows deposit and balance status per job with paid, pending, and overdue states
+**Plans**: TBD
 
-Plans:
-- [x] 03-01-PLAN.md — n8n workflow JSON and Vapi analysisPlan configuration
-- [x] 03-02-PLAN.md — Import workflow, configure credentials, validate pipeline
-
-### Phase 4: Scheduling and Availability
-**Goal**: The bot can check and offer available dates during calls, and the admin manages availability through a calendar interface
-**Depends on**: Phase 1 (database foundation)
-**Requirements**: SCHED-01, SCHED-02, SCHED-03, SCHED-04, SCHED-05
+### Phase 10: Offline Sync Hardening
+**Goal**: Offline flight log data survives sync failures and the pilot has clear visibility into sync status
+**Depends on**: Nothing (independent of billing pipeline)
+**Requirements**: SYNC-01, SYNC-02, SYNC-03, SYNC-04
 **Success Criteria** (what must be TRUE):
-  1. The availability_slots table has default weekly slots (e.g., Monday through Friday 8am to 5pm) that the admin can override per date
-  2. The blackout_dates table allows blocking specific dates with a reason (weather, holiday, maintenance)
-  3. The admin scheduling page shows a week view with current availability and allows adding or removing slots and blackout dates
-  4. A GET to the availability edge function with a service type and date range returns only open dates that are not blacked out
-  5. The Vapi bot can call the availability endpoint mid-conversation and tell the caller which dates are open
-**Plans**: 3 plans
+  1. A flight log created while offline appears in IndexedDB and auto-syncs to Supabase when connectivity returns
+  2. After max retries, failed sync items move to a dead letter store instead of being silently deleted
+  3. Pilot sees a persistent warning banner when dead letter items exist, with the count of stuck items
+  4. Sync engine uses try/catch with actual network requests instead of navigator.onLine checks to detect connectivity
+**Plans**: TBD
 
-Plans:
-- [x] 04-01-PLAN.md — Database migrations and availability-check edge function (three tables, RLS, seeded weekday slots, GET endpoint)
-- [x] 04-02-PLAN.md — Admin scheduling page (calendar with modifiers, weekly slots, blackout management, nav wiring)
-- [x] 04-03-PLAN.md — Vapi check_availability tool definition and system prompt additions
-
-### Phase 5: Weather Operations
-**Goal**: The system checks weather forecasts against flight parameters and alerts the admin when scheduled jobs face unsafe conditions
-**Depends on**: Phase 4 (needs scheduled jobs to check against)
-**Requirements**: WTHR-01, WTHR-02, WTHR-03, WTHR-04
+### Phase 11: Standalone Deployment
+**Goal**: Trestle is deployed as a standalone app at trestle.sentinelaerial.com with production payment processing
+**Depends on**: Phase 9 (billing must work before Square production cutover), Phase 10 (offline sync must be reliable before pilot deployment)
+**Requirements**: DEPLOY-02, DEPLOY-03, DEPLOY-04
 **Success Criteria** (what must be TRUE):
-  1. The system fetches NWS forecast data for the Hampton Roads area (Norfolk station) and parses wind speed, precipitation probability, visibility, and cloud ceiling
-  2. Flight parameters are configurable: max sustained wind, max gust, max precipitation probability, min visibility, min cloud ceiling
-  3. A scheduled check (n8n cron or edge function) runs daily and flags any job in the next 48 hours with conditions outside safe parameters
-  4. The admin weather view shows current conditions and a 48-hour forecast with pass/fail indicators against flight parameters
-**Plans**: 2 plans
-
-Plans:
-- [x] 05-01-PLAN.md — NWS weather pipeline (forecast cache table, weather-forecast-fetch edge function, pg_cron schedule, drone_jobs weather flagging)
-- [x] 05-02-PLAN.md — Admin weather operations page (48-hour forecast grid, flagged jobs, manual refresh)
-
-### Phase 6: Integration and Edge Cases
-**Goal**: The complete pipeline works end-to-end and handles real-world edge cases gracefully
-**Depends on**: All previous phases
-**Requirements**: INTG-01, INTG-02, INTG-03, INTG-04
-**Success Criteria** (what must be TRUE):
-  1. A test call through the full pipeline (dial 757 number, talk to bot, hang up) results in a request visible in admin within 60 seconds
-  2. An out-of-service-area caller receives a polite decline with a suggestion to search for local providers
-  3. The admin call log page shows recent calls with: timestamp, caller name, duration, outcome (qualified, declined, transferred), and a link to the transcript
-  4. The admin leads page shows bot-sourced leads with qualification status and whether they converted to a quote
-**Plans**: 2 plans
-
-Plans:
-- [x] 06-01-PLAN.md — Admin call log and leads pages (RLS migration, CallLogs page, Leads page, nav and route wiring)
-- [x] 06-02-PLAN.md — End-to-end pipeline validation and edge case verification (system check, live test calls)
+  1. trestle.sentinelaerial.com loads the pilot portal PWA and is installable on mobile devices
+  2. Login at trestle.sentinelaerial.com works correctly with Supabase auth redirect URLs configured for the subdomain
+  3. Square production webhook is registered and processes real payments (sandbox data archived, production environment variables set)
+**Plans**: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 > 2 > 3 > 4 > 5 > 6
+Phases 7 and 10 are independent and can run in parallel. Phase 8 depends on 7. Phase 9 depends on 8. Phase 11 depends on 9 and 10.
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Intake API and Lead Tracking | 3/3 | Complete | 2026-03-03 |
-| 2. Vapi Voice Bot | 3/3 | Complete   | 2026-03-03 |
-| 3. n8n Vapi Pipeline | 2/2 | Complete    | 2026-03-05 |
-| 4. Scheduling and Availability | 3/3 | Complete | 2026-03-03 |
-| 5. Weather Operations | 2/2 | Complete    | 2026-03-05 |
-| 6. Integration and Edge Cases | 2/2 | Complete    | 2026-03-05 |
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 7. Foundation and Quick Wins | v2.0 | 0/? | Not started | - |
+| 8. Watermark Pipeline | v2.0 | 0/? | Not started | - |
+| 9. Billing Lifecycle | v2.0 | 0/? | Not started | - |
+| 10. Offline Sync Hardening | v2.0 | 0/? | Not started | - |
+| 11. Standalone Deployment | v2.0 | 0/? | Not started | - |
