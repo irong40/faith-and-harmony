@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Vapi Voice Bot** - Configure Vapi assistant with ElevenLabs TTS, author system prompt covering packages and service area and qualification flow, define tool schemas for mid-call API queries, provision 757 number (completed 2026-03-03)
 - [ ] **Phase 3: n8n Vapi Pipeline** - Build n8n workflow receiving Vapi end-of-call webhook, transform payload to intake API format, wire successful intakes into existing request-to-quote flow, add error notifications
 - [x] **Phase 4: Scheduling and Availability** - Create availability_slots and blackout_dates tables, build admin scheduling UI, build availability check edge function, connect bot to offer dates during calls (completed 2026-03-03)
-- [ ] **Phase 5: Weather Operations** - Integrate NWS weather API, validate flight parameters against forecasts, automate 48-hour pre-flight checks for scheduled jobs, add admin weather conditions view
+- [x] **Phase 5: Weather Operations** - Integrate NWS weather API, validate flight parameters against forecasts, automate 48-hour pre-flight checks for scheduled jobs, add admin weather conditions view (completed 2026-03-05)
 - [ ] **Phase 6: Integration and Edge Cases** - Validate end-to-end call-to-invoice flow, implement edge case routing (out of area, complex jobs, payment questions), build admin call log and lead management views
 
 ## Phase Details
@@ -101,8 +101,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — NWS weather pipeline (forecast cache table, weather-forecast-fetch edge function, pg_cron schedule, drone_jobs weather flagging)
-- [ ] 05-02-PLAN.md — Admin weather operations page (48-hour forecast grid, flagged jobs, manual refresh)
+- [x] 05-01-PLAN.md — NWS weather pipeline (forecast cache table, weather-forecast-fetch edge function, pg_cron schedule, drone_jobs weather flagging)
+- [x] 05-02-PLAN.md — Admin weather operations page (48-hour forecast grid, flagged jobs, manual refresh)
 
 ### Phase 6: Integration and Edge Cases
 **Goal**: The complete pipeline works end-to-end and handles real-world edge cases gracefully
@@ -130,5 +130,5 @@ Phases execute in numeric order: 1 > 2 > 3 > 4 > 5 > 6
 | 2. Vapi Voice Bot | 3/3 | Complete   | 2026-03-03 |
 | 3. n8n Vapi Pipeline | 1/2 | In progress | — |
 | 4. Scheduling and Availability | 3/3 | Complete | 2026-03-03 |
-| 5. Weather Operations | 0/2 | Not started | — |
+| 5. Weather Operations | 2/2 | Complete | 2026-03-05 |
 | 6. Integration and Edge Cases | 0/2 | Not started | — |

@@ -9,14 +9,14 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 
 ## Current Position
 
-Phase: 5 of 6 (in progress), Plan 05-01 COMPLETE, Plan 05-02 next
-Plan: 05-01 committed (weather forecast cache + edge function). Ready for 05-02 admin weather view.
-Status: Phases 1, 2, 4 complete. Phase 3 in progress (03-01 done). Phase 5 in progress (05-01 done). Phase 6 depends on all.
-Last activity: 2026-03-05 — 05-01 execution complete, weather pipeline artifacts verified and committed.
+Phase: 5 of 6 COMPLETE, Plan 05-02 COMPLETE
+Plan: 05-02 committed (admin weather dashboard). Phase 5 fully done (05-01 + 05-02).
+Status: Phases 1, 2, 4, 5 complete. Phase 3 in progress (03-01 done). Phase 6 depends on all.
+Last activity: 2026-03-05 — 05-02 execution complete, weather operations admin dashboard committed.
 
 ## Progress
 
-[████████░░] 73% (11/15 plans executed, 4 remaining across 3 phases)
+[█████████░] 80% (12/15 plans executed, 3 remaining across 2 phases)
 
 ## Accumulated Context
 
@@ -86,6 +86,11 @@ All 5 phases shipped. Landing page live at sentinelaerial domain. Phase artifact
 - evaluateWeather logic ported inline into Deno edge function (cannot resolve @/ path aliases)
 - Null ceilingHeight preserved as null (unlimited ceiling) not zero in weather evaluation
 
+### Decisions (05-02)
+
+- Used `as never` cast on weather_forecast_cache table query (generated Supabase types not yet regenerated for new table)
+- Weather nav item placed first in Operations category so Iron checks conditions before scheduling
+
 ### Blockers/Concerns
 
 - Phase 3 Plan 03-02: wf5 needs import into n8n, activation, and test with a real Vapi call
@@ -97,6 +102,6 @@ All 5 phases shipped. Landing page live at sentinelaerial domain. Phase artifact
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 05-01-PLAN.md. Weather forecast pipeline (2 migrations + edge function) verified and committed.
+Stopped at: Completed 05-02-PLAN.md. Phase 5 weather operations fully done. Admin dashboard committed.
 Resume file: None
-Resume signal: Run 05-02 (admin weather dashboard view) or 03-02 (n8n import and test)
+Resume signal: Run 03-02 (n8n workflow import and test) or 06-01 (integration testing)
