@@ -29,6 +29,7 @@ import {
   Satellite,
   CalendarDays,
   Cloud,
+  Phone,
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -67,6 +68,8 @@ const navCategories: NavCategory[] = [
     icon: FileText,
     items: [
       { href: "/admin/quote-requests", label: "Quote Requests", icon: Inbox },
+      { href: "/admin/call-logs", label: "Call Logs", icon: Phone },
+      { href: "/admin/leads", label: "Leads", icon: Target },
     ],
   },
   {
