@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { addToSyncQueue } from "@/lib/sync/db";
+import { processQueue } from "@/lib/sync/sync-engine";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +30,7 @@ import { useActiveAircraft, useActiveControllers } from "@/hooks/useFleet";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
     scheduled: { label: "SCHEDULED", color: "bg-blue-500" },
-    in_progress: { label: "IN PROGRESS", color: "bg-orange-500" },
+    captured: { label: "IN PROGRESS", color: "bg-orange-500" },
     complete: { label: "COMPLETE", color: "bg-green-500" },
     canceled: { label: "CANCELED", color: "bg-gray-500" },
 };
@@ -155,38 +155,26 @@ export default function PilotMissionDetail() {
                 device_id: deviceId,
             };
 
-            if (!navigator.onLine) {
-                // Queue both operations for later sync
-                await addToSyncQueue({
-                    action: 'insert_flight_log',
-                    table: 'flight_logs',
-                    payload: flightLogPayload as unknown as Record<string, unknown>,
-                    created_at: new Date().toISOString(),
-                    retries: 0,
-                    last_error: null,
-                });
-                await addToSyncQueue({
-                    action: 'update_mission_status',
-                    table: 'drone_jobs',
-                    payload: { id: mission.id, status: 'complete' },
-                    created_at: new Date().toISOString(),
-                    retries: 0,
-                    last_error: null,
-                });
-            } else {
-                const { error: logError } = await supabase
-                    .from("flight_logs")
-                    .insert(flightLogPayload);
+            // Always queue to IndexedDB first, then trigger sync
+            await addToSyncQueue({
+                action: 'insert_flight_log',
+                table: 'flight_logs',
+                payload: flightLogPayload as unknown as Record<string, unknown>,
+                created_at: new Date().toISOString(),
+                retries: 0,
+                last_error: null,
+            });
+            await addToSyncQueue({
+                action: 'update_mission_status',
+                table: 'drone_jobs',
+                payload: { id: mission.id, status: 'complete' },
+                created_at: new Date().toISOString(),
+                retries: 0,
+                last_error: null,
+            });
 
-                if (logError) throw logError;
-
-                const { error: updateError } = await supabase
-                    .from("drone_jobs")
-                    .update({ status: "complete" })
-                    .eq("id", mission.id);
-
-                if (updateError) throw updateError;
-            }
+            // Fire and forget: mutex prevents conflicts, probe checks connectivity
+            processQueue();
 
             localStorage.removeItem(`trestle_checklist_${mission.id}`);
 
@@ -195,8 +183,8 @@ export default function PilotMissionDetail() {
             }
 
             toast({
-                title: navigator.onLine ? "Flight logged successfully" : "Flight saved offline",
-                description: navigator.onLine ? "Mission marked as complete" : "Will sync when back online",
+                title: "Flight logged",
+                description: "Syncing to server...",
             });
 
             navigate("/pilot");
@@ -464,24 +452,26 @@ export default function PilotMissionDetail() {
                 <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t">
                     <div className="container mx-auto max-w-2xl space-y-2">
                         {/* Weather freshness warning at final gate */}
-                        {hasWeather && isWeatherStaleAtGate && (
-                            <Alert variant="destructive" className="py-2">
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle className="text-sm">Weather Stale</AlertTitle>
-                                <AlertDescription className="text-xs">
-                                    Refresh weather in Pre-Flight before logging flight.
-                                </AlertDescription>
-                            </Alert>
-                        )}
-                        {!hasWeather && checklistComplete && (
-                            <Alert className="py-2">
-                                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                                <AlertTitle className="text-sm">Weather Required</AlertTitle>
-                                <AlertDescription className="text-xs">
-                                    Complete weather briefing in Pre-Flight section above.
-                                </AlertDescription>
-                            </Alert>
-                        )}
+                        <div aria-live="polite" aria-atomic="true">
+                            {hasWeather && isWeatherStaleAtGate && (
+                                <Alert variant="destructive" className="py-2">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <AlertTitle className="text-sm">Weather Stale</AlertTitle>
+                                    <AlertDescription className="text-xs">
+                                        Refresh weather in Pre-Flight before logging flight.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                            {!hasWeather && checklistComplete && (
+                                <Alert className="py-2">
+                                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                    <AlertTitle className="text-sm">Weather Required</AlertTitle>
+                                    <AlertDescription className="text-xs">
+                                        Complete weather briefing in Pre-Flight section above.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                        </div>
                         <GatekeeperButton
                             enabled={checklistComplete && canLogFlights && !isWeatherStaleAtGate}
                             loading={logging}

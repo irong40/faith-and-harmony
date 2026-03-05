@@ -8,25 +8,32 @@ import {
   pullFleet,
 } from '@/lib/sync/sync-engine';
 import { addToSyncQueue, getSyncQueue } from '@/lib/sync/db';
+import { isNetworkAvailable } from '@/lib/sync/network-probe';
 import type { SyncAction, SyncQueueItem } from '@/lib/sync/db';
 import type { SyncStatus } from '@/lib/sync/sync-engine';
 
 export function useOfflineSync(pilotId?: string) {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [pendingCount, setPendingCount] = useState(0);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOnline, setIsOnline] = useState(true);
 
+  // Network availability via probe, with browser events as recheck hints
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => {
-      setIsOnline(false);
-      setSyncStatus('offline');
+    let cancelled = false;
+    const checkNetwork = async () => {
+      const available = await isNetworkAvailable();
+      if (!cancelled) setIsOnline(available);
     };
+    checkNetwork();
+
+    const handleOnline = () => { checkNetwork(); };
+    const handleOffline = () => { setIsOnline(false); };
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
     return () => {
+      cancelled = true;
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
@@ -66,15 +73,11 @@ export function useOfflineSync(pilotId?: string) {
     await addToSyncQueue(item);
     setPendingCount(prev => prev + 1);
 
-    // Try immediate sync if online
-    if (navigator.onLine) {
-      processQueue();
-    }
+    // Fire and forget: engine checks connectivity via probe
+    processQueue();
   }, []);
 
   const syncNow = useCallback(async () => {
-    if (!navigator.onLine) return;
-
     setSyncStatus('syncing');
 
     try {
