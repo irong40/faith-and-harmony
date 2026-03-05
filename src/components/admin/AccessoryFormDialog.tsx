@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog,
@@ -14,6 +15,7 @@ import {
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateAccessory, useUpdateAccessory } from '@/hooks/useFleetMutations';
+import { useAllAircraft } from '@/hooks/useFleet';
 import type { Accessory } from '@/types/fleet';
 
 interface AccessoryFormDialogProps {
@@ -33,17 +35,28 @@ const ACCESSORY_TYPES = [
   { value: 'other', label: 'Other' },
 ];
 
+interface FormState {
+  name: string;
+  type: string;
+  serial_number: string;
+  compatible_aircraft: string[]; // string[] not comma-separated string
+  status: string;
+  purchase_date: string;
+  notes: string;
+}
+
 export default function AccessoryFormDialog({ open, onOpenChange, accessory }: AccessoryFormDialogProps) {
   const { toast } = useToast();
   const createMutation = useCreateAccessory();
   const updateMutation = useUpdateAccessory();
+  const { data: aircraft, isLoading: aircraftLoading } = useAllAircraft();
   const isEdit = !!accessory;
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormState>({
     name: '',
     type: 'other',
     serial_number: '',
-    compatible_aircraft: '' as string,
+    compatible_aircraft: [] as string[],
     status: 'active',
     purchase_date: '',
     notes: '',
@@ -55,7 +68,7 @@ export default function AccessoryFormDialog({ open, onOpenChange, accessory }: A
         name: accessory.name || '',
         type: accessory.type || 'other',
         serial_number: accessory.serial_number || '',
-        compatible_aircraft: accessory.compatible_aircraft?.join(', ') || '',
+        compatible_aircraft: accessory.compatible_aircraft || [],
         status: accessory.status || 'active',
         purchase_date: '',
         notes: accessory.notes || '',
@@ -65,7 +78,7 @@ export default function AccessoryFormDialog({ open, onOpenChange, accessory }: A
         name: '',
         type: 'other',
         serial_number: '',
-        compatible_aircraft: '',
+        compatible_aircraft: [],
         status: 'active',
         purchase_date: '',
         notes: '',
@@ -73,21 +86,27 @@ export default function AccessoryFormDialog({ open, onOpenChange, accessory }: A
     }
   }, [accessory, open]);
 
+  const toggleAircraft = (model: string) => {
+    setForm(f => {
+      const current = f.compatible_aircraft;
+      const next = current.includes(model)
+        ? current.filter(m => m !== model)
+        : [...current, model];
+      return { ...f, compatible_aircraft: next };
+    });
+  };
+
   const handleSubmit = async () => {
     if (!form.name.trim()) {
       toast({ title: 'Name is required', variant: 'destructive' });
       return;
     }
 
-    const compatibleList = typeof form.compatible_aircraft === 'string'
-      ? form.compatible_aircraft.split(',').map(s => s.trim()).filter(Boolean)
-      : form.compatible_aircraft;
-
     const payload = {
       name: form.name,
       type: form.type,
       serial_number: form.serial_number || null,
-      compatible_aircraft: compatibleList.length > 0 ? compatibleList : null,
+      compatible_aircraft: form.compatible_aircraft.length > 0 ? form.compatible_aircraft : null,
       status: form.status,
       purchase_date: form.purchase_date || null,
       notes: form.notes || null,
@@ -139,12 +158,29 @@ export default function AccessoryFormDialog({ open, onOpenChange, accessory }: A
           </div>
           <div>
             <Label className="text-xs">Compatible Aircraft</Label>
-            <Input
-              value={form.compatible_aircraft}
-              onChange={e => setForm(f => ({ ...f, compatible_aircraft: e.target.value }))}
-              placeholder="Matrice 4E, Mavic 3 Enterprise"
-            />
-            <p className="text-xs text-muted-foreground mt-1">Comma separated model names</p>
+            {aircraftLoading ? (
+              <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading aircraft...
+              </div>
+            ) : aircraft && aircraft.length > 0 ? (
+              <div className="space-y-2 mt-1">
+                {aircraft.map(ac => (
+                  <label key={ac.id} className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      checked={form.compatible_aircraft.includes(ac.model)}
+                      onCheckedChange={() => toggleAircraft(ac.model)}
+                    />
+                    <span className="text-sm">{ac.model}</span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1">No aircraft in fleet</p>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              Leave all unchecked for universal compatibility
+            </p>
           </div>
           <div>
             <Label className="text-xs">Status</Label>
