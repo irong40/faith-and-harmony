@@ -77,7 +77,11 @@ Plans:
   3. When the client pays the balance via Square, the webhook processes the payment and the job status updates to paid within seconds
   4. Client receives a receipt email after balance payment clears, and full resolution deliverables are released automatically (download links sent)
   5. Admin payments panel shows deposit and balance status per job with paid, pending, and overdue states
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 09-01-PLAN.md -- Database migration, balance invoice edge function, and balance due email edge function
+- [ ] 09-02-PLAN.md -- Square webhook completion (job status update, receipt email, delivery release trigger chain)
+- [ ] 09-03-PLAN.md -- Admin payments panel component and balance invoice button on job detail page
 
 ### Phase 10: Offline Sync Hardening
 **Goal**: Offline flight log data survives sync failures and the pilot has clear visibility into sync status
@@ -116,6 +120,6 @@ Phases 7 and 10 are independent and can run in parallel. Phase 8 depends on 7. P
 |-------|-----------|----------------|--------|-----------|
 | 7. Foundation and Quick Wins | 2/2 | Complete   | 2026-03-05 | - |
 | 8. Watermark Pipeline | 2/2 | Complete   | 2026-03-05 | - |
-| 9. Billing Lifecycle | v2.0 | 0/? | Not started | - |
+| 9. Billing Lifecycle | v2.0 | 0/3 | Planned | - |
 | 10. Offline Sync Hardening | 3/3 | Complete    | 2026-03-05 | - |
 | 11. Standalone Deployment | v2.0 | 0/2 | Planned | - |
