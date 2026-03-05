@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 3: n8n Vapi Pipeline** - Build n8n workflow receiving Vapi end-of-call webhook, transform payload to intake API format, wire successful intakes into existing request-to-quote flow, add error notifications
 - [x] **Phase 4: Scheduling and Availability** - Create availability_slots and blackout_dates tables, build admin scheduling UI, build availability check edge function, connect bot to offer dates during calls (completed 2026-03-03)
 - [x] **Phase 5: Weather Operations** - Integrate NWS weather API, validate flight parameters against forecasts, automate 48-hour pre-flight checks for scheduled jobs, add admin weather conditions view (completed 2026-03-05)
-- [ ] **Phase 6: Integration and Edge Cases** - Validate end-to-end call-to-invoice flow, implement edge case routing (out of area, complex jobs, payment questions), build admin call log and lead management views
+- [x] **Phase 6: Integration and Edge Cases** - Validate end-to-end call-to-invoice flow, implement edge case routing (out of area, complex jobs, payment questions), build admin call log and lead management views (completed 2026-03-05)
 
 ## Phase Details
 
@@ -131,4 +131,4 @@ Phases execute in numeric order: 1 > 2 > 3 > 4 > 5 > 6
 | 3. n8n Vapi Pipeline | 1/2 | In progress | — |
 | 4. Scheduling and Availability | 3/3 | Complete | 2026-03-03 |
 | 5. Weather Operations | 2/2 | Complete    | 2026-03-05 |
-| 6. Integration and Edge Cases | 1/2 | In Progress|  |
+| 6. Integration and Edge Cases | 2/2 | Complete   | 2026-03-05 |
