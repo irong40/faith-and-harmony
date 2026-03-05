@@ -22,6 +22,7 @@ export default function LandingPage() {
             <a href="#about">About</a>
             <a href="#contact">Contact</a>
             <span className="fh-nav-phone">757.843.8772</span>
+            <a href="https://trestle.sentinelaerialinspections.com/auth" className="fh-nav-login">Pilot Portal</a>
             <Link to="/auth" className="fh-nav-login">Login</Link>
           </div>
         </div>
