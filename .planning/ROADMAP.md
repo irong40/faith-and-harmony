@@ -31,7 +31,7 @@ See v1.0 roadmap archive.
 
 **Milestone Goal:** Close all remaining gaps to make the platform production ready with automated billing, complete equipment tracking, reliable offline operations, and standalone Trestle deployment.
 
-- [ ] **Phase 7: Foundation and Quick Wins** - PWA icons, accessories admin page, deposit amount verification
+- [x] **Phase 7: Foundation and Quick Wins** - PWA icons, accessories admin page, deposit amount verification (completed 2026-03-05)
 - [ ] **Phase 8: Watermark Pipeline** - Watermarked preview generation and separate storage buckets
 - [ ] **Phase 9: Billing Lifecycle** - Balance invoice, balance due email, payment webhook, receipt, delivery gate, admin payments panel
 - [ ] **Phase 10: Offline Sync Hardening** - Dead letter store, persistent warnings, end-to-end flight log sync, try/catch fallback
@@ -108,7 +108,7 @@ Phases 7 and 10 are independent and can run in parallel. Phase 8 depends on 7. P
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 7. Foundation and Quick Wins | 1/2 | In Progress|  | - |
+| 7. Foundation and Quick Wins | 2/2 | Complete   | 2026-03-05 | - |
 | 8. Watermark Pipeline | v2.0 | 0/? | Not started | - |
 | 9. Billing Lifecycle | v2.0 | 0/? | Not started | - |
 | 10. Offline Sync Hardening | 1/3 | In Progress|  | - |

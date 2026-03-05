@@ -7,7 +7,7 @@
 
 ### Billing
 
-- [ ] **BILL-01**: Deposit amount is fixed at 50% of package price in quote creation
+- [x] **BILL-01**: Deposit amount is fixed at 50% of package price in quote creation
 - [ ] **BILL-02**: Admin can trigger balance invoice creation via Square after job processing completes
 - [ ] **BILL-03**: Watermarked preview thumbnails are generated during the processing pipeline and stored separately from originals
 - [ ] **BILL-04**: Client receives balance due email with 2 to 3 watermarked preview thumbnails and Square payment link
@@ -31,7 +31,7 @@
 
 ### Deployment
 
-- [ ] **DEPLOY-01**: Production PWA icons with Sentinel branding replace SVG placeholders (same filenames for cache compatibility)
+- [x] **DEPLOY-01**: Production PWA icons with Sentinel branding replace SVG placeholders (same filenames for cache compatibility)
 - [ ] **DEPLOY-02**: Trestle deployed as standalone Vercel project at trestle.sentinelaerial.com
 - [ ] **DEPLOY-03**: Supabase auth redirect URLs include trestle.sentinelaerial.com
 - [ ] **DEPLOY-04**: Square production environment configured with production webhook registration
@@ -69,7 +69,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BILL-01 | Phase 7 | Pending |
+| BILL-01 | Phase 7 | Complete |
 | BILL-02 | Phase 9 | Pending |
 | BILL-03 | Phase 8 | Pending |
 | BILL-04 | Phase 9 | Pending |
@@ -80,7 +80,7 @@
 | EQUIP-01 | Phase 7 | Complete |
 | EQUIP-02 | Phase 7 | Complete |
 | EQUIP-03 | Phase 7 | Complete |
-| DEPLOY-01 | Phase 7 | Pending |
+| DEPLOY-01 | Phase 7 | Complete |
 | DEPLOY-02 | Phase 11 | Pending |
 | DEPLOY-03 | Phase 11 | Pending |
 | DEPLOY-04 | Phase 11 | Pending |
