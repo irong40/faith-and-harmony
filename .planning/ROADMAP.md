@@ -49,7 +49,10 @@ See v1.0 roadmap archive.
   3. Admin can assign one or more compatible aircraft to an accessory, and mission equipment selection filters accessories by the selected aircraft
   4. The PWA install prompt on Android and iOS shows the Sentinel branded icon instead of an SVG placeholder
   5. Quote creation sets the deposit amount to exactly 50% of the package price
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 07-01-PLAN.md -- Admin accessories page with CRUD, deletion guard, and aircraft multi-select
+- [ ] 07-02-PLAN.md -- Deposit percentage fix and PWA icon replacement
 
 ### Phase 8: Watermark Pipeline
 **Goal**: The processing pipeline generates watermarked preview thumbnails stored separately from originals, ready to be included in balance due emails
@@ -84,9 +87,9 @@ See v1.0 roadmap archive.
   4. Sync engine uses try/catch with actual network requests instead of navigator.onLine checks to detect connectivity
 **Plans**: 3 plans
 Plans:
-- [ ] 10-01-PLAN.md — Network probe function and IndexedDB dead letter store infrastructure
-- [ ] 10-02-PLAN.md — Sync engine hardening and always-queue flight log pattern
-- [ ] 10-03-PLAN.md — Dead letter warning banner and pilot dashboard integration
+- [ ] 10-01-PLAN.md -- Network probe function and IndexedDB dead letter store infrastructure
+- [ ] 10-02-PLAN.md -- Sync engine hardening and always-queue flight log pattern
+- [ ] 10-03-PLAN.md -- Dead letter warning banner and pilot dashboard integration
 
 ### Phase 11: Standalone Deployment
 **Goal**: Trestle is deployed as a standalone app at trestle.sentinelaerial.com with production payment processing
@@ -105,7 +108,7 @@ Phases 7 and 10 are independent and can run in parallel. Phase 8 depends on 7. P
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 7. Foundation and Quick Wins | v2.0 | 0/? | Not started | - |
+| 7. Foundation and Quick Wins | v2.0 | 0/2 | Planned | - |
 | 8. Watermark Pipeline | v2.0 | 0/? | Not started | - |
 | 9. Billing Lifecycle | v2.0 | 0/? | Not started | - |
 | 10. Offline Sync Hardening | v2.0 | 0/3 | Planned | - |
