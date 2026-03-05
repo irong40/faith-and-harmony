@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -35,14 +35,65 @@ const ACTION_CONFIG: Record<string, { label: string; icon: typeof CheckCircle }>
   flag_for_review: { label: "Review", icon: AlertTriangle },
 };
 
+/**
+ * Extract the storage path relative to the drone-jobs bucket root from
+ * a file_path that may be a full public URL or a plain storage path.
+ */
+function extractStoragePath(filePath: string): string | null {
+  // Match public URL pattern (legacy rows before bucket went private)
+  const publicMatch = filePath.match(/\/storage\/v1\/object\/(?:public|sign)\/drone-jobs\/(.+)/);
+  if (publicMatch) return publicMatch[1];
+
+  // Match authenticated/signed URL pattern
+  const signedMatch = filePath.match(/\/object\/(?:public|sign|authenticated)\/drone-jobs\/(.+)/);
+  if (signedMatch) return signedMatch[1];
+
+  // If the path does not look like a full URL, treat it as a relative storage path
+  if (!filePath.startsWith('http')) return filePath;
+
+  return null;
+}
+
 export default function QADetailModal({ asset, onClose, onRefresh }: QADetailModalProps) {
   const { toast } = useToast();
   const [overrideReason, setOverrideReason] = useState("");
   const [saving, setSaving] = useState(false);
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+
+  // Generate a signed URL for the private drone-jobs bucket
+  useEffect(() => {
+    if (!asset) {
+      setSignedUrl(null);
+      return;
+    }
+
+    const storagePath = extractStoragePath(asset.file_path);
+    if (!storagePath) {
+      setSignedUrl(null);
+      return;
+    }
+
+    let cancelled = false;
+    supabase.storage
+      .from("drone-jobs")
+      .createSignedUrl(storagePath, 3600)
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.error("Failed to create signed URL", error);
+          setSignedUrl(null);
+        } else {
+          setSignedUrl(data.signedUrl);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [asset?.id, asset?.file_path]);
 
   if (!asset) return null;
 
   const qaResults = asset.qa_results as unknown as QAResults | null;
+  const mediaUrl = signedUrl || asset.file_path;
 
   const handleOverride = async (approve: boolean) => {
     if (!overrideReason.trim()) {
@@ -80,8 +131,8 @@ export default function QADetailModal({ asset, onClose, onRefresh }: QADetailMod
 
     setSaving(true);
 
-    // Delete from storage
-    const storagePath = asset.file_path.split('/storage/v1/object/public/drone-jobs/')[1];
+    // Delete from storage (works with both public and private bucket paths)
+    const storagePath = extractStoragePath(asset.file_path);
     if (storagePath) {
       await supabase.storage.from('drone-jobs').remove([storagePath]);
     }
@@ -152,7 +203,7 @@ export default function QADetailModal({ asset, onClose, onRefresh }: QADetailMod
             {asset.file_type?.startsWith("video") ? (
               <div className="space-y-2">
                 <video
-                  src={asset.file_path}
+                  src={mediaUrl}
                   controls
                   className="w-full rounded-lg border border-border"
                   preload="metadata"
@@ -205,7 +256,7 @@ export default function QADetailModal({ asset, onClose, onRefresh }: QADetailMod
               </div>
             ) : asset.file_type?.startsWith("image") ? (
               <img
-                src={asset.file_path}
+                src={mediaUrl}
                 alt={asset.file_name}
                 className="w-full rounded-lg border border-border"
               />
