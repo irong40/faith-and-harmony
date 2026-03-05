@@ -88,6 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          // Mark loading immediately so ProtectedRoute shows spinner while roles load
+          setLoading(true);
           // Defer to avoid Supabase auth deadlock, but await all checks before clearing loading
           setTimeout(() => {
             loadUserData(session.user.id, session.user.email);

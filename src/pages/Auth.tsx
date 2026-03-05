@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
@@ -17,12 +17,13 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
-  
+
   const ssoCallback = searchParams.get('sso_callback');
+  const redirectingRef = useRef(false);
 
   const handleSSORedirect = async (userId: string, userEmail: string) => {
     if (!ssoCallback) return;
-    
+
     try {
       const { data, error } = await supabase.functions.invoke('sso-generate-token', {
         body: {
@@ -37,7 +38,7 @@ const Auth = () => {
       const redirectUrl = new URL(ssoCallback);
       redirectUrl.searchParams.set('sso_token', data.sso_token);
       redirectUrl.searchParams.set('user_data', JSON.stringify(data.user_data));
-      
+
       window.location.href = redirectUrl.toString();
     } catch (error: unknown) {
       console.error('SSO redirect error:', error);
@@ -50,50 +51,51 @@ const Auth = () => {
   };
 
   const redirectByRole = async (userId: string) => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId);
+    if (redirectingRef.current) return;
+    redirectingRef.current = true;
 
-    const roles = (data ?? []).map((r) => r.role);
+    try {
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
 
-    if (roles.includes('pilot')) {
-      navigate('/pilot');
-    } else if (roles.includes('admin')) {
-      navigate('/admin/dashboard');
-    } else {
+      const roles = (data ?? []).map((r) => r.role);
+
+      if (roles.includes('pilot')) {
+        navigate('/pilot');
+      } else if (roles.includes('admin')) {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/');
+      }
+    } catch {
       navigate('/');
     }
   };
 
+  // Only handle: existing session on mount + PASSWORD_RECOVERY events
   useEffect(() => {
+    // Check for existing session once on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session && view !== 'reset-password') {
-        if (ssoCallback) {
-          handleSSORedirect(session.user.id, session.user.email || '');
-        } else {
-          redirectByRole(session.user.id);
-        }
+      if (!session || view === 'reset-password') return;
+      if (ssoCallback) {
+        handleSSORedirect(session.user.id, session.user.email || '');
+      } else {
+        redirectByRole(session.user.id);
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setView('reset-password');
-        return;
-      }
-
-      if (session && view !== 'reset-password') {
-        if (ssoCallback) {
-          handleSSORedirect(session.user.id, session.user.email || '');
-        } else {
-          redirectByRole(session.user.id);
-        }
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [navigate, ssoCallback, view]);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,11 +103,21 @@ const Auth = () => {
 
     try {
       if (view === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
+
+        // Redirect directly after successful login — no useEffect race
+        const user = signInData.user;
+        if (user) {
+          if (ssoCallback) {
+            await handleSSORedirect(user.id, user.email || '');
+          } else {
+            await redirectByRole(user.id);
+          }
+        }
       } else if (view === 'signup') {
         const { error } = await supabase.auth.signUp({
           email,
@@ -115,7 +127,7 @@ const Auth = () => {
           },
         });
         if (error) throw error;
-        
+
         toast({
           title: 'Success',
           description: 'Account created successfully',
