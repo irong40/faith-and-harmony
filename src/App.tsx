@@ -48,6 +48,8 @@ const ProcessingTemplates = lazy(() => import("./pages/admin/ProcessingTemplates
 const DeliveryReview = lazy(() => import("./pages/admin/DeliveryReview"));
 const QuoteRequests = lazy(() => import("./pages/admin/QuoteRequests"));
 const LandMonitor = lazy(() => import("./pages/admin/LandMonitor"));
+const Scheduling = lazy(() => import("./pages/admin/Scheduling"));
+const WeatherOperations = lazy(() => import("./pages/admin/WeatherOperations"));
 
 // Lazy — pilot pages
 const PilotDashboard = lazy(() => import("./pages/pilot/PilotDashboard"));
@@ -144,6 +146,8 @@ const App = () => (
               <Route path="/admin/processing-templates" element={<AdminRoute><ProcessingTemplates /></AdminRoute>} />
               <Route path="/admin/quote-requests" element={<AdminRoute><QuoteRequests /></AdminRoute>} />
               <Route path="/admin/land-monitor" element={<AdminRoute><LandMonitor /></AdminRoute>} />
+              <Route path="/admin/scheduling" element={<AdminRoute><Scheduling /></AdminRoute>} />
+              <Route path="/admin/weather" element={<AdminRoute><WeatherOperations /></AdminRoute>} />
 
               {/* Pilot portal routes */}
               <Route path="/pilot" element={<PilotRoute><PilotDashboard /></PilotRoute>} />
