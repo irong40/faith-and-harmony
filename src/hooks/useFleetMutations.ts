@@ -316,7 +316,7 @@ export function useDeleteAccessory() {
         await enqueueOffline('delete_record', 'accessories', { _record_id: id });
         return;
       }
-      const { error } = await supabase.from('accessories').delete().eq('id', id);
+      const { error } = await supabase.rpc('delete_accessory_safe', { p_accessory_id: id });
       if (error) throw error;
     },
     onSuccess: () => {

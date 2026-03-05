@@ -30,6 +30,7 @@ import {
   CalendarDays,
   Cloud,
   Phone,
+  Wrench,
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -61,6 +62,7 @@ const navCategories: NavCategory[] = [
       { href: "/pilot", label: "Pilot Portal", icon: Target },
       { href: "/admin/processing-templates", label: "Templates", icon: Route },
       { href: "/admin/land-monitor", label: "Land Monitor", icon: Satellite },
+      { href: "/admin/accessories", label: "Accessories", icon: Wrench },
     ],
   },
   {
