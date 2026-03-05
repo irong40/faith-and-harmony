@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** A prospective client can find Sentinel through search or phone, get qualified, receive a quote, and book a drone job without Iron personally fielding the call or manually creating the request.
-**Current focus:** Phase 7 Foundation and Quick Wins
+**Current focus:** Phase 10 Offline Sync Hardening
 
 ## Current Position
 
-Phase: 7 of 11 (Foundation and Quick Wins)
+Phase: 10 of 11 (Offline Sync Hardening)
 Plan: 1 of 3 in current phase
 Status: Executing
-Last activity: 2026-03-05 -- Completed Plan 07-01 (Admin Accessories CRUD)
+Last activity: 2026-03-05 -- Completed Plan 10-01 (Sync Infrastructure Foundation)
 
 Progress: [==........] 20% (v2.0 milestone)
 
@@ -45,6 +45,8 @@ Recent decisions affecting current work:
 - Database function for deletion guard instead of application check (prevents deletion from any client)
 - Admin form uses checkbox multi-select from aircraft table, pilot form unchanged for offline compatibility
 - compatible_aircraft stored as text array of model names, not UUIDs, preserving EquipmentSelector filtering
+- AbortController with setTimeout for network probe instead of AbortSignal.timeout() for browser compatibility
+- Dead letter items preserve original_retries and original_created_at for sync history debugging
 
 ### v1.0 Landing Page (Complete)
 
@@ -77,6 +79,6 @@ Key infrastructure from v1.1:
 ## Session Continuity
 
 Last session: 2026-03-05
-Stopped at: Completed 07-01-PLAN.md (Admin Accessories CRUD)
+Stopped at: Completed 10-01-PLAN.md (Sync Infrastructure Foundation)
 Resume file: None
-Resume signal: Execute 07-02-PLAN.md or 07-03-PLAN.md next
+Resume signal: Execute 10-02-PLAN.md next (sync engine changes)
