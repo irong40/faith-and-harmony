@@ -33,7 +33,7 @@ export interface MissionControlConfig {
 
 // Default configuration - UPDATE THESE VALUES
 export const missionControlConfig: MissionControlConfig = {
-  hubUrl: 'https://cwaxhfmstlkxqpuhbrbv.supabase.co/functions/v1/mission-control-api',
+  hubUrl: 'https://qjpujskwqaehxnqypxzu.supabase.co/functions/v1/mission-control-api',
   apiKey: '', // Set via environment variable: import.meta.env.VITE_MISSION_CONTROL_API_KEY
   appCode: '', // Set via environment variable: import.meta.env.VITE_APP_CODE
   heartbeatInterval: 5 * 60 * 1000, // 5 minutes

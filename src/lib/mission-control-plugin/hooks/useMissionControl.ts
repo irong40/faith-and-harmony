@@ -82,7 +82,8 @@ export function useMissionControl(configOverrides?: Partial<MissionControlConfig
     endpoint: string,
     options: RequestInit = {}
   ) => {
-    const url = `${config.hubUrl}${endpoint}`;
+    const action = endpoint.replace('/', '');
+    const url = `${config.hubUrl}?action=${action}`;
     
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -112,7 +113,7 @@ export function useMissionControl(configOverrides?: Partial<MissionControlConfig
       const data = await apiRequest('/heartbeat', {
         method: 'POST',
         body: JSON.stringify({
-          status: 'healthy',
+          status: 'online',
           version: import.meta.env.VITE_APP_VERSION || '1.0.0',
           metrics: {
             timestamp: new Date().toISOString(),
@@ -225,7 +226,7 @@ export function useMissionControl(configOverrides?: Partial<MissionControlConfig
     log('No API key found. Attempting auto-registration...');
 
     try {
-      const url = `${config.hubUrl}/register`;
+      const url = `${config.hubUrl}?action=register`;
       const resp = await fetch(url, {
         method: 'POST',
         headers: {

@@ -16,7 +16,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key, x-bootstrap-secret',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 };
 
@@ -77,12 +77,14 @@ serve(async (req: Request) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Parse URL path
+    // Resolve endpoint from ?action= param or URL path segment
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/').filter(Boolean);
-    const endpoint = pathParts[pathParts.length - 1]; // Last segment
+    const lastSegment = pathParts[pathParts.length - 1];
+    const endpoint = url.searchParams.get('action')
+      || (lastSegment !== 'mission-control-api' ? lastSegment : '');
 
-    console.log(`Mission Control API: ${req.method} /${endpoint}`);
+    console.log('Mission Control API: ' + req.method + ' endpoint=' + (endpoint || '(root)'));
 
     // Registration endpoint uses bootstrap secret instead of API key
     if (endpoint === 'register' && req.method === 'POST') {
