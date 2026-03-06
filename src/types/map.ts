@@ -1,0 +1,11 @@
+export interface MapCenter {
+  lat: number;
+  lng: number;
+}
+
+export interface MapBounds {
+  north: number;
+  south: number;
+  east: number;
+  west: number;
+}

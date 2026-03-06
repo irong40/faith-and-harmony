@@ -73,6 +73,28 @@ export default defineConfig(({ mode }) => ({
             },
           },
           {
+            urlPattern: /^https:\/\/maps\.googleapis\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-maps-tiles",
+              expiration: {
+                maxEntries: 500,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/maps\.gstatic\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-maps-assets",
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+              },
+            },
+          },
+          {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: "CacheFirst",
             options: {

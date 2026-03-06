@@ -27,6 +27,9 @@ import { useMissionEquipment } from "@/hooks/useMissionEquipment";
 import { useMissionWeatherLog } from "@/hooks/useWeatherBriefing";
 import { useMissionAuthorization } from "@/hooks/useAirspaceAuth";
 import { useActiveAircraft, useActiveControllers } from "@/hooks/useFleet";
+import MissionLocationMap from "@/components/map/MissionLocationMap";
+import ElevationBadge from "@/components/pilot/ElevationBadge";
+import RoutePlannerCard from "@/components/pilot/RoutePlannerCard";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
     scheduled: { label: "SCHEDULED", color: "bg-blue-500" },
@@ -273,6 +276,20 @@ export default function PilotMissionDetail() {
                             </Button>
                         </div>
 
+                        {/* Embedded Map */}
+                        <MissionLocationMap
+                            latitude={mission.latitude}
+                            longitude={mission.longitude}
+                            status={mission.status}
+                            address={[mission.property_address, mission.property_city, mission.property_state, mission.property_zip].filter(Boolean).join(', ')}
+                        />
+
+                        {/* Elevation */}
+                        <ElevationBadge
+                            latitude={mission.latitude}
+                            longitude={mission.longitude}
+                        />
+
                         <Separator />
 
                         {/* Date & Time */}
@@ -316,6 +333,14 @@ export default function PilotMissionDetail() {
                         )}
                     </CardContent>
                 </Card>
+
+                {/* Route Planner */}
+                {!isComplete && mission.latitude && mission.longitude && (
+                    <RoutePlannerCard
+                        latitude={mission.latitude}
+                        longitude={mission.longitude}
+                    />
+                )}
 
                 {/* Shot List Reference Panel */}
                 {!isComplete && mission.shot_manifest && (

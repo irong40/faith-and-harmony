@@ -14,6 +14,8 @@ import {
 } from '@/hooks/useAirspaceAuth';
 import type { TfrSummary } from '@/types/authorization';
 import { logTfrReview } from '@/lib/safety-audit';
+import AirspaceMapOverlay from '@/components/map/AirspaceMapOverlay';
+import ElevationBadge from '@/components/pilot/ElevationBadge';
 
 interface AirspacePanelProps {
   missionId: string;
@@ -225,6 +227,27 @@ export default function AirspacePanel({
         </div>
       )}
 
+      {/* Airspace Map Overlay */}
+      {latitude && longitude && (
+        <AirspaceMapOverlay
+          latitude={latitude}
+          longitude={longitude}
+          nearestGrid={grid ? {
+            latitude: grid.latitude,
+            longitude: grid.longitude,
+            facility_name: grid.facility_name || grid.grid_id,
+            airspace_class: airspaceClass,
+          } : null}
+          activeTfrs={(activeTfrs || []).map(tfr => ({
+            center_latitude: tfr.center_latitude,
+            center_longitude: tfr.center_longitude,
+            radius_nm: tfr.radius_nm,
+            status: tfr.status,
+            notam_number: tfr.notam_number,
+          }))}
+        />
+      )}
+
       {/* TFR Alerts — enhanced with full detail and FAA links */}
       {(activeTfrs || []).length > 0 && (
         <Alert>
@@ -358,10 +381,17 @@ export default function AirspacePanel({
         </div>
       )}
 
-      {/* Coordinates */}
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <MapPin className="h-3 w-3" />
-        <span>{latitude?.toFixed(4)}, {longitude?.toFixed(4)}</span>
+      {/* Coordinates + Elevation */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <MapPin className="h-3 w-3" />
+          <span>{latitude?.toFixed(4)}, {longitude?.toFixed(4)}</span>
+        </div>
+        <ElevationBadge
+          latitude={latitude}
+          longitude={longitude}
+          laancCeilingAgl={requiresLaanc ? ceiling : null}
+        />
       </div>
 
       {/* Confirm Button */}

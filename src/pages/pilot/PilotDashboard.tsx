@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw, LogOut, Plane, Play, RotateCcw, Cog, LayoutDashboard } from "lucide-react";
+import { RefreshCw, LogOut, Plane, Play, RotateCcw, Cog, LayoutDashboard, MapIcon, Route } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isToday, isBefore, startOfDay } from "date-fns";
 import PilotCard from "@/components/pilot/PilotCard";
@@ -260,13 +260,31 @@ export default function PilotDashboard() {
                 {/* Processing Status for my missions */}
                 {user?.id && <ProcessingStatusCard userId={user.id} />}
 
-                {/* Fleet Quick Link */}
-                <Link to="/pilot/fleet" className="block mb-6">
-                    <Button variant="outline" className="w-full justify-start gap-2">
-                        <Plane className="h-4 w-4" />
-                        Fleet Inventory
-                    </Button>
-                </Link>
+                {/* Quick Links */}
+                <div className="space-y-2 mb-6">
+                    <div className="grid grid-cols-2 gap-2">
+                        <Link to="/pilot/map">
+                            <Button variant="outline" className="w-full justify-start gap-2">
+                                <MapIcon className="h-4 w-4" />
+                                Map View
+                            </Button>
+                        </Link>
+                        <Link to="/pilot/fleet">
+                            <Button variant="outline" className="w-full justify-start gap-2">
+                                <Plane className="h-4 w-4" />
+                                Fleet
+                            </Button>
+                        </Link>
+                    </div>
+                    {today.length >= 2 && (
+                        <Link to="/pilot/route" className="block">
+                            <Button variant="secondary" className="w-full justify-start gap-2">
+                                <Route className="h-4 w-4" />
+                                Plan Today's Route ({today.length} jobs)
+                            </Button>
+                        </Link>
+                    )}
+                </div>
 
                 {/* Mission List — grouped by Today / Upcoming / Past */}
                 {loading ? (

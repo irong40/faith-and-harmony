@@ -37,7 +37,7 @@ export function usePilotMissions() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('drone_jobs')
-        .select('id, job_number, customers(name), property_address, scheduled_date, status, drone_packages(id, name, code, shot_manifest, requires_thermal, requires_raw)')
+        .select('id, job_number, customers(name), property_address, property_city, property_state, latitude, longitude, scheduled_date, status, drone_packages(id, name, code, shot_manifest, requires_thermal, requires_raw)')
         .eq('pilot_id', user!.id)
         .neq('status', 'canceled')
         .order('scheduled_date', { ascending: true });
@@ -49,6 +49,10 @@ export function usePilotMissions() {
         job_number: job.job_number,
         client_name: job.customers?.name || 'Unknown Client',
         property_address: job.property_address,
+        property_city: job.property_city || null,
+        property_state: job.property_state || null,
+        latitude: job.latitude ?? null,
+        longitude: job.longitude ?? null,
         scheduled_date: job.scheduled_date,
         status: job.status,
         package_name: job.drone_packages?.name || null,

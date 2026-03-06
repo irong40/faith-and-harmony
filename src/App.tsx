@@ -57,12 +57,15 @@ const Accessories = lazy(() => import("./pages/admin/Accessories"));
 // Lazy — pilot pages
 const PilotDashboard = lazy(() => import("./pages/pilot/PilotDashboard"));
 const PilotMissionDetail = lazy(() => import("./pages/pilot/PilotMissionDetail"));
+const PilotMap = lazy(() => import("./pages/pilot/PilotMap"));
+const PilotRouteOptimizer = lazy(() => import("./pages/pilot/PilotRouteOptimizer"));
 const FleetOverview = lazy(() => import("./components/pilot/FleetOverview"));
 const MaintenanceHistory = lazy(() => import("./components/pilot/MaintenanceHistory"));
 
 import DefaultHelmet from "./components/seo/DefaultHelmet";
 import PWAUpdatePrompt from "./components/pwa/PWAUpdatePrompt";
 import PWAInstallPrompt from "./components/pwa/PWAInstallPrompt";
+import GoogleMapsProvider from "./components/map/GoogleMapsProvider";
 
 const PageSpinner = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -103,6 +106,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <GoogleMapsProvider>
       <PipelineRealtimeProvider>
       <TooltipProvider>
         <Toaster />
@@ -158,6 +162,8 @@ const App = () => (
               {/* Pilot portal routes */}
               <Route path="/pilot" element={<PilotRoute><PilotDashboard /></PilotRoute>} />
               <Route path="/pilot/mission/:id" element={<PilotRoute><PilotMissionDetail /></PilotRoute>} />
+              <Route path="/pilot/map" element={<PilotRoute><PilotMap /></PilotRoute>} />
+              <Route path="/pilot/route" element={<PilotRoute><PilotRouteOptimizer /></PilotRoute>} />
               <Route path="/pilot/fleet" element={<PilotRoute><FleetOverview /></PilotRoute>} />
               <Route path="/pilot/fleet/maintenance" element={<PilotRoute><MaintenanceHistory /></PilotRoute>} />
 
@@ -168,6 +174,7 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
       </PipelineRealtimeProvider>
+      </GoogleMapsProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
