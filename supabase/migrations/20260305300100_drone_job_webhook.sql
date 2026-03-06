@@ -25,8 +25,6 @@ BEGIN
   );
 
   -- n8n webhook URL (set via Supabase vault or hardcode for local dev)
-  -- For production: use Supabase vault secrets or env var
-  -- For local dev: n8n must be exposed via tunnel (e.g., ngrok, cloudflared)
   v_n8n_url := COALESCE(
     current_setting('app.n8n_webhook_url', true),
     'https://divided-champion-chance-agricultural.trycloudflare.com/webhook/drone-job-created'
@@ -47,6 +45,9 @@ EXCEPTION
     RETURN NEW;
 END;
 $$;
+
+-- Drop and recreate to ensure latest version
+DROP TRIGGER IF EXISTS on_drone_job_created_notify_n8n ON public.drone_jobs;
 
 CREATE TRIGGER on_drone_job_created_notify_n8n
   AFTER INSERT ON public.drone_jobs
