@@ -25,27 +25,28 @@
 - weather-forecast-fetch edge function
 - Admin pages: Scheduling, Weather Operations, Call Logs, Leads
 
-## v2.0 Billing, Equipment, and Production Readiness (Active)
+## v2.0 Billing, Equipment, and Production Readiness (Complete)
 
-**Started:** 2026-03-05
-**Phases:** 7 through 12
-**Summary:** Close all remaining gaps for production readiness with automated billing, equipment tracking, offline operations, standalone Trestle deployment, and Mission Control validation.
+**Shipped:** 2026-03-06
+**Phases:** 7 through 12 (14 plans)
+**Last phase number:** 12
+**Timeline:** 2 days (2026-03-05 to 2026-03-06)
+**Stats:** 31 commits, 109 files modified, 7,509 insertions, 64,215 LOC TypeScript
+**Summary:** Full production readiness with automated billing lifecycle (Square deposit/balance/receipt/delivery), equipment accessories management, watermarked preview pipeline, offline sync hardening with dead letter store, standalone Trestle deployment at trestle.sentinelaerialinspections.com, and Mission Control validation.
 
-**Phases:**
-- Phase 07: Foundation and Quick Wins
-- Phase 08: Watermark Pipeline
-- Phase 09: Billing Lifecycle
-- Phase 10: Offline Sync Hardening
-- Phase 11: Standalone Deployment
-- Phase 12: Mission Control Validation
+**Key accomplishments:**
+- End-to-end billing flow from balance invoice through Square payment to automatic receipt and deliverable release
+- Watermarked preview generation on local rig via n8n pipeline with separate storage buckets
+- Dead letter store for failed offline syncs with persistent pilot warning banner
+- Standalone Trestle PWA at trestle.sentinelaerialinspections.com with domain-aware routing
+- Mission Control admin UI (apps, announcements) with satellite plugin and API key auth
+- Integration audit fixing wrong domains, blocked geolocation, missing edge function configs, redirect loops, and stale SEO
 
-**Mission Control pre-existing artifacts (needs validation):**
-- apps table with API key auth (SHA-256 hashed)
-- maintenance_announcements table with RLS
-- app_health_history table
-- app_status_overview and active_announcements views
-- mission-control-api edge function (heartbeat, tickets, announcements, bootstrap registration)
-- Admin pages: Apps, Announcements
-- Satellite plugin (src/lib/mission-control-plugin) with Provider, Widget, hooks
-- useMissionControlAdmin hook with full CRUD and audit logging
-- register_app_with_bootstrap, validate_api_key, generate/revoke_app_api_key RPCs
+**Key artifacts:**
+- accessories table with delete_accessory_safe RPC
+- watermark-previews public storage bucket
+- create-balance-invoice, send-balance-due-email, send-payment-receipt-email edge functions
+- square-webhook with payment processing and fire-and-forget downstream triggers
+- Dead letter store in IndexedDB with DeadLetterBanner component
+- Domain-aware routing in App.tsx (F&H vs Trestle)
+- Mission Control satellite plugin (Provider, Widget, hooks, auto-registration)
