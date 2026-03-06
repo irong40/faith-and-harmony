@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -18,6 +19,7 @@ import {
   useCreateAnnouncement, 
   useUpdateAnnouncement, 
   useDeleteAnnouncement,
+  useMissionControlApps,
   type AnnouncementFormData,
   type Announcement
 } from "@/hooks/useMissionControlAdmin";
@@ -35,6 +37,7 @@ export default function Announcements() {
   const createAnnouncement = useCreateAnnouncement();
   const updateAnnouncement = useUpdateAnnouncement();
   const deleteAnnouncement = useDeleteAnnouncement();
+  const { data: apps } = useMissionControlApps();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
@@ -44,6 +47,7 @@ export default function Announcements() {
     message: "",
     type: "info",
     target_all_apps: true,
+    target_app_ids: [],
     starts_at: new Date().toISOString().slice(0, 16),
     ends_at: null,
     is_active: true,
@@ -104,12 +108,21 @@ export default function Announcements() {
       message: announcement.message,
       type: announcement.type,
       target_all_apps: announcement.target_all_apps,
+      target_app_ids: announcement.target_app_ids || [],
       starts_at: announcement.starts_at.slice(0, 16),
       ends_at: announcement.ends_at?.slice(0, 16) || null,
       is_active: announcement.is_active,
       priority: announcement.priority,
     });
     setEditingAnnouncement(announcement);
+  };
+
+  const toggleAppId = (appId: string) => {
+    const current = formData.target_app_ids || [];
+    const updated = current.includes(appId)
+      ? current.filter((id) => id !== appId)
+      : [...current, appId];
+    setFormData({ ...formData, target_app_ids: updated });
   };
 
   const getTypeBadge = (type: string) => {
@@ -217,7 +230,7 @@ export default function Announcements() {
           <Switch
             id="target_all"
             checked={formData.target_all_apps}
-            onCheckedChange={(checked) => setFormData({ ...formData, target_all_apps: checked })}
+            onCheckedChange={(checked) => setFormData({ ...formData, target_all_apps: checked, target_app_ids: checked ? [] : formData.target_app_ids })}
           />
           <Label htmlFor="target_all">Target All Apps</Label>
         </div>
@@ -231,6 +244,33 @@ export default function Announcements() {
           <Label htmlFor="is_active">Active</Label>
         </div>
       </div>
+
+      {!formData.target_all_apps && (
+        <div className="space-y-2">
+          <Label>Target Apps</Label>
+          {apps && apps.length > 0 ? (
+            <div className="border rounded-md p-3 space-y-2 max-h-48 overflow-y-auto">
+              {apps.map((app) => (
+                <div key={app.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`app-${app.id}`}
+                    checked={(formData.target_app_ids || []).includes(app.id)}
+                    onCheckedChange={() => toggleAppId(app.id)}
+                  />
+                  <Label htmlFor={`app-${app.id}`} className="text-sm font-normal cursor-pointer">
+                    {app.name} <span className="text-muted-foreground">({app.code})</span>
+                  </Label>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No apps registered yet</p>
+          )}
+          {(formData.target_app_ids || []).length === 0 && (
+            <p className="text-sm text-yellow-600">Select at least one app to target</p>
+          )}
+        </div>
+      )}
     </div>
   );
 
