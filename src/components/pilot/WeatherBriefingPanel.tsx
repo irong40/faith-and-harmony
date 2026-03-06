@@ -19,6 +19,7 @@ import type { WeatherDetermination } from '@/types/weather';
 import MetarAgeIndicator from './MetarAgeIndicator';
 import { logWeatherBriefing, logWeatherRefresh } from '@/lib/safety-audit';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface WeatherBriefingPanelProps {
   missionId: string;
@@ -139,8 +140,16 @@ export default function WeatherBriefingPanel({
     setRateLimitSecondsLeft(60);
 
     try {
-      const url = `https://aviationweather.gov/api/data/metar?ids=${station}&format=json`;
-      const response = await fetch(url);
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/metar-proxy?station=${station}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       if (!response.ok) throw new Error(`METAR fetch failed: ${response.status}`);
 

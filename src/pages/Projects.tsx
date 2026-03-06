@@ -24,8 +24,23 @@ const projects = [
   },
   {
     name: "ImpressiveJB",
-    url: "https://impressivejb.com",
+    url: "https://impressivejb.faithandharmonyllc.com",
     description: "E-commerce storefront",
+  },
+  {
+    name: "Harvest Distribution",
+    url: "https://www.harvestdistribution.net",
+    description: "B2B wholesale hemp and CBD distribution",
+  },
+  {
+    name: "Dr. Adam O. Pierce Locator",
+    url: "https://locator.dradamopierce.com",
+    description: "Provider and location finder",
+  },
+  {
+    name: "Healing Hearts Foundation",
+    url: "https://healingheartsfoundation.faithandharmonyllc.com",
+    description: "Community outreach and support foundation",
   },
 ];
 
