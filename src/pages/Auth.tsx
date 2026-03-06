@@ -50,8 +50,6 @@ const Auth = () => {
     }
   };
 
-  const TRESTLE_HOST = 'trestle.sentinelaerialinspections.com';
-
   const redirectByRole = async (userId: string) => {
     if (redirectingRef.current) return;
     redirectingRef.current = true;
@@ -65,11 +63,7 @@ const Auth = () => {
       const roles = (data ?? []).map((r) => r.role);
 
       if (roles.includes('pilot')) {
-        if (window.location.hostname !== TRESTLE_HOST) {
-          window.location.href = `https://${TRESTLE_HOST}/pilot`;
-        } else {
-          navigate('/pilot');
-        }
+        navigate('/pilot');
       } else if (roles.includes('admin')) {
         navigate('/admin/dashboard');
       } else {
