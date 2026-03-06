@@ -189,6 +189,9 @@ export default function LandingPage() {
             Tell us about your project and we'll get back to you within one business day.
           </p>
           <QuoteForm />
+          <div style={{ textAlign: "center", marginTop: "2rem" }}>
+            <Link to="/projects" className="fh-btn fh-btn-outline">View Our Live Projects</Link>
+          </div>
         </div>
       </section>
 
