@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
-type AuthView = 'login' | 'signup' | 'forgot-password' | 'reset-password';
+type AuthView = 'login' | 'forgot-password' | 'reset-password';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -124,20 +124,6 @@ const Auth = () => {
             await redirectByRole(user.id);
           }
         }
-      } else if (view === 'signup') {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-          },
-        });
-        if (error) throw error;
-
-        toast({
-          title: 'Success',
-          description: 'Account created successfully',
-        });
       }
     } catch (error: unknown) {
       toast({
@@ -224,7 +210,6 @@ const Auth = () => {
   const getTitle = () => {
     switch (view) {
       case 'login': return 'Sign In';
-      case 'signup': return 'Sign Up';
       case 'forgot-password': return 'Reset Password';
       case 'reset-password': return 'Set New Password';
     }
@@ -234,7 +219,6 @@ const Auth = () => {
     if (ssoCallback) return 'Sign in to continue to Event Tracking';
     switch (view) {
       case 'login': return 'Welcome back to Trestle';
-      case 'signup': return 'Create your Sentinel account';
       case 'forgot-password': return 'Enter your email to receive a reset link';
       case 'reset-password': return 'Enter your new password below';
     }
@@ -252,7 +236,7 @@ const Auth = () => {
           </p>
         </div>
         
-        {(view === 'login' || view === 'signup') && (
+        {view === 'login' && (
           <form onSubmit={handleSubmit} className="space-y-6">
             <Input
               type="email"
@@ -280,7 +264,7 @@ const Auth = () => {
               )}
             </div>
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Loading...' : view === 'login' ? 'Sign In' : 'Sign Up'}
+              {loading ? 'Loading...' : 'Sign In'}
             </Button>
           </form>
         )}
@@ -334,14 +318,6 @@ const Auth = () => {
             </button>
           )}
           
-          {view === 'signup' && (
-            <button
-              onClick={() => setView('login')}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Already have an account? Sign in
-            </button>
-          )}
         </div>
       </div>
     </div>
