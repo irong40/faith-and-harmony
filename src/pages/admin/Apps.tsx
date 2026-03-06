@@ -181,7 +181,7 @@ export default function Apps() {
                       id="url"
                       value={formData.url}
                       onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                      placeholder="https://my-app.lovable.app"
+                      placeholder="https://my-app.example.com"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
