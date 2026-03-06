@@ -5,7 +5,6 @@ import type {
   ProcessingJob,
   ProcessingJobStep,
   ProcessingTemplate,
-  DeliveryLog,
   PipelineJobRow,
 } from '@/types/pipeline';
 
@@ -55,26 +54,6 @@ export function useProcessingTemplateById(templateId: string | undefined) {
     },
     enabled: !!templateId,
     staleTime: 30 * 60 * 1000,
-  });
-}
-
-/**
- * Delivery log entries for a mission.
- */
-export function useDeliveryLogs(missionId: string | undefined) {
-  return useQuery({
-    queryKey: ['delivery-logs', missionId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('delivery_log')
-        .select('*')
-        .eq('mission_id', missionId!)
-        .order('delivered_at', { ascending: false });
-
-      if (error) throw error;
-      return data as DeliveryLog[];
-    },
-    enabled: !!missionId,
   });
 }
 

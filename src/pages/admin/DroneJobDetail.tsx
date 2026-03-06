@@ -112,6 +112,23 @@ function ProcessingJobCard({ missionId, processingTemplateId }: {
       return;
     }
 
+    // Pre-flight: warn if n8n automation engine is offline
+    const { data: heartbeat } = await supabase
+      .from('n8n_heartbeat')
+      .select('last_ping')
+      .eq('instance_id', 'primary')
+      .maybeSingle();
+    const ageMin = heartbeat?.last_ping
+      ? (Date.now() - new Date(heartbeat.last_ping).getTime()) / 60_000
+      : Infinity;
+    if (ageMin > 20) {
+      toast({
+        title: "n8n appears offline",
+        description: "The automation engine hasn't reported in. The job will be created but may not process until n8n is back online.",
+        variant: "destructive",
+      });
+    }
+
     try {
       const result = await triggerPipeline.mutateAsync({
         missionId,
