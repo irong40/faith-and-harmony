@@ -3,30 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Billing, Equipment, and Production Readiness
 status: executing
-stopped_at: Completed 08-02-PLAN.md (Watermark Pipeline)
-last_updated: "2026-03-05T20:11:56.373Z"
-last_activity: 2026-03-05 -- Completed Plan 08-02 (Watermark Pipeline)
+stopped_at: Completed 09-02-PLAN.md (Billing Lifecycle)
+last_updated: "2026-03-06T17:02:00Z"
+last_activity: 2026-03-06 -- Completed Plan 09-02 (Billing Lifecycle)
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 9
-  completed_plans: 7
----
-
----
-gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Billing, Equipment, and Production Readiness
-status: executing
-stopped_at: Completed 08-02-PLAN.md (Watermark Pipeline)
-last_updated: "2026-03-05T20:10:00Z"
-last_activity: 2026-03-05 -- Completed Plan 08-02 (Watermark Pipeline)
-progress:
-  total_phases: 5
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 8
-  percent: 92
+  completed_plans: 9
+  percent: 100
 ---
 
 # Project State
@@ -36,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** A prospective client can find Sentinel through search or phone, get qualified, receive a quote, and book a drone job without Iron personally fielding the call or manually creating the request.
-**Current focus:** Phase 8 (Watermark Pipeline) complete. Plans 01 and 02 both finished.
+**Current focus:** Phase 9 (Billing Lifecycle) Plan 02 complete. Balance payment webhook lifecycle and receipt email implemented.
 
 ## Current Position
 
-Phase: 8 of 11 (Watermark Pipeline)
-Plan: 2 of 2 complete in phase 8
+Phase: 9 of 11 (Billing Lifecycle)
+Plan: 2 of 2 complete in phase 9
 Status: Executing
-Last activity: 2026-03-05 -- Completed Plan 08-02 (Watermark Pipeline)
+Last activity: 2026-03-06 -- Completed Plan 09-02 (Billing Lifecycle)
 
-Progress: [█████████░] 92% (v2.0 milestone, 8/9 plans complete across Phases 7, 10, 8)
+Progress: [██████████] 100% (v2.0 milestone, 9/9 plans complete across Phases 7, 10, 8, 9)
 
 ## Accumulated Context
 
@@ -72,6 +57,8 @@ Recent decisions affecting current work:
 - [Phase 10]: Installed @testing-library/react for component TDD (was missing from devDependencies)
 - [Phase 10]: Dead letter banner placed after PilotCard and before QuickActions for maximum visibility
 - [Phase 10]: Always queue to IndexedDB first then fire processQueue, removing online/offline branching
+- [Phase 09]: Fire and forget pattern for receipt and delivery triggers prevents Square webhook retries on downstream failures
+- [Phase 09]: Job lookup falls back from direct job_id to quote_id for backward compatibility
 
 ### v1.0 Landing Page (Complete)
 
@@ -102,7 +89,7 @@ Key infrastructure from v1.1:
 
 ## Session Continuity
 
-Last session: 2026-03-05T20:10:00Z
-Stopped at: Completed 08-02-PLAN.md (Watermark Pipeline)
+Last session: 2026-03-06T17:02:00Z
+Stopped at: Completed 09-02-PLAN.md (Billing Lifecycle)
 Resume file: None
-Resume signal: Phase 8 complete. Continue with Phase 9 (Billing Lifecycle).
+Resume signal: Phase 9 complete. All v2.0 milestone plans executed.

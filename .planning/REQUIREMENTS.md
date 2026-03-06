@@ -11,9 +11,9 @@
 - [ ] **BILL-02**: Admin can trigger balance invoice creation via Square after job processing completes
 - [x] **BILL-03**: Watermarked preview thumbnails are generated during the processing pipeline and stored separately from originals
 - [ ] **BILL-04**: Client receives balance due email with 2 to 3 watermarked preview thumbnails and Square payment link
-- [ ] **BILL-05**: Square webhook processes balance payment confirmation and triggers receipt and delivery
-- [ ] **BILL-06**: Client receives receipt email after balance payment clears
-- [ ] **BILL-07**: Full resolution deliverables release automatically after balance payment confirmed
+- [x] **BILL-05**: Square webhook processes balance payment confirmation and triggers receipt and delivery
+- [x] **BILL-06**: Client receives receipt email after balance payment clears
+- [x] **BILL-07**: Full resolution deliverables release automatically after balance payment confirmed
 - [ ] **BILL-08**: Admin payments panel shows deposit and balance status per job with paid, pending, and overdue states
 
 ### Equipment
@@ -73,9 +73,9 @@
 | BILL-02 | Phase 9 | Pending |
 | BILL-03 | Phase 8 | Complete |
 | BILL-04 | Phase 9 | Pending |
-| BILL-05 | Phase 9 | Pending |
-| BILL-06 | Phase 9 | Pending |
-| BILL-07 | Phase 9 | Pending |
+| BILL-05 | Phase 9 | Complete |
+| BILL-06 | Phase 9 | Complete |
+| BILL-07 | Phase 9 | Complete |
 | BILL-08 | Phase 9 | Pending |
 | EQUIP-01 | Phase 7 | Complete |
 | EQUIP-02 | Phase 7 | Complete |
