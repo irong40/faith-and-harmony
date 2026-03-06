@@ -35,7 +35,8 @@ See v1.0 roadmap archive.
 - [x] **Phase 8: Watermark Pipeline** - Watermarked preview generation and separate storage buckets (completed 2026-03-05)
 - [x] **Phase 9: Billing Lifecycle** - Balance invoice, balance due email, payment webhook, receipt, delivery gate, admin payments panel
 - [x] **Phase 10: Offline Sync Hardening** - Dead letter store, persistent warnings, end-to-end flight log sync, try/catch fallback (completed 2026-03-05)
-- [ ] **Phase 11: Standalone Deployment** - Vercel subdomain, Supabase auth redirects, Square production cutover
+- [x] **Phase 11: Standalone Deployment** - Vercel subdomain, Supabase auth redirects, Square production cutover (completed 2026-03-05)
+- [x] **Phase 12: Mission Control Validation** - Admin apps/announcements, satellite plugin, edge function validation (completed 2026-03-06)
 
 ## Phase Details
 
@@ -108,8 +109,8 @@ Plans:
   3. Square production webhook is registered and processes real payments (sandbox data archived, production environment variables set)
 **Plans**: 2 plans
 Plans:
-- [ ] 11-01-PLAN.md -- config.toml fix, Vercel project creation, DNS, and Supabase auth redirects
-- [ ] 11-02-PLAN.md -- Square production cutover and end-to-end deployment verification
+- [x] 11-01-PLAN.md -- config.toml fix, Vercel project creation, DNS, and Supabase auth redirects
+- [x] 11-02-PLAN.md -- Square production cutover and end-to-end deployment verification
 
 ## Progress
 
@@ -122,4 +123,5 @@ Phases 7 and 10 are independent and can run in parallel. Phase 8 depends on 7. P
 | 8. Watermark Pipeline | 2/2 | Complete   | 2026-03-05 | - |
 | 9. Billing Lifecycle | 3/3 | Complete   | 2026-03-06 | - |
 | 10. Offline Sync Hardening | 3/3 | Complete    | 2026-03-05 | - |
-| 11. Standalone Deployment | v2.0 | 0/2 | Planned | - |
+| 11. Standalone Deployment | v2.0 | 2/2 | Complete | 2026-03-05 |
+| 12. Mission Control Validation | v2.0 | 1/1 | Complete | 2026-03-06 |
