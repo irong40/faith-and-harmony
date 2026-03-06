@@ -12,6 +12,11 @@ export default function PWAInstallPrompt() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
+    // Only show on the Trestle subdomain
+    if (!window.location.hostname.startsWith('trestle.')) {
+      return;
+    }
+
     // Check if already dismissed this session
     if (sessionStorage.getItem('trestle_install_dismissed')) {
       setDismissed(true);

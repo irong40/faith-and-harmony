@@ -67,57 +67,56 @@ export default function QuoteForm() {
     }
   };
 
+  if (status === 'success') {
+    return (
+      <div className="fh-quote-confirmation">
+        <h3>REQUEST RECEIVED</h3>
+        <p>Your quote request was submitted. Expect a response within one business day. Check your email for confirmation.</p>
+      </div>
+    );
+  }
+
   return (
-    <section className="lp-quote" id="quote" aria-label="Request a quote">
-      <div className="lp-container">
-        <h2 className="lp-section-title">REQUEST A QUOTE</h2>
-        <div className="lp-quote-form-wrapper">
-          {status === 'success' ? (
-            <div className="lp-quote-confirmation">
-              <h3>REQUEST RECEIVED</h3>
-              <p>Your quote request was submitted. Expect a response within one business day. Check your email for confirmation.</p>
-            </div>
-          ) : (
-            <form className="lp-quote-form" onSubmit={handleSubmit}>
-              <div className="lp-quote-field">
-                <label htmlFor="quote-name">Name</label>
-                <input type="text" id="quote-name" name="name" required placeholder="Your name" value={formData.name} onChange={handleChange} />
-              </div>
-              <div className="lp-quote-field">
-                <label htmlFor="quote-email">Email</label>
-                <input type="email" id="quote-email" name="email" required placeholder="Your email address" value={formData.email} onChange={handleChange} />
-              </div>
-              <div className="lp-quote-field">
-                <label htmlFor="quote-phone">Phone</label>
-                <input type="tel" id="quote-phone" name="phone" placeholder="Your phone number" value={formData.phone} onChange={handleChange} />
-              </div>
-              <div className="lp-quote-field">
-                <label htmlFor="quote-service">Service Type</label>
-                <select id="quote-service" name="service_type" value={formData.service_type} onChange={handleChange}>
-                  <option value="" disabled>Select a service</option>
-                  {SERVICE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="lp-quote-field">
-                <label htmlFor="quote-date">Preferred Date</label>
-                <input type="date" id="quote-date" name="preferred_date" value={formData.preferred_date} onChange={handleChange} />
-              </div>
-              <div className="lp-quote-field">
-                <label htmlFor="quote-message">Message</label>
-                <textarea id="quote-message" name="message" rows={4} placeholder="Describe your project or ask a question" value={formData.message} onChange={handleChange} />
-              </div>
-              {status === 'error' && (
-                <p className="lp-quote-error">Something went wrong. Call 757.843.8772 or email info@faithandharmonyllc.com directly.</p>
-              )}
-              <button type="submit" className="lp-cta-button" disabled={status === 'submitting'}>
-                {status === 'submitting' ? 'SENDING...' : 'SEND REQUEST'}
-              </button>
-            </form>
-          )}
+    <form className="fh-quote-form" onSubmit={handleSubmit}>
+      <div className="fh-quote-row">
+        <div className="fh-quote-field">
+          <label htmlFor="quote-name">Name</label>
+          <input type="text" id="quote-name" name="name" required placeholder="Your name" value={formData.name} onChange={handleChange} />
+        </div>
+        <div className="fh-quote-field">
+          <label htmlFor="quote-email">Email</label>
+          <input type="email" id="quote-email" name="email" required placeholder="Your email address" value={formData.email} onChange={handleChange} />
         </div>
       </div>
-    </section>
+      <div className="fh-quote-row">
+        <div className="fh-quote-field">
+          <label htmlFor="quote-phone">Phone</label>
+          <input type="tel" id="quote-phone" name="phone" placeholder="Your phone number" value={formData.phone} onChange={handleChange} />
+        </div>
+        <div className="fh-quote-field">
+          <label htmlFor="quote-service">Service Type</label>
+          <select id="quote-service" name="service_type" value={formData.service_type} onChange={handleChange}>
+            <option value="" disabled>Select a service</option>
+            {SERVICE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="fh-quote-field">
+        <label htmlFor="quote-date">Preferred Date</label>
+        <input type="date" id="quote-date" name="preferred_date" value={formData.preferred_date} onChange={handleChange} />
+      </div>
+      <div className="fh-quote-field">
+        <label htmlFor="quote-message">Message</label>
+        <textarea id="quote-message" name="message" rows={4} placeholder="Describe your project or ask a question" value={formData.message} onChange={handleChange} />
+      </div>
+      {status === 'error' && (
+        <p className="fh-quote-error">Something went wrong. Call 757.843.8772 or email info@faithandharmonyllc.com directly.</p>
+      )}
+      <button type="submit" className="fh-btn fh-btn-primary" style={{ width: '100%', marginTop: '8px' }} disabled={status === 'submitting'}>
+        {status === 'submitting' ? 'SENDING...' : 'SEND REQUEST'}
+      </button>
+    </form>
   );
 }

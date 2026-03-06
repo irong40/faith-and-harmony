@@ -371,6 +371,103 @@
   letter-spacing: 1px;
 }
 
+/* ─── Quote Form ─── */
+.fh-quote-form {
+  max-width: 640px;
+  margin: 36px auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.fh-quote-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.fh-quote-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fh-quote-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fh-cream-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.fh-quote-field input,
+.fh-quote-field select,
+.fh-quote-field textarea {
+  background: var(--fh-purple-dark);
+  border: 1px solid var(--fh-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 15px;
+  color: var(--fh-cream);
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+.fh-quote-field input::placeholder,
+.fh-quote-field textarea::placeholder {
+  color: var(--fh-slate);
+}
+.fh-quote-field input:focus,
+.fh-quote-field select:focus,
+.fh-quote-field textarea:focus {
+  outline: none;
+  border-color: var(--fh-gold);
+}
+.fh-quote-field select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2364607a' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+.fh-quote-field select option {
+  background: var(--fh-purple-dark);
+  color: var(--fh-cream);
+}
+.fh-quote-field textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+.fh-quote-error {
+  color: #f87171;
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
+}
+.fh-quote-confirmation {
+  max-width: 640px;
+  margin: 36px auto 0;
+  text-align: center;
+  padding: 40px;
+  background: var(--fh-purple-dark);
+  border: 1px solid var(--fh-gold);
+  border-radius: 14px;
+}
+.fh-quote-confirmation h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--fh-gold);
+  letter-spacing: 2px;
+  margin: 0 0 12px;
+}
+.fh-quote-confirmation p {
+  color: var(--fh-cream-dim);
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .fh-quote-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ─── Footer ─── */
 .fh-footer {
   background: var(--fh-purple-dark);
