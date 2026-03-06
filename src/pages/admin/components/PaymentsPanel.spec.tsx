@@ -85,7 +85,7 @@ describe("PaymentsPanel", () => {
 
     expect(await screen.findByText("Deposit")).toBeTruthy();
     expect(screen.getByText("Balance")).toBeTruthy();
-    expect(screen.getByText("$225.00")).toBeTruthy();
+    expect(screen.getAllByText("$225.00").length).toBe(2);
   });
 
   it("shows 'Paid' badge for status === 'paid'", async () => {
