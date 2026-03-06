@@ -21,16 +21,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle, ScanSearch, Zap, Settings2, Image as ImageIcon, AlertTriangle, ExternalLink, Link2, Calendar } from "lucide-react";
+import { ArrowLeft, RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle, ScanSearch, Zap, Settings2, Image as ImageIcon, AlertTriangle, ExternalLink, Link2, Calendar, DollarSign } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import AdminNav from "./components/AdminNav";
+import PaymentsPanel from "./components/PaymentsPanel";
 import DroneJobForm from "./components/DroneJobForm";
 import QASummaryCard from "@/components/drone/QASummaryCard";
 import QAAssetGrid from "@/components/drone/QAAssetGrid";
 import AdminAssetUpload from "@/components/drone/AdminAssetUpload";
 import type { Database, Json } from "@/integrations/supabase/types";
 import type { DroneAsset, QAResults, ProcessingProfile } from "@/types/drone";
+import { useQueryClient } from "@tanstack/react-query";
 import { useProcessingJob, useTriggerPipeline, useResumeManualEdit } from "@/hooks/usePipeline";
 import type { ProcessingJobStep } from "@/hooks/usePipeline";
 import PipelineStepper from "@/components/pipeline/PipelineStepper";
@@ -265,6 +267,35 @@ export default function DroneJobDetail() {
   const [triggeringProcessing, setTriggeringProcessing] = useState(false);
   const [syncingCalendar, setSyncingCalendar] = useState(false);
   const [calendarConnected, setCalendarConnected] = useState(false);
+  const [sendingBalanceInvoice, setSendingBalanceInvoice] = useState(false);
+  const queryClient = useQueryClient();
+
+  const sendBalanceInvoice = async () => {
+    if (!job) return;
+    setSendingBalanceInvoice(true);
+
+    const { data, error } = await supabase.functions.invoke("create-balance-invoice", {
+      body: { job_id: job.id },
+    });
+
+    if (error) {
+      toast({
+        title: "Failed to send balance invoice",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else if (data?.error) {
+      toast({
+        title: "Balance invoice error",
+        description: data.error,
+        variant: "destructive",
+      });
+    } else {
+      toast({ title: "Balance invoice sent" });
+      queryClient.invalidateQueries({ queryKey: ["payments", job.id] });
+    }
+    setSendingBalanceInvoice(false);
+  };
 
   const fetchJob = async () => {
     if (!id) return;
@@ -577,6 +608,7 @@ export default function DroneJobDetail() {
             <TabsTrigger value="qa">QA</TabsTrigger>
             <TabsTrigger value="processing">Processing</TabsTrigger>
             <TabsTrigger value="delivery">Delivery</TabsTrigger>
+            <TabsTrigger value="billing">Billing</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -1170,6 +1202,45 @@ export default function DroneJobDetail() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Billing Tab */}
+          <TabsContent value="billing" className="space-y-4">
+            {/* Balance Invoice Button */}
+            {job.status === "complete" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    Balance Invoice
+                  </CardTitle>
+                  <CardDescription>
+                    Send the balance invoice to the client via Square
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    onClick={sendBalanceInvoice}
+                    disabled={sendingBalanceInvoice}
+                  >
+                    {sendingBalanceInvoice ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <DollarSign className="mr-2 h-4 w-4" />
+                        Send Balance Invoice
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Payments Panel */}
+            <PaymentsPanel jobId={job.id} />
           </TabsContent>
 
           {/* Delivery Tab */}
