@@ -209,10 +209,12 @@ const Auth = () => {
     }
   };
 
+  const isTrestle = window.location.hostname.includes('trestle');
+
   const getSubtitle = () => {
     if (ssoCallback) return 'Sign in to continue to Event Tracking';
     switch (view) {
-      case 'login': return 'Welcome back to Trestle';
+      case 'login': return isTrestle ? 'Trestle Pilot Portal' : 'Faith & Harmony Admin';
       case 'forgot-password': return 'Enter your email to receive a reset link';
       case 'reset-password': return 'Enter your new password below';
     }

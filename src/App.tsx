@@ -75,11 +75,16 @@ const PageSpinner = () => (
   </div>
 );
 
+const isTrestleDomain = () => window.location.hostname.includes('trestle');
+
 // Role-based redirect — logged-in users go to dashboard, guests see landing page
 function RootRedirect() {
   const { user, isAdmin, isPilot, loading } = useAuth();
   if (loading) return <PageSpinner />;
-  if (!user) return <LandingPage />;
+  if (!user) {
+    if (isTrestleDomain()) return <Navigate to="/auth" replace />;
+    return <LandingPage />;
+  }
   if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
   if (isPilot) return <Navigate to="/pilot" replace />;
   return <Navigate to="/auth" replace />;
