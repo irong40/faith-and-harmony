@@ -109,7 +109,7 @@ export default function QuoteForm() {
                 <textarea id="quote-message" name="message" rows={4} placeholder="Describe your project or ask a question" value={formData.message} onChange={handleChange} />
               </div>
               {status === 'error' && (
-                <p className="lp-quote-error">Something went wrong. Call 757.843.8772 or email contact@sentinelaerial.com directly.</p>
+                <p className="lp-quote-error">Something went wrong. Call 757.843.8772 or email info@faithandharmonyllc.com directly.</p>
               )}
               <button type="submit" className="lp-cta-button" disabled={status === 'submitting'}>
                 {status === 'submitting' ? 'SENDING...' : 'SEND REQUEST'}

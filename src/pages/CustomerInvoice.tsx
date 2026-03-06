@@ -392,8 +392,8 @@ export default function CustomerInvoice() {
           <p>Questions about this invoice?</p>
           <p>
             Contact us at{" "}
-            <a href="mailto:info@sentinelaerial.com" className="text-primary hover:underline">
-              info@sentinelaerial.com
+            <a href="mailto:info@faithandharmonyllc.com" className="text-primary hover:underline">
+              info@faithandharmonyllc.com
             </a>
           </p>
         </div>

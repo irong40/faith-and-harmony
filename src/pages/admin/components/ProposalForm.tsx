@@ -392,7 +392,7 @@ export default function ProposalForm({
           <!-- Footer -->
           <div style="margin-top: 48px; padding-top: 16px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 14px; color: #9ca3af;">
             <p style="font-weight: 500;">Sentinel Aerial Inspections</p>
-            <p>sentinelaerial.com</p>
+            <p>sentinelaerialinspections.com</p>
             <p style="margin-top: 8px; font-style: italic;">Thank you for considering us for your project.</p>
           </div>
         </body>

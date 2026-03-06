@@ -527,7 +527,7 @@ export default function CustomerProposal() {
       <footer className="bg-[#2b0a3d] text-white py-6 mt-12">
         <div className="container max-w-4xl mx-auto px-4 text-center">
           <p className="text-[#dfae62] font-semibold">Sentinel Aerial Inspections</p>
-          <p className="text-sm text-white/60 mt-1">info@sentinelaerial.com</p>
+          <p className="text-sm text-white/60 mt-1">info@faithandharmonyllc.com</p>
           <p className="text-xs text-white/40 mt-2">
             &copy; {new Date().getFullYear()} Faith &amp; Harmony LLC DBA Sentinel Aerial Inspections. All rights reserved.
           </p>

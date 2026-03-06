@@ -114,7 +114,7 @@ serve(async (req) => {
       companyName: brandRow?.company_name ?? "Sentinel Aerial Inspections",
       tagline: brandRow?.tagline ?? "Professional Drone Services — Hampton Roads",
       fromEmail: brandRow?.from_email ?? "quotes@sentinelaerialinspections.com",
-      replyTo: brandRow?.reply_to ?? "contact@sentinelaerial.com",
+      replyTo: brandRow?.reply_to ?? "info@faithandharmonyllc.com",
       baseUrl: brandRow?.base_url ?? "https://faithandharmonyllc.com",
     };
 

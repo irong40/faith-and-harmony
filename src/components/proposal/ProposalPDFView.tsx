@@ -205,7 +205,7 @@ export const ProposalPDFView = forwardRef<HTMLDivElement, ProposalPDFViewProps>(
         {/* Footer */}
         <div className="mt-12 pt-4 border-t text-center text-sm text-gray-500">
           <p className="font-medium">Sentinel Aerial Inspections</p>
-          <p>sentinelaerial.com</p>
+          <p>sentinelaerialinspections.com</p>
           <p className="mt-2 italic">Thank you for considering us for your project.</p>
         </div>
       </div>

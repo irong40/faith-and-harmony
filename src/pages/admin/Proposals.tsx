@@ -323,7 +323,7 @@ export default function Proposals() {
           ` : ''}
 
           <div class="footer">
-            <p>Sentinel Aerial Inspections | sentinelaerial.com</p>
+            <p>Sentinel Aerial Inspections | sentinelaerialinspections.com</p>
             <p>Thank you for considering us for your project.</p>
           </div>
         </body>

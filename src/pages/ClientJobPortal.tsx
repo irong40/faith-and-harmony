@@ -196,8 +196,8 @@ export default function ClientJobPortal() {
             </p>
             <p className="text-sm text-muted-foreground">
               If you believe this is an error, please contact us at{' '}
-              <a href="mailto:info@sentinelaerial.com" className="text-primary hover:underline">
-                info@sentinelaerial.com
+              <a href="mailto:info@faithandharmonyllc.com" className="text-primary hover:underline">
+                info@faithandharmonyllc.com
               </a>
             </p>
           </CardContent>
@@ -538,11 +538,11 @@ export default function ClientJobPortal() {
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <a
-                  href="mailto:info@sentinelaerial.com"
+                  href="mailto:info@faithandharmonyllc.com"
                   className="flex items-center gap-2 text-sm text-primary hover:underline"
                 >
                   <Mail className="h-4 w-4" />
-                  info@sentinelaerial.com
+                  info@faithandharmonyllc.com
                 </a>
                 <a
                   href="tel:+17576093268"

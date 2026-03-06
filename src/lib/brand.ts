@@ -11,10 +11,10 @@ export const BRAND = {
   dba: "Sentinel Aerial Inspections",
   app: "Trestle",
   tagline: "Veteran-owned aerial inspection services in Hampton Roads, Virginia.",
-  email: "info@sentinelaerial.com",
+  email: "info@faithandharmonyllc.com",
   emailPayment: "faithandharmonyllc@gmail.com",
   phone: "(757) 609-3268",
-  website: "sentinelaerial.com",
+  website: "sentinelaerialinspections.com",
   location: "Hampton Roads, Virginia",
 
   // Payment Options

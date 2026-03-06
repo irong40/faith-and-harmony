@@ -189,9 +189,9 @@ export default function QuoteAcceptancePage() {
     color_accent: "#FF6B35",
     color_cta: "#FF6B35",
     color_light: "#F5F5F0",
-    reply_to: "contact@sentinelaerial.com",
+    reply_to: "info@faithandharmonyllc.com",
     phone: "760.575.4876",
-    website: "sentinelaerial.com",
+    website: "sentinelaerialinspections.com",
   };
 
   const formatDate = (iso: string) =>

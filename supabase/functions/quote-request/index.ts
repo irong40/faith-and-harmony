@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// NOTE: inquiries@sentinelaerial.com must be verified in Resend (same domain as contact@sentinelaerial.com)
+// NOTE: inquiries@faithandharmonyllc.com must be verified in Resend
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 interface QuoteRequest {
@@ -95,8 +95,8 @@ ${quoteRow ? `\nQuote Request ID: ${quoteRow.id}` : ""}
 Reply directly to this email to respond to the prospect.`;
 
     const emailResponse = await resend.emails.send({
-      from: "Sentinel Aerial Inquiries <inquiries@sentinelaerial.com>",
-      to: ["contact@sentinelaerial.com"],
+      from: "Sentinel Aerial Inquiries <inquiries@faithandharmonyllc.com>",
+      to: ["info@faithandharmonyllc.com"],
       replyTo: email,
       subject: `New Quote Request: ${service_type} from ${name}`,
       text: emailBody,

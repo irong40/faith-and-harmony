@@ -6,9 +6,9 @@ const localBusinessSchema = {
   "name": "Sentinel Aerial Inspections",
   "alternateName": "Faith & Harmony LLC",
   "description": "Veteran owned drone services company providing aerial photography, property inspections, and 3D photogrammetry in Hampton Roads VA and surrounding areas.",
-  "url": "https://sentinelaerial.faithandharmonyllc.com",
+  "url": "https://sentinelaerialinspections.com",
   "telephone": "+17578438772",
-  "email": "contact@sentinelaerial.com",
+  "email": "info@faithandharmonyllc.com",
   "priceRange": "$$",
   "address": {
     "@type": "PostalAddress",
