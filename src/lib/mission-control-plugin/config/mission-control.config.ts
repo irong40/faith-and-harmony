@@ -50,7 +50,7 @@ export function getMissionControlConfig(overrides?: Partial<MissionControlConfig
     apiKey: import.meta.env.VITE_MISSION_CONTROL_API_KEY || missionControlConfig.apiKey,
     appCode: import.meta.env.VITE_APP_CODE || missionControlConfig.appCode,
     appName: import.meta.env.VITE_APP_NAME || overrides?.appName || missionControlConfig.appName,
-    bootstrapSecret: import.meta.env.VITE_MC_BOOTSTRAP_SECRET || overrides?.bootstrapSecret || missionControlConfig.bootstrapSecret,
+    bootstrapSecret: overrides?.bootstrapSecret || missionControlConfig.bootstrapSecret,
     debug: import.meta.env.DEV || missionControlConfig.debug,
     ...overrides,
   };

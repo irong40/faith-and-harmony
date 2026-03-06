@@ -32,7 +32,7 @@ serve(async (req) => {
   try {
     const { proposal, client, deliverables }: ProposalEmailRequest = await req.json();
     
-    const proposalUrl = `${req.headers.get("origin") || "https://faithandharmony.com"}/proposal/${proposal.approval_token}`;
+    const proposalUrl = `${req.headers.get("origin") || "https://faithandharmonyllc.com"}/proposal/${proposal.approval_token}`;
     
     const deliverablesHtml = deliverables
       .map(d => `<li style="margin-bottom: 8px;"><strong>${d.name}</strong>: ${d.description}</li>`)

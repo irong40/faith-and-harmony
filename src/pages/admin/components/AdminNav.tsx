@@ -124,7 +124,7 @@ export default function AdminNav() {
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-primary transition-colors"
-              title="Sentinel Aerial Inspections website"
+              title="Faith & Harmony LLC website"
             >
               <ExternalLink className="h-4 w-4" />
             </a>

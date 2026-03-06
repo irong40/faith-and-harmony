@@ -99,7 +99,7 @@ serve(async (req: Request): Promise<Response> => {
 
       // Create notification for admin
       const { error: notifError } = await supabase.from("notifications").insert({
-        user_email: "admin@faithandharmony.com",
+        user_email: "admin@faithandharmonyllc.com",
         type: "message",
         title: `New message from ${body.customer_name}`,
         body: body.content.substring(0, 100) + (body.content.length > 100 ? "..." : ""),

@@ -87,7 +87,10 @@ function RootRedirect() {
   }
   if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
   if (isPilot) return <Navigate to="/pilot" replace />;
-  return <Navigate to="/auth" replace />;
+  // User is authenticated but has no admin/pilot role — show landing page on F&H domain,
+  // or redirect to auth on Trestle domain (auth page will show "no role" state)
+  if (isTrestleDomain()) return <Navigate to="/auth" replace />;
+  return <LandingPage />;
 }
 
 // Helper: wrap admin route in ErrorBoundary + ProtectedRoute

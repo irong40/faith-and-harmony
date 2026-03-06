@@ -66,11 +66,10 @@ const Auth = () => {
         navigate('/pilot');
       } else if (roles.includes('admin')) {
         navigate('/admin/dashboard');
-      } else {
-        navigate('/');
       }
+      // If no recognized role, stay on auth page (don't redirect to / to avoid loop)
     } catch {
-      navigate('/');
+      // Stay on auth page on error
     }
   };
 

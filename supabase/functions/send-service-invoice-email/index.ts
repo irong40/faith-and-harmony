@@ -49,7 +49,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Customer email not found");
     }
 
-    const baseUrl = Deno.env.get("SITE_URL") || "https://faithandharmony.com";
+    const baseUrl = Deno.env.get("SITE_URL") || "https://faithandharmonyllc.com";
     const invoiceUrl = `${baseUrl}/invoice/${invoice.view_token}`;
 
     const formatDate = (dateStr: string) => {

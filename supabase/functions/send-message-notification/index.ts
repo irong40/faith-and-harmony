@@ -16,7 +16,7 @@ const BRAND = {
   companyName: "Faith & Harmony LLC",
   tagline: "Rooted in Purpose. Driven by Service.",
   email: "info@faithandharmonyllc.com",
-  website: "faithandharmony.com",
+  website: "faithandharmonyllc.com",
 };
 
 interface NotificationRequest {

@@ -104,3 +104,24 @@ verify_jwt = false
 
 [functions.square-webhook]
 verify_jwt = false
+
+[functions.availability-check]
+verify_jwt = false
+
+[functions.intake-lead]
+verify_jwt = false
+
+[functions.pricing-lookup]
+verify_jwt = false
+
+[functions.quote-request]
+verify_jwt = false
+
+[functions.tfr-refresh]
+verify_jwt = false
+
+[functions.vapi-tool-handler]
+verify_jwt = false
+
+[functions.weather-forecast-fetch]
+verify_jwt = false

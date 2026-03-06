@@ -7,4 +7,4 @@ Disallow: /invoice/
 Disallow: /drone-upload/
 Disallow: /my-jobs/
 
-Sitemap: https://sentinelaerial.faithandharmonyllc.com/sitemap.xml
+Sitemap: https://faithandharmonyllc.com/sitemap.xml
