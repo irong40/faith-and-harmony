@@ -120,6 +120,6 @@ Phases 7 and 10 are independent and can run in parallel. Phase 8 depends on 7. P
 |-------|-----------|----------------|--------|-----------|
 | 7. Foundation and Quick Wins | 2/2 | Complete   | 2026-03-05 | - |
 | 8. Watermark Pipeline | 2/2 | Complete   | 2026-03-05 | - |
-| 9. Billing Lifecycle | v2.0 | 0/3 | Planned | - |
+| 9. Billing Lifecycle | 2/3 | In Progress|  | - |
 | 10. Offline Sync Hardening | 3/3 | Complete    | 2026-03-05 | - |
 | 11. Standalone Deployment | v2.0 | 0/2 | Planned | - |

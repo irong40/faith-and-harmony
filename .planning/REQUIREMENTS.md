@@ -8,9 +8,9 @@
 ### Billing
 
 - [x] **BILL-01**: Deposit amount is fixed at 50% of package price in quote creation
-- [ ] **BILL-02**: Admin can trigger balance invoice creation via Square after job processing completes
+- [x] **BILL-02**: Admin can trigger balance invoice creation via Square after job processing completes
 - [x] **BILL-03**: Watermarked preview thumbnails are generated during the processing pipeline and stored separately from originals
-- [ ] **BILL-04**: Client receives balance due email with 2 to 3 watermarked preview thumbnails and Square payment link
+- [x] **BILL-04**: Client receives balance due email with 2 to 3 watermarked preview thumbnails and Square payment link
 - [x] **BILL-05**: Square webhook processes balance payment confirmation and triggers receipt and delivery
 - [x] **BILL-06**: Client receives receipt email after balance payment clears
 - [x] **BILL-07**: Full resolution deliverables release automatically after balance payment confirmed
@@ -70,9 +70,9 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | BILL-01 | Phase 7 | Complete |
-| BILL-02 | Phase 9 | Pending |
+| BILL-02 | Phase 9 | Complete |
 | BILL-03 | Phase 8 | Complete |
-| BILL-04 | Phase 9 | Pending |
+| BILL-04 | Phase 9 | Complete |
 | BILL-05 | Phase 9 | Complete |
 | BILL-06 | Phase 9 | Complete |
 | BILL-07 | Phase 9 | Complete |
