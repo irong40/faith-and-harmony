@@ -44,6 +44,7 @@ A prospective client can find Sentinel through search or phone, get qualified, r
 - [ ] End to end offline flight log queueing with sync
 - [ ] Production PWA icons
 - [ ] Standalone Vercel deployment at trestle.sentinelaerial.com
+- [ ] Mission Control validation (edge function deployed, admin UI tested, satellite plugin documented)
 
 ### Out of Scope
 

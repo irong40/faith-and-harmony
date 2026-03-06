@@ -24,3 +24,28 @@
 - weather_forecast_cache table
 - weather-forecast-fetch edge function
 - Admin pages: Scheduling, Weather Operations, Call Logs, Leads
+
+## v2.0 Billing, Equipment, and Production Readiness (Active)
+
+**Started:** 2026-03-05
+**Phases:** 7 through 12
+**Summary:** Close all remaining gaps for production readiness with automated billing, equipment tracking, offline operations, standalone Trestle deployment, and Mission Control validation.
+
+**Phases:**
+- Phase 07: Foundation and Quick Wins
+- Phase 08: Watermark Pipeline
+- Phase 09: Billing Lifecycle
+- Phase 10: Offline Sync Hardening
+- Phase 11: Standalone Deployment
+- Phase 12: Mission Control Validation
+
+**Mission Control pre-existing artifacts (needs validation):**
+- apps table with API key auth (SHA-256 hashed)
+- maintenance_announcements table with RLS
+- app_health_history table
+- app_status_overview and active_announcements views
+- mission-control-api edge function (heartbeat, tickets, announcements, bootstrap registration)
+- Admin pages: Apps, Announcements
+- Satellite plugin (src/lib/mission-control-plugin) with Provider, Widget, hooks
+- useMissionControlAdmin hook with full CRUD and audit logging
+- register_app_with_bootstrap, validate_api_key, generate/revoke_app_api_key RPCs

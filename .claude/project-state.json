@@ -1,22 +1,18 @@
 {
-  "lastSession": "2026-02-20",
+  "lastSession": "2026-03-06",
   "branch": "main",
-  "phase": "Pilot portal QA complete, offline sync wired, code-split deployed",
+  "phase": "Phase 11 (Standalone Deployment) in progress, awaiting manual dashboard steps",
   "workItems": [
-    "E2E test offline sync queue with real network disconnection",
-    "Fix battery_mission_tracking + airframe_flight_history migrations (schema mismatch)",
-    "Populate nearest_weather_station on drone_jobs records",
-    "Replace programmatic PWA icons with designed assets",
-    "Split DroneCRMDashboard chunk (419 KB)",
-    "ROTATE SUPABASE SERVICE ROLE KEY"
+    "Add Supabase auth redirect URLs for trestle.sentinelaerialinspections.com",
+    "Deploy create-deposit-invoice edge function",
+    "Square production cutover (11-02-PLAN.md)",
+    "Fix faithandharmonyllc.com deep link 404s (Cloudflare proxy issue)",
+    "Phase 8 Watermark Pipeline",
+    "Phase 9 Billing Lifecycle"
   ],
   "blockers": [
-    "Service role key exposed — must rotate before any production use"
-  ],
-  "deployedAt": "4e2d8b8",
-  "migrationsApplied": [
-    "20260220120000_retainers",
-    "20260220120100_mission_equipment_accessories",
-    "20260220120200_drone_jobs_weather_station"
+    "Supabase CLI requires interactive login (run supabase login in terminal)",
+    "Square production cutover requires manual dashboard access",
+    "Cloudflare DNS proxy may need reconfiguration for F&H deep links"
   ]
 }
