@@ -35,6 +35,7 @@ const People = lazy(() => import("./pages/admin/People"));
 const Messages = lazy(() => import("./pages/admin/Messages"));
 const Apps = lazy(() => import("./pages/admin/Apps"));
 const Announcements = lazy(() => import("./pages/admin/Announcements"));
+const Tickets = lazy(() => import("./pages/admin/Tickets"));
 const Documents = lazy(() => import("./pages/admin/Documents"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
 const Invoices = lazy(() => import("./pages/admin/Invoices"));
@@ -147,6 +148,7 @@ const App = () => (
               <Route path="/admin/messages" element={<AdminRoute><Messages /></AdminRoute>} />
               <Route path="/admin/apps" element={<AdminRoute><Apps /></AdminRoute>} />
               <Route path="/admin/announcements" element={<AdminRoute><Announcements /></AdminRoute>} />
+              <Route path="/admin/tickets" element={<AdminRoute><Tickets /></AdminRoute>} />
               <Route path="/admin/documents" element={<AdminRoute><Documents /></AdminRoute>} />
               <Route path="/admin/pricing" element={<AdminRoute><SentinelPricing /></AdminRoute>} />
               <Route path="/admin/settings" element={<AdminRoute><Settings /></AdminRoute>} />

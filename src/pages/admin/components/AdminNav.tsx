@@ -31,6 +31,7 @@ import {
   Cloud,
   Phone,
   Wrench,
+  TicketCheck,
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -48,6 +49,7 @@ const navCategories: NavCategory[] = [
       { href: "/admin/dashboard", label: "Overview", icon: LayoutDashboard },
       { href: "/admin/apps", label: "Apps", icon: Server },
       { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
+      { href: "/admin/tickets", label: "Tickets", icon: TicketCheck },
     ],
   },
   {

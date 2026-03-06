@@ -454,3 +454,91 @@ export function useDeleteAnnouncement() {
     },
   });
 }
+// ============================================
+// TICKETS
+// ============================================
+
+export interface MaintenanceTicket {
+  id: string;
+  ticket_number: string;
+  app_id: string | null;
+  type: 'bug' | 'feature-request' | 'break-fix' | 'question';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  category: 'database' | 'ui' | 'api' | 'performance' | 'security' | 'other';
+  status: 'open' | 'in-progress' | 'resolved' | 'closed';
+  title: string;
+  description: string | null;
+  steps_to_reproduce: string | null;
+  reporter_email: string | null;
+  reporter_name: string | null;
+  resolution: string | null;
+  page_url: string | null;
+  browser_info: Record<string, unknown> | null;
+  submitted_via: string | null;
+  external_reference: string | null;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+  apps: { name: string; code: string } | null;
+}
+
+export function useTickets() {
+  return useQuery({
+    queryKey: ['mission-control-tickets'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('maintenance_tickets')
+        .select('*, apps(name, code)')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as MaintenanceTicket[];
+    },
+  });
+}
+
+export function useUpdateTicketStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, status, resolution, ticketNumber }: {
+      id: string;
+      status: MaintenanceTicket['status'];
+      resolution: string | null;
+      ticketNumber: string;
+    }) => {
+      const updateData: Record<string, unknown> = {
+        status,
+        resolution,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (status === 'resolved' || status === 'closed') {
+        updateData.resolved_at = new Date().toISOString();
+      }
+
+      const { data: updated, error } = await supabase
+        .from('maintenance_tickets')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await logAuditEvent({
+        action: 'updated',
+        tableName: 'maintenance_tickets',
+        recordId: id,
+        changesAfter: { status, resolution },
+        notes: `Ticket ${ticketNumber} status changed to "${status}"`,
+      });
+
+      return updated;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mission-control-tickets'] });
+      queryClient.invalidateQueries({ queryKey: ['mission-control-apps'] });
+    },
+  });
+}
