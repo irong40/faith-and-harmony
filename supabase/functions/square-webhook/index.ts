@@ -130,7 +130,7 @@ serve(async (req) => {
   // Find the matching payment row by Square invoice ID
   const { data: payment, error: fetchError } = await supabase
     .from("payments")
-    .select("id, quote_id, status, payment_type, customer_email")
+    .select("id, quote_id, job_id, status, payment_type, customer_email")
     .eq("square_invoice_id", squareInvoiceId)
     .maybeSingle();
 
@@ -179,8 +179,80 @@ serve(async (req) => {
 
   console.log(`Payment ${payment.id} (${payment.payment_type}) marked paid. quote=${payment.quote_id}`);
 
-  // TODO (Plan 04): Trigger receipt email when BOTH deposit and balance are paid
-  // if (payment.payment_type === 'balance') { ... trigger payment-receipt-email ... }
+  // Balance payment lifecycle: update job status, send receipt, release deliverables
+  if (payment.payment_type === "balance") {
+    // Find the drone_job: prefer direct job_id, fall back to quote_id lookup
+    let jobId: string | null = payment.job_id ?? null;
+
+    if (!jobId && payment.quote_id) {
+      const { data: jobRow } = await supabase
+        .from("drone_jobs")
+        .select("id")
+        .eq("quote_id", payment.quote_id)
+        .maybeSingle();
+      jobId = jobRow?.id ?? null;
+    }
+
+    if (jobId) {
+      // Update drone_jobs status to paid
+      const { error: jobUpdateError } = await supabase
+        .from("drone_jobs")
+        .update({ status: "paid" })
+        .eq("id", jobId);
+
+      if (jobUpdateError) {
+        console.error(`Failed to update drone_jobs.status to paid for job ${jobId}:`, jobUpdateError);
+      } else {
+        console.log(`drone_jobs ${jobId} status updated to paid`);
+      }
+
+      // Trigger receipt email (fire and forget, errors logged but do not fail webhook)
+      try {
+        const receiptResp = await fetch(
+          `${SUPABASE_URL}/functions/v1/send-payment-receipt-email`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ job_id: jobId, payment_id: payment.id }),
+          }
+        );
+        if (!receiptResp.ok) {
+          console.error(`Receipt email trigger returned ${receiptResp.status}:`, await receiptResp.text());
+        } else {
+          console.log(`Receipt email triggered for job ${jobId}`);
+        }
+      } catch (receiptErr) {
+        console.error("Receipt email trigger failed:", receiptErr);
+      }
+
+      // Trigger delivery email (fire and forget, errors logged but do not fail webhook)
+      try {
+        const deliveryResp = await fetch(
+          `${SUPABASE_URL}/functions/v1/drone-delivery-email`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ job_id: jobId }),
+          }
+        );
+        if (!deliveryResp.ok) {
+          console.error(`Delivery email trigger returned ${deliveryResp.status}:`, await deliveryResp.text());
+        } else {
+          console.log(`Delivery email triggered for job ${jobId}`);
+        }
+      } catch (deliveryErr) {
+        console.error("Delivery email trigger failed:", deliveryErr);
+      }
+    } else {
+      console.warn(`Balance payment ${payment.id} has no associated drone_job (no job_id or quote_id match)`);
+    }
+  }
 
   return new Response(
     JSON.stringify({
