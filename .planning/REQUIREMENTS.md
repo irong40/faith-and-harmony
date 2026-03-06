@@ -14,7 +14,7 @@
 - [x] **BILL-05**: Square webhook processes balance payment confirmation and triggers receipt and delivery
 - [x] **BILL-06**: Client receives receipt email after balance payment clears
 - [x] **BILL-07**: Full resolution deliverables release automatically after balance payment confirmed
-- [ ] **BILL-08**: Admin payments panel shows deposit and balance status per job with paid, pending, and overdue states
+- [x] **BILL-08**: Admin payments panel shows deposit and balance status per job with paid, pending, and overdue states
 
 ### Equipment
 
@@ -76,7 +76,7 @@
 | BILL-05 | Phase 9 | Complete |
 | BILL-06 | Phase 9 | Complete |
 | BILL-07 | Phase 9 | Complete |
-| BILL-08 | Phase 9 | Pending |
+| BILL-08 | Phase 9 | Complete |
 | EQUIP-01 | Phase 7 | Complete |
 | EQUIP-02 | Phase 7 | Complete |
 | EQUIP-03 | Phase 7 | Complete |

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Billing, Equipment, and Production Readiness
 status: executing
-stopped_at: Completed 09-02-PLAN.md (Billing Lifecycle)
-last_updated: "2026-03-06T17:04:04Z"
-last_activity: 2026-03-06 -- Completed Plan 09-02 (Billing Lifecycle)
+stopped_at: Completed 09-03-PLAN.md (Admin Billing UI)
+last_updated: "2026-03-06T17:17:04Z"
+last_activity: 2026-03-06 -- Completed Plan 09-03 (Admin Billing UI)
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 9
-  completed_plans: 9
-  percent: 100
+  total_plans: 12
+  completed_plans: 10
+  percent: 83
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-05)
 
 **Core value:** A prospective client can find Sentinel through search or phone, get qualified, receive a quote, and book a drone job without Iron personally fielding the call or manually creating the request.
-**Current focus:** Phase 9 (Billing Lifecycle) Plan 02 complete. Balance payment webhook lifecycle and receipt email implemented.
+**Current focus:** Phase 9 (Billing Lifecycle) complete. All 3 plans delivered. Balance invoice, payments webhook, receipt email, admin billing UI all operational.
 
 ## Current Position
 
-Phase: 9 of 11 (Billing Lifecycle)
-Plan: 2 of 2 complete in phase 9
+Phase: 9 of 11 (Billing Lifecycle) COMPLETE
+Plan: 3 of 3 complete in phase 9
 Status: Executing
-Last activity: 2026-03-06 -- Completed Plan 09-02 (Billing Lifecycle)
+Last activity: 2026-03-06 -- Completed Plan 09-03 (Admin Billing UI)
 
-Progress: [██████████] 100% (v2.0 milestone, 9/9 plans complete across Phases 7, 10, 8, 9)
+Progress: [████████░░] 83% (v2.0 milestone, 10/12 plans complete across Phases 7, 10, 8, 9)
 
 ## Accumulated Context
 
@@ -59,6 +59,7 @@ Recent decisions affecting current work:
 - [Phase 10]: Always queue to IndexedDB first then fire processQueue, removing online/offline branching
 - [Phase 09]: Fire and forget pattern for receipt and delivery triggers prevents Square webhook retries on downstream failures
 - [Phase 09]: Job lookup falls back from direct job_id to quote_id for backward compatibility
+- [Phase 09]: PaymentsPanel uses TanStack Query with key ['payments', jobId] for cache invalidation after balance invoice creation
 
 ### v1.0 Landing Page (Complete)
 
@@ -89,7 +90,7 @@ Key infrastructure from v1.1:
 
 ## Session Continuity
 
-Last session: 2026-03-06T17:04:04Z
-Stopped at: Completed 09-02-PLAN.md (Billing Lifecycle)
+Last session: 2026-03-06T17:17:04Z
+Stopped at: Completed 09-03-PLAN.md (Admin Billing UI)
 Resume file: None
-Resume signal: Phase 9 complete. All v2.0 milestone plans executed.
+Resume signal: Phase 9 complete. Phase 11 (Standalone Deployment) is the only remaining phase.
