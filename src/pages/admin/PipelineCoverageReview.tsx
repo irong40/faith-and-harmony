@@ -16,7 +16,7 @@ import { ArrowLeft } from 'lucide-react';
 import AdminNav from './components/AdminNav';
 import CoverageChecklist from '@/components/pipeline/CoverageChecklist';
 import CoverageActions from '@/components/pipeline/CoverageActions';
-import { useProcessingTemplate, useResumePipeline } from '@/hooks/usePipeline';
+import { useProcessingTemplate, useProcessingTemplateById, useResumePipeline } from '@/hooks/usePipeline';
 import type { DroneAsset } from '@/types/drone';
 
 export default function PipelineCoverageReview() {
@@ -29,7 +29,7 @@ export default function PipelineCoverageReview() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('drone_jobs')
-        .select('job_number, property_address, drone_packages(id, name)')
+        .select('job_number, property_address, processing_template_id, drone_packages(id, name)')
         .eq('id', missionId!)
         .single();
 
@@ -39,9 +39,14 @@ export default function PipelineCoverageReview() {
     enabled: !!missionId,
   });
 
+  // Prefer direct template assignment (covers standalone paths C, D, V, B+C)
+  // Fall back to package-based lookup for legacy jobs
+  const templateId = job?.processing_template_id as string | null;
   const dronePackages = job?.drone_packages as { id: string; name: string } | null;
   const packageId = dronePackages?.id;
-  const { data: template } = useProcessingTemplate(packageId);
+  const { data: templateById } = useProcessingTemplateById(templateId ?? undefined);
+  const { data: templateByPkg } = useProcessingTemplate(!templateId ? packageId : undefined);
+  const template = templateById ?? templateByPkg;
 
   const { data: assets = [] } = useQuery({
     queryKey: ['coverage-review-assets', missionId],

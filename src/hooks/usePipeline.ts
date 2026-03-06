@@ -37,6 +37,28 @@ export function useProcessingTemplate(packageId: string | undefined) {
 }
 
 /**
+ * Processing template by ID. Used when the job already has a template assigned
+ * (covers standalone paths C, D, V, B+C that have no package_id).
+ */
+export function useProcessingTemplateById(templateId: string | undefined) {
+  return useQuery({
+    queryKey: ['processing-template-by-id', templateId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('processing_templates')
+        .select('*')
+        .eq('id', templateId!)
+        .single();
+
+      if (error) throw error;
+      return data as ProcessingTemplate;
+    },
+    enabled: !!templateId,
+    staleTime: 30 * 60 * 1000,
+  });
+}
+
+/**
  * Delivery log entries for a mission.
  */
 export function useDeliveryLogs(missionId: string | undefined) {
