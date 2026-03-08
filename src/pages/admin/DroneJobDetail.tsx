@@ -71,7 +71,7 @@ interface DroneJob {
   drone_packages?: { id: string; name: string; code: string; price: number; edit_budget_minutes: number; processing_profile: Json | null } | null;
   service_requests?: { id: string; project_title: string | null } | null;
   clients?: { id: string; name: string; company: string | null; email: string | null; phone: string | null } | null;
-  processing_templates?: { id: string; display_name: string | null; path_code: string | null; description: string | null } | null;
+  processing_templates?: { id: string; display_name: string | null; path_code: string | null; description: string | null; preset_name: string | null; lightroom_preset: string | null; output_format: string | null; qa_threshold: number | null } | null;
 }
 
 const STATUS_CONFIG: Record<DroneJobStatus, { label: string; color: string }> = {
@@ -79,18 +79,27 @@ const STATUS_CONFIG: Record<DroneJobStatus, { label: string; color: string }> = 
   scheduled: { label: "Scheduled", color: "bg-blue-500" },
   captured: { label: "Captured", color: "bg-indigo-500" },
   uploaded: { label: "Uploaded", color: "bg-purple-500" },
+  ingested: { label: "Ingested", color: "bg-purple-600" },
   complete: { label: "Complete", color: "bg-teal-500" },
+  paid: { label: "Paid", color: "bg-emerald-600" },
   processing: { label: "Processing", color: "bg-amber-500" },
   review_pending: { label: "Review Pending", color: "bg-violet-500" },
   qa: { label: "QA Review", color: "bg-orange-500" },
   revision: { label: "Revision", color: "bg-red-500" },
+  video_grading: { label: "Video Grading", color: "bg-cyan-600" },
+  video_editing: { label: "Video Editing", color: "bg-cyan-500" },
+  video_exporting: { label: "Video Exporting", color: "bg-cyan-400" },
   delivered: { label: "Delivered", color: "bg-green-500" },
+  photos_delivered: { label: "Photos Delivered", color: "bg-green-600" },
   failed: { label: "Failed", color: "bg-red-700" },
   cancelled: { label: "Cancelled", color: "bg-gray-500" },
 };
 
 const STATUS_ORDER: DroneJobStatus[] = [
-  "intake", "scheduled", "captured", "uploaded", "complete", "processing", "review_pending", "qa", "revision", "delivered"
+  "intake", "scheduled", "captured", "uploaded", "ingested", "complete", "paid",
+  "processing", "review_pending", "qa", "revision",
+  "video_grading", "video_editing", "video_exporting",
+  "photos_delivered", "delivered"
 ];
 
 function ProcessingJobCard({ missionId, processingTemplateId }: {
@@ -321,7 +330,7 @@ export default function DroneJobDetail() {
     const [jobRes, assetsRes] = await Promise.all([
       supabase
         .from("drone_jobs")
-        .select("*, customers(id, name, email, phone), drone_packages(id, name, code, price, edit_budget_minutes, processing_profile), service_requests(id, project_title), clients(id, name, company, email, phone), processing_templates(id, display_name, path_code, description)")
+        .select("*, customers(id, name, email, phone), drone_packages(id, name, code, price, edit_budget_minutes, processing_profile), service_requests(id, project_title), clients(id, name, company, email, phone), processing_templates(id, display_name, path_code, description, preset_name, lightroom_preset, output_format, qa_threshold)")
         .eq("id", id)
         .single(),
       supabase
@@ -1020,8 +1029,8 @@ export default function DroneJobDetail() {
                 </Card>
               )}
 
-              {/* Processing Profile Card */}
-              {job.drone_packages?.processing_profile && (
+              {/* Processing Profile Card — prefer processing_templates, fallback to legacy drone_packages.processing_profile */}
+              {(job.processing_templates || job.drone_packages?.processing_profile) && (
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between">
                     <div>
@@ -1030,7 +1039,9 @@ export default function DroneJobDetail() {
                         Processing Profile
                       </CardTitle>
                       <CardDescription>
-                        {(job.drone_packages.processing_profile as unknown as ProcessingProfile)?.lightroom_preset || "Default preset"}
+                        {job.processing_templates
+                          ? (job.processing_templates.display_name || job.processing_templates.preset_name || "Template")
+                          : (job.drone_packages?.processing_profile as unknown as ProcessingProfile)?.lightroom_preset || "Default preset"}
                       </CardDescription>
                     </div>
                     <Button
@@ -1053,35 +1064,55 @@ export default function DroneJobDetail() {
                     </Button>
                   </CardHeader>
                   <CardContent>
-                    {(() => {
+                    {job.processing_templates ? (
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {job.processing_templates.path_code && (
+                          <div className="space-y-2 p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm font-medium text-muted-foreground">Path Code</p>
+                            <Badge variant="outline" className="font-mono">{job.processing_templates.path_code}</Badge>
+                          </div>
+                        )}
+                        <div className="space-y-2 p-4 rounded-lg bg-muted/50">
+                          <p className="text-sm font-medium text-muted-foreground">Lightroom Preset</p>
+                          <p className="font-mono text-sm">{job.processing_templates.lightroom_preset || job.processing_templates.preset_name}</p>
+                        </div>
+                        {job.processing_templates.output_format && (
+                          <div className="space-y-2 p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm font-medium text-muted-foreground">Output Format</p>
+                            <p className="text-sm">{job.processing_templates.output_format}</p>
+                          </div>
+                        )}
+                        {job.processing_templates.qa_threshold !== null && (
+                          <div className="space-y-2 p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm font-medium text-muted-foreground">QA Threshold</p>
+                            <p className="text-sm">{job.processing_templates.qa_threshold}%</p>
+                          </div>
+                        )}
+                        {job.processing_templates.description && (
+                          <div className="md:col-span-2 lg:col-span-3 space-y-2 p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm font-medium text-muted-foreground">Description</p>
+                            <p className="text-sm">{job.processing_templates.description}</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (() => {
                       const profile = job.drone_packages?.processing_profile as unknown as ProcessingProfile;
                       if (!profile) return null;
 
                       return (
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                          {/* Lightroom Settings */}
                           <div className="space-y-2 p-4 rounded-lg bg-muted/50">
                             <p className="text-sm font-medium text-muted-foreground">Lightroom Preset</p>
                             <p className="font-mono text-sm">{profile.lightroom_preset}</p>
                           </div>
-
-                          {/* Corrections */}
                           <div className="space-y-2 p-4 rounded-lg bg-muted/50">
                             <p className="text-sm font-medium text-muted-foreground">Auto Corrections</p>
                             <div className="flex flex-wrap gap-1">
-                              {profile.lens_correction && (
-                                <Badge variant="secondary" className="text-xs">Lens</Badge>
-                              )}
-                              {profile.horizon_straighten && (
-                                <Badge variant="secondary" className="text-xs">Horizon</Badge>
-                              )}
-                              {profile.sky_enhance && (
-                                <Badge variant="secondary" className="text-xs">Sky Enhance</Badge>
-                              )}
+                              {profile.lens_correction && <Badge variant="secondary" className="text-xs">Lens</Badge>}
+                              {profile.horizon_straighten && <Badge variant="secondary" className="text-xs">Horizon</Badge>}
+                              {profile.sky_enhance && <Badge variant="secondary" className="text-xs">Sky Enhance</Badge>}
                             </div>
                           </div>
-
-                          {/* Exposure Balance */}
                           {profile.exposure_balance && (
                             <div className="space-y-2 p-4 rounded-lg bg-muted/50">
                               <p className="text-sm font-medium text-muted-foreground">Exposure Balance</p>
@@ -1094,8 +1125,6 @@ export default function DroneJobDetail() {
                               </div>
                             </div>
                           )}
-
-                          {/* Output Settings */}
                           <div className="space-y-2 p-4 rounded-lg bg-muted/50">
                             <p className="text-sm font-medium text-muted-foreground">Output Formats</p>
                             <div className="flex flex-wrap gap-1">
@@ -1104,8 +1133,6 @@ export default function DroneJobDetail() {
                               ))}
                             </div>
                           </div>
-
-                          {/* Quality Settings */}
                           <div className="space-y-2 p-4 rounded-lg bg-muted/50">
                             <p className="text-sm font-medium text-muted-foreground">Quality</p>
                             <p className="text-sm">
@@ -1113,14 +1140,10 @@ export default function DroneJobDetail() {
                               {profile.resize_max_px && ` • ${profile.resize_max_px}px max`}
                             </p>
                           </div>
-
-                          {/* Vibrance */}
                           <div className="space-y-2 p-4 rounded-lg bg-muted/50">
                             <p className="text-sm font-medium text-muted-foreground">Vibrance Boost</p>
                             <p className="text-sm">+{profile.vibrance_boost || 0}</p>
                           </div>
-
-                          {/* Sky Replacement (Premium) */}
                           {profile.sky_replace && profile.sky_replace !== false && (
                             <div className="space-y-2 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
                               <p className="text-sm font-medium text-amber-600 flex items-center gap-2">
@@ -1128,14 +1151,10 @@ export default function DroneJobDetail() {
                                 Sky Replacement
                               </p>
                               <p className="text-sm">
-                                {profile.sky_replace === "manual_review"
-                                  ? "Manual review required"
-                                  : "Auto-replace enabled"}
+                                {profile.sky_replace === "manual_review" ? "Manual review required" : "Auto-replace enabled"}
                               </p>
                             </div>
                           )}
-
-                          {/* Labeling (Construction) */}
                           {profile.labeling?.enabled && (
                             <div className="space-y-2 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
                               <p className="text-sm font-medium text-blue-600 flex items-center gap-2">
@@ -1149,16 +1168,10 @@ export default function DroneJobDetail() {
                               </div>
                             </div>
                           )}
-
-                          {/* Review Gate (Premium) */}
                           {profile.review_gate && (
                             <div className="md:col-span-2 lg:col-span-3 p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                              <p className="text-sm font-medium text-purple-600">
-                                Premium Review Gate Active
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                This job requires manual approval before delivery
-                              </p>
+                              <p className="text-sm font-medium text-purple-600">Premium Review Gate Active</p>
+                              <p className="text-sm text-muted-foreground">This job requires manual approval before delivery</p>
                             </div>
                           )}
                         </div>
