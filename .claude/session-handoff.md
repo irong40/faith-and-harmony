@@ -3,39 +3,35 @@
 **Branch:** main
 
 ## Accomplished
-- **Pilot login redirect**: Pilots logging in from the F&H domain now redirect to `trestle.sentinelaerialinspections.com/pilot` via full page redirect (Auth.tsx `redirectByRole` and App.tsx `RootRedirect`)
-- **Trestle guest redirect**: Unauthenticated visitors to `trestle.sentinelaerialinspections.com` go straight to `/auth` instead of seeing the F&H landing page
-- **Pilot Portal link**: Added "Pilot Portal" link in the F&H landing page nav pointing to `trestle.sentinelaerialinspections.com/auth`
-- All three commits pushed to main and deploying on Vercel
+- Full pipeline integration audit (frontend + backend + edge functions + schema)
+- Fixed template lookup for standalone paths C, D, V, B+C (was querying by package_id only — those paths have null package_id)
+- Regenerated Supabase types — `processing_jobs` and `step_definitions` now properly typed
+- Added `useProcessingTemplateById()` hook for direct template ID lookup
+- Added 14 unit tests in `usePipeline.spec.ts` (template resolution, coalesce, conflict detection)
+- Removed dead `useDeliveryLogs` hook (delivery_log table superseded by drone_jobs columns)
+- Added n8n heartbeat pre-flight check before pipeline trigger (warns admin if offline)
+- Documented 3 pending cleanup decisions as ADR in Obsidian vault
 
 ## Next Steps
-1. **Add Supabase auth redirect URLs** for `trestle.sentinelaerialinspections.com` (dashboard manual step):
-   - `https://trestle.sentinelaerialinspections.com/`
-   - `https://trestle.sentinelaerialinspections.com/auth`
-   - `https://trestle.sentinelaerialinspections.com/admin/settings`
-2. **Deploy `create-deposit-invoice` edge function**: Run `supabase login` then `npx supabase functions deploy create-deposit-invoice --use-api`
-3. **Square production cutover** (Phase 11 Plan 02): All manual dashboard work per 11-02-PLAN.md
-   - Get production credentials from Square Developer Console
-   - Register webhook at `https://qjpujskwqaehxnqypxzu.supabase.co/functions/v1/square-webhook`
-   - Set Supabase secrets (SQUARE_ACCESS_TOKEN, SQUARE_LOCATION_ID, SQUARE_ENVIRONMENT=production, SQUARE_WEBHOOK_SIGNATURE_KEY, SQUARE_WEBHOOK_URL)
-   - Archive sandbox payment records
-   - Send test webhook event and verify 200 response
-4. **Fix faithandharmonyllc.com 404 on deep links**: Cloudflare DNS is proxied (orange cloud), which may block SPA routing. Either set DNS to DNS-only (gray cloud) or add Cloudflare page rule for catch-all forwarding.
-5. **Phase 8 (Watermark Pipeline)**: Next in critical path after Phase 11 complete
-6. **Phase 9 (Billing Lifecycle)**: Depends on Phase 8
+- **Decision required:** Review `obsidian-dev/decisions/ADR - Pipeline Cleanup Decisions.md`
+  1. Drop `processing_steps` table? (check n8n workflows first)
+  2. Consolidate delivery tracking (delivery_log vs drone_jobs)
+  3. n8n webhook URLs — required vs optional in edge functions
+- After decisions: run `/qcode` to implement chosen options
+- Consider adding integration tests for the full pipeline trigger → n8n → step progression flow
+- **Carried over from prior session:**
+  - Square production cutover (11-02-PLAN.md)
+  - Fix faithandharmonyllc.com deep link 404s (Cloudflare proxy)
+  - Phase 8 Watermark Pipeline / Phase 9 Billing Lifecycle
 
 ## Known Issues
-- `faithandharmonyllc.com/admin/pilots` returns 404. Likely Cloudflare proxy interfering with Vercel SPA rewrite. Landing page works, deep links do not.
-- `sentinelaerial.com` on Vercel is misconfigured (nameservers mismatch). Remove if not needed.
-- Phase 8 plan file has minor uncommitted edit (08-01-PLAN.md, 3 lines)
+- `.planning/` files have uncommitted changes (GSD milestone tracking, not app code)
+- `supabase/.temp/` permission denied warnings (stale temp dirs from edge function builds)
 
 ## Key Decisions
-- Pilot domain redirect uses hostname check against `trestle.sentinelaerialinspections.com` constant, not env var. Hardcoded in Auth.tsx and App.tsx.
-- F&H landing page keeps its own "Login" link for admin access. "Pilot Portal" is a separate link pointing to Trestle domain.
-- All three domains (faithandharmonyllc.com, trestle.sentinelaerialinspections.com, sentinelaerial.com variants) serve the same faith-and-harmony Vercel project.
+- Template lookup now uses direct ID first, package-based fallback second (covers all 6 processing paths)
+- `useDeliveryLogs` removed — delivery tracking lives on `drone_jobs` columns, not `delivery_log` table
+- n8n offline warning is a non-blocking toast (job still created), not a hard fail
 
 ## Uncommitted Changes
-- `.claude/project-state.json` (session metadata)
-- `.claude/session-handoff.md` (this file)
-- `package.json` / `package-lock.json` (dependency change from prior session)
-- `.planning/phases/11-standalone-deployment/11-VERIFICATION.md` (untracked)
+- `.planning/` files only (MILESTONES.md, PROJECT.md, ROADMAP.md, STATE.md, RETROSPECTIVE.md, TODOS.md) — GSD tracking metadata, not application code

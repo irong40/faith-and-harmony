@@ -1,18 +1,17 @@
 {
   "lastSession": "2026-03-06",
   "branch": "main",
-  "phase": "Phase 11 (Standalone Deployment) in progress, awaiting manual dashboard steps",
+  "phase": "Pipeline audit complete, 3 cleanup decisions pending",
   "workItems": [
-    "Add Supabase auth redirect URLs for trestle.sentinelaerialinspections.com",
-    "Deploy create-deposit-invoice edge function",
+    "ADR: Drop processing_steps table (check n8n first)",
+    "ADR: Consolidate delivery tracking (delivery_log vs drone_jobs)",
+    "ADR: n8n webhook URL requirement level",
     "Square production cutover (11-02-PLAN.md)",
-    "Fix faithandharmonyllc.com deep link 404s (Cloudflare proxy issue)",
+    "Fix faithandharmonyllc.com deep link 404s (Cloudflare proxy)",
     "Phase 8 Watermark Pipeline",
     "Phase 9 Billing Lifecycle"
   ],
   "blockers": [
-    "Supabase CLI requires interactive login (run supabase login in terminal)",
-    "Square production cutover requires manual dashboard access",
-    "Cloudflare DNS proxy may need reconfiguration for F&H deep links"
+    "3 pipeline ADR decisions need owner input before implementation"
   ]
 }
