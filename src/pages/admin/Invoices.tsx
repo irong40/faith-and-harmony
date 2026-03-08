@@ -49,6 +49,8 @@ import {
   Clock,
   AlertTriangle,
   FileText,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import AdminNav from "./components/AdminNav";
 
@@ -86,6 +88,7 @@ interface Invoice {
   paid_at: string | null;
   customer_payment_claim: Record<string, unknown> | null;
   created_at: string;
+  archived_at: string | null;
   customers?: {
     name: string;
     email: string;
@@ -112,19 +115,21 @@ export default function Invoices() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [markPaidDialogOpen, setMarkPaidDialogOpen] = useState(false);
   const [invoiceToMarkPaid, setInvoiceToMarkPaid] = useState<Invoice | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   const { data: invoices, isLoading } = useQuery({
-    queryKey: ["invoices"],
+    queryKey: ["invoices", showArchived],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const q = supabase
         .from("invoices")
-        .select(`
-          *,
-          customers (name, email, company_name),
-          proposals (proposal_number, title)
-        `)
+        .select(`*, customers (name, email, company_name), proposals (proposal_number, title)`)
         .order("created_at", { ascending: false });
-
+      if (showArchived) {
+        q.not("archived_at", "is", null);
+      } else {
+        q.is("archived_at", null);
+      }
+      const { data, error } = await q;
       if (error) throw error;
       return data as Invoice[];
     },
@@ -172,6 +177,23 @@ export default function Invoices() {
     },
     onError: (error) => {
       toast.error("Failed to mark invoice as paid: " + error.message);
+    },
+  });
+
+  const archiveMutation = useMutation({
+    mutationFn: async ({ id, restore }: { id: string; restore: boolean }) => {
+      const { error } = await supabase
+        .from("invoices")
+        .update({ archived_at: restore ? null : new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] });
+      toast.success(showArchived ? "Invoice restored" : "Invoice archived");
+    },
+    onError: (error) => {
+      toast.error("Failed: " + error.message);
     },
   });
 
@@ -276,6 +298,15 @@ export default function Invoices() {
               <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            variant={showArchived ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowArchived(!showArchived)}
+            className="gap-2"
+          >
+            <Archive className="h-4 w-4" />
+            {showArchived ? "Viewing Archived" : "Show Archived"}
+          </Button>
         </div>
 
         {/* Invoices Table */}
@@ -388,6 +419,14 @@ export default function Invoices() {
                               <CheckCircle className="h-4 w-4" />
                             </Button>
                           )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => archiveMutation.mutate({ id: invoice.id, restore: showArchived })}
+                            title={showArchived ? "Restore" : "Archive"}
+                          >
+                            {showArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>

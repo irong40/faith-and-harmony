@@ -36,7 +36,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Search, RefreshCw, Eye, Edit, Plus, Trash2, FileText } from "lucide-react";
+import { Search, RefreshCw, Eye, Edit, Plus, Trash2, FileText, Archive, ArchiveRestore } from "lucide-react";
 import { format } from "date-fns";
 import ProposalForm from "./components/ProposalForm";
 import type { Tables, Enums } from "@/integrations/supabase/types";
@@ -69,13 +69,22 @@ export default function ServiceRequests() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isProposalOpen, setIsProposalOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   const fetchRequests = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("service_requests")
       .select("*, services(name, code)")
       .order("created_at", { ascending: false });
+
+    if (showArchived) {
+      query = query.not("archived_at", "is", null);
+    } else {
+      query = query.is("archived_at", null);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       toast({
@@ -91,7 +100,7 @@ export default function ServiceRequests() {
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [showArchived]);
 
   const filteredRequests = requests.filter((req) => {
     const matchesSearch =
@@ -132,23 +141,23 @@ export default function ServiceRequests() {
     setIsProposalOpen(true);
   };
 
-  const handleDelete = async () => {
+  const handleArchive = async () => {
     if (!selectedRequest) return;
     setDeleteLoading(true);
 
     const { error } = await supabase
       .from("service_requests")
-      .delete()
+      .update({ archived_at: showArchived ? null : new Date().toISOString() })
       .eq("id", selectedRequest.id);
 
     if (error) {
       toast({
-        title: "Delete failed",
+        title: "Failed",
         description: error.message,
         variant: "destructive",
       });
     } else {
-      toast({ title: "Service request deleted" });
+      toast({ title: showArchived ? "Request restored" : "Request archived" });
       fetchRequests();
     }
 
@@ -202,6 +211,15 @@ export default function ServiceRequests() {
           <Button onClick={fetchRequests} variant="outline" disabled={loading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             Refresh
+          </Button>
+          <Button
+            variant={showArchived ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowArchived(!showArchived)}
+            className="gap-2"
+          >
+            <Archive className="h-4 w-4" />
+            {showArchived ? "Viewing Archived" : "Show Archived"}
           </Button>
         </div>
         </div>
@@ -321,10 +339,10 @@ export default function ServiceRequests() {
                         </Button>
                         <Button
                           onClick={() => openDelete(request)}
-                          title="Delete"
+                          title={showArchived ? "Restore" : "Archive"}
                           className="text-destructive hover:text-destructive"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          {showArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                         </Button>
                       </div>
                     </TableCell>
@@ -454,24 +472,31 @@ export default function ServiceRequests() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Archive/Restore Confirmation Dialog */}
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Service Request</AlertDialogTitle>
+            <AlertDialogTitle>
+              {showArchived ? "Restore" : "Archive"} Service Request
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the service request from{" "}
-              <strong>{selectedRequest?.client_name}</strong>? This action cannot be undone.
+              Are you sure you want to {showArchived ? "restore" : "archive"} the service request from{" "}
+              <strong>{selectedRequest?.client_name}</strong>?
+              {showArchived
+                ? " It will be moved back to the active requests list."
+                : " You can restore it later from the archived view."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={handleArchive}
               disabled={deleteLoading}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className={showArchived ? "" : "bg-destructive text-destructive-foreground hover:bg-destructive/90"}
             >
-              {deleteLoading ? "Deleting..." : "Delete"}
+              {deleteLoading
+                ? (showArchived ? "Restoring..." : "Archiving...")
+                : (showArchived ? "Restore" : "Archive")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
