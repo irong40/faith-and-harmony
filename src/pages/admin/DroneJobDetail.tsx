@@ -26,7 +26,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import AdminNav from "./components/AdminNav";
 import PaymentsPanel from "./components/PaymentsPanel";
-import DroneJobForm from "./components/DroneJobForm";
+import { Input } from "@/components/ui/input";
+import ClientAutocomplete from "@/components/admin/ClientAutocomplete";
 import QASummaryCard from "@/components/drone/QASummaryCard";
 import QAAssetGrid from "@/components/drone/QAAssetGrid";
 import AdminAssetUpload from "@/components/drone/AdminAssetUpload";
@@ -53,6 +54,8 @@ interface DroneJob {
   site_address: string | null;
   client_id: string | null;
   processing_template_id: string | null;
+  pilot_id: string | null;
+  aircraft_id: string | null;
   pilot_notes: string | null;
   admin_notes: string | null;
   qa_score: number | null;
@@ -288,6 +291,203 @@ function ProcessingJobCard({ missionId, processingTemplateId }: {
   );
 }
 
+function JobEditForm({ job, onSuccess, onCancel }: { job: DroneJob; onSuccess: () => void; onCancel: () => void }) {
+  const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
+  const [editData, setEditData] = useState({
+    client_id: job.clients?.id || job.client_id || "",
+    processing_template_id: job.processing_template_id || "",
+    site_address: job.site_address || job.property_address || "",
+    scheduled_date: job.scheduled_date || "",
+    scheduled_time: job.scheduled_time || "",
+    pilot_id: job.pilot_id || "",
+    aircraft_id: job.aircraft_id || "",
+    pilot_notes: job.pilot_notes || "",
+    admin_notes: job.admin_notes || "",
+  });
+
+  const [templates, setTemplates] = useState<{ id: string; path_code: string | null; display_name: string | null; preset_name: string }[]>([]);
+  const [pilots, setPilots] = useState<{ id: string; full_name: string | null }[]>([]);
+  const [aircraft, setAircraft] = useState<{ id: string; model: string; nickname: string | null }[]>([]);
+
+  useEffect(() => {
+    const loadOptions = async () => {
+      const [tmplRes, pilotRoleRes, aircraftRes] = await Promise.all([
+        supabase.from("processing_templates").select("id, path_code, display_name, preset_name").eq("active", true).order("path_code"),
+        supabase.from("user_roles").select("user_id").eq("role", "pilot"),
+        supabase.from("aircraft").select("id, model, nickname").eq("status", "active").order("model"),
+      ]);
+      if (tmplRes.data) setTemplates(tmplRes.data);
+      if (aircraftRes.data) setAircraft(aircraftRes.data);
+      if (pilotRoleRes.data && pilotRoleRes.data.length > 0) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", pilotRoleRes.data.map(r => r.user_id))
+          .order("full_name");
+        if (profileData) setPilots(profileData);
+      }
+    };
+    loadOptions();
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    const { error } = await supabase
+      .from("drone_jobs")
+      .update({
+        client_id: editData.client_id || null,
+        processing_template_id: editData.processing_template_id || null,
+        site_address: editData.site_address,
+        property_address: editData.site_address,
+        scheduled_date: editData.scheduled_date || null,
+        scheduled_time: editData.scheduled_time || null,
+        pilot_id: editData.pilot_id || null,
+        aircraft_id: editData.aircraft_id || null,
+        pilot_notes: editData.pilot_notes || null,
+        admin_notes: editData.admin_notes || null,
+      })
+      .eq("id", job.id);
+
+    if (error) {
+      toast({ title: "Error updating job", description: error.message, variant: "destructive" });
+    } else {
+      onSuccess();
+    }
+    setSaving(false);
+  };
+
+  return (
+    <form onSubmit={handleSave} className="space-y-4">
+      <div className="space-y-2">
+        <Label>Client</Label>
+        <ClientAutocomplete
+          value={editData.client_id}
+          onChange={(id) => setEditData({ ...editData, client_id: id })}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Job Type</Label>
+        <Select
+          value={editData.processing_template_id}
+          onValueChange={(v) => setEditData({ ...editData, processing_template_id: v === "none" ? "" : v })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select job type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None</SelectItem>
+            {templates.map((t) => (
+              <SelectItem key={t.id} value={t.id}>
+                {t.path_code ? `${t.path_code} – ` : ""}{t.display_name || t.preset_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Site Address *</Label>
+        <Input
+          value={editData.site_address}
+          onChange={(e) => setEditData({ ...editData, site_address: e.target.value })}
+          required
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label>Scheduled Date</Label>
+          <Input
+            type="date"
+            value={editData.scheduled_date}
+            onChange={(e) => setEditData({ ...editData, scheduled_date: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Time</Label>
+          <Input
+            type="time"
+            value={editData.scheduled_time}
+            onChange={(e) => setEditData({ ...editData, scheduled_time: e.target.value })}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label>Pilot</Label>
+          <Select
+            value={editData.pilot_id || "unassigned"}
+            onValueChange={(v) => setEditData({ ...editData, pilot_id: v === "unassigned" ? "" : v })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
+              {pilots.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.full_name || "Unknown"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Aircraft</Label>
+          <Select
+            value={editData.aircraft_id || "unassigned"}
+            onValueChange={(v) => setEditData({ ...editData, aircraft_id: v === "unassigned" ? "" : v })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
+              {aircraft.map((a) => (
+                <SelectItem key={a.id} value={a.id}>
+                  {a.model}{a.nickname ? ` (${a.nickname})` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Pilot Notes</Label>
+        <Textarea
+          value={editData.pilot_notes}
+          onChange={(e) => setEditData({ ...editData, pilot_notes: e.target.value })}
+          placeholder="Access instructions, weather considerations..."
+          rows={2}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Admin Notes</Label>
+        <Textarea
+          value={editData.admin_notes}
+          onChange={(e) => setEditData({ ...editData, admin_notes: e.target.value })}
+          placeholder="Internal notes..."
+          rows={2}
+        />
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+        <Button type="submit" disabled={saving}>
+          {saving ? "Saving..." : "Update Job"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 export default function DroneJobDetail() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
@@ -506,15 +706,33 @@ export default function DroneJobDetail() {
     if (!job) return;
     setTriggeringProcessing(true);
 
-    // Manually trigger batch-qa which will send the webhook if configured
-    const { error } = await supabase.functions.invoke("drone-batch-qa", {
+    const { data, error } = await supabase.functions.invoke("drone-batch-qa", {
       body: { job_id: job.id },
     });
 
     if (error) {
       toast({ title: "Failed to trigger processing", description: error.message, variant: "destructive" });
+    } else if (data?.status === "revision") {
+      toast({
+        title: "QA flagged issues",
+        description: `Score: ${data.qa_score ?? "N/A"}% — job moved to Revision. Review QA tab for details.`,
+        variant: "destructive",
+      });
+      fetchJob();
+    } else if (data?.status === "review_pending") {
+      toast({
+        title: "Awaiting your review",
+        description: `Score: ${data.qa_score ?? "N/A"}% — premium package needs sky replacement review before processing.`,
+      });
+      fetchJob();
+    } else if (data?.status === "qa") {
+      toast({
+        title: "QA passed — processing triggered",
+        description: `Score: ${data.qa_score ?? "N/A"}%. ${data.n8n_triggered !== false ? "Sent to n8n pipeline." : "N8N webhook not configured — process manually."}`,
+      });
+      fetchJob();
     } else {
-      toast({ title: "Processing triggered", description: "Job sent to n8n processing workflow" });
+      toast({ title: "Processing triggered" });
       fetchJob();
     }
     setTriggeringProcessing(false);
@@ -1425,21 +1643,8 @@ export default function DroneJobDetail() {
           <DialogHeader>
             <DialogTitle>Edit Job {job.job_number}</DialogTitle>
           </DialogHeader>
-          <DroneJobForm
-            initialData={{
-              id: job.id,
-              customer_id: job.customers?.id,
-              package_id: job.drone_packages?.id,
-              property_address: job.property_address,
-              property_city: job.property_city || "",
-              property_state: job.property_state || "",
-              property_zip: job.property_zip || "",
-              property_type: job.property_type,
-              scheduled_date: job.scheduled_date || "",
-              scheduled_time: job.scheduled_time || "",
-              pilot_notes: job.pilot_notes || "",
-              admin_notes: job.admin_notes || "",
-            }}
+          <JobEditForm
+            job={job}
             onSuccess={() => {
               setIsEditOpen(false);
               fetchJob();
