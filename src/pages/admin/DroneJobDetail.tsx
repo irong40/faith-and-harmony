@@ -95,12 +95,25 @@ const STATUS_CONFIG: Record<DroneJobStatus, { label: string; color: string }> = 
   cancelled: { label: "Cancelled", color: "bg-gray-500" },
 };
 
+// Statuses visible in the progress stepper (admin happy path)
+// Internal/automated statuses (ingested, paid, video_*, photos_delivered) are
+// tracked but hidden from the stepper — they advance automatically.
 const STATUS_ORDER: DroneJobStatus[] = [
-  "intake", "scheduled", "captured", "uploaded", "ingested", "complete", "paid",
-  "processing", "review_pending", "qa", "revision",
-  "video_grading", "video_editing", "video_exporting",
-  "photos_delivered", "delivered"
+  "intake", "scheduled", "captured", "uploaded", "processing", "qa", "delivered"
 ];
+
+// Map internal statuses to the nearest stepper step so the indicator stays accurate
+const STATUS_TO_STEP: Partial<Record<DroneJobStatus, DroneJobStatus>> = {
+  ingested: "uploaded",
+  complete: "uploaded",
+  paid: "processing",
+  review_pending: "qa",
+  revision: "qa",
+  video_grading: "processing",
+  video_editing: "processing",
+  video_exporting: "processing",
+  photos_delivered: "delivered",
+};
 
 function ProcessingJobCard({ missionId, processingTemplateId }: {
   missionId: string;
@@ -599,28 +612,49 @@ export default function DroneJobDetail() {
         <Card className="mb-6">
           <CardContent className="py-4">
             <div className="flex items-center justify-between overflow-x-auto gap-2">
-              {STATUS_ORDER.map((status, index) => {
-                const currentIndex = STATUS_ORDER.indexOf(job.status);
+              {STATUS_ORDER.map((step, index) => {
+                const displayStatus = STATUS_TO_STEP[job.status] ?? job.status;
+                const currentIndex = STATUS_ORDER.indexOf(displayStatus);
                 const isPast = index < currentIndex;
                 const isCurrent = index === currentIndex;
-                const config = STATUS_CONFIG[status];
+                const config = STATUS_CONFIG[step];
+                // Show actual status label when it differs from the stepper step
+                const actualConfig = STATUS_CONFIG[job.status];
+                const showActualLabel = isCurrent && displayStatus !== job.status;
 
                 return (
-                  <button
-                    key={status}
-                    onClick={() => handleStatusChange(status)}
-                    className={`flex-shrink-0 px-3 py-1.5 rounded text-sm font-medium transition-colors ${isCurrent
-                      ? `${config.color} text-white`
+                  <div
+                    key={step}
+                    className={`flex-shrink-0 px-3 py-1.5 rounded text-sm font-medium ${isCurrent
+                      ? `${actualConfig.color} text-white`
                       : isPast
                         ? "bg-muted text-muted-foreground"
-                        : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                        : "bg-muted/50 text-muted-foreground"
                       }`}
                   >
-                    {config.label}
-                  </button>
+                    {showActualLabel ? actualConfig.label : config.label}
+                  </div>
                 );
               })}
             </div>
+            {/* Manual override — only when needed */}
+            {(job.status === "failed" || job.status === "cancelled" || job.status === "revision") && (
+              <div className="mt-3 pt-3 border-t flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">Override:</span>
+                <Select value={job.status} onValueChange={(v) => handleStatusChange(v as DroneJobStatus)}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(STATUS_CONFIG).map(([value, config]) => (
+                      <SelectItem key={value} value={value}>
+                        {config.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </CardContent>
         </Card>
 
