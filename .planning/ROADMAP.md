@@ -93,7 +93,12 @@ Plans:
   3. Admin can click "Convert" on a qualified lead and the system creates a new client record and a linked quote request in one action with no additional data entry required
   4. When converting, if the admin identifies an existing client match, they can link the lead to that client instead of creating a duplicate
   5. Admin can select multiple qualified leads via checkboxes and convert them all in a single bulk action that processes each conversion and reports success or failure per lead
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 15-01-PLAN.md — admin write migration, source channel filter with counts, New Lead dialog
+- [ ] 15-02-PLAN.md — ConvertLeadDialog with one-click convert and link existing client
+- [ ] 15-03-PLAN.md — checkbox selection, bulk action bar, and bulk convert with per-lead results
 
 ### Phase 16: Analytics Dashboard
 **Goal**: The leads page header shows live stat cards that give admin an immediate read on conversion performance, source mix, response speed, and revenue attribution
@@ -114,5 +119,5 @@ Plans:
 | 1-6 | v1.1 | 15 | Complete | 2026-03-05 |
 | 7-12 | v2.0 | 14 | 3/3 | Complete    | 2026-03-11 | 13. Schema Foundation | v2.1 | 2/2 | Complete | 2026-03-11 |
 | 14. Detail Drawer and Inline Editing | v2.1 | 0/3 | Not started | - |
-| 15. Lead Entry and Conversion | v2.1 | 0/TBD | Not started | - |
+| 15. Lead Entry and Conversion | v2.1 | 0/3 | Not started | - |
 | 16. Analytics Dashboard | v2.1 | 0/TBD | Not started | - |
