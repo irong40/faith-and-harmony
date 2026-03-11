@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Leads Admin Upgrade
 status: completed
-stopped_at: Completed 14-01-PLAN.md
-last_updated: "2026-03-11T19:36:31.521Z"
-last_activity: 2026-03-11 — Phase 14, Plan 01 complete. Source channel badges, overdue row highlight, and inline status Select added to VoiceLeadsTab.
+stopped_at: Completed 14-02-PLAN.md
+last_updated: "2026-03-11T19:39:08Z"
+last_activity: 2026-03-11 — Phase 14, Plan 02 complete. LeadDetailDrawer with transcript, AI summary, and embedded audio player created. Row click wired in Leads.tsx.
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 5
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 
 ## Current Position
 
-Phase: 14 (Detail Drawer and Inline Editing) — in progress, 1 of 2 plans complete
-Plan: 01 complete
-Status: Phase 14 Plan 01 done, Plan 02 is next
-Last activity: 2026-03-11 — Phase 14, Plan 01 complete. Source channel badges, overdue row highlight, and inline status Select added to VoiceLeadsTab.
+Phase: 14 (Detail Drawer and Inline Editing) — in progress, 2 of 2 plans complete (pending Plan 03 if applicable)
+Plan: 02 complete
+Status: Phase 14 Plan 02 done. LeadDetailDrawer built and wired. Plan 03 placeholders in place.
+Last activity: 2026-03-11 — Phase 14, Plan 02 complete. LeadDetailDrawer with transcript, AI summary, and embedded audio player created. Row click wired in Leads.tsx.
 
 ## Accumulated Context
 
@@ -74,6 +74,9 @@ Last activity: 2026-03-11 — Phase 14, Plan 01 complete. Source channel badges,
 - Phase 13-02: lead_activity is a view, not a table. Avoids triggers or a separate event log. status_change branch shows current status only (not history) via updated_at.
 - Phase 14-01: isOverdue exported from Leads.tsx so Leads.spec.ts can import without module mocking.
 - Phase 14-01: voice_bot source_channel filter removed at query level so all 5 source channels appear in one table.
+- Phase 14-02: LeadDetail type defined locally in drawer to avoid coupling to generated types that use `as never` casts.
+- Phase 14-02: formatDuration copied into drawer rather than imported from CallLogs.tsx to prevent cross-page imports.
+- Phase 14-02: LeadDetailDrawer rendered inside the container div after Tabs closing tag so it overlays the full page correctly.
 
 ### Blockers/Concerns
 
@@ -81,7 +84,7 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-03-11T19:36:31.519Z
-Stopped at: Completed 14-01-PLAN.md
+Last session: 2026-03-11T19:39:08Z
+Stopped at: Completed 14-02-PLAN.md
 Resume file: None
-Resume signal: Phase 14 Plan 01 complete. Run /gsd:execute-phase 14 plan 02 to build the detail drawer component.
+Resume signal: Phase 14 Plan 02 complete. Drawer shell built with Plan 03 placeholders. Run /gsd:execute-phase 14 plan 03 to add notes form and activity timeline.

@@ -15,8 +15,8 @@ Requirements for the Leads Admin Upgrade milestone. Each maps to roadmap phases.
 
 ### Lead Details
 
-- [ ] **DETL-01**: Admin can click a lead row to open a detail drawer showing call transcript and summary
-- [ ] **DETL-02**: Admin can play the Vapi call recording directly in the detail drawer
+- [x] **DETL-01**: Admin can click a lead row to open a detail drawer showing call transcript and summary
+- [x] **DETL-02**: Admin can play the Vapi call recording directly in the detail drawer
 - [x] **DETL-03**: Admin can add notes to a lead with reason tags (not ready, wrong area, needs callback, price sensitive)
 - [x] **DETL-04**: Admin can set a follow-up date on a lead and see overdue follow-ups highlighted
 - [x] **DETL-05**: Admin can view a timeline of all activity on a lead (status changes, notes, conversion)
@@ -29,7 +29,7 @@ Requirements for the Leads Admin Upgrade milestone. Each maps to roadmap phases.
 
 ### Inline Editing
 
-- [ ] **EDIT-01**: Admin can change a lead's qualification status directly from the table row without opening the detail drawer
+- [x] **EDIT-01**: Admin can change a lead's qualification status directly from the table row without opening the detail drawer
 
 ### Analytics
 
@@ -72,15 +72,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONV-01 | Phase 15 | Pending |
 | CONV-02 | Phase 15 | Pending |
 | CONV-03 | Phase 15 | Pending |
-| DETL-01 | Phase 14 | Pending |
-| DETL-02 | Phase 14 | Pending |
+| DETL-01 | Phase 14 | Complete |
+| DETL-02 | Phase 14 | Complete |
 | DETL-03 | Phase 14 | Complete |
 | DETL-04 | Phase 14 | Complete |
 | DETL-05 | Phase 14 | Complete |
 | SRCE-01 | Phase 15 | Pending |
 | SRCE-02 | Phase 14 | Complete |
 | SRCE-03 | Phase 15 | Pending |
-| EDIT-01 | Phase 14 | Pending |
+| EDIT-01 | Phase 14 | Complete |
 | ANLY-01 | Phase 16 | Pending |
 | ANLY-02 | Phase 16 | Pending |
 | ANLY-03 | Phase 16 | Pending |
