@@ -49,6 +49,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ConvertLeadDialog } from "@/components/admin/ConvertLeadDialog";
 
 // -------------------------------------------------------
 // Voice Leads Types
@@ -148,6 +149,9 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
   const [page, setPage] = useState(0);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // Convert Lead dialog state
+  const [convertLead, setConvertLead] = useState<LeadRow | null>(null);
 
   // New Lead dialog state
   const [newLeadOpen, setNewLeadOpen] = useState(false);
@@ -443,11 +447,20 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
                       </SelectContent>
                     </Select>
                   </TableCell>
-                  <TableCell>
-                    {lead.quote_requests ? (
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    {lead.client_id ? (
+                      <Badge className="bg-purple-600 text-white">Converted</Badge>
+                    ) : lead.qualification_status === "qualified" ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() => setConvertLead(lead)}
+                      >
+                        Convert
+                      </Button>
+                    ) : lead.quote_requests ? (
                       <Badge className="bg-green-500 text-white">Quoted ({lead.quote_requests.status})</Badge>
-                    ) : lead.quote_request_id ? (
-                      <Badge variant="secondary">Linked</Badge>
                     ) : (
                       <span className="text-xs text-muted-foreground">No quote</span>
                     )}
@@ -467,6 +480,18 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
             <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}>Next</Button>
           </div>
         </div>
+      )}
+
+      {convertLead && (
+        <ConvertLeadDialog
+          lead={convertLead}
+          open={!!convertLead}
+          onClose={() => setConvertLead(null)}
+          onConverted={() => {
+            queryClient.invalidateQueries({ queryKey: ["admin-leads"] });
+            setConvertLead(null);
+          }}
+        />
       )}
     </div>
   );
