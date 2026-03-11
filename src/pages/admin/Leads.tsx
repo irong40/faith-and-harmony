@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminNav from "./components/AdminNav";
+import { LeadDetailDrawer } from "@/components/admin/LeadDetailDrawer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -131,7 +132,11 @@ const PAGE_SIZE = 20;
 // -------------------------------------------------------
 // Voice Leads Tab
 // -------------------------------------------------------
-function VoiceLeadsTab() {
+type VoiceLeadsTabProps = {
+  onSelectLead: (id: string) => void;
+};
+
+function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
   const [statusFilter, setStatusFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
@@ -231,6 +236,7 @@ function VoiceLeadsTab() {
                 <TableRow
                   key={lead.id}
                   className={isOverdue(lead) ? "border-l-4 border-amber-400 bg-amber-50/40 cursor-pointer" : "cursor-pointer"}
+                  onClick={() => onSelectLead(lead.id)}
                 >
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                     {format(new Date(lead.created_at), "MMM d, h:mm a")}
@@ -647,6 +653,7 @@ function DroneLeadsTab() {
 // -------------------------------------------------------
 export default function Leads() {
   const queryClient = useQueryClient();
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen bg-background">
@@ -693,9 +700,11 @@ export default function Leads() {
           </TabsContent>
 
           <TabsContent value="voice">
-            <VoiceLeadsTab />
+            <VoiceLeadsTab onSelectLead={setSelectedLeadId} />
           </TabsContent>
         </Tabs>
+
+        <LeadDetailDrawer leadId={selectedLeadId} onClose={() => setSelectedLeadId(null)} />
       </div>
     </div>
   );
