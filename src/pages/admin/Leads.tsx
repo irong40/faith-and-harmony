@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminNav from "./components/AdminNav";
@@ -50,6 +50,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ConvertLeadDialog } from "@/components/admin/ConvertLeadDialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // -------------------------------------------------------
 // Voice Leads Types
@@ -78,6 +79,20 @@ export function isOverdue(lead: Pick<LeadRow, "lead_notes">): boolean {
 
 export function isSourceFilterActive(filter: string): boolean {
   return filter !== "All";
+}
+
+export function getQualifiedUnconvertedLeads(leads: LeadRow[]): LeadRow[] {
+  return leads.filter((l) => l.qualification_status === "qualified" && l.client_id === null);
+}
+
+export function toggleLeadSelection(selected: Set<string>, leadId: string): Set<string> {
+  const next = new Set(selected);
+  if (next.has(leadId)) {
+    next.delete(leadId);
+  } else {
+    next.add(leadId);
+  }
+  return next;
 }
 
 const SOURCE_CHANNEL_COLORS: Record<string, string> = {
@@ -149,6 +164,14 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
   const [page, setPage] = useState(0);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // Bulk selection state
+  const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
+
+  // Reset selection when page or filters change
+  useEffect(() => {
+    setSelectedLeadIds(new Set());
+  }, [page, statusFilter, sourceChannelFilter]);
 
   // Convert Lead dialog state
   const [convertLead, setConvertLead] = useState<LeadRow | null>(null);
@@ -403,6 +426,21 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={
+                      getQualifiedUnconvertedLeads(leads).length > 0 &&
+                      getQualifiedUnconvertedLeads(leads).every((l) => selectedLeadIds.has(l.id))
+                    }
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedLeadIds(new Set(getQualifiedUnconvertedLeads(leads).map((l) => l.id)));
+                      } else {
+                        setSelectedLeadIds(new Set());
+                      }
+                    }}
+                  />
+                </TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Caller</TableHead>
                 <TableHead>Phone</TableHead>
@@ -419,6 +457,14 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
                   className={isOverdue(lead) ? "border-l-4 border-amber-400 bg-amber-50/40 cursor-pointer" : "cursor-pointer"}
                   onClick={() => onSelectLead(lead.id)}
                 >
+                  <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
+                    {lead.qualification_status === "qualified" && !lead.client_id && (
+                      <Checkbox
+                        checked={selectedLeadIds.has(lead.id)}
+                        onCheckedChange={() => setSelectedLeadIds(toggleLeadSelection(selectedLeadIds, lead.id))}
+                      />
+                    )}
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                     {format(new Date(lead.created_at), "MMM d, h:mm a")}
                   </TableCell>
