@@ -23,9 +23,9 @@ Requirements for the Leads Admin Upgrade milestone. Each maps to roadmap phases.
 
 ### Lead Entry & Sources
 
-- [ ] **SRCE-01**: Admin can manually create a lead via a form (name, phone, email, source, notes)
+- [x] **SRCE-01**: Admin can manually create a lead via a form (name, phone, email, source, notes)
 - [x] **SRCE-02**: Leads page shows all source channels (voice_bot, web_form, manual, email_outreach, social) with source badges
-- [ ] **SRCE-03**: Admin can filter leads by source channel
+- [x] **SRCE-03**: Admin can filter leads by source channel
 
 ### Inline Editing
 
@@ -77,9 +77,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DETL-03 | Phase 14 | Complete |
 | DETL-04 | Phase 14 | Complete |
 | DETL-05 | Phase 14 | Complete |
-| SRCE-01 | Phase 15 | Pending |
+| SRCE-01 | Phase 15 | Complete |
 | SRCE-02 | Phase 14 | Complete |
-| SRCE-03 | Phase 15 | Pending |
+| SRCE-03 | Phase 15 | Complete |
 | EDIT-01 | Phase 14 | Complete |
 | ANLY-01 | Phase 16 | Pending |
 | ANLY-02 | Phase 16 | Pending |

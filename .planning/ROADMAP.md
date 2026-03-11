@@ -116,8 +116,7 @@ Plans:
 | Phase | Milestone | Plans | Status | Completed |
 |-------|-----------|-------|--------|-----------|
 | 1-5 | v1.0 | 8 | Complete | 2026-02 |
-| 1-6 | v1.1 | 15 | Complete | 2026-03-05 |
-| 7-12 | v2.0 | 14 | 3/3 | Complete    | 2026-03-11 | 13. Schema Foundation | v2.1 | 2/2 | Complete | 2026-03-11 |
+| 1-6 | v1.1 | 15 | 1/3 | In Progress|  | 7-12 | v2.0 | 14 | 3/3 | Complete    | 2026-03-11 | 13. Schema Foundation | v2.1 | 2/2 | Complete | 2026-03-11 |
 | 14. Detail Drawer and Inline Editing | v2.1 | 0/3 | Not started | - |
 | 15. Lead Entry and Conversion | v2.1 | 0/3 | Not started | - |
 | 16. Analytics Dashboard | v2.1 | 0/TBD | Not started | - |

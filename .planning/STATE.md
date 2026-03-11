@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Leads Admin Upgrade
-status: completed
-stopped_at: Completed 14-03-PLAN.md
-last_updated: "2026-03-11T19:51:11.147Z"
-last_activity: 2026-03-11 — Phase 14, Plan 03 complete. Notes form and activity timeline added to LeadDetailDrawer. Phase 14 drawer requirements fully complete.
+status: in_progress
+stopped_at: Completed 15-01-PLAN.md
+last_updated: "2026-03-11T21:15:00Z"
+last_activity: 2026-03-11 — Phase 15, Plan 01 complete. Admin write RLS policies on leads, source channel filter with per-channel counts, and New Lead dialog added to VoiceLeadsTab.
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 6
+  completed_plans: 6
 ---
 
 # Project State
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 
 ## Current Position
 
-Phase: 14 (Detail Drawer and Inline Editing) — complete (3 of 3 plans done)
-Plan: 03 complete
-Status: Phase 14 fully done. LeadDetailDrawer complete with transcript, AI summary, audio player, notes form, and activity timeline.
-Last activity: 2026-03-11 — Phase 14, Plan 03 complete. Notes form and activity timeline added to LeadDetailDrawer. Phase 14 drawer requirements fully complete.
+Phase: 15 (Lead Entry and Conversion) — in progress (1 of 3 plans done)
+Plan: 01 complete
+Status: Phase 15 Plan 01 done. Admin write RLS, source filter, and New Lead dialog complete.
+Last activity: 2026-03-11 — Phase 15, Plan 01 complete. Admin write RLS policies on leads, source channel filter with per-channel counts, and New Lead dialog added to VoiceLeadsTab.
 
 ## Accumulated Context
 
@@ -80,6 +80,10 @@ Last activity: 2026-03-11 — Phase 14, Plan 03 complete. Notes form and activit
 - Phase 14-03: useToast from @/hooks/use-toast used for admin component pattern consistency (not sonner).
 - Phase 14-03: Notes form renders even without a callLog so manual/web-form leads can be annotated.
 - Phase 14-03: Transcript and timeline placed inside single ScrollArea with Separator for unified scrolling.
+- Phase 15-01: Two separate RLS policies (admins_insert_leads and admins_update_leads) keep revocation granular for future phases.
+- Phase 15-01: Per-channel count queries via Promise.all rather than GROUP BY aggregate due to as-never cast constraints on the Supabase client.
+- Phase 15-01: voice_bot excluded from New Lead source select since voice bot leads arrive via Vapi automatically.
+- Phase 15-01: isSourceFilterActive exported as pure function so spec can test without module mocking, following isOverdue pattern.
 
 ### Blockers/Concerns
 
@@ -87,7 +91,7 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-03-11T19:47:00Z
-Stopped at: Completed 14-03-PLAN.md
+Last session: 2026-03-11T21:15:00Z
+Stopped at: Completed 15-01-PLAN.md
 Resume file: None
-Resume signal: Phase 14 complete. All drawer requirements done (DETL-01 through DETL-05). Run /gsd:execute-phase 15 to begin Lead Entry and Conversion.
+Resume signal: Phase 15 Plan 01 complete. Source filter, New Lead dialog, and admin RLS policies done. Continue with 15-02 (one-click convert and client linking).
