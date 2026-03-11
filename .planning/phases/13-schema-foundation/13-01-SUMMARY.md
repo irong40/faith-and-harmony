@@ -67,7 +67,7 @@ Each task was committed atomically:
 1. **Task 1: Create source_channel enum and migrate leads column** - `2ef412e` (feat)
 2. **Task 2: Create lead_notes table with RLS and constraints** - `5086abd` (feat)
 
-**Plan metadata:** pending docs commit
+**Plan metadata:** `6b3dfb3` (docs)
 
 ## Files Created/Modified
 
@@ -103,6 +103,15 @@ npx supabase db push            # pushes pending migrations to remote
 ## Next Phase Readiness
 
 Phase 14 (Detail Drawer and Inline Editing) can proceed. The lead_notes table is ready for insert/read operations. The source_channel enum values align with the badge values Phase 14 needs to render. No schema changes are required before Phase 14 begins.
+
+## Self-Check: PASSED
+
+- supabase/migrations/20260311100000_lead_source_channel_enum.sql: FOUND
+- supabase/migrations/20260311100100_lead_notes_table.sql: FOUND
+- .planning/phases/13-schema-foundation/13-01-SUMMARY.md: FOUND
+- Commit 2ef412e: FOUND (feat Task 1)
+- Commit 5086abd: FOUND (feat Task 2)
+- Commit 6b3dfb3: FOUND (docs metadata)
 
 ---
 *Phase: 13-schema-foundation*
