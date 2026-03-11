@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Leads Admin Upgrade
-status: roadmap_ready
-stopped_at: Roadmap created — ready to plan Phase 13
-last_updated: "2026-03-10T22:30:00.000Z"
-last_activity: 2026-03-10 -- Roadmap created for v2.1 (4 phases, 16 requirements mapped)
+status: in_progress
+stopped_at: Completed 13-01-PLAN.md
+last_updated: "2026-03-11T03:44:00.000Z"
+last_activity: 2026-03-11 — Phase 13, Plan 01 complete (source_channel enum + lead_notes table)
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 2
+  completed_plans: 1
 ---
 
 # Project State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 
 ## Current Position
 
-Phase: 13 (Schema Foundation) — not started
-Plan: —
-Status: Roadmap ready, awaiting plan-phase
-Last activity: 2026-03-10 — Roadmap created, 4 phases, 16 requirements mapped
+Phase: 13 (Schema Foundation) — in progress, 1 of 2 plans complete
+Plan: 01 complete, 02 next
+Status: In progress
+Last activity: 2026-03-11 — Phase 13, Plan 01 complete. source_channel enum migrated, lead_notes table created with admin RLS.
 
 ## Accumulated Context
 
@@ -68,13 +67,18 @@ Last activity: 2026-03-10 — Roadmap created, 4 phases, 16 requirements mapped
 - app_health_history INSERT RLS policy needs tightening
 - Sentinel marketing site "Pilot Login" link has newline in URL (separate repo)
 
+### Key Decisions (v2.1)
+
+- Phase 13-01: reason_tag uses text+CHECK over enum. Simpler to ALTER as allowed values grow.
+- Phase 13-01: USING cast on source_channel is fail-fast. Any value outside 5 enum values errors at migration time.
+
 ### Blockers/Concerns
 
 None active.
 
 ## Session Continuity
 
-Last session: 2026-03-10T22:30:00Z
-Stopped at: Roadmap created for v2.1
+Last session: 2026-03-11T03:44:43.418Z
+Stopped at: Completed 13-01-PLAN.md
 Resume file: None
 Resume signal: Run /gsd:plan-phase 13 to begin Schema Foundation planning.

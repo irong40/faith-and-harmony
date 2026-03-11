@@ -17,14 +17,14 @@ Requirements for the Leads Admin Upgrade milestone. Each maps to roadmap phases.
 
 - [ ] **DETL-01**: Admin can click a lead row to open a detail drawer showing call transcript and summary
 - [ ] **DETL-02**: Admin can play the Vapi call recording directly in the detail drawer
-- [ ] **DETL-03**: Admin can add notes to a lead with reason tags (not ready, wrong area, needs callback, price sensitive)
-- [ ] **DETL-04**: Admin can set a follow-up date on a lead and see overdue follow-ups highlighted
+- [x] **DETL-03**: Admin can add notes to a lead with reason tags (not ready, wrong area, needs callback, price sensitive)
+- [x] **DETL-04**: Admin can set a follow-up date on a lead and see overdue follow-ups highlighted
 - [ ] **DETL-05**: Admin can view a timeline of all activity on a lead (status changes, notes, conversion)
 
 ### Lead Entry & Sources
 
 - [ ] **SRCE-01**: Admin can manually create a lead via a form (name, phone, email, source, notes)
-- [ ] **SRCE-02**: Leads page shows all source channels (voice_bot, web_form, manual, email_outreach, social) with source badges
+- [x] **SRCE-02**: Leads page shows all source channels (voice_bot, web_form, manual, email_outreach, social) with source badges
 - [ ] **SRCE-03**: Admin can filter leads by source channel
 
 ### Inline Editing
@@ -74,11 +74,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONV-03 | Phase 15 | Pending |
 | DETL-01 | Phase 14 | Pending |
 | DETL-02 | Phase 14 | Pending |
-| DETL-03 | Phase 14 | Pending |
-| DETL-04 | Phase 14 | Pending |
+| DETL-03 | Phase 14 | Complete |
+| DETL-04 | Phase 14 | Complete |
 | DETL-05 | Phase 14 | Pending |
 | SRCE-01 | Phase 15 | Pending |
-| SRCE-02 | Phase 14 | Pending |
+| SRCE-02 | Phase 14 | Complete |
 | SRCE-03 | Phase 15 | Pending |
 | EDIT-01 | Phase 14 | Pending |
 | ANLY-01 | Phase 16 | Pending |
