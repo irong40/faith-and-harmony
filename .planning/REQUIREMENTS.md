@@ -11,7 +11,7 @@ Requirements for the Leads Admin Upgrade milestone. Each maps to roadmap phases.
 
 - [x] **CONV-01**: Admin can one-click convert a qualified lead into a new client and quote request
 - [x] **CONV-02**: Admin can link a lead to an existing client when a match is found
-- [ ] **CONV-03**: Admin can bulk select multiple qualified leads and convert them all at once
+- [x] **CONV-03**: Admin can bulk select multiple qualified leads and convert them all at once
 
 ### Lead Details
 
@@ -71,7 +71,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | CONV-01 | Phase 15 | Complete |
 | CONV-02 | Phase 15 | Complete |
-| CONV-03 | Phase 15 | Pending |
+| CONV-03 | Phase 15 | Complete |
 | DETL-01 | Phase 14 | Complete |
 | DETL-02 | Phase 14 | Complete |
 | DETL-03 | Phase 14 | Complete |

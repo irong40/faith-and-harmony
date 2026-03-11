@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Leads Admin Upgrade
 status: completed
-stopped_at: Completed 15-02-PLAN.md
-last_updated: "2026-03-11T21:23:00Z"
-last_activity: 2026-03-11 — Phase 15, Plan 02 complete. ConvertLeadDialog with new client and link-existing-client flows wired into VoiceLeadsTab rows.
+stopped_at: Completed 15-03-PLAN.md
+last_updated: "2026-03-11T21:29:00Z"
+last_activity: 2026-03-11 — Phase 15, Plan 03 complete. Checkbox bulk selection and bulk convert with Promise.allSettled in VoiceLeadsTab. Phase 15 fully complete.
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 
 ## Current Position
 
-Phase: 15 (Lead Entry and Conversion) — in progress (2 of 3 plans done)
-Plan: 02 complete
-Status: Phase 15 Plan 02 done. ConvertLeadDialog with new-client and link-existing-client flows, Convert button in VoiceLeadsTab rows.
-Last activity: 2026-03-11 — Phase 15, Plan 02 complete. ConvertLeadDialog with new client and link-existing-client flows wired into VoiceLeadsTab rows.
+Phase: 15 (Lead Entry and Conversion) — complete (3 of 3 plans done)
+Plan: 03 complete
+Status: Phase 15 fully done. Checkbox bulk selection, bulk convert with Promise.allSettled, per-lead results summary.
+Last activity: 2026-03-11 — Phase 15, Plan 03 complete. Checkbox bulk selection and bulk convert with Promise.allSettled in VoiceLeadsTab. Phase 15 fully complete.
 
 ## Accumulated Context
 
@@ -87,6 +87,9 @@ Last activity: 2026-03-11 — Phase 15, Plan 02 complete. ConvertLeadDialog with
 - Phase 15-02: quote_requests needed admin INSERT policy; 20260303500000 only had SELECT and UPDATE — added 20260311200100.
 - Phase 15-02: ConvertLeadDialogProps includes source_channel so buildQuoteRequestInsert can map it without an extra query.
 - Phase 15-02: convertLead state holds full LeadRow rather than just an ID to avoid a refetch inside the dialog.
+- Phase 15-03: useEffect resets selectedLeadIds on filter/page change to prevent stale selection across navigation.
+- Phase 15-03: handleBulkConvert as async function (not useMutation) since Promise.allSettled handles partial failure natively.
+- Phase 15-03: Checkbox stopPropagation prevents detail drawer opening on checkbox click.
 
 ### Blockers/Concerns
 
@@ -94,7 +97,7 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-03-11T21:23:00Z
-Stopped at: Completed 15-02-PLAN.md
+Last session: 2026-03-11T21:29:00Z
+Stopped at: Completed 15-03-PLAN.md
 Resume file: None
-Resume signal: Phase 15 Plan 02 complete. ConvertLeadDialog component and Convert button wired. Continue with 15-03 (bulk convert or next phase 15 plan).
+Resume signal: Phase 15 complete. All 3 plans done. Continue with Phase 16 (Analytics Dashboard).
