@@ -40,6 +40,13 @@ import {
   Loader2,
 } from "lucide-react";
 import { OUTCOME_COLORS } from "./CallLogs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // -------------------------------------------------------
 // Voice Leads Types
@@ -129,6 +136,24 @@ function VoiceLeadsTab() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase
+        .from("leads" as never)
+        .update({ qualification_status: status } as never)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-leads"] });
+      toast({ title: "Status updated" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Update failed", description: err.message, variant: "destructive" });
+    },
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-leads", statusFilter, search, page],
@@ -218,10 +243,22 @@ function VoiceLeadsTab() {
                       {SOURCE_CHANNEL_LABELS[lead.source_channel] ?? lead.source_channel}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    <Badge className={OUTCOME_COLORS[lead.qualification_status] ?? "bg-gray-400 text-white"}>
-                      {lead.qualification_status}
-                    </Badge>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Select
+                      value={lead.qualification_status}
+                      onValueChange={(value) => updateStatusMutation.mutate({ id: lead.id, status: value })}
+                    >
+                      <SelectTrigger className="h-7 w-auto border-0 p-0 focus:ring-0">
+                        <Badge className={OUTCOME_COLORS[lead.qualification_status] ?? "bg-gray-400 text-white"}>
+                          {lead.qualification_status}
+                        </Badge>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["qualified", "declined", "transferred", "pending"].map((s) => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell>
                     {lead.quote_requests ? (
