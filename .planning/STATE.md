@@ -1,33 +1,34 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Billing, Equipment, and Production Readiness
-status: shipped
-stopped_at: v2.0 milestone complete and archived
-last_updated: "2026-03-06T22:30:00.000Z"
-last_activity: 2026-03-06 -- v2.0 milestone archived
+milestone: v2.1
+milestone_name: Leads Admin Upgrade
+status: defining_requirements
+stopped_at: Defining requirements for v2.1
+last_updated: "2026-03-10T22:00:00.000Z"
+last_activity: 2026-03-10 -- Milestone v2.1 started
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 14
-  completed_plans: 14
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-06)
+See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** A prospective client can find Sentinel through search or phone, get qualified, receive a quote, and book a drone job without Iron personally fielding the call or manually creating the request.
-**Current focus:** v2.0 shipped. Platform is production ready. Planning next milestone.
+**Current focus:** v2.1 Leads Admin Upgrade — defining requirements
 
 ## Current Position
 
-Milestone v2.0 shipped 2026-03-06.
-All 3 milestones complete (v1.0, v1.1, v2.0).
-Next step: /gsd:new-milestone to plan v3.0.
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-10 — Milestone v2.1 started
 
 ## Accumulated Context
 
@@ -66,7 +67,7 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-03-06T22:30:00Z
-Stopped at: v2.0 milestone archived
+Last session: 2026-03-10T22:00:00Z
+Stopped at: Defining requirements for v2.1
 Resume file: None
-Resume signal: Run /gsd:new-milestone to start v3.0 planning.
+Resume signal: Continue requirements definition and roadmap creation.
