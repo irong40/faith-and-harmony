@@ -1,9 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
 
 // -------------------------------------------------------
 // Types
@@ -29,9 +39,29 @@ type LeadDetail = {
   } | null;
 };
 
+type ActivityEvent = {
+  lead_id: string;
+  event_type: string;
+  event_at: string;
+  summary: string;
+  source_id: string | null;
+};
+
 // -------------------------------------------------------
 // Helpers
 // -------------------------------------------------------
+const EVENT_TYPE_COLORS: Record<string, string> = {
+  status_change: "bg-blue-100 text-blue-800",
+  note_added: "bg-green-100 text-green-800",
+  converted: "bg-purple-100 text-purple-800",
+};
+
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  status_change: "Status",
+  note_added: "Note",
+  converted: "Converted",
+};
+
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -55,6 +85,58 @@ type LeadDetailDrawerProps = {
 };
 
 export function LeadDetailDrawer({ leadId, onClose }: LeadDetailDrawerProps) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const [noteContent, setNoteContent] = useState("");
+  const [reasonTag, setReasonTag] = useState("");
+  const [followUpDate, setFollowUpDate] = useState<Date | undefined>(undefined);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+
+  const saveNoteMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      const { error } = await (supabase as never)
+        .from("lead_notes")
+        .insert({
+          lead_id: leadId,
+          content: noteContent.trim(),
+          reason_tag: reasonTag || null,
+          follow_up_at: followUpDate ? followUpDate.toISOString() : null,
+          created_by: session.user.id,
+        } as never);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setNoteContent("");
+      setReasonTag("");
+      setFollowUpDate(undefined);
+      queryClient.invalidateQueries({ queryKey: ["lead-detail", leadId] });
+      queryClient.invalidateQueries({ queryKey: ["admin-leads"] });
+      queryClient.invalidateQueries({ queryKey: ["lead-activity", leadId] });
+      toast({ title: "Note saved" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Save failed", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const { data: timeline = [], isLoading: timelineLoading } = useQuery({
+    queryKey: ["lead-activity", leadId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as never)
+        .from("lead_activity")
+        .select("lead_id, event_type, event_at, summary, source_id")
+        .eq("lead_id", leadId)
+        .order("event_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as ActivityEvent[];
+    },
+    enabled: !!leadId,
+    staleTime: 30_000,
+  });
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["lead-detail", leadId],
     queryFn: async (): Promise<LeadDetail> => {
@@ -141,9 +223,64 @@ export function LeadDetailDrawer({ leadId, onClose }: LeadDetailDrawerProps) {
           </div>
         )}
 
-        {/* PLAN-03: notes form will go here */}
+        {/* Section 3: Notes form */}
+        {!isLoading && !error && (
+          <div className="px-6 py-4 border-b space-y-3">
+            <p className="text-sm font-medium">Add Note</p>
+            <Textarea
+              placeholder="Write a note..."
+              value={noteContent}
+              onChange={(e) => setNoteContent(e.target.value)}
+              rows={3}
+              className="resize-none"
+            />
+            <div className="flex gap-2 flex-wrap">
+              <Select value={reasonTag} onValueChange={setReasonTag}>
+                <SelectTrigger className="w-[180px] h-8 text-sm">
+                  <SelectValue placeholder="Reason tag (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="not_ready">Not Ready</SelectItem>
+                  <SelectItem value="wrong_area">Wrong Area</SelectItem>
+                  <SelectItem value="needs_callback">Needs Callback</SelectItem>
+                  <SelectItem value="price_sensitive">Price Sensitive</SelectItem>
+                </SelectContent>
+              </Select>
 
-        {/* Section 3: Transcript */}
+              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 gap-1.5 text-sm font-normal">
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    {followUpDate ? format(followUpDate, "MMM d, yyyy") : "Follow-up date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={followUpDate}
+                    onSelect={(date) => { setFollowUpDate(date); setDatePickerOpen(false); }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {followUpDate && (
+                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setFollowUpDate(undefined)}>
+                  Clear date
+                </Button>
+              )}
+            </div>
+            <Button
+              size="sm"
+              onClick={() => saveNoteMutation.mutate()}
+              disabled={!noteContent.trim() || saveNoteMutation.isPending}
+            >
+              {saveNoteMutation.isPending ? "Saving..." : "Save Note"}
+            </Button>
+          </div>
+        )}
+
+        {/* Section 4: Transcript + Activity Timeline */}
         <div className="flex-1 min-h-0">
           {isLoading ? (
             <div className="p-6 space-y-2">
@@ -155,20 +292,53 @@ export function LeadDetailDrawer({ leadId, onClose }: LeadDetailDrawerProps) {
             <div className="flex items-center justify-center h-full text-muted-foreground text-sm p-6">
               Unable to load call details. Please try again.
             </div>
-          ) : !data?.callLog ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground text-sm p-6">
-              No call log found for this lead
-            </div>
-          ) : !data.callLog.transcript ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground text-sm p-6">
-              No transcript available
-            </div>
           ) : (
             <ScrollArea className="h-full">
-              <pre className="whitespace-pre-wrap font-mono text-sm p-6">
-                {data.callLog.transcript}
-              </pre>
-              {/* PLAN-03: activity timeline will go here */}
+              {!data?.callLog ? (
+                <div className="px-6 py-4 text-sm text-muted-foreground">
+                  No call log found for this lead
+                </div>
+              ) : !data.callLog.transcript ? (
+                <div className="px-6 py-4 text-sm text-muted-foreground">
+                  No transcript available
+                </div>
+              ) : (
+                <div className="px-6 py-4">
+                  <p className="text-sm font-medium mb-2">Transcript</p>
+                  <pre className="whitespace-pre-wrap font-mono text-sm">
+                    {data.callLog.transcript}
+                  </pre>
+                </div>
+              )}
+
+              <Separator />
+
+              <div className="px-6 py-4">
+                <p className="text-sm font-medium mb-3">Activity</p>
+                {timelineLoading ? (
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
+                  </div>
+                ) : timeline.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No activity yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {timeline.map((event, idx) => (
+                      <div key={`${event.event_at}-${idx}`} className="flex items-start gap-3 text-sm">
+                        <Badge className={`shrink-0 text-xs ${EVENT_TYPE_COLORS[event.event_type] ?? "bg-gray-100 text-gray-700"}`}>
+                          {EVENT_TYPE_LABELS[event.event_type] ?? event.event_type}
+                        </Badge>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground leading-snug">{event.summary}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {format(new Date(event.event_at), "MMM d, yyyy h:mm a")}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </ScrollArea>
           )}
         </div>
