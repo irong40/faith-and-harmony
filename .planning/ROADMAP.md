@@ -58,7 +58,11 @@ See v1.0 roadmap archive.
   2. A lead_notes table exists with columns for lead_id, content, reason_tag, and follow_up_at and enforces row-level security for admin access only
   3. A lead_activity table (or view) exists that surfaces timestamped events for status changes, note additions, and conversions
   4. All new columns and tables are covered by a migration that applies cleanly to production without breaking the existing leads admin page
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — source_channel enum migration and lead_notes table
+- [ ] 13-02-PLAN.md — lead_activity view
 
 ### Phase 14: Detail Drawer and Inline Editing
 **Goal**: Admin can open any lead row to see its full detail, interact with transcript and recording, add notes with tags, set follow-up dates, and change qualification status without leaving the table
@@ -104,7 +108,7 @@ See v1.0 roadmap archive.
 | 1-5 | v1.0 | 8 | Complete | 2026-02 |
 | 1-6 | v1.1 | 15 | Complete | 2026-03-05 |
 | 7-12 | v2.0 | 14 | Complete | 2026-03-06 |
-| 13. Schema Foundation | v2.1 | 0/TBD | Not started | - |
+| 13. Schema Foundation | v2.1 | 2 | Not started | - |
 | 14. Detail Drawer and Inline Editing | v2.1 | 0/TBD | Not started | - |
 | 15. Lead Entry and Conversion | v2.1 | 0/TBD | Not started | - |
 | 16. Analytics Dashboard | v2.1 | 0/TBD | Not started | - |
