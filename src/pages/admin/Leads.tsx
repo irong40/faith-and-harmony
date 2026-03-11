@@ -16,6 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -72,6 +73,10 @@ export function isOverdue(lead: Pick<LeadRow, "lead_notes">): boolean {
   return lead.lead_notes.some(
     (n) => n.follow_up_at != null && new Date(n.follow_up_at) < now
   );
+}
+
+export function isSourceFilterActive(filter: string): boolean {
+  return filter !== "All";
 }
 
 const SOURCE_CHANNEL_COLORS: Record<string, string> = {
@@ -138,10 +143,60 @@ type VoiceLeadsTabProps = {
 
 function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
   const [statusFilter, setStatusFilter] = useState("All");
+  const [sourceChannelFilter, setSourceChannelFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  // New Lead dialog state
+  const [newLeadOpen, setNewLeadOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newSource, setNewSource] = useState<string>("manual");
+  const [newNote, setNewNote] = useState("");
+
+  const createLeadMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      const { data: lead, error } = await (supabase as never)
+        .from("leads")
+        .insert({
+          caller_name: newName.trim(),
+          caller_phone: newPhone.trim(),
+          caller_email: newEmail.trim() || null,
+          source_channel: newSource,
+          qualification_status: "pending",
+        } as never)
+        .select("id")
+        .single();
+      if (error) throw error;
+      if (newNote.trim() && lead) {
+        await (supabase as never)
+          .from("lead_notes")
+          .insert({
+            lead_id: (lead as { id: string }).id,
+            content: newNote.trim(),
+            created_by: session.user.id,
+          } as never);
+      }
+    },
+    onSuccess: () => {
+      setNewLeadOpen(false);
+      setNewName("");
+      setNewPhone("");
+      setNewEmail("");
+      setNewSource("manual");
+      setNewNote("");
+      queryClient.invalidateQueries({ queryKey: ["admin-leads"] });
+      toast({ title: "Lead created" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Create failed", description: err.message, variant: "destructive" });
+    },
+  });
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -160,8 +215,29 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
     },
   });
 
+  const { data: sourceCounts } = useQuery({
+    queryKey: ["admin-leads-source-counts", statusFilter, search],
+    queryFn: async () => {
+      const channels = ["voice_bot", "web_form", "manual", "email_outreach", "social"];
+      const results = await Promise.all(
+        channels.map(async (ch) => {
+          let cq = supabase
+            .from("leads" as never)
+            .select("id", { count: "exact", head: true }) as never;
+          cq = (cq as never).eq("source_channel", ch);
+          if (statusFilter !== "All") cq = (cq as never).eq("qualification_status", statusFilter);
+          if (search.trim()) cq = (cq as never).or(`caller_name.ilike.%${search}%,caller_phone.ilike.%${search}%`);
+          const { count } = await cq;
+          return [ch, count ?? 0] as [string, number];
+        })
+      );
+      return Object.fromEntries(results) as Record<string, number>;
+    },
+    staleTime: 30_000,
+  });
+
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-leads", statusFilter, search, page],
+    queryKey: ["admin-leads", statusFilter, sourceChannelFilter, search, page],
     queryFn: async () => {
       let query = supabase
         .from("leads" as never)
@@ -173,6 +249,7 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
       if (statusFilter !== "All") query = query.eq("qualification_status", statusFilter);
+      if (sourceChannelFilter !== "All") query = query.eq("source_channel", sourceChannelFilter);
       if (search.trim()) {
         query = query.or(`caller_name.ilike.%${search}%,caller_phone.ilike.%${search}%`);
       }
@@ -190,6 +267,91 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
 
   return (
     <div>
+      {/* New Lead button and dialog */}
+      <div className="flex justify-end mb-4">
+        <Dialog open={newLeadOpen} onOpenChange={setNewLeadOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" className="gap-2">
+              New Lead
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>New Lead</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div>
+                <Label htmlFor="new-lead-name">Name (required)</Label>
+                <Input
+                  id="new-lead-name"
+                  placeholder="Caller full name"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-lead-phone">Phone (required)</Label>
+                <Input
+                  id="new-lead-phone"
+                  placeholder="+1 (555) 000-0000"
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-lead-email">Email (optional)</Label>
+                <Input
+                  id="new-lead-email"
+                  type="email"
+                  placeholder="caller@example.com"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-lead-source">Source (required)</Label>
+                <Select value={newSource} onValueChange={setNewSource}>
+                  <SelectTrigger id="new-lead-source">
+                    <SelectValue placeholder="Select source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manual">Manual</SelectItem>
+                    <SelectItem value="web_form">Web Form</SelectItem>
+                    <SelectItem value="email_outreach">Email</SelectItem>
+                    <SelectItem value="social">Social</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="new-lead-note">Note (optional)</Label>
+                <Textarea
+                  id="new-lead-note"
+                  placeholder="Any context about this lead..."
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  rows={3}
+                />
+              </div>
+              <Button
+                className="w-full"
+                onClick={() => createLeadMutation.mutate()}
+                disabled={!newName.trim() || !newPhone.trim() || createLeadMutation.isPending}
+              >
+                {createLeadMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Lead"
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Status filter row */}
       <div className="flex gap-2 mb-4 flex-wrap">
         {VOICE_STATUS_FILTERS.map((filter) => (
           <Button
@@ -199,6 +361,21 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
             onClick={() => { setStatusFilter(filter); setPage(0); }}
           >
             {filter}
+          </Button>
+        ))}
+      </div>
+
+      {/* Source channel filter row */}
+      <div className="flex gap-2 mb-4 flex-wrap">
+        {(["All", "voice_bot", "web_form", "manual", "email_outreach", "social"] as const).map((ch) => (
+          <Button
+            key={ch}
+            variant={sourceChannelFilter === ch ? "default" : "outline"}
+            size="sm"
+            onClick={() => { setSourceChannelFilter(ch); setPage(0); }}
+          >
+            {ch === "All" ? "All Sources" : SOURCE_CHANNEL_LABELS[ch]}
+            {ch !== "All" && sourceCounts?.[ch] != null ? ` (${sourceCounts[ch]})` : ""}
           </Button>
         ))}
       </div>
