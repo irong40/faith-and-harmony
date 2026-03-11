@@ -76,7 +76,12 @@ Plans:
   5. The drawer shows a chronological timeline of all status changes, notes added, and conversion events for that lead
   6. Admin can click the qualification status cell in the table row and change it via a dropdown without opening the drawer
   7. Source channel badges render on every lead row in the table using the source_channel value from Phase 13
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 14-01-PLAN.md — table enhancements: source badges, inline status dropdown, overdue row highlight
+- [ ] 14-02-PLAN.md — LeadDetailDrawer component with transcript and embedded audio player
+- [ ] 14-03-PLAN.md — notes form with reason tags and follow-up date, plus activity timeline
 
 ### Phase 15: Lead Entry and Conversion
 **Goal**: Admin can create leads from non-Vapi sources, filter by source, and convert qualified leads into clients and quote requests through one-click, link, or bulk actions
@@ -108,7 +113,7 @@ Plans:
 | 1-5 | v1.0 | 8 | Complete | 2026-02 |
 | 1-6 | v1.1 | 15 | Complete | 2026-03-05 |
 | 7-12 | v2.0 | 14 | Complete | 2026-03-06 |
-| 13. Schema Foundation | 2/2 | Complete    | 2026-03-11 | - |
-| 14. Detail Drawer and Inline Editing | v2.1 | 0/TBD | Not started | - |
+| 13. Schema Foundation | v2.1 | 2/2 | Complete | 2026-03-11 |
+| 14. Detail Drawer and Inline Editing | v2.1 | 0/3 | Not started | - |
 | 15. Lead Entry and Conversion | v2.1 | 0/TBD | Not started | - |
 | 16. Analytics Dashboard | v2.1 | 0/TBD | Not started | - |
