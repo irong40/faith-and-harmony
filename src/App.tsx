@@ -61,6 +61,7 @@ const PilotDashboard = lazy(() => import("./pages/pilot/PilotDashboard"));
 const PilotMissionDetail = lazy(() => import("./pages/pilot/PilotMissionDetail"));
 const PilotMap = lazy(() => import("./pages/pilot/PilotMap"));
 const PilotRouteOptimizer = lazy(() => import("./pages/pilot/PilotRouteOptimizer"));
+const PortfolioFlights = lazy(() => import("./pages/pilot/PortfolioFlights"));
 const FleetOverview = lazy(() => import("./components/pilot/FleetOverview"));
 const MaintenanceHistory = lazy(() => import("./components/pilot/MaintenanceHistory"));
 
@@ -176,6 +177,7 @@ const App = () => (
               <Route path="/pilot/mission/:id" element={<PilotRoute><PilotMissionDetail /></PilotRoute>} />
               <Route path="/pilot/map" element={<PilotRoute><PilotMap /></PilotRoute>} />
               <Route path="/pilot/route" element={<PilotRoute><PilotRouteOptimizer /></PilotRoute>} />
+              <Route path="/pilot/portfolio" element={<PilotRoute><PortfolioFlights /></PilotRoute>} />
               <Route path="/pilot/fleet" element={<PilotRoute><FleetOverview /></PilotRoute>} />
               <Route path="/pilot/fleet/maintenance" element={<PilotRoute><MaintenanceHistory /></PilotRoute>} />
 

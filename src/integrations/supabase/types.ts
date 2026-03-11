@@ -1416,19 +1416,31 @@ export type Database = {
           id: string
           ingested_at: string | null
           is_rush: boolean
+          is_test: boolean
           job_number: string
           job_price: number | null
           latitude: number | null
           longitude: number | null
           mission_number: number | null
+          model_file_path: string | null
           nearest_weather_station: string | null
+          nodeodm_task_id: string | null
+          orthophoto_path: string | null
           output_path: string | null
           package_id: string | null
           photo_count: number | null
+          photogrammetry_status:
+            | Database["public"]["Enums"]["photogrammetry_status"]
+            | null
           pilot_id: string | null
           pilot_notes: string | null
+          pointcloud_path: string | null
           preview_urls: string[] | null
+          processing_completed_at: string | null
+          processing_error: string | null
           processing_job_id: string | null
+          processing_options: Json | null
+          processing_started_at: string | null
           processing_template_id: string | null
           property_address: string
           property_city: string | null
@@ -1477,19 +1489,31 @@ export type Database = {
           id?: string
           ingested_at?: string | null
           is_rush?: boolean
+          is_test?: boolean
           job_number: string
           job_price?: number | null
           latitude?: number | null
           longitude?: number | null
           mission_number?: number | null
+          model_file_path?: string | null
           nearest_weather_station?: string | null
+          nodeodm_task_id?: string | null
+          orthophoto_path?: string | null
           output_path?: string | null
           package_id?: string | null
           photo_count?: number | null
+          photogrammetry_status?:
+            | Database["public"]["Enums"]["photogrammetry_status"]
+            | null
           pilot_id?: string | null
           pilot_notes?: string | null
+          pointcloud_path?: string | null
           preview_urls?: string[] | null
+          processing_completed_at?: string | null
+          processing_error?: string | null
           processing_job_id?: string | null
+          processing_options?: Json | null
+          processing_started_at?: string | null
           processing_template_id?: string | null
           property_address: string
           property_city?: string | null
@@ -1538,19 +1562,31 @@ export type Database = {
           id?: string
           ingested_at?: string | null
           is_rush?: boolean
+          is_test?: boolean
           job_number?: string
           job_price?: number | null
           latitude?: number | null
           longitude?: number | null
           mission_number?: number | null
+          model_file_path?: string | null
           nearest_weather_station?: string | null
+          nodeodm_task_id?: string | null
+          orthophoto_path?: string | null
           output_path?: string | null
           package_id?: string | null
           photo_count?: number | null
+          photogrammetry_status?:
+            | Database["public"]["Enums"]["photogrammetry_status"]
+            | null
           pilot_id?: string | null
           pilot_notes?: string | null
+          pointcloud_path?: string | null
           preview_urls?: string[] | null
+          processing_completed_at?: string | null
+          processing_error?: string | null
           processing_job_id?: string | null
+          processing_options?: Json | null
+          processing_started_at?: string | null
           processing_template_id?: string | null
           property_address?: string
           property_city?: string | null
@@ -3390,11 +3426,13 @@ export type Database = {
       pipeline_runs: {
         Row: {
           completed_at: string | null
+          correlation_id: string | null
           created_at: string
           detected_at: string | null
           error_message: string | null
-          folder_name: string
-          folder_path: string
+          execution_id: string | null
+          folder_name: string | null
+          folder_path: string | null
           has_ppk_data: boolean | null
           id: string
           mission_number: number | null
@@ -3404,14 +3442,17 @@ export type Database = {
           total_size_bytes: number | null
           updated_at: string
           video_count: number | null
+          workflow_name: string | null
         }
         Insert: {
           completed_at?: string | null
+          correlation_id?: string | null
           created_at?: string
           detected_at?: string | null
           error_message?: string | null
-          folder_name: string
-          folder_path: string
+          execution_id?: string | null
+          folder_name?: string | null
+          folder_path?: string | null
           has_ppk_data?: boolean | null
           id?: string
           mission_number?: number | null
@@ -3421,14 +3462,17 @@ export type Database = {
           total_size_bytes?: number | null
           updated_at?: string
           video_count?: number | null
+          workflow_name?: string | null
         }
         Update: {
           completed_at?: string | null
+          correlation_id?: string | null
           created_at?: string
           detected_at?: string | null
           error_message?: string | null
-          folder_name?: string
-          folder_path?: string
+          execution_id?: string | null
+          folder_name?: string | null
+          folder_path?: string | null
           has_ppk_data?: boolean | null
           id?: string
           mission_number?: number | null
@@ -3438,6 +3482,7 @@ export type Database = {
           total_size_bytes?: number | null
           updated_at?: string
           video_count?: number | null
+          workflow_name?: string | null
         }
         Relationships: []
       }
@@ -3777,6 +3822,7 @@ export type Database = {
           admin_notes: string | null
           approval_token: string
           approved_at: string | null
+          archived_at: string | null
           created_at: string | null
           customer_notes: string | null
           declined_at: string | null
@@ -3801,6 +3847,7 @@ export type Database = {
           admin_notes?: string | null
           approval_token: string
           approved_at?: string | null
+          archived_at?: string | null
           created_at?: string | null
           customer_notes?: string | null
           declined_at?: string | null
@@ -3825,6 +3872,7 @@ export type Database = {
           admin_notes?: string | null
           approval_token?: string
           approved_at?: string | null
+          archived_at?: string | null
           created_at?: string | null
           customer_notes?: string | null
           declined_at?: string | null
@@ -3903,6 +3951,7 @@ export type Database = {
       quote_requests: {
         Row: {
           address: string | null
+          archived_at: string | null
           brand_slug: string
           created_at: string
           description: string
@@ -3917,6 +3966,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          archived_at?: string | null
           brand_slug?: string
           created_at?: string
           description: string
@@ -3931,6 +3981,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          archived_at?: string | null
           brand_slug?: string
           created_at?: string
           description?: string
@@ -4105,6 +4156,7 @@ export type Database = {
       service_requests: {
         Row: {
           admin_notes: string | null
+          archived_at: string | null
           budget_range: string | null
           client_email: string
           client_name: string
@@ -4127,6 +4179,7 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          archived_at?: string | null
           budget_range?: string | null
           client_email: string
           client_name: string
@@ -4149,6 +4202,7 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          archived_at?: string | null
           budget_range?: string | null
           client_email?: string
           client_name?: string
@@ -5415,6 +5469,12 @@ export type Database = {
         | "not_interested"
       payment_status: "pending" | "paid" | "overdue" | "waived"
       payment_type: "deposit" | "balance"
+      photogrammetry_status:
+        | "pending"
+        | "queued"
+        | "processing"
+        | "completed"
+        | "failed"
       pricing_unit:
         | "per_project"
         | "per_hour"
@@ -5678,6 +5738,13 @@ export const Constants = {
       ],
       payment_status: ["pending", "paid", "overdue", "waived"],
       payment_type: ["deposit", "balance"],
+      photogrammetry_status: [
+        "pending",
+        "queued",
+        "processing",
+        "completed",
+        "failed",
+      ],
       pricing_unit: [
         "per_project",
         "per_hour",
