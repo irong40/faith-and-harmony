@@ -56,6 +56,30 @@ type LeadRow = {
   client_id: string | null;
   quote_request_id: string | null;
   quote_requests: { id: string; status: string } | null;
+  lead_notes: Array<{ follow_up_at: string | null }>;
+};
+
+export function isOverdue(lead: Pick<LeadRow, "lead_notes">): boolean {
+  const now = new Date();
+  return lead.lead_notes.some(
+    (n) => n.follow_up_at != null && new Date(n.follow_up_at) < now
+  );
+}
+
+const SOURCE_CHANNEL_COLORS: Record<string, string> = {
+  voice_bot: "bg-blue-500 text-white",
+  web_form: "bg-violet-500 text-white",
+  manual: "bg-slate-500 text-white",
+  email_outreach: "bg-orange-500 text-white",
+  social: "bg-pink-500 text-white",
+};
+
+const SOURCE_CHANNEL_LABELS: Record<string, string> = {
+  voice_bot: "Voice Bot",
+  web_form: "Web Form",
+  manual: "Manual",
+  email_outreach: "Email",
+  social: "Social",
 };
 
 // -------------------------------------------------------
@@ -112,10 +136,9 @@ function VoiceLeadsTab() {
       let query = supabase
         .from("leads" as never)
         .select(
-          "id, created_at, caller_name, caller_phone, caller_email, source_channel, qualification_status, call_id, client_id, quote_request_id, quote_requests ( id, status )",
+          "id, created_at, caller_name, caller_phone, caller_email, source_channel, qualification_status, call_id, client_id, quote_request_id, quote_requests ( id, status ), lead_notes ( follow_up_at )",
           { count: "exact" },
         )
-        .eq("source_channel", "voice_bot")
         .order("created_at", { ascending: false })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
@@ -173,19 +196,28 @@ function VoiceLeadsTab() {
                 <TableHead>Caller</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Source</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Converted</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {leads.map((lead) => (
-                <TableRow key={lead.id}>
+                <TableRow
+                  key={lead.id}
+                  className={isOverdue(lead) ? "border-l-4 border-amber-400 bg-amber-50/40 cursor-pointer" : "cursor-pointer"}
+                >
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                     {format(new Date(lead.created_at), "MMM d, h:mm a")}
                   </TableCell>
                   <TableCell className="font-medium">{lead.caller_name}</TableCell>
                   <TableCell className="text-sm">{lead.caller_phone}</TableCell>
                   <TableCell className="text-sm">{lead.caller_email ?? "No email"}</TableCell>
+                  <TableCell>
+                    <Badge className={SOURCE_CHANNEL_COLORS[lead.source_channel] ?? "bg-gray-400 text-white"}>
+                      {SOURCE_CHANNEL_LABELS[lead.source_channel] ?? lead.source_channel}
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     <Badge className={OUTCOME_COLORS[lead.qualification_status] ?? "bg-gray-400 text-white"}>
                       {lead.qualification_status}
