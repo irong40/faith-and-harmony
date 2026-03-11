@@ -292,6 +292,63 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
+  // Bulk conversion state
+  const [bulkConverting, setBulkConverting] = useState(false);
+  type BulkResult = { leadId: string; name: string; status: "success" | "error"; error?: string };
+  const [bulkResults, setBulkResults] = useState<BulkResult[]>([]);
+
+  async function handleBulkConvert() {
+    setBulkConverting(true);
+    setBulkResults([]);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setBulkConverting(false);
+      toast({ title: "Not authenticated", variant: "destructive" });
+      return;
+    }
+
+    const leadsToConvert = leads.filter((l) => selectedLeadIds.has(l.id));
+    const results = await Promise.allSettled(
+      leadsToConvert.map(async (lead) => {
+        const { data: client, error: cErr } = await supabase
+          .from("clients" as never)
+          .insert({ name: lead.caller_name, phone: lead.caller_phone, email: lead.caller_email, created_by: session.user.id } as never)
+          .select("id").single() as { data: { id: string } | null; error: unknown };
+        if (cErr || !client) throw cErr ?? new Error("Client insert failed");
+
+        const { data: qr, error: qErr } = await (supabase as never)
+          .from("quote_requests")
+          .insert({ name: lead.caller_name, email: lead.caller_email, phone: lead.caller_phone, description: "Lead converted from Sentinel lead record", status: "new", source: lead.source_channel === "voice_bot" ? "voice_bot" : "manual", brand_slug: "sai" } as never)
+          .select("id").single();
+        if (qErr || !qr) throw qErr ?? new Error("Quote request insert failed");
+
+        const { error: lErr } = await (supabase as never)
+          .from("leads")
+          .update({ client_id: (client as { id: string }).id, quote_request_id: (qr as { id: string }).id, qualification_status: "converted" } as never)
+          .eq("id", lead.id);
+        if (lErr) throw lErr;
+      })
+    );
+
+    const bulkRes: BulkResult[] = results.map((r, i) => ({
+      leadId: leadsToConvert[i].id,
+      name: leadsToConvert[i].caller_name,
+      status: r.status === "fulfilled" ? "success" : "error",
+      error: r.status === "rejected" ? String((r as PromiseRejectedResult).reason) : undefined,
+    }));
+    setBulkResults(bulkRes);
+    setBulkConverting(false);
+    setSelectedLeadIds(new Set());
+    queryClient.invalidateQueries({ queryKey: ["admin-leads"] });
+
+    const successCount = bulkRes.filter((r) => r.status === "success").length;
+    const failCount = bulkRes.filter((r) => r.status === "error").length;
+    toast({
+      title: `Bulk convert: ${successCount} succeeded${failCount > 0 ? `, ${failCount} failed` : ""}`,
+      variant: failCount > 0 ? "destructive" : "default",
+    });
+  }
+
   return (
     <div>
       {/* New Lead button and dialog */}
@@ -416,6 +473,43 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
           className="pl-10"
         />
       </div>
+
+      {selectedLeadIds.size > 0 && (
+        <div className="flex items-center gap-3 mb-3 p-3 bg-muted rounded-md border">
+          <span className="text-sm font-medium">{selectedLeadIds.size} lead{selectedLeadIds.size !== 1 ? "s" : ""} selected</span>
+          <Button
+            size="sm"
+            onClick={handleBulkConvert}
+            disabled={bulkConverting}
+            className="gap-2"
+          >
+            {bulkConverting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {bulkConverting ? "Converting..." : "Bulk Convert"}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setSelectedLeadIds(new Set())}
+            disabled={bulkConverting}
+          >
+            Clear selection
+          </Button>
+        </div>
+      )}
+
+      {bulkResults.length > 0 && (
+        <div className="mb-3 space-y-1">
+          {bulkResults.map((r) => (
+            <div key={r.leadId} className="flex items-center gap-2 text-sm">
+              <Badge className={r.status === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"}>
+                {r.status === "success" ? "OK" : "Failed"}
+              </Badge>
+              <span>{r.name}</span>
+              {r.error && <span className="text-muted-foreground text-xs">({r.error})</span>}
+            </div>
+          ))}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="text-center py-12 text-muted-foreground">Loading leads...</div>
