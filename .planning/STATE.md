@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Leads Admin Upgrade
-status: in_progress
-stopped_at: Completed 13-01-PLAN.md
-last_updated: "2026-03-11T03:44:00.000Z"
-last_activity: 2026-03-11 — Phase 13, Plan 01 complete (source_channel enum + lead_notes table)
+status: executing
+stopped_at: Completed 13-02-PLAN.md
+last_updated: "2026-03-11T03:47:42.777Z"
+last_activity: 2026-03-11 — Phase 13, Plan 02 complete. lead_activity view created unioning status changes, notes, and conversions.
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 
 ## Current Position
 
-Phase: 13 (Schema Foundation) — in progress, 1 of 2 plans complete
-Plan: 01 complete, 02 next
-Status: In progress
-Last activity: 2026-03-11 — Phase 13, Plan 01 complete. source_channel enum migrated, lead_notes table created with admin RLS.
+Phase: 13 (Schema Foundation) — complete, 2 of 2 plans complete
+Plan: 02 complete, phase complete
+Status: Phase 13 done, Phase 14 is next
+Last activity: 2026-03-11 — Phase 13, Plan 02 complete. lead_activity view created unioning status changes, notes, and conversions.
 
 ## Accumulated Context
 
@@ -71,6 +71,7 @@ Last activity: 2026-03-11 — Phase 13, Plan 01 complete. source_channel enum mi
 
 - Phase 13-01: reason_tag uses text+CHECK over enum. Simpler to ALTER as allowed values grow.
 - Phase 13-01: USING cast on source_channel is fail-fast. Any value outside 5 enum values errors at migration time.
+- Phase 13-02: lead_activity is a view, not a table. Avoids triggers or a separate event log. status_change branch shows current status only (not history) via updated_at.
 
 ### Blockers/Concerns
 
@@ -78,7 +79,7 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-03-11T03:44:43.418Z
-Stopped at: Completed 13-01-PLAN.md
+Last session: 2026-03-11T03:47:07Z
+Stopped at: Completed 13-02-PLAN.md
 Resume file: None
-Resume signal: Run /gsd:plan-phase 13 to begin Schema Foundation planning.
+Resume signal: Phase 13 complete. Run /gsd:execute-phase 14 to begin Phase 14 (Detail Drawer and Inline Editing).

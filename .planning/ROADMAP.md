@@ -42,7 +42,7 @@ See v1.0 roadmap archive.
 
 ### v2.1 Leads Admin Upgrade (Phases 13-16)
 
-- [ ] **Phase 13: Schema Foundation** - lead_notes table, source_channel enum, follow_up_at column, activity timeline structure
+- [x] **Phase 13: Schema Foundation** - lead_notes table, source_channel enum, follow_up_at column, activity timeline structure (completed 2026-03-11)
 - [ ] **Phase 14: Detail Drawer and Inline Editing** - Lead detail drawer with transcript, recording, notes, timeline, and inline status editing
 - [ ] **Phase 15: Lead Entry and Conversion** - Manual lead form, source filtering, one-click conversion, link existing client, bulk convert
 - [ ] **Phase 16: Analytics Dashboard** - Conversion rate, leads by source, average response time, and revenue stats cards
@@ -108,7 +108,7 @@ Plans:
 | 1-5 | v1.0 | 8 | Complete | 2026-02 |
 | 1-6 | v1.1 | 15 | Complete | 2026-03-05 |
 | 7-12 | v2.0 | 14 | Complete | 2026-03-06 |
-| 13. Schema Foundation | 1/2 | In Progress|  | - |
+| 13. Schema Foundation | 2/2 | Complete   | 2026-03-11 | - |
 | 14. Detail Drawer and Inline Editing | v2.1 | 0/TBD | Not started | - |
 | 15. Lead Entry and Conversion | v2.1 | 0/TBD | Not started | - |
 | 16. Analytics Dashboard | v2.1 | 0/TBD | Not started | - |
