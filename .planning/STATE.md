@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Leads Admin Upgrade
-status: defining_requirements
-stopped_at: Defining requirements for v2.1
-last_updated: "2026-03-10T22:00:00.000Z"
-last_activity: 2026-03-10 -- Milestone v2.1 started
+status: roadmap_ready
+stopped_at: Roadmap created — ready to plan Phase 13
+last_updated: "2026-03-10T22:30:00.000Z"
+last_activity: 2026-03-10 -- Roadmap created for v2.1 (4 phases, 16 requirements mapped)
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** A prospective client can find Sentinel through search or phone, get qualified, receive a quote, and book a drone job without Iron personally fielding the call or manually creating the request.
-**Current focus:** v2.1 Leads Admin Upgrade — defining requirements
+**Current focus:** v2.1 Leads Admin Upgrade — Phase 13: Schema Foundation
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 13 (Schema Foundation) — not started
 Plan: —
-Status: Defining requirements
-Last activity: 2026-03-10 — Milestone v2.1 started
+Status: Roadmap ready, awaiting plan-phase
+Last activity: 2026-03-10 — Roadmap created, 4 phases, 16 requirements mapped
 
 ## Accumulated Context
 
@@ -47,6 +47,13 @@ Last activity: 2026-03-10 — Milestone v2.1 started
 - Resend connected for email
 - Always use --use-api flag for supabase functions deploy on this machine
 - Two live domains: faithandharmonyllc.com and trestle.sentinelaerialinspections.com
+
+### v2.1 Phase Structure
+
+- Phase 13: Schema Foundation — lead_notes table, source_channel enum, follow_up_at, activity log
+- Phase 14: Detail Drawer and Inline Editing — drawer with transcript/recording/notes/timeline, inline status edit, source badges
+- Phase 15: Lead Entry and Conversion — manual form, source filter, one-click convert, link existing client, bulk convert
+- Phase 16: Analytics Dashboard — conversion rate, leads by source, avg response time, revenue from leads
 
 ### Pending Todos
 
@@ -67,7 +74,7 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-03-10T22:00:00Z
-Stopped at: Defining requirements for v2.1
+Last session: 2026-03-10T22:30:00Z
+Stopped at: Roadmap created for v2.1
 Resume file: None
-Resume signal: Continue requirements definition and roadmap creation.
+Resume signal: Run /gsd:plan-phase 13 to begin Schema Foundation planning.

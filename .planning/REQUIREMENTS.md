@@ -69,28 +69,28 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CONV-01 | Pending | Pending |
-| CONV-02 | Pending | Pending |
-| CONV-03 | Pending | Pending |
-| DETL-01 | Pending | Pending |
-| DETL-02 | Pending | Pending |
-| DETL-03 | Pending | Pending |
-| DETL-04 | Pending | Pending |
-| DETL-05 | Pending | Pending |
-| SRCE-01 | Pending | Pending |
-| SRCE-02 | Pending | Pending |
-| SRCE-03 | Pending | Pending |
-| EDIT-01 | Pending | Pending |
-| ANLY-01 | Pending | Pending |
-| ANLY-02 | Pending | Pending |
-| ANLY-03 | Pending | Pending |
-| ANLY-04 | Pending | Pending |
+| CONV-01 | Phase 15 | Pending |
+| CONV-02 | Phase 15 | Pending |
+| CONV-03 | Phase 15 | Pending |
+| DETL-01 | Phase 14 | Pending |
+| DETL-02 | Phase 14 | Pending |
+| DETL-03 | Phase 14 | Pending |
+| DETL-04 | Phase 14 | Pending |
+| DETL-05 | Phase 14 | Pending |
+| SRCE-01 | Phase 15 | Pending |
+| SRCE-02 | Phase 14 | Pending |
+| SRCE-03 | Phase 15 | Pending |
+| EDIT-01 | Phase 14 | Pending |
+| ANLY-01 | Phase 16 | Pending |
+| ANLY-02 | Phase 16 | Pending |
+| ANLY-03 | Phase 16 | Pending |
+| ANLY-04 | Phase 16 | Pending |
 
 **Coverage:**
 - v2.1 requirements: 16 total
-- Mapped to phases: 0
-- Unmapped: 16 ⚠️
+- Mapped to phases: 16
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-10*
-*Last updated: 2026-03-10 after initial definition*
+*Last updated: 2026-03-10 after roadmap creation (v2.1 phases 13-16 assigned)*
