@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Leads Admin Upgrade
 status: completed
-stopped_at: Completed 13-02-PLAN.md
-last_updated: "2026-03-11T03:50:34.422Z"
-last_activity: 2026-03-11 — Phase 13, Plan 02 complete. lead_activity view created unioning status changes, notes, and conversions.
+stopped_at: Completed 14-01-PLAN.md
+last_updated: "2026-03-11T19:36:31.521Z"
+last_activity: 2026-03-11 — Phase 14, Plan 01 complete. Source channel badges, overdue row highlight, and inline status Select added to VoiceLeadsTab.
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 5
+  completed_plans: 3
 ---
 
 # Project State
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 
 ## Current Position
 
-Phase: 13 (Schema Foundation) — complete, 2 of 2 plans complete
-Plan: 02 complete, phase complete
-Status: Phase 13 done, Phase 14 is next
-Last activity: 2026-03-11 — Phase 13, Plan 02 complete. lead_activity view created unioning status changes, notes, and conversions.
+Phase: 14 (Detail Drawer and Inline Editing) — in progress, 1 of 2 plans complete
+Plan: 01 complete
+Status: Phase 14 Plan 01 done, Plan 02 is next
+Last activity: 2026-03-11 — Phase 14, Plan 01 complete. Source channel badges, overdue row highlight, and inline status Select added to VoiceLeadsTab.
 
 ## Accumulated Context
 
@@ -72,6 +72,8 @@ Last activity: 2026-03-11 — Phase 13, Plan 02 complete. lead_activity view cre
 - Phase 13-01: reason_tag uses text+CHECK over enum. Simpler to ALTER as allowed values grow.
 - Phase 13-01: USING cast on source_channel is fail-fast. Any value outside 5 enum values errors at migration time.
 - Phase 13-02: lead_activity is a view, not a table. Avoids triggers or a separate event log. status_change branch shows current status only (not history) via updated_at.
+- Phase 14-01: isOverdue exported from Leads.tsx so Leads.spec.ts can import without module mocking.
+- Phase 14-01: voice_bot source_channel filter removed at query level so all 5 source channels appear in one table.
 
 ### Blockers/Concerns
 
@@ -79,7 +81,7 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-03-11T03:47:07Z
-Stopped at: Completed 13-02-PLAN.md
+Last session: 2026-03-11T19:36:31.519Z
+Stopped at: Completed 14-01-PLAN.md
 Resume file: None
-Resume signal: Phase 13 complete. Run /gsd:execute-phase 14 to begin Phase 14 (Detail Drawer and Inline Editing).
+Resume signal: Phase 14 Plan 01 complete. Run /gsd:execute-phase 14 plan 02 to build the detail drawer component.
