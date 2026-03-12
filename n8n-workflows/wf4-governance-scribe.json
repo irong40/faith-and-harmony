@@ -182,6 +182,51 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1080, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 8192, temperature: 0, system: 'You are a governance scribe for Faith & Harmony LLC, a Virginia single-member LLC providing drone inspection services. Generate formal quarterly meeting minutes as structured JSON.\\n\\nWriting standards:\\n- Active voice throughout\\n- No dashes or hyphens in prose (use commas or periods instead)\\n- Direct, conversational tone\\n- No marketing fluff or corporate jargon\\n- Be specific with numbers\\n\\nEvery section must be present in the output even if data is limited. For empty data sections, write \"No activity reported this quarter\" rather than leaving blank.\\n\\nFormat governance decisions as formal resolutions with reference numbers in the format RES-{YYYY}-{QN}-{NNN} where NNN is a zero-padded sequential number starting at 001.', messages: [{ role: 'user', content: 'Generate quarterly meeting minutes for ' + $json.quarter + ' ' + $json.fiscalYear + '.\\n\\nIs this the inaugural meeting (no prior quarter data)? ' + ($json.collectedData.previous_scribe_output === null ? 'Yes' : 'No') + '\\n\\nCollected data:\\n' + JSON.stringify($json.collectedData, null, 2) + '\\n\\nRespond with raw JSON only. No markdown code fences. No explanatory text.\\n\\nRequired JSON structure:\\n{\\n  \"call_to_order\": { \"date\": \"...\", \"time\": \"9:00 AM ET\", \"attendees\": [\"Dradamo Pierce, Sole Member and Managing Member\"], \"quorum_statement\": \"...\" },\\n  \"previous_quarter_review\": { \"summary\": \"...\", \"action_items\": [{ \"item\": \"...\", \"status\": \"completed|in_progress|deferred\", \"notes\": \"...\" }] },\\n  \"financial_report\": { \"revenue_summary\": \"...\", \"expense_summary\": \"...\", \"cash_position\": \"...\", \"notable_variances\": [\"...\"] },\\n  \"operations_report\": { \"jobs_summary\": \"...\", \"package_mix\": \"...\", \"equipment_status\": \"...\", \"platform_updates\": \"...\" },\\n  \"compliance_report\": { \"completed\": [\"...\"], \"approaching\": [\"...\"], \"overdue\": [\"...\"], \"summary\": \"...\" },\\n  \"decisions_and_resolutions\": [{ \"reference\": \"RES-YYYY-QN-NNN\", \"title\": \"...\", \"context\": \"...\", \"resolution\": \"...\" }],\\n  \"action_items\": [{ \"item\": \"...\", \"owner\": \"...\", \"due_date\": \"...\" }],\\n  \"adjournment\": { \"next_meeting_date\": \"...\", \"closing_statement\": \"...\" }\\n}' }] }) }}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "gs-0011",
+      "name": "Generate Minutes AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $json;\nconst mergeData = $('Merge Data').first().json;\n\nlet minutes;\ntry {\n  let text = response.content[0].text.trim();\n  // Strip markdown code fences if present\n  if (text.startsWith('```')) {\n    text = text.replace(/^```(?:json)?\\n?/, '').replace(/\\n?```$/, '').trim();\n  }\n  minutes = JSON.parse(text);\n} catch (e) {\n  const raw = response.content ? response.content[0].text.substring(0, 200) : 'No content';\n  throw new Error('Failed to parse Claude response as JSON: ' + e.message + '. First 200 chars: ' + raw);\n}\n\n// Validate all 8 required keys\nconst required = ['call_to_order', 'previous_quarter_review', 'financial_report', 'operations_report', 'compliance_report', 'decisions_and_resolutions', 'action_items', 'adjournment'];\nconst missing = required.filter(k => !minutes[k]);\nif (missing.length > 0) {\n  throw new Error('Missing required sections: ' + missing.join(', '));\n}\n\nreturn [{\n  json: {\n    quarter: mergeData.quarter,\n    fiscalYear: mergeData.fiscalYear,\n    quarterStart: mergeData.quarterStart,\n    quarterEnd: mergeData.quarterEnd,\n    minutes: minutes,\n    collectedData: mergeData.collectedData\n  }\n}];"
+      },
+      "id": "gs-0012",
+      "name": "Validate AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } = require('docx');\n\nconst { quarter, fiscalYear, minutes } = $json;\nconst children = [];\n\n// Title block\nchildren.push(new Paragraph({ text: 'Faith & Harmony LLC', heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }));\nchildren.push(new Paragraph({ text: 'Quarterly Governance Meeting Minutes', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }));\nchildren.push(new Paragraph({ text: quarter + ' ' + fiscalYear, heading: HeadingLevel.HEADING_2, alignment: AlignmentType.CENTER }));\nchildren.push(new Paragraph({ text: '' }));\n\n// Helper: add paragraphs from text or array\nfunction addText(text) {\n  if (!text) return;\n  const parts = String(text).split('\\n\\n');\n  for (const p of parts) {\n    if (p.trim()) children.push(new Paragraph({ text: p.trim() }));\n  }\n}\n\nfunction addBullets(items) {\n  if (!items || !Array.isArray(items) || items.length === 0) {\n    children.push(new Paragraph({ text: 'No items reported.' }));\n    return;\n  }\n  for (const item of items) {\n    children.push(new Paragraph({ text: typeof item === 'string' ? item : JSON.stringify(item), bullet: { level: 0 } }));\n  }\n}\n\n// Section 1: Call to Order\nchildren.push(new Paragraph({ text: '1. Call to Order', heading: HeadingLevel.HEADING_2 }));\nconst cto = minutes.call_to_order || {};\nchildren.push(new Paragraph({ text: 'Date: ' + (cto.date || 'Not specified') }));\nchildren.push(new Paragraph({ text: 'Time: ' + (cto.time || '9:00 AM ET') }));\nchildren.push(new Paragraph({ text: 'Attendees: ' + (cto.attendees ? cto.attendees.join(', ') : 'Dradamo Pierce, Sole Member') }));\nchildren.push(new Paragraph({ text: cto.quorum_statement || 'Sole member present constitutes quorum.' }));\nchildren.push(new Paragraph({ text: '' }));\n\n// Section 2: Previous Quarter Review\nchildren.push(new Paragraph({ text: '2. Review of Previous Quarter', heading: HeadingLevel.HEADING_2 }));\nconst pqr = minutes.previous_quarter_review || {};\naddText(pqr.summary || 'No prior quarter data available. This is the inaugural meeting.');\nif (pqr.action_items && pqr.action_items.length > 0) {\n  children.push(new Paragraph({ text: '' }));\n  for (const ai of pqr.action_items) {\n    children.push(new Paragraph({\n      children: [\n        new TextRun({ text: (ai.item || 'Item') + ' ', bold: true }),\n        new TextRun({ text: '[' + (ai.status || 'unknown') + '] ' + (ai.notes || '') })\n      ],\n      bullet: { level: 0 }\n    }));\n  }\n}\nchildren.push(new Paragraph({ text: '' }));\n\n// Section 3: Financial Report\nchildren.push(new Paragraph({ text: '3. Financial Report', heading: HeadingLevel.HEADING_2 }));\nconst fin = minutes.financial_report || {};\naddText(fin.revenue_summary || 'No revenue data reported.');\naddText(fin.expense_summary || 'No expense data reported.');\naddText(fin.cash_position || '');\nif (fin.notable_variances && fin.notable_variances.length > 0) {\n  children.push(new Paragraph({ children: [new TextRun({ text: 'Notable Variances:', bold: true })] }));\n  addBullets(fin.notable_variances);\n}\nchildren.push(new Paragraph({ text: '' }));\n\n// Section 4: Operations Report\nchildren.push(new Paragraph({ text: '4. Operations Report', heading: HeadingLevel.HEADING_2 }));\nconst ops = minutes.operations_report || {};\naddText(ops.jobs_summary || 'No operations data reported.');\naddText(ops.package_mix || '');\naddText(ops.equipment_status || '');\naddText(ops.platform_updates || '');\nchildren.push(new Paragraph({ text: '' }));\n\n// Section 5: Compliance Report\nchildren.push(new Paragraph({ text: '5. Compliance Report', heading: HeadingLevel.HEADING_2 }));\nconst comp = minutes.compliance_report || {};\naddText(comp.summary || 'No compliance activity reported.');\nif (comp.completed && comp.completed.length > 0) {\n  children.push(new Paragraph({ children: [new TextRun({ text: 'Completed:', bold: true })] }));\n  addBullets(comp.completed);\n}\nif (comp.approaching && comp.approaching.length > 0) {\n  children.push(new Paragraph({ children: [new TextRun({ text: 'Approaching Deadlines:', bold: true })] }));\n  addBullets(comp.approaching);\n}\nif (comp.overdue && comp.overdue.length > 0) {\n  children.push(new Paragraph({ children: [new TextRun({ text: 'Overdue:', bold: true })] }));\n  addBullets(comp.overdue);\n}\nchildren.push(new Paragraph({ text: '' }));\n\n// Section 6: Decisions and Resolutions\nchildren.push(new Paragraph({ text: '6. Decisions and Resolutions', heading: HeadingLevel.HEADING_2 }));\nconst resolutions = minutes.decisions_and_resolutions || [];\nif (resolutions.length === 0) {\n  children.push(new Paragraph({ text: 'No formal resolutions recorded this quarter.' }));\n} else {\n  for (const res of resolutions) {\n    children.push(new Paragraph({ children: [new TextRun({ text: (res.reference || 'RES') + ': ' + (res.title || 'Untitled'), bold: true })] }));\n    addText(res.context || '');\n    addText(res.resolution || '');\n    children.push(new Paragraph({ text: '' }));\n  }\n}\nchildren.push(new Paragraph({ text: '' }));\n\n// Section 7: Action Items\nchildren.push(new Paragraph({ text: '7. Action Items', heading: HeadingLevel.HEADING_2 }));\nconst actions = minutes.action_items || [];\nif (actions.length === 0) {\n  children.push(new Paragraph({ text: 'No action items assigned.' }));\n} else {\n  for (const ai of actions) {\n    children.push(new Paragraph({\n      children: [\n        new TextRun({ text: (ai.item || 'Item'), bold: true }),\n        new TextRun({ text: ' | Owner: ' + (ai.owner || 'Unassigned') + ' | Due: ' + (ai.due_date || 'TBD') })\n      ],\n      bullet: { level: 0 }\n    }));\n  }\n}\nchildren.push(new Paragraph({ text: '' }));\n\n// Section 8: Adjournment\nchildren.push(new Paragraph({ text: '8. Adjournment', heading: HeadingLevel.HEADING_2 }));\nconst adj = minutes.adjournment || {};\nchildren.push(new Paragraph({ text: 'Next Meeting: ' + (adj.next_meeting_date || 'To be determined') }));\naddText(adj.closing_statement || 'Meeting adjourned.');\nchildren.push(new Paragraph({ text: '' }));\n\n// Footer\nchildren.push(new Paragraph({\n  children: [new TextRun({ text: 'Minutes prepared by Governance Scribe Agent | Generated ' + new Date().toISOString().slice(0, 10), italics: true })],\n  alignment: AlignmentType.RIGHT\n}));\n\nconst doc = new Document({ sections: [{ children }] });\nconst buffer = await Packer.toBuffer(doc);\nconst filename = fiscalYear + '-' + quarter + '_meeting_minutes.docx';\nconst storagePath = 'governance/scribe/' + filename;\n\nconst binaryData = await this.helpers.prepareBinaryData(\n  Buffer.from(buffer),\n  filename,\n  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'\n);\n\nreturn [{\n  json: {\n    filename,\n    storagePath,\n    quarter: $json.quarter,\n    fiscalYear: $json.fiscalYear,\n    minutes: $json.minutes,\n    collectedData: $json.collectedData\n  },\n  binary: { data: binaryData }\n}];"
+      },
+      "id": "gs-0013",
+      "name": "Generate DOCX",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1800, 400]
     }
   ],
   "connections": {
@@ -235,6 +280,21 @@
     "Query previous scribe output": {
       "main": [
         [{ "node": "Merge Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [{ "node": "Generate Minutes AI", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate Minutes AI": {
+      "main": [
+        [{ "node": "Validate AI Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Validate AI Response": {
+      "main": [
+        [{ "node": "Generate DOCX", "type": "main", "index": 0 }]
       ]
     }
   },
