@@ -89,7 +89,7 @@ async function checkSCHM03() {
 
 async function checkSCHM04() {
   const cols = await getColumns('financial_actuals');
-  const expectedCount = 16;
+  const expectedCount = 18;
 
   // Check UNIQUE constraint on month
   const idxRes = await client.query(
