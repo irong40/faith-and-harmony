@@ -1,4 +1,5 @@
 import { forwardRef } from "react";
+import { SAI_BRAND } from "@/lib/brand";
 
 interface Deliverable {
   name: string;
@@ -39,10 +40,10 @@ export const ProposalPDFView = forwardRef<HTMLDivElement, ProposalPDFViewProps>(
     return (
       <div ref={ref} className="p-8 bg-white text-black min-h-screen font-sans">
         {/* Header */}
-        <div className="flex justify-between items-start mb-8 border-b pb-6">
+        <div className="flex justify-between items-start mb-8 pb-6" style={{ borderBottom: `2px solid ${SAI_BRAND.colors.primary}` }}>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Sentinel Aerial Inspections</h1>
-            <p className="text-sm text-gray-600 mt-1">Professional Services Proposal</p>
+            <h1 className="text-2xl font-bold" style={{ color: SAI_BRAND.colors.bg }}>{SAI_BRAND.name}</h1>
+            <p className="text-sm mt-1" style={{ color: SAI_BRAND.colors.primary }}>{SAI_BRAND.tagline}</p>
           </div>
           <div className="text-right">
             <p className="font-bold text-lg text-gray-900">
@@ -203,9 +204,9 @@ export const ProposalPDFView = forwardRef<HTMLDivElement, ProposalPDFViewProps>(
         )}
 
         {/* Footer */}
-        <div className="mt-12 pt-4 border-t text-center text-sm text-gray-500">
-          <p className="font-medium">Sentinel Aerial Inspections</p>
-          <p>sentinelaerialinspections.com</p>
+        <div className="mt-12 pt-4 text-center text-sm text-gray-500" style={{ borderTop: `2px solid ${SAI_BRAND.colors.primary}` }}>
+          <p className="font-medium" style={{ color: SAI_BRAND.colors.bg }}>{SAI_BRAND.name}</p>
+          <p>{SAI_BRAND.website}</p>
           <p className="mt-2 italic">Thank you for considering us for your project.</p>
         </div>
       </div>
