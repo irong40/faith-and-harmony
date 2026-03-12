@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/select";
 import { ConvertLeadDialog } from "@/components/admin/ConvertLeadDialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { LeadStatsHeader } from "@/components/admin/LeadStatsHeader";
 
 // -------------------------------------------------------
 // Voice Leads Types
@@ -1024,6 +1025,8 @@ export default function Leads() {
             Refresh
           </Button>
         </div>
+
+        <LeadStatsHeader />
 
         <Tabs defaultValue="drone" className="space-y-4">
           <TabsList>
