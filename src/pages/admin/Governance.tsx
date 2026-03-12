@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import AdminNav from "./components/AdminNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shield } from "lucide-react";
@@ -6,7 +7,15 @@ import AgentTriggerPanel from "@/components/admin/governance/AgentTriggerPanel";
 import GovernanceDocuments from "@/components/admin/governance/GovernanceDocuments";
 import DecisionsList from "@/components/admin/governance/DecisionsList";
 
+const VALID_TABS = ["dashboard", "agents", "documents", "decisions"] as const;
+
 export default function Governance() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const activeTab = VALID_TABS.includes(tabParam as typeof VALID_TABS[number])
+    ? tabParam!
+    : "dashboard";
+
   return (
     <div className="min-h-screen bg-background">
       <AdminNav />
@@ -19,7 +28,11 @@ export default function Governance() {
           </div>
         </div>
 
-        <Tabs defaultValue="dashboard" className="space-y-4">
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setSearchParams({ tab: v })}
+          className="space-y-4"
+        >
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="agents">Agents</TabsTrigger>
