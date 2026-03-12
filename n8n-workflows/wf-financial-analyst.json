@@ -1,0 +1,384 @@
+{
+  "name": "Financial Analyst Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 1-3 * *"
+            }
+          ]
+        }
+      },
+      "id": "fa-0001-0001-0001-000000000001",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\nconst year = now.getFullYear();\nconst month = now.getMonth();\n\n// Find first weekday of current month\nlet firstBizDay = new Date(year, month, 1);\nconst dayOfWeek = firstBizDay.getDay();\nif (dayOfWeek === 0) firstBizDay.setDate(2);\nif (dayOfWeek === 6) firstBizDay.setDate(3);\n\n// Skip New Year's Day (Jan 1 on weekday -> Jan 2)\nif (month === 0 && firstBizDay.getDate() === 1) {\n  firstBizDay.setDate(2);\n  if (firstBizDay.getDay() === 0) firstBizDay.setDate(3);\n  if (firstBizDay.getDay() === 6) firstBizDay.setDate(4);\n}\n\nconst isFirstBizDay = now.getDate() === firstBizDay.getDate()\n  && now.getMonth() === firstBizDay.getMonth();\n\nif (!isFirstBizDay) {\n  return [{ json: { is_first_biz_day: false } }];\n}\n\n// Target month is previous month\nconst targetDate = new Date(year, month - 1, 1);\nconst targetMonth = targetDate.toISOString().slice(0, 10);\nconst reportLabel = targetDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });\n\nreturn [{\n  json: {\n    is_first_biz_day: true,\n    target_month: targetMonth,\n    report_label: reportLabel,\n    fiscal_year: targetDate.getFullYear()\n  }\n}];"
+      },
+      "id": "fa-0002-0002-0002-000000000002",
+      "name": "Check First Business Day",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-first-biz-day",
+              "leftValue": "={{ $json.is_first_biz_day }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "fa-0003-0003-0003-000000000003",
+      "name": "Is First Business Day?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {},
+      "id": "fa-0004-0004-0004-000000000004",
+      "name": "Not First Biz Day - Stop",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [880, 500]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "financial-analyst",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "fa-0005-0005-0005-000000000005",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 700]
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nlet targetMonth, reportLabel, fiscalYear;\n\nif (body.month) {\n  const d = new Date(body.month + 'T00:00:00Z');\n  targetMonth = d.toISOString().slice(0, 10);\n  reportLabel = d.toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });\n  fiscalYear = d.getUTCFullYear();\n} else {\n  const now = new Date();\n  const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);\n  targetMonth = d.toISOString().slice(0, 10);\n  reportLabel = d.toLocaleString('en-US', { month: 'long', year: 'numeric' });\n  fiscalYear = d.getFullYear();\n}\n\nreturn [{\n  json: {\n    is_first_biz_day: true,\n    target_month: targetMonth,\n    report_label: reportLabel,\n    fiscal_year: fiscalYear\n  }\n}];"
+      },
+      "id": "fa-0006-0006-0006-000000000006",
+      "name": "Parse Webhook Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 700]
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch",
+        "output": "empty"
+      },
+      "id": "fa-0007-0007-0007-000000000007",
+      "name": "Merge Target Month",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/financial_actuals?month=eq.{{ $json.target_month }}&select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": {
+          "response": { "response": { "responseFormat": "json" } },
+          "timeout": 15000
+        }
+      },
+      "id": "fa-0008-0008-0008-000000000008",
+      "name": "Get Financial Actuals",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 100]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/budget_baselines?fiscal_year=eq.{{ $json.fiscal_year }}&select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": {
+          "response": { "response": { "responseFormat": "json" } },
+          "timeout": 15000
+        }
+      },
+      "id": "fa-0009-0009-0009-000000000009",
+      "name": "Get Budget Baseline",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/financial_actuals?month=gte.{{ $json.fiscal_year }}-01-01&month=lte.{{ $json.target_month }}&order=month.asc&select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": {
+          "response": { "response": { "responseFormat": "json" } },
+          "timeout": 15000
+        }
+      },
+      "id": "fa-0010-0010-0010-000000000010",
+      "name": "Get YTD Actuals",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 500]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ (() => { const d = new Date($json.target_month + 'T00:00:00Z'); d.setUTCMonth(d.getUTCMonth() - 1); return $env.SUPABASE_URL + '/rest/v1/financial_actuals?month=eq.' + d.toISOString().slice(0,10) + '&select=*'; })() }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": {
+          "response": { "response": { "responseFormat": "json" } },
+          "timeout": 15000
+        }
+      },
+      "id": "fa-0011-0011-0011-000000000011",
+      "name": "Get Previous Month",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 700]
+    },
+    {
+      "parameters": {
+        "jsCode": "const actualsArr = $('Get Financial Actuals').first().json;\nconst budgetArr = $('Get Budget Baseline').first().json;\nconst ytdArr = $('Get YTD Actuals').all().map(i => i.json);\nconst prevArr = $('Get Previous Month').first().json;\nconst mergeData = $('Merge Target Month').first().json;\n\n// Handle Supabase REST response (returns array)\nconst actuals = Array.isArray(actualsArr) ? actualsArr[0] : actualsArr;\nconst budget = Array.isArray(budgetArr) ? budgetArr[0] : budgetArr;\nconst ytdActuals = Array.isArray(ytdArr[0]) ? ytdArr[0] : ytdArr;\nconst prevMonth = Array.isArray(prevArr) ? prevArr[0] : prevArr;\n\nconst targetMonth = mergeData.target_month;\nconst reportLabel = mergeData.report_label;\nconst fiscalYear = mergeData.fiscal_year;\n\nif (!actuals || (Array.isArray(actualsArr) && actualsArr.length === 0)) {\n  return [{ json: { has_data: false, target_month: targetMonth, report_label: reportLabel, fiscal_year: fiscalYear } }];\n}\n\n// Parse budget JSONB fields\nconst revenueMix = typeof budget.revenue_mix === 'string' ? JSON.parse(budget.revenue_mix) : budget.revenue_mix;\nconst expenseCats = typeof budget.expense_categories === 'string' ? JSON.parse(budget.expense_categories) : budget.expense_categories;\n\n// Revenue calculations\nconst totalRevenue = Number(actuals.revenue_residential || 0) + Number(actuals.revenue_commercial || 0)\n  + Number(actuals.revenue_retainer || 0) + Number(actuals.revenue_other || 0);\nconst budgetMonthlyRevenue = Number(budget.monthly_revenue_avg);\n\nconst revenueByStream = {\n  residential: {\n    actual: Number(actuals.revenue_residential || 0),\n    budget: budgetMonthlyRevenue * (revenueMix.residential?.pct || 0.80),\n    variance_pct: 0\n  },\n  commercial: {\n    actual: Number(actuals.revenue_commercial || 0),\n    budget: budgetMonthlyRevenue * (revenueMix.commercial?.pct || 0.15),\n    variance_pct: 0\n  },\n  retainer: {\n    actual: Number(actuals.revenue_retainer || 0),\n    budget: budgetMonthlyRevenue * (revenueMix.retainer?.pct || 0.05),\n    variance_pct: 0\n  },\n  other: {\n    actual: Number(actuals.revenue_other || 0),\n    budget: 0,\n    variance_pct: 0\n  }\n};\n\nfor (const [key, stream] of Object.entries(revenueByStream)) {\n  if (stream.budget > 0) {\n    stream.variance_pct = Number(((stream.actual - stream.budget) / stream.budget * 100).toFixed(1));\n  }\n}\n\n// Expense calculations with 15% variance flagging\nconst expenseCategories = ['equipment', 'software', 'insurance', 'marketing', 'vehicle', 'professional', 'contractor', 'misc'];\nconst monthlyExpenseBudget = {};\nfor (const cat of expenseCategories) {\n  monthlyExpenseBudget[cat] = (expenseCats[cat] || 0) / 12;\n}\n\nconst expenses = {};\nlet totalExpenses = 0;\nconst flaggedCategories = [];\nfor (const cat of expenseCategories) {\n  const actual = Number(actuals['expense_' + cat] || 0);\n  const budgetAmt = monthlyExpenseBudget[cat];\n  const variancePct = budgetAmt > 0 ? ((actual - budgetAmt) / budgetAmt * 100) : 0;\n  expenses[cat] = { actual, budget: Number(budgetAmt.toFixed(2)), variance_pct: Number(variancePct.toFixed(1)) };\n  totalExpenses += actual;\n  if (variancePct > 15) {\n    flaggedCategories.push({ category: cat, variance_pct: Number(variancePct.toFixed(1)), actual, budget: Number(budgetAmt.toFixed(2)) });\n  }\n}\n\n// Profitability\nconst netIncome = totalRevenue - totalExpenses;\nconst netMargin = totalRevenue > 0 ? Number((netIncome / totalRevenue * 100).toFixed(1)) : 0;\nconst marginTarget = 35;\nconst breakEvenJobs = 20;\n\n// YTD calculations\nlet ytdRevenue = 0, ytdExpenses = 0, ytdJobs = 0;\nconst ytdRows = Array.isArray(ytdActuals) ? ytdActuals : [];\nfor (const row of ytdRows) {\n  ytdRevenue += Number(row.revenue_residential || 0) + Number(row.revenue_commercial || 0)\n    + Number(row.revenue_retainer || 0) + Number(row.revenue_other || 0);\n  for (const cat of expenseCategories) {\n    ytdExpenses += Number(row['expense_' + cat] || 0);\n  }\n  ytdJobs += Number(row.jobs_completed || 0);\n}\n\n// Cash position (monthly snapshot approach)\nconst startingCash = 0; // First month default; no running balance table\nconst endingCash = startingCash + totalRevenue - totalExpenses;\nconst daysInMonth = new Date(\n  new Date(targetMonth + 'T00:00:00Z').getUTCFullYear(),\n  new Date(targetMonth + 'T00:00:00Z').getUTCMonth() + 1, 0\n).getDate();\nconst monthlyBurnRate = totalExpenses;\n\n// MoM trend\nlet momTrend = { prev_revenue: 0, curr_revenue: totalRevenue, direction: 'flat', change_pct: 0 };\nif (prevMonth && !Array.isArray(prevMonth)) {\n  const prevRev = Number(prevMonth.revenue_residential || 0) + Number(prevMonth.revenue_commercial || 0)\n    + Number(prevMonth.revenue_retainer || 0) + Number(prevMonth.revenue_other || 0);\n  momTrend.prev_revenue = prevRev;\n  if (prevRev > 0) {\n    const changePct = ((totalRevenue - prevRev) / prevRev * 100);\n    momTrend.change_pct = Number(changePct.toFixed(1));\n    momTrend.direction = changePct > 2 ? 'up' : (changePct < -2 ? 'down' : 'flat');\n  }\n}\n\nreturn [{\n  json: {\n    has_data: true,\n    target_month: targetMonth,\n    report_label: reportLabel,\n    fiscal_year: fiscalYear,\n    raw_actuals: actuals,\n    metrics: {\n      total_revenue: totalRevenue,\n      total_expenses: totalExpenses,\n      revenue_by_stream: revenueByStream,\n      expenses_by_category: expenses,\n      flagged_categories: flaggedCategories,\n      jobs_completed: Number(actuals.jobs_completed || 0),\n      avg_job_value: Number(actuals.jobs_completed) > 0 ? Number((totalRevenue / Number(actuals.jobs_completed)).toFixed(2)) : 0,\n      net_income: netIncome,\n      net_margin: netMargin,\n      margin_target: marginTarget,\n      break_even_jobs: breakEvenJobs,\n      break_even_status: Number(actuals.jobs_completed) >= breakEvenJobs ? 'above' : 'below',\n      cash: { starting: startingCash, revenue_in: totalRevenue, expenses_out: totalExpenses, ending: endingCash, monthly_burn: monthlyBurnRate },\n      ytd: { revenue: ytdRevenue, expenses: ytdExpenses, jobs: ytdJobs, net_income: ytdRevenue - ytdExpenses },\n      budget: { monthly_revenue: budgetMonthlyRevenue, monthly_expense: Number(budget.monthly_expense_avg), monthly_jobs: Number(budget.monthly_jobs_avg) },\n      mom_trend: momTrend\n    }\n  }\n}];"
+      },
+      "id": "fa-0012-0012-0012-000000000012",
+      "name": "Calculate Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1350, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-has-data",
+              "leftValue": "={{ $json.has_data }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "fa-0013-0013-0013-000000000013",
+      "name": "Has Data?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1570, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const targetMonth = $json.target_month;\nconst reportLabel = $json.report_label;\nconst fiscalYear = $json.fiscal_year;\n\nconst logEntry = {\n  agent_name: 'financial_analyst',\n  event_type: 'reminder',\n  summary: 'No financial data found for ' + reportLabel + '. Data entry required.',\n  data_snapshot: { target_month: targetMonth, reason: 'no_data' },\n  quarter: 'Q' + (Math.floor(new Date(targetMonth + 'T00:00:00Z').getUTCMonth() / 3) + 1),\n  fiscal_year: fiscalYear\n};\n\nconst emailHtml = '<h2>Financial Data Needed</h2>' +\n  '<p>No financial data was found in the <code>financial_actuals</code> table for <strong>' + reportLabel + '</strong>.</p>' +\n  '<p>Please enter the monthly financial data so the Financial Analyst agent can generate your report.</p>' +\n  '<p>Once data is entered, you can trigger a report manually via the webhook.</p>';\n\nreturn [{\n  json: {\n    log_entry: logEntry,\n    email_html: emailHtml,\n    report_label: reportLabel,\n    target_month: targetMonth\n  }\n}];"
+      },
+      "id": "fa-0014-0014-0014-000000000014",
+      "name": "Prepare No Data Warning",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1790, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/governance_log",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.log_entry) }}"
+      },
+      "id": "fa-0015-0015-0015-000000000015",
+      "name": "Log No Data Warning",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2010, 600]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.RESEND_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: 'Faith & Harmony <info@faithandharmonyllc.com>', to: [$env.FOUNDER_EMAIL], subject: 'Financial Data Needed: ' + $json.report_label, html: $json.email_html }) }}"
+      },
+      "id": "fa-0016-0016-0016-000000000016",
+      "name": "Send No Data Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2230, 600]
+    },
+    {
+      "parameters": {},
+      "id": "fa-0017-0017-0017-000000000017",
+      "name": "End No Data Path",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2450, 600]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [{ "node": "Check First Business Day", "type": "main", "index": 0 }]
+      ]
+    },
+    "Check First Business Day": {
+      "main": [
+        [{ "node": "Is First Business Day?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Is First Business Day?": {
+      "main": [
+        [{ "node": "Merge Target Month", "type": "main", "index": 0 }],
+        [{ "node": "Not First Biz Day - Stop", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook Trigger": {
+      "main": [
+        [{ "node": "Parse Webhook Input", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Webhook Input": {
+      "main": [
+        [{ "node": "Merge Target Month", "type": "main", "index": 1 }]
+      ]
+    },
+    "Merge Target Month": {
+      "main": [
+        [
+          { "node": "Get Financial Actuals", "type": "main", "index": 0 },
+          { "node": "Get Budget Baseline", "type": "main", "index": 0 },
+          { "node": "Get YTD Actuals", "type": "main", "index": 0 },
+          { "node": "Get Previous Month", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Get Financial Actuals": {
+      "main": [
+        [{ "node": "Calculate Metrics", "type": "main", "index": 0 }]
+      ]
+    },
+    "Get Budget Baseline": {
+      "main": [
+        [{ "node": "Calculate Metrics", "type": "main", "index": 0 }]
+      ]
+    },
+    "Get YTD Actuals": {
+      "main": [
+        [{ "node": "Calculate Metrics", "type": "main", "index": 0 }]
+      ]
+    },
+    "Get Previous Month": {
+      "main": [
+        [{ "node": "Calculate Metrics", "type": "main", "index": 0 }]
+      ]
+    },
+    "Calculate Metrics": {
+      "main": [
+        [{ "node": "Has Data?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Has Data?": {
+      "main": [
+        [],
+        [{ "node": "Prepare No Data Warning", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare No Data Warning": {
+      "main": [
+        [{ "node": "Log No Data Warning", "type": "main", "index": 0 }]
+      ]
+    },
+    "Log No Data Warning": {
+      "main": [
+        [{ "node": "Send No Data Email", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send No Data Email": {
+      "main": [
+        [{ "node": "End No Data Path", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York"
+  },
+  "tags": [
+    { "name": "governance" },
+    { "name": "financial-analyst" }
+  ]
+}
