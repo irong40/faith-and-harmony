@@ -287,6 +287,275 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [2450, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "const m = $json.metrics;\nconst raw = $json.raw_actuals;\nconst reportLabel = $json.report_label;\nconst fiscalYear = $json.fiscal_year;\nconst targetMonth = $json.target_month;\n\nconst systemPrompt = `You are a financial analyst for Faith & Harmony LLC (DBA Sentinel Aerial Inspections), a drone services company. Generate a monthly financial summary report as structured JSON.\n\nWriting standards:\n- Active voice throughout\n- No dashes (use commas or periods instead)\n- Direct, conversational tone\n- No marketing fluff or corporate jargon\n- Be specific with numbers (always include dollar amounts and percentages)\n\nOutput format: Return ONLY valid JSON with this exact structure:\n{\n  \"revenue_summary\": {\n    \"heading\": \"Revenue Summary\",\n    \"narrative\": \"2-3 paragraphs comparing actual vs budget by revenue stream\",\n    \"mom_trend\": \"One sentence on month-over-month direction\",\n    \"ytd_status\": \"One sentence on year-to-date cumulative vs annual target\"\n  },\n  \"job_volume\": {\n    \"heading\": \"Job Volume\",\n    \"narrative\": \"2 paragraphs on job count, average value, mix shift toward commercial\"\n  },\n  \"expense_summary\": {\n    \"heading\": \"Expense Summary\",\n    \"narrative\": \"2-3 paragraphs with category breakdown\",\n    \"flagged_variances\": \"Paragraph specifically addressing any categories exceeding 15% of budget (or 'All expense categories are within 15% of budget.')\"\n  },\n  \"profitability\": {\n    \"heading\": \"Profitability\",\n    \"narrative\": \"2 paragraphs on net income, margin vs 35% target, break-even status vs 20 jobs\"\n  },\n  \"cash_position\": {\n    \"heading\": \"Cash Position\",\n    \"narrative\": \"1-2 paragraphs: starting cash, revenue in, expenses out, ending cash, burn rate\"\n  },\n  \"outlook\": {\n    \"heading\": \"Outlook\",\n    \"narrative\": \"2-3 paragraphs of forward-looking commentary\",\n    \"risks\": [\"risk 1\", \"risk 2\"],\n    \"opportunities\": [\"opportunity 1\"]\n  },\n  \"email_summary\": \"Exactly two sentences summarizing the month's financial performance for email body\"\n}\n\nIMPORTANT: Use ONLY the numbers provided below. Do not calculate or estimate any figures. All math has been pre-calculated for you.`;\n\n// Build the user prompt with all pre-calculated metrics\nconst revStreams = m.revenue_by_stream;\nconst expCats = m.expenses_by_category;\nconst flagged = m.flagged_categories;\nconst cash = m.cash;\nconst ytd = m.ytd;\nconst budget = m.budget;\nconst mom = m.mom_trend;\n\nlet flaggedText = 'None. All categories are within 15% of budget.';\nif (flagged.length > 0) {\n  flaggedText = flagged.map(f => `${f.category}: $${f.actual.toLocaleString()} actual vs $${f.budget.toLocaleString()} budget (${f.variance_pct}% over)`).join('; ');\n}\n\nconst userPrompt = `Generate the financial summary report for ${reportLabel} (Fiscal Year ${fiscalYear}).\n\nREVENUE:\n- Total Revenue: $${m.total_revenue.toLocaleString()}\n- Budget Target: $${budget.monthly_revenue.toLocaleString()}/month\n- Residential: $${revStreams.residential.actual.toLocaleString()} actual vs $${revStreams.residential.budget.toLocaleString()} budget (${revStreams.residential.variance_pct}% variance)\n- Commercial: $${revStreams.commercial.actual.toLocaleString()} actual vs $${revStreams.commercial.budget.toLocaleString()} budget (${revStreams.commercial.variance_pct}% variance)\n- Retainer: $${revStreams.retainer.actual.toLocaleString()} actual vs $${revStreams.retainer.budget.toLocaleString()} budget (${revStreams.retainer.variance_pct}% variance)\n- Other: $${revStreams.other.actual.toLocaleString()}\n- MoM Trend: ${mom.direction} (${mom.change_pct}% change from $${mom.prev_revenue.toLocaleString()} previous month)\n- YTD Revenue: $${ytd.revenue.toLocaleString()}\n\nJOB VOLUME:\n- Jobs Completed: ${m.jobs_completed}\n- Budget Target: ${budget.monthly_jobs} jobs/month\n- Average Job Value: $${m.avg_job_value}\n- Break-even Threshold: ${m.break_even_jobs} jobs\n- Break-even Status: ${m.break_even_status}\n- YTD Jobs: ${ytd.jobs}\n\nEXPENSES:\n- Total Expenses: $${m.total_expenses.toLocaleString()}\n- Budget Target: $${budget.monthly_expense.toLocaleString()}/month\n${Object.entries(expCats).map(([cat, v]) => `- ${cat}: $${v.actual.toLocaleString()} actual vs $${v.budget.toLocaleString()} budget (${v.variance_pct}% variance)`).join('\\n')}\n- Flagged Categories (>15% over budget): ${flaggedText}\n\nPROFITABILITY:\n- Net Income: $${m.net_income.toLocaleString()}\n- Net Margin: ${m.net_margin}%\n- Margin Target: ${m.margin_target}%\n- YTD Net Income: $${ytd.net_income.toLocaleString()}\n\nCASH POSITION:\n- Starting Cash: $${cash.starting.toLocaleString()}\n- Revenue In: $${cash.revenue_in.toLocaleString()}\n- Expenses Out: $${cash.expenses_out.toLocaleString()}\n- Ending Cash: $${cash.ending.toLocaleString()}\n- Monthly Burn Rate: $${cash.monthly_burn.toLocaleString()}\n\nNote: Starting cash balance assumes $0 for the first reporting period.\n\nUse ONLY the numbers provided. Do not calculate or estimate any figures.`;\n\nreturn [{\n  json: {\n    system_prompt: systemPrompt,\n    user_prompt: userPrompt,\n    target_month: targetMonth,\n    report_label: reportLabel,\n    fiscal_year: fiscalYear,\n    raw_actuals: raw,\n    metrics: m\n  }\n}];"
+      },
+      "id": "fa-0018-0018-0018-000000000018",
+      "name": "Prepare Claude Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1800, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 8192, temperature: 0, system: $json.system_prompt, messages: [{ role: 'user', content: $json.user_prompt }] }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "fa-0019-0019-0019-000000000019",
+      "name": "Call Claude API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2020, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $json;\nconst prevData = $('Prepare Claude Prompt').first().json;\n\nlet reportJson;\nlet isValid = true;\nlet errorMsg = '';\n\ntry {\n  // Extract text from Claude API response\n  const text = response.content[0].text;\n\n  // Try to parse JSON from the response (handle potential markdown code blocks)\n  let jsonStr = text.trim();\n  if (jsonStr.startsWith('```')) {\n    jsonStr = jsonStr.replace(/^```(?:json)?\\n?/, '').replace(/\\n?```$/, '').trim();\n  }\n\n  reportJson = JSON.parse(jsonStr);\n\n  // Validate all 6 required sections exist\n  const requiredSections = ['revenue_summary', 'job_volume', 'expense_summary', 'profitability', 'cash_position', 'outlook'];\n  const missingSections = requiredSections.filter(s => !reportJson[s]);\n  if (missingSections.length > 0) {\n    isValid = false;\n    errorMsg = 'Missing sections: ' + missingSections.join(', ');\n  }\n\n  // Validate email_summary exists\n  if (!reportJson.email_summary) {\n    isValid = false;\n    errorMsg = (errorMsg ? errorMsg + '. ' : '') + 'Missing email_summary field';\n  }\n\n  // Validate each section has required fields\n  for (const section of requiredSections) {\n    if (reportJson[section] && !reportJson[section].narrative) {\n      isValid = false;\n      errorMsg = (errorMsg ? errorMsg + '. ' : '') + section + ' missing narrative field';\n    }\n  }\n} catch (e) {\n  isValid = false;\n  errorMsg = 'Failed to parse Claude response as JSON: ' + e.message;\n  reportJson = null;\n}\n\nreturn [{\n  json: {\n    is_valid: isValid,\n    error_message: errorMsg,\n    claude_response: reportJson,\n    target_month: prevData.target_month,\n    report_label: prevData.report_label,\n    fiscal_year: prevData.fiscal_year,\n    raw_actuals: prevData.raw_actuals,\n    metrics: prevData.metrics\n  }\n}];"
+      },
+      "id": "fa-0020-0020-0020-000000000020",
+      "name": "Validate Claude Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2240, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-claude-valid",
+              "leftValue": "={{ $json.is_valid }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "fa-0021-0021-0021-000000000021",
+      "name": "Claude Response Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2460, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { Document, Packer, Paragraph, HeadingLevel, AlignmentType } = require('docx');\n\nconst report = $json.claude_response;\nconst reportLabel = $json.report_label;\nconst targetMonth = $json.target_month;\n\n// Build document sections\nconst children = [];\n\n// Title\nchildren.push(new Paragraph({\n  text: 'Financial Summary: ' + reportLabel,\n  heading: HeadingLevel.HEADING_1,\n  alignment: AlignmentType.CENTER\n}));\n\nchildren.push(new Paragraph({\n  text: 'Faith & Harmony LLC | Generated ' + new Date().toLocaleDateString('en-US'),\n  alignment: AlignmentType.CENTER\n}));\n\nchildren.push(new Paragraph({ text: '' }));\n\n// Add each section\nconst sections = ['revenue_summary', 'job_volume', 'expense_summary', 'profitability', 'cash_position', 'outlook'];\n\nfor (const sectionKey of sections) {\n  const section = report[sectionKey];\n  children.push(new Paragraph({\n    text: section.heading,\n    heading: HeadingLevel.HEADING_2\n  }));\n\n  // Split narrative into paragraphs\n  const paragraphs = section.narrative.split('\\n\\n');\n  for (const p of paragraphs) {\n    if (p.trim()) {\n      children.push(new Paragraph({ text: p.trim() }));\n    }\n  }\n\n  // Add MoM trend and YTD status for revenue summary\n  if (sectionKey === 'revenue_summary') {\n    if (section.mom_trend) {\n      children.push(new Paragraph({ text: '' }));\n      children.push(new Paragraph({ text: section.mom_trend }));\n    }\n    if (section.ytd_status) {\n      children.push(new Paragraph({ text: section.ytd_status }));\n    }\n  }\n\n  // Add flagged variances for expense section (bold)\n  if (sectionKey === 'expense_summary' && section.flagged_variances) {\n    children.push(new Paragraph({ text: '' }));\n    children.push(new Paragraph({\n      children: [new (require('docx').TextRun)({ text: section.flagged_variances, bold: true })]\n    }));\n  }\n\n  // Add risks and opportunities for outlook\n  if (sectionKey === 'outlook') {\n    if (section.risks && section.risks.length > 0) {\n      children.push(new Paragraph({ text: 'Risks:', heading: HeadingLevel.HEADING_3 }));\n      for (const risk of section.risks) {\n        children.push(new Paragraph({\n          text: risk,\n          bullet: { level: 0 }\n        }));\n      }\n    }\n    if (section.opportunities && section.opportunities.length > 0) {\n      children.push(new Paragraph({ text: 'Opportunities:', heading: HeadingLevel.HEADING_3 }));\n      for (const opp of section.opportunities) {\n        children.push(new Paragraph({\n          text: opp,\n          bullet: { level: 0 }\n        }));\n      }\n    }\n  }\n\n  children.push(new Paragraph({ text: '' }));\n}\n\nconst doc = new Document({\n  sections: [{ children }]\n});\n\nconst buffer = await Packer.toBuffer(doc);\nconst filename = targetMonth.slice(0, 7) + '_financial_summary.docx';\n\nconst binaryData = await this.helpers.prepareBinaryData(\n  Buffer.from(buffer),\n  filename,\n  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'\n);\n\nreturn [{\n  json: {\n    filename: filename,\n    target_month: targetMonth,\n    report_label: reportLabel,\n    fiscal_year: $json.fiscal_year,\n    raw_actuals: $json.raw_actuals,\n    metrics: $json.metrics,\n    claude_response: report\n  },\n  binary: { data: binaryData }\n}];"
+      },
+      "id": "fa-0022-0022-0022-000000000022",
+      "name": "Generate DOCX",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2700, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/storage/v1/object/governance/financial/{{ $json.filename }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
+            { "name": "x-upsert", "value": "true" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "fa-0023-0023-0023-000000000023",
+      "name": "Upload DOCX to Supabase Storage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2920, 200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/storage/v1/object/sign/governance/financial/{{ $('Generate DOCX').first().json.filename }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ expiresIn: 2592000 }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "fa-0024-0024-0024-000000000024",
+      "name": "Create Signed URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3140, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "multipart/related; boundary=docx_boundary" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "string",
+        "body": "={{ '--docx_boundary\\r\\nContent-Type: application/json; charset=UTF-8\\r\\n\\r\\n' + JSON.stringify({ name: $('Generate DOCX').first().json.filename, parents: [$env.GOOGLE_DRIVE_GOVERNANCE_FOLDER_ID || 'root'] }) + '\\r\\n--docx_boundary\\r\\nContent-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document\\r\\nContent-Transfer-Encoding: base64\\r\\n\\r\\n' }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "fa-0025-0025-0025-000000000025",
+      "name": "Backup to Google Drive",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3360, 200],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const prevDocx = $('Generate DOCX').first().json;\nconst signedUrlResp = $('Create Signed URL').first().json;\n\nconst targetMonth = prevDocx.target_month;\nconst reportLabel = prevDocx.report_label;\nconst fiscalYear = prevDocx.fiscal_year;\nconst filename = prevDocx.filename;\n\n// Derive quarter from target month\nconst monthNum = new Date(targetMonth + 'T00:00:00Z').getUTCMonth(); // 0-indexed\nconst quarter = 'Q' + (Math.floor(monthNum / 3) + 1);\n\nconst logEntry = {\n  agent_name: 'financial_analyst',\n  event_type: 'report_generated',\n  summary: 'Financial summary report generated for ' + reportLabel,\n  document_url: 'governance/financial/' + filename,\n  data_snapshot: {\n    raw_actuals: prevDocx.raw_actuals,\n    calculated_metrics: prevDocx.metrics,\n    report_label: reportLabel,\n    target_month: targetMonth\n  },\n  quarter: quarter,\n  fiscal_year: fiscalYear\n};\n\n// Build signed download URL\nconst signedPath = signedUrlResp.signedURL || signedUrlResp.signedUrl || '';\nconst downloadUrl = signedPath.startsWith('http') ? signedPath : ($env.SUPABASE_URL + '/storage/v1' + signedPath);\n\nreturn [{\n  json: {\n    log_entry: logEntry,\n    download_url: downloadUrl,\n    report_label: reportLabel,\n    target_month: targetMonth,\n    email_summary: prevDocx.claude_response.email_summary,\n    filename: filename\n  }\n}];"
+      },
+      "id": "fa-0026-0026-0026-000000000026",
+      "name": "Prepare Governance Log Entry",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3580, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/governance_log",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.log_entry) }}"
+      },
+      "id": "fa-0027-0027-0027-000000000027",
+      "name": "Log to Governance Log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3800, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const prevData = $('Prepare Governance Log Entry').first().json;\n\nconst reportLabel = prevData.report_label;\nconst downloadUrl = prevData.download_url;\nconst emailSummary = prevData.email_summary;\n\nconst emailHtml = '<h2>Financial Summary: ' + reportLabel + '</h2>' +\n  '<p>' + emailSummary + '</p>' +\n  '<p><a href=\"' + downloadUrl + '\" style=\"display:inline-block;padding:12px 24px;background-color:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:bold;\">Download Report (DOCX)</a></p>' +\n  '<p style=\"color:#6b7280;font-size:12px;\">This download link expires in 30 days. The report is also backed up to Google Drive.</p>';\n\nreturn [{\n  json: {\n    from: 'Faith & Harmony <info@faithandharmonyllc.com>',\n    to: $env.FOUNDER_EMAIL,\n    subject: 'Financial Summary: ' + reportLabel,\n    html: emailHtml\n  }\n}];"
+      },
+      "id": "fa-0028-0028-0028-000000000028",
+      "name": "Prepare Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4020, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.RESEND_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: $json.from, to: [$json.to], subject: $json.subject, html: $json.html }) }}"
+      },
+      "id": "fa-0029-0029-0029-000000000029",
+      "name": "Send Email via Resend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4240, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const targetMonth = $json.target_month || $('Validate Claude Response').first().json.target_month;\nconst reportLabel = $json.report_label || $('Validate Claude Response').first().json.report_label;\nconst fiscalYear = $json.fiscal_year || $('Validate Claude Response').first().json.fiscal_year;\nconst errorMsg = $('Validate Claude Response').first().json.error_message;\n\nconst monthNum = new Date(targetMonth + 'T00:00:00Z').getUTCMonth();\nconst quarter = 'Q' + (Math.floor(monthNum / 3) + 1);\n\nconst logEntry = {\n  agent_name: 'financial_analyst',\n  event_type: 'error',\n  summary: 'Claude API response validation failed for ' + reportLabel + ': ' + errorMsg,\n  data_snapshot: {\n    target_month: targetMonth,\n    error: errorMsg,\n    reason: 'claude_response_invalid'\n  },\n  quarter: quarter,\n  fiscal_year: fiscalYear\n};\n\nreturn [{ json: { log_entry: logEntry } }];"
+      },
+      "id": "fa-0030-0030-0030-000000000030",
+      "name": "Prepare Error Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2700, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/governance_log",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.log_entry) }}"
+      },
+      "id": "fa-0031-0031-0031-000000000031",
+      "name": "Log Error",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2920, 420]
+    },
+    {
+      "parameters": {},
+      "id": "fa-0032-0032-0032-000000000032",
+      "name": "End Error Path",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [3140, 420]
     }
   ],
   "connections": {
@@ -353,7 +622,7 @@
     },
     "Has Data?": {
       "main": [
-        [],
+        [{ "node": "Prepare Claude Prompt", "type": "main", "index": 0 }],
         [{ "node": "Prepare No Data Warning", "type": "main", "index": 0 }]
       ]
     },
@@ -370,6 +639,72 @@
     "Send No Data Email": {
       "main": [
         [{ "node": "End No Data Path", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare Claude Prompt": {
+      "main": [
+        [{ "node": "Call Claude API", "type": "main", "index": 0 }]
+      ]
+    },
+    "Call Claude API": {
+      "main": [
+        [{ "node": "Validate Claude Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Validate Claude Response": {
+      "main": [
+        [{ "node": "Claude Response Valid?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Claude Response Valid?": {
+      "main": [
+        [{ "node": "Generate DOCX", "type": "main", "index": 0 }],
+        [{ "node": "Prepare Error Log", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate DOCX": {
+      "main": [
+        [{ "node": "Upload DOCX to Supabase Storage", "type": "main", "index": 0 }]
+      ]
+    },
+    "Upload DOCX to Supabase Storage": {
+      "main": [
+        [{ "node": "Create Signed URL", "type": "main", "index": 0 }]
+      ]
+    },
+    "Create Signed URL": {
+      "main": [
+        [{ "node": "Backup to Google Drive", "type": "main", "index": 0 }]
+      ]
+    },
+    "Backup to Google Drive": {
+      "main": [
+        [{ "node": "Prepare Governance Log Entry", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare Governance Log Entry": {
+      "main": [
+        [{ "node": "Log to Governance Log", "type": "main", "index": 0 }]
+      ]
+    },
+    "Log to Governance Log": {
+      "main": [
+        [{ "node": "Prepare Email", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare Email": {
+      "main": [
+        [{ "node": "Send Email via Resend", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare Error Log": {
+      "main": [
+        [{ "node": "Log Error", "type": "main", "index": 0 }]
+      ]
+    },
+    "Log Error": {
+      "main": [
+        [{ "node": "End Error Path", "type": "main", "index": 0 }]
       ]
     }
   },
