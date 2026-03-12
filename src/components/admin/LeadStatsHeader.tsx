@@ -20,14 +20,14 @@ const SOURCE_CHANNEL_COLORS: Record<string, string> = {
   social: "bg-pink-500",
 };
 
-function formatResponseTime(hours: number): string {
+export function formatResponseTime(hours: number): string {
   if (hours >= 48) {
     return `${(hours / 24).toFixed(1)}d`;
   }
   return `${hours.toFixed(1)}h`;
 }
 
-function responseTimeColor(hours: number): string {
+export function responseTimeColor(hours: number): string {
   if (hours < 24) return "text-green-600";
   if (hours < 48) return "text-amber-500";
   return "text-red-500";
