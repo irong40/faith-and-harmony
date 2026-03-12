@@ -119,4 +119,4 @@ Plans:
 | 1-6 | v1.1 | 15 | 3/3 | Complete    | 2026-03-11 | 7-12 | v2.0 | 14 | 3/3 | Complete    | 2026-03-11 | 13. Schema Foundation | v2.1 | 2/2 | Complete | 2026-03-11 |
 | 14. Detail Drawer and Inline Editing | v2.1 | 0/3 | Not started | - |
 | 15. Lead Entry and Conversion | v2.1 | 0/3 | Not started | - |
-| 16. Analytics Dashboard | v2.1 | 0/TBD | Not started | - |
+| 16. Analytics Dashboard | 1/2 | In Progress|  | - |

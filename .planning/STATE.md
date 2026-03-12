@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Leads Admin Upgrade
 status: completed
-stopped_at: Completed 15-03-PLAN.md
-last_updated: "2026-03-11T21:32:45.568Z"
+stopped_at: Completed 16-01-PLAN.md
+last_updated: "2026-03-12T00:13:58.192Z"
 last_activity: 2026-03-11 — Phase 15, Plan 03 complete. Checkbox bulk selection and bulk convert with Promise.allSettled in VoiceLeadsTab. Phase 15 fully complete.
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 10
+  completed_plans: 9
 ---
 
 # Project State
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 
 ## Current Position
 
-Phase: 15 (Lead Entry and Conversion) — complete (3 of 3 plans done)
-Plan: 03 complete
-Status: Phase 15 fully done. Checkbox bulk selection, bulk convert with Promise.allSettled, per-lead results summary.
-Last activity: 2026-03-11 — Phase 15, Plan 03 complete. Checkbox bulk selection and bulk convert with Promise.allSettled in VoiceLeadsTab. Phase 15 fully complete.
+Phase: 16 (Analytics Dashboard) — in progress (1 of 2 plans done)
+Plan: 01 complete
+Status: Phase 16 Plan 01 done. lead_stats Postgres RPC function and useLeadStats React Query hook created. Ready for Plan 02 (dashboard UI).
+Last activity: 2026-03-12 — Phase 16, Plan 01 complete. lead_stats RPC function with 4 analytics metrics and typed useLeadStats hook.
 
 ## Accumulated Context
 
@@ -90,6 +90,10 @@ Last activity: 2026-03-11 — Phase 15, Plan 03 complete. Checkbox bulk selectio
 - Phase 15-03: useEffect resets selectedLeadIds on filter/page change to prevent stale selection across navigation.
 - Phase 15-03: handleBulkConvert as async function (not useMutation) since Promise.allSettled handles partial failure natively.
 - Phase 15-03: Checkbox stopPropagation prevents detail drawer opening on checkbox click.
+- Phase 16-01: Conversion metric counts qualified leads with client_id not null since leads table has no converted status value.
+- Phase 16-01: Revenue joins leads to clients to drone_jobs via client_id because drone_jobs does not reference leads directly.
+- Phase 16-01: lead_activity view used for response time so all event types (status changes, notes, conversions) count toward first contact.
+- Phase 16-01: SECURITY DEFINER on lead_stats so the function joins across RLS-protected tables consistently from the analytics page.
 
 ### Blockers/Concerns
 
@@ -97,7 +101,7 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-03-11T21:29:00Z
-Stopped at: Completed 15-03-PLAN.md
+Last session: 2026-03-12T00:13:58.190Z
+Stopped at: Completed 16-01-PLAN.md
 Resume file: None
-Resume signal: Phase 15 complete. All 3 plans done. Continue with Phase 16 (Analytics Dashboard).
+Resume signal: Phase 16 Plan 01 complete. lead_stats RPC and useLeadStats hook done. Continue with Phase 16 Plan 02 (analytics dashboard UI).

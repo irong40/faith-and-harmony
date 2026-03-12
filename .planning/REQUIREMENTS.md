@@ -33,10 +33,10 @@ Requirements for the Leads Admin Upgrade milestone. Each maps to roadmap phases.
 
 ### Analytics
 
-- [ ] **ANLY-01**: Leads page shows conversion rate stat card with week/month/all-time toggle
-- [ ] **ANLY-02**: Leads page shows leads by source breakdown
-- [ ] **ANLY-03**: Leads page shows average response time (lead creation to first note or status change)
-- [ ] **ANLY-04**: Leads page shows total revenue from converted leads (joined through client to jobs)
+- [x] **ANLY-01**: Leads page shows conversion rate stat card with week/month/all-time toggle
+- [x] **ANLY-02**: Leads page shows leads by source breakdown
+- [x] **ANLY-03**: Leads page shows average response time (lead creation to first note or status change)
+- [x] **ANLY-04**: Leads page shows total revenue from converted leads (joined through client to jobs)
 
 ## Future Requirements
 
@@ -81,10 +81,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SRCE-02 | Phase 14 | Complete |
 | SRCE-03 | Phase 15 | Complete |
 | EDIT-01 | Phase 14 | Complete |
-| ANLY-01 | Phase 16 | Pending |
-| ANLY-02 | Phase 16 | Pending |
-| ANLY-03 | Phase 16 | Pending |
-| ANLY-04 | Phase 16 | Pending |
+| ANLY-01 | Phase 16 | Complete |
+| ANLY-02 | Phase 16 | Complete |
+| ANLY-03 | Phase 16 | Complete |
+| ANLY-04 | Phase 16 | Complete |
 
 **Coverage:**
 - v2.1 requirements: 16 total
