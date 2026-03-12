@@ -4,8 +4,8 @@ milestone: v2.1
 milestone_name: Leads Admin Upgrade
 status: completed
 stopped_at: Completed 16-02-PLAN.md
-last_updated: "2026-03-12T00:17:19.947Z"
-last_activity: 2026-03-12 — Phase 16, Plan 01 complete. lead_stats RPC function with 4 analytics metrics and typed useLeadStats hook.
+last_updated: "2026-03-12T00:20:34.240Z"
+last_activity: 2026-03-12 — Phase 16, Plan 02 complete. LeadStatsHeader with conversion rate, leads by source, avg response time, and lead revenue cards.
 progress:
   total_phases: 4
   completed_phases: 4
