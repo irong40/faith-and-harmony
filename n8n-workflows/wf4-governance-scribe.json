@@ -227,6 +227,114 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1800, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/storage/v1/object/governance/scribe/{{ $json.filename }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
+            { "name": "x-upsert", "value": "true" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": { "timeout": 30000 }
+      },
+      "id": "gs-0014",
+      "name": "Upload DOCX to Storage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2040, 400],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const docxData = $('Generate DOCX').first().json;\nconst collectedData = docxData.collectedData;\n\nconst dataSnapshot = {\n  quarter: docxData.quarter,\n  fiscal_year: docxData.fiscalYear,\n  drone_jobs_count: collectedData.drone_jobs ? collectedData.drone_jobs.length : 0,\n  governance_decisions_count: collectedData.governance_decisions ? collectedData.governance_decisions.length : 0,\n  compliance_obligations_count: collectedData.compliance_obligations ? collectedData.compliance_obligations.length : 0,\n  financial_actuals_months: collectedData.financial_actuals ? collectedData.financial_actuals.length : 0,\n  governance_log_entries: collectedData.governance_log ? collectedData.governance_log.length : 0,\n  has_previous_scribe_output: collectedData.previous_scribe_output !== null,\n  ai_response: docxData.minutes\n};\n\nreturn [{\n  json: {\n    dataSnapshot,\n    storagePath: docxData.storagePath,\n    filename: docxData.filename,\n    quarter: docxData.quarter,\n    fiscalYear: docxData.fiscalYear\n  }\n}];"
+      },
+      "id": "gs-0015",
+      "name": "Build Data Snapshot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2280, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/governance_log",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ agent_name: 'governance_scribe', event_type: 'generation', summary: 'Generated ' + $json.quarter + ' ' + $json.fiscalYear + ' quarterly meeting minutes', document_url: $json.storagePath, data_snapshot: $json.dataSnapshot, quarter: $json.quarter, fiscal_year: $json.fiscalYear }) }}"
+      },
+      "id": "gs-0016",
+      "name": "Log to Governance Log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2520, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/storage/v1/object/sign/governance/scribe/{{ $('Generate DOCX').first().json.filename }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ expiresIn: 604800 }) }}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "gs-0017",
+      "name": "Create Signed URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2760, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.RESEND_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: 'Faith & Harmony <info@faithandharmonyllc.com>', to: [$env.FOUNDER_EMAIL], subject: $('Build Data Snapshot').first().json.quarter + ' ' + $('Build Data Snapshot').first().json.fiscalYear + ' Quarterly Meeting Minutes Ready', html: '<h2>Quarterly Meeting Minutes Generated</h2><p>Your ' + $('Build Data Snapshot').first().json.quarter + ' ' + $('Build Data Snapshot').first().json.fiscalYear + ' quarterly governance meeting minutes have been generated and stored.</p><p><a href=\"' + $env.SUPABASE_URL + '/storage/v1' + ($json.signedURL || $json.signedUrl || '') + '\" style=\"display:inline-block;padding:12px 24px;background-color:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:bold;\">Download Meeting Minutes (DOCX)</a></p><p style=\"color:#6b7280;font-size:12px;\">This link expires in 7 days.</p>' }) }}"
+      },
+      "id": "gs-0018",
+      "name": "Send Email Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3000, 400]
     }
   ],
   "connections": {
@@ -295,6 +403,31 @@
     "Validate AI Response": {
       "main": [
         [{ "node": "Generate DOCX", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate DOCX": {
+      "main": [
+        [{ "node": "Upload DOCX to Storage", "type": "main", "index": 0 }]
+      ]
+    },
+    "Upload DOCX to Storage": {
+      "main": [
+        [{ "node": "Build Data Snapshot", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Data Snapshot": {
+      "main": [
+        [{ "node": "Log to Governance Log", "type": "main", "index": 0 }]
+      ]
+    },
+    "Log to Governance Log": {
+      "main": [
+        [{ "node": "Create Signed URL", "type": "main", "index": 0 }]
+      ]
+    },
+    "Create Signed URL": {
+      "main": [
+        [{ "node": "Send Email Notification", "type": "main", "index": 0 }]
       ]
     }
   },
