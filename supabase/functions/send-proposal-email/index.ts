@@ -23,6 +23,16 @@ const SAI = {
   creamDim: "#d9d0c4",
 };
 
+/** Escape HTML special characters to prevent XSS in email templates. */
+function esc(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 interface ProposalEmailRequest {
   proposal: {
     proposal_number: string;
@@ -50,7 +60,7 @@ serve(async (req) => {
     const proposalUrl = `${req.headers.get("origin") || "https://faithandharmonyllc.com"}/proposal/${proposal.approval_token}`;
 
     const deliverablesHtml = deliverables
-      .map(d => `<li style="margin-bottom: 8px;"><strong>${d.name}</strong>: ${d.description}</li>`)
+      .map(d => `<li style="margin-bottom: 8px;"><strong>${esc(d.name)}</strong>: ${esc(d.description)}</li>`)
       .join("");
 
     const emailHtml = `
@@ -79,7 +89,7 @@ serve(async (req) => {
               <h2 style="color: ${SAI.dark800}; margin: 0 0 20px; font-size: 24px;">Your Proposal is Ready</h2>
 
               <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
-                Dear ${client.name},
+                Dear ${esc(client.name)},
               </p>
 
               <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
@@ -91,7 +101,7 @@ serve(async (req) => {
                 <tr>
                   <td style="padding: 25px;">
                     <p style="margin: 0 0 8px; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Proposal</p>
-                    <h3 style="margin: 0 0 15px; color: ${SAI.dark800}; font-size: 20px;">${proposal.title}</h3>
+                    <h3 style="margin: 0 0 15px; color: ${SAI.dark800}; font-size: 20px;">${esc(proposal.title)}</h3>
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="color: #666; font-size: 14px; padding: 5px 0;">Proposal #:</td>
@@ -150,7 +160,7 @@ serve(async (req) => {
     const emailResponse = await resend.emails.send({
       from: `Sentinel Aerial Inspections <${SAI.email}>`,
       to: [client.email],
-      subject: `Your Proposal: ${proposal.title} (${proposal.proposal_number})`,
+      subject: `Your Proposal: ${esc(proposal.title)} (${esc(proposal.proposal_number)})`,
       html: emailHtml,
     });
 
@@ -160,14 +170,14 @@ serve(async (req) => {
     await resend.emails.send({
       from: `Sentinel Aerial Inspections <${SAI.email}>`,
       to: [SAI.email],
-      subject: `Proposal Sent: ${proposal.proposal_number} - ${client.name}`,
+      subject: `Proposal Sent: ${esc(proposal.proposal_number)} - ${esc(client.name)}`,
       html: `
         <h2>Proposal Sent</h2>
-        <p><strong>Proposal:</strong> ${proposal.proposal_number}</p>
-        <p><strong>Client:</strong> ${client.name} (${client.email})</p>
-        <p><strong>Title:</strong> ${proposal.title}</p>
+        <p><strong>Proposal:</strong> ${esc(proposal.proposal_number)}</p>
+        <p><strong>Client:</strong> ${esc(client.name)} (${esc(client.email)})</p>
+        <p><strong>Title:</strong> ${esc(proposal.title)}</p>
         <p><strong>Total:</strong> $${proposal.total.toLocaleString()}</p>
-        <p><strong>Valid Until:</strong> ${proposal.valid_until}</p>
+        <p><strong>Valid Until:</strong> ${esc(proposal.valid_until)}</p>
       `,
     });
 

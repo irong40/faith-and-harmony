@@ -9,6 +9,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+/** Escape HTML special characters to prevent XSS in email templates. */
+function esc(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Status configuration with email templates
 const statusConfig: Record<string, {
   subject: string;
@@ -132,7 +142,7 @@ const handler = async (req: Request): Promise<Response> => {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${subject}</title>
+        <title>${esc(subject)}</title>
       </head>
       <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc;">
         <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
@@ -153,15 +163,15 @@ const handler = async (req: Request): Promise<Response> => {
             </h2>
             
             <p style="color: #64748b; font-size: 14px; margin: 0 0 24px 0;">
-              Project: <strong style="color: #1e3a5f;">${project.title}</strong> (#${project.project_number})
+              Project: <strong style="color: #1e3a5f;">${esc(project.title)}</strong> (#${esc(project.project_number)})
             </p>
-            
+
             <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
-              Hi ${customerName.split(' ')[0]},
+              Hi ${esc(customerName.split(' ')[0])},
             </p>
-            
+
             <p style="color: #374151; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
-              ${message}
+              ${esc(message)}
             </p>
             
             <!-- Project Details -->
@@ -172,11 +182,11 @@ const handler = async (req: Request): Promise<Response> => {
               <table style="width: 100%; border-collapse: collapse;">
                 <tr>
                   <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Service</td>
-                  <td style="padding: 8px 0; color: #1e3a5f; font-size: 14px; text-align: right; font-weight: 500;">${serviceName}</td>
+                  <td style="padding: 8px 0; color: #1e3a5f; font-size: 14px; text-align: right; font-weight: 500;">${esc(serviceName)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Project Number</td>
-                  <td style="padding: 8px 0; color: #1e3a5f; font-size: 14px; text-align: right; font-weight: 500;">${project.project_number}</td>
+                  <td style="padding: 8px 0; color: #1e3a5f; font-size: 14px; text-align: right; font-weight: 500;">${esc(project.project_number)}</td>
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Status</td>
