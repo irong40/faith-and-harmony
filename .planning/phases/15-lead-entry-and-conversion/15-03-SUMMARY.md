@@ -106,6 +106,14 @@ Phase 15 is complete. All three plans shipped:
 
 Phase 16 (Analytics Dashboard) can begin. It will consume the leads, clients, and quote_requests data established across Phase 15.
 
+## Self-Check: PASSED
+
+- src/pages/admin/Leads.tsx: FOUND
+- src/pages/admin/Leads.spec.ts: FOUND
+- 15-03-SUMMARY.md: FOUND
+- Commit 7fe50f0: FOUND
+- Commit 242b52b: FOUND
+
 ---
 *Phase: 15-lead-entry-and-conversion*
 *Completed: 2026-03-11*
