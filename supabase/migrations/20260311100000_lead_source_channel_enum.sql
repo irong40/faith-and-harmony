@@ -17,12 +17,17 @@ CREATE TYPE public.lead_source_channel AS ENUM (
 
 COMMENT ON TYPE public.lead_source_channel IS 'Source channels for inbound leads. voice_bot = Vapi voice call, web_form = website contact form, manual = admin created, email_outreach = outbound email reply, social = social media inquiry.';
 
--- Step 2: Migrate the column from text to enum
--- USING clause handles the cast of existing rows.
--- DEFAULT is also updated to use the enum type.
+-- Step 2: Drop the existing text default before changing the column type.
+-- Postgres cannot auto-cast a text default to enum, so we drop it first
+-- and re-set it after the type change.
+ALTER TABLE public.leads
+  ALTER COLUMN source_channel DROP DEFAULT;
+
 ALTER TABLE public.leads
   ALTER COLUMN source_channel TYPE public.lead_source_channel
-    USING source_channel::public.lead_source_channel,
+    USING source_channel::public.lead_source_channel;
+
+ALTER TABLE public.leads
   ALTER COLUMN source_channel SET DEFAULT 'voice_bot'::public.lead_source_channel;
 
 -- Step 3: Index on source_channel to support Phase 15 filtering queries

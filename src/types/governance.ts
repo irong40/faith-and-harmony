@@ -44,19 +44,19 @@ export interface GovernanceDecision {
 export interface FinancialActual {
   id: string;
   month: string;
-  residential_revenue: number;
-  commercial_revenue: number;
-  retainer_revenue: number;
-  other_revenue: number;
+  revenue_residential: number;
+  revenue_commercial: number;
+  revenue_retainer: number;
+  revenue_other: number;
   jobs_completed: number;
-  equipment_expense: number;
-  insurance_expense: number;
-  vehicle_expense: number;
-  marketing_expense: number;
-  software_expense: number;
-  training_expense: number;
-  office_expense: number;
-  misc_expense: number;
+  expense_equipment: number;
+  expense_software: number;
+  expense_insurance: number;
+  expense_marketing: number;
+  expense_vehicle: number;
+  expense_professional: number;
+  expense_contractor: number;
+  expense_misc: number;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -65,13 +65,16 @@ export interface FinancialActual {
 export interface BudgetBaseline {
   id: string;
   fiscal_year: number;
-  annual_revenue_target: number;
-  annual_expense_budget: number;
-  annual_job_target: number;
-  monthly_revenue_target: number;
-  monthly_expense_budget: number;
-  monthly_job_target: number;
+  label: string;
+  revenue_target: number;
+  expense_budget: number;
   net_income_target: number;
-  margin_target: number;
+  net_margin_target: number;
+  job_volume_target: number;
+  monthly_revenue_avg: number;
+  monthly_expense_avg: number;
+  monthly_jobs_avg: number;
+  revenue_mix: Record<string, unknown>;
+  expense_categories: Record<string, number>;
   created_at: string;
 }

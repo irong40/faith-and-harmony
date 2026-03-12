@@ -48,7 +48,9 @@ CREATE INDEX IF NOT EXISTS idx_lead_notes_follow_up_at
   ON public.lead_notes (follow_up_at)
   WHERE follow_up_at IS NOT NULL;
 
--- Step 5: updated_at trigger using moddatetime extension
+-- Step 5: Enable moddatetime extension (if not already) and create updated_at trigger
+CREATE EXTENSION IF NOT EXISTS moddatetime WITH SCHEMA extensions;
+
 CREATE TRIGGER set_lead_notes_updated_at
   BEFORE UPDATE ON public.lead_notes
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);

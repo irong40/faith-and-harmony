@@ -52,7 +52,7 @@ CREATE POLICY "admins_all_compliance_obligations" ON public.compliance_obligatio
 -- updated_at trigger
 CREATE TRIGGER set_compliance_obligations_updated_at
   BEFORE UPDATE ON public.compliance_obligations
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ============================================================================
@@ -133,7 +133,7 @@ CREATE POLICY "admins_all_governance_decisions" ON public.governance_decisions
 -- updated_at trigger
 CREATE TRIGGER set_governance_decisions_updated_at
   BEFORE UPDATE ON public.governance_decisions
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ============================================================================
@@ -182,7 +182,7 @@ CREATE POLICY "admins_all_financial_actuals" ON public.financial_actuals
 -- updated_at trigger
 CREATE TRIGGER set_financial_actuals_updated_at
   BEFORE UPDATE ON public.financial_actuals
-  FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+  FOR EACH ROW EXECUTE FUNCTION extensions.moddatetime(updated_at);
 
 
 -- ============================================================================
