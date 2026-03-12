@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: Leads Admin Upgrade
 status: completed
-stopped_at: Completed 16-01-PLAN.md
-last_updated: "2026-03-12T00:13:58.192Z"
-last_activity: 2026-03-11 — Phase 15, Plan 03 complete. Checkbox bulk selection and bulk convert with Promise.allSettled in VoiceLeadsTab. Phase 15 fully complete.
+stopped_at: Completed 16-02-PLAN.md
+last_updated: "2026-03-12T00:17:19.947Z"
+last_activity: 2026-03-12 — Phase 16, Plan 01 complete. lead_stats RPC function with 4 analytics metrics and typed useLeadStats hook.
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -24,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 
 ## Current Position
 
-Phase: 16 (Analytics Dashboard) — in progress (1 of 2 plans done)
-Plan: 01 complete
-Status: Phase 16 Plan 01 done. lead_stats Postgres RPC function and useLeadStats React Query hook created. Ready for Plan 02 (dashboard UI).
-Last activity: 2026-03-12 — Phase 16, Plan 01 complete. lead_stats RPC function with 4 analytics metrics and typed useLeadStats hook.
+Phase: 16 (Analytics Dashboard) — complete (2 of 2 plans done)
+Plan: 02 complete
+Status: Phase 16 fully complete. LeadStatsHeader component with 4 analytics stat cards integrated into Leads admin page. v2.1 milestone complete.
+Last activity: 2026-03-12 — Phase 16, Plan 02 complete. LeadStatsHeader with conversion rate, leads by source, avg response time, and lead revenue cards.
 
 ## Accumulated Context
 
@@ -94,6 +94,9 @@ Last activity: 2026-03-12 — Phase 16, Plan 01 complete. lead_stats RPC functio
 - Phase 16-01: Revenue joins leads to clients to drone_jobs via client_id because drone_jobs does not reference leads directly.
 - Phase 16-01: lead_activity view used for response time so all event types (status changes, notes, conversions) count toward first contact.
 - Phase 16-01: SECURITY DEFINER on lead_stats so the function joins across RLS-protected tables consistently from the analytics page.
+- Phase 16-02: SOURCE_CHANNEL_LABELS and SOURCE_CHANNEL_COLORS defined as local copies in LeadStatsHeader to keep the component self-contained without cross-file coupling.
+- Phase 16-02: Time window toggle uses Button components not Tabs so it stays compact and does not conflict with the existing Voice/Drone Leads tab switcher.
+- Phase 16-02: Response time shows a dash when avg_hours is 0 to signal no data rather than showing 0.0h which could be misread as instant response.
 
 ### Blockers/Concerns
 
@@ -101,7 +104,7 @@ None active.
 
 ## Session Continuity
 
-Last session: 2026-03-12T00:13:58.190Z
-Stopped at: Completed 16-01-PLAN.md
+Last session: 2026-03-12T00:17:19.945Z
+Stopped at: Completed 16-02-PLAN.md
 Resume file: None
-Resume signal: Phase 16 Plan 01 complete. lead_stats RPC and useLeadStats hook done. Continue with Phase 16 Plan 02 (analytics dashboard UI).
+Resume signal: Phase 16 complete. v2.1 Leads Admin Upgrade milestone fully shipped. All 4 analytics requirements (ANLY-01 through ANLY-04) live on the Leads admin page.
