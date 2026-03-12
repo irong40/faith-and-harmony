@@ -32,7 +32,7 @@ type TemplateResult = {
 type TemplateKey = `${string}_${number}`;
 
 // Wrap email body in branded shell
-function wrap(brand: BrandConfig, bodyHtml: string): string {
+export function wrap(brand: BrandConfig, bodyHtml: string): string {
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
@@ -68,7 +68,7 @@ function wrap(brand: BrandConfig, bodyHtml: string): string {
 </html>`;
 }
 
-function ctaButton(brand: BrandConfig, text: string, url: string): string {
+export function ctaButton(brand: BrandConfig, text: string, url: string): string {
   return `<table cellpadding="0" cellspacing="0" style="margin:24px 0;">
     <tr><td style="background-color:${brand.sky};border-radius:6px;padding:14px 28px;">
       <a href="${url}" style="color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;">${text}</a>
@@ -76,7 +76,7 @@ function ctaButton(brand: BrandConfig, text: string, url: string): string {
   </table>`;
 }
 
-function p(text: string): string {
+export function p(text: string): string {
   return `<p style="color:#374151;margin:0 0 14px;line-height:1.7;font-size:15px;">${text}</p>`;
 }
 

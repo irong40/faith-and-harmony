@@ -22,7 +22,31 @@ const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const BATCH_LIMIT = 20;
+export const BATCH_LIMIT = 20;
+
+/** Determine if a scheduled email should be skipped. Returns skip reason or null. */
+export function shouldSkipEmail(
+  sequenceType: string,
+  leadStatus: string | null,
+  hasNotInterestedLog: boolean,
+): string | null {
+  if (sequenceType === 'outreach_drip' && leadStatus === 'client') {
+    return 'Lead already converted to client';
+  }
+  if (sequenceType === 'outreach_drip' && hasNotInterestedLog) {
+    return 'Lead marked not interested';
+  }
+  return null;
+}
+
+/** Inject a 1x1 tracking pixel before </body>. */
+export function injectTrackingPixel(html: string, trackingId: string, supabaseUrl: string): string {
+  const pixelUrl = `${supabaseUrl}/functions/v1/track-email?t=${trackingId}&a=open`;
+  return html.replace(
+    '</body>',
+    `<img src="${pixelUrl}" width="1" height="1" style="display:none;" alt="" /></body>`,
+  );
+}
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -100,17 +124,6 @@ serve(async (req) => {
             .eq('id', email.lead_id)
             .single();
 
-          // Skip outreach if lead already became a client
-          if (lead && email.sequence_type === 'outreach_drip' && lead.status === 'client') {
-            await supabase
-              .from('scheduled_emails')
-              .update({ status: 'skipped', skip_reason: 'Lead already converted to client' })
-              .eq('id', email.id);
-            results.skipped++;
-            continue;
-          }
-
-          // Skip if lead marked as not interested
           // Check outreach_log for not_interested outcome
           const { data: notInterested } = await supabase
             .from('outreach_log')
@@ -120,10 +133,16 @@ serve(async (req) => {
             .limit(1)
             .maybeSingle();
 
-          if (notInterested && email.sequence_type === 'outreach_drip') {
+          const skipReason = shouldSkipEmail(
+            email.sequence_type,
+            lead?.status ?? null,
+            !!notInterested,
+          );
+
+          if (skipReason) {
             await supabase
               .from('scheduled_emails')
-              .update({ status: 'skipped', skip_reason: 'Lead marked not interested' })
+              .update({ status: 'skipped', skip_reason: skipReason })
               .eq('id', email.id);
             results.skipped++;
             continue;
@@ -169,11 +188,7 @@ serve(async (req) => {
         }
 
         // Inject tracking pixel into HTML
-        const trackingPixelUrl = `${supabaseUrl}/functions/v1/track-email?t=${trackingRecord.tracking_id}&a=open`;
-        const htmlWithPixel = template.html.replace(
-          '</body>',
-          `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" alt="" /></body>`,
-        );
+        const htmlWithPixel = injectTrackingPixel(template.html, trackingRecord.tracking_id, supabaseUrl);
 
         // Send via Resend
         const { data: emailResult, error: emailError } = await resend.emails.send({

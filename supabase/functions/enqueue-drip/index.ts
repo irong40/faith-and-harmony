@@ -18,20 +18,70 @@ const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-type SequenceType = 'outreach_drip' | 'post_delivery' | 'vapi_followup';
+export type SequenceType = 'outreach_drip' | 'post_delivery' | 'vapi_followup';
 
-interface EnqueueRequest {
+export interface EnqueueRequest {
   lead_id: string;
   sequence_type: SequenceType;
   context?: Record<string, unknown>;
 }
 
 // Schedule offsets in days for each sequence type
-const SEQUENCE_SCHEDULES: Record<SequenceType, number[]> = {
+export const SEQUENCE_SCHEDULES: Record<SequenceType, number[]> = {
   outreach_drip: [0, 3, 9],     // Day 1, Day 4, Day 10 (0-indexed offsets)
   post_delivery: [0, 6, 13, 29], // Day 1, Day 7, Day 14, Day 30
   vapi_followup: [0],            // Immediate (within next cron cycle)
 };
+
+/** Validate the enqueue request body. Returns error message or null if valid. */
+export function validateEnqueueRequest(
+  body: Partial<EnqueueRequest>,
+): string | null {
+  if (!body.lead_id || !body.sequence_type) {
+    return 'lead_id and sequence_type are required';
+  }
+  if (!SEQUENCE_SCHEDULES[body.sequence_type]) {
+    return `Invalid sequence_type: ${body.sequence_type}`;
+  }
+  return null;
+}
+
+/** Build scheduled email rows from lead info and sequence config. */
+export function buildScheduleRows(
+  lead: { email: string; company_name: string | null },
+  leadId: string,
+  sequenceType: SequenceType,
+  context: Record<string, unknown>,
+  now: Date,
+): Array<{
+  lead_id: string;
+  recipient_email: string;
+  recipient_name: string | null;
+  sequence_type: SequenceType;
+  sequence_step: number;
+  scheduled_for: string;
+  status: 'pending';
+  context: Record<string, unknown>;
+}> {
+  const offsets = SEQUENCE_SCHEDULES[sequenceType];
+  return offsets.map((dayOffset, index) => {
+    const scheduledFor = new Date(now);
+    scheduledFor.setDate(scheduledFor.getDate() + dayOffset);
+    // Schedule for 9 AM ET (13:00 UTC) on the target day
+    scheduledFor.setUTCHours(13, 0, 0, 0);
+
+    return {
+      lead_id: leadId,
+      recipient_email: lead.email,
+      recipient_name: lead.company_name,
+      sequence_type: sequenceType,
+      sequence_step: index + 1,
+      scheduled_for: scheduledFor.toISOString(),
+      status: 'pending' as const,
+      context: context || {},
+    };
+  });
+}
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -54,14 +104,12 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { lead_id, sequence_type, context }: EnqueueRequest = await req.json();
+    const body: EnqueueRequest = await req.json();
+    const { lead_id, sequence_type, context } = body;
 
-    if (!lead_id || !sequence_type) {
-      return json({ error: 'lead_id and sequence_type are required' }, 400);
-    }
-
-    if (!SEQUENCE_SCHEDULES[sequence_type]) {
-      return json({ error: `Invalid sequence_type: ${sequence_type}` }, 400);
+    const validationError = validateEnqueueRequest(body);
+    if (validationError) {
+      return json({ error: validationError }, 400);
     }
 
     // Check for existing pending sequence (prevent duplicates)
@@ -98,25 +146,7 @@ serve(async (req) => {
     }
 
     // Build scheduled email rows
-    const offsets = SEQUENCE_SCHEDULES[sequence_type];
-    const now = new Date();
-    const rows = offsets.map((dayOffset, index) => {
-      const scheduledFor = new Date(now);
-      scheduledFor.setDate(scheduledFor.getDate() + dayOffset);
-      // Schedule for 9 AM ET (13:00 UTC) on the target day
-      scheduledFor.setUTCHours(13, 0, 0, 0);
-
-      return {
-        lead_id,
-        recipient_email: lead.email,
-        recipient_name: lead.company_name,
-        sequence_type,
-        sequence_step: index + 1,
-        scheduled_for: scheduledFor.toISOString(),
-        status: 'pending' as const,
-        context: context || {},
-      };
-    });
+    const rows = buildScheduleRows(lead, lead_id, sequence_type, context || {}, new Date());
 
     const { data: inserted, error: insertError } = await supabase
       .from('scheduled_emails')
