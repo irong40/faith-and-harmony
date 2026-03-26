@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -42,6 +42,31 @@ export default function QuoteBuilder({ request, onClose, onCreated }: QuoteBuild
   const [lineItems, setLineItems] = useState<LineItem[]>([{ ...DEFAULT_LINE_ITEM }]);
   const [depositAmount, setDepositAmount] = useState<number>(0);
   const [notes, setNotes] = useState<string>("");
+
+  // Pre-populate from Mission Costing calculator if available
+  useEffect(() => {
+    const stored = sessionStorage.getItem("costing-to-quote");
+    if (!stored) return;
+    try {
+      const data = JSON.parse(stored) as {
+        lineItems: LineItem[];
+        total: number;
+        deposit: number;
+        missionName?: string;
+      };
+      if (data.lineItems?.length > 0) {
+        setLineItems(data.lineItems);
+        setDepositAmount(data.deposit ?? 0);
+        if (data.missionName) {
+          setNotes(`Mission costing: ${data.missionName}`);
+        }
+        sessionStorage.removeItem("costing-to-quote");
+        toast({ title: "Pre-filled from Mission Costing", description: "Line items loaded from calculator." });
+      }
+    } catch {
+      // Invalid JSON, ignore
+    }
+  }, [toast]);
 
   const total = lineItems.reduce(
     (sum, item) => sum + item.quantity * item.unit_price,

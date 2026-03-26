@@ -1,3 +1,4 @@
+Initialising login role...
 export type Json =
   | string
   | number
@@ -11,6 +12,31 @@ export type Database = {
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.1"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -665,6 +691,57 @@ export type Database = {
         }
         Relationships: []
       }
+      budget_baselines: {
+        Row: {
+          created_at: string
+          expense_budget: number
+          expense_categories: Json
+          fiscal_year: number
+          id: string
+          job_volume_target: number
+          label: string
+          monthly_expense_avg: number
+          monthly_jobs_avg: number
+          monthly_revenue_avg: number
+          net_income_target: number
+          net_margin_target: number
+          revenue_mix: Json
+          revenue_target: number
+        }
+        Insert: {
+          created_at?: string
+          expense_budget: number
+          expense_categories: Json
+          fiscal_year: number
+          id?: string
+          job_volume_target: number
+          label: string
+          monthly_expense_avg: number
+          monthly_jobs_avg: number
+          monthly_revenue_avg: number
+          net_income_target: number
+          net_margin_target: number
+          revenue_mix: Json
+          revenue_target: number
+        }
+        Update: {
+          created_at?: string
+          expense_budget?: number
+          expense_categories?: Json
+          fiscal_year?: number
+          id?: string
+          job_volume_target?: number
+          label?: string
+          monthly_expense_avg?: number
+          monthly_jobs_avg?: number
+          monthly_revenue_avg?: number
+          net_income_target?: number
+          net_margin_target?: number
+          revenue_mix?: Json
+          revenue_target?: number
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string | null
@@ -713,6 +790,54 @@ export type Database = {
           state?: string | null
           updated_at?: string | null
           zip?: string | null
+        }
+        Relationships: []
+      }
+      compliance_obligations: {
+        Row: {
+          category: string
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_date: string
+          id: string
+          notes: string | null
+          obligation_name: string
+          owner: string
+          recurrence: string
+          source_document: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date: string
+          id?: string
+          notes?: string | null
+          obligation_name: string
+          owner?: string
+          recurrence: string
+          source_document?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          notes?: string | null
+          obligation_name?: string
+          owner?: string
+          recurrence?: string
+          source_document?: string | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -963,6 +1088,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      costing_settings: {
+        Row: {
+          admin_cost_pct: number
+          default_margin_pct: number
+          depreciation_pct: number
+          id: string
+          overhead_pct: number
+          tax_rate_pct: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          admin_cost_pct?: number
+          default_margin_pct?: number
+          depreciation_pct?: number
+          id?: string
+          overhead_pct?: number
+          tax_rate_pct?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          admin_cost_pct?: number
+          default_margin_pct?: number
+          depreciation_pct?: number
+          id?: string
+          overhead_pct?: number
+          tax_rate_pct?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       customers: {
         Row: {
@@ -1896,6 +2054,69 @@ export type Database = {
           },
         ]
       }
+      financial_actuals: {
+        Row: {
+          created_at: string
+          expense_contractor: number | null
+          expense_equipment: number | null
+          expense_insurance: number | null
+          expense_marketing: number | null
+          expense_misc: number | null
+          expense_professional: number | null
+          expense_software: number | null
+          expense_vehicle: number | null
+          id: string
+          jobs_completed: number | null
+          month: string
+          notes: string | null
+          revenue_commercial: number | null
+          revenue_other: number | null
+          revenue_residential: number | null
+          revenue_retainer: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expense_contractor?: number | null
+          expense_equipment?: number | null
+          expense_insurance?: number | null
+          expense_marketing?: number | null
+          expense_misc?: number | null
+          expense_professional?: number | null
+          expense_software?: number | null
+          expense_vehicle?: number | null
+          id?: string
+          jobs_completed?: number | null
+          month: string
+          notes?: string | null
+          revenue_commercial?: number | null
+          revenue_other?: number | null
+          revenue_residential?: number | null
+          revenue_retainer?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expense_contractor?: number | null
+          expense_equipment?: number | null
+          expense_insurance?: number | null
+          expense_marketing?: number | null
+          expense_misc?: number | null
+          expense_professional?: number | null
+          expense_software?: number | null
+          expense_vehicle?: number | null
+          id?: string
+          jobs_completed?: number | null
+          month?: string
+          notes?: string | null
+          revenue_commercial?: number | null
+          revenue_other?: number | null
+          revenue_residential?: number | null
+          revenue_retainer?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       flight_logs: {
         Row: {
           checklist_data: Json
@@ -2003,6 +2224,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      governance_decisions: {
+        Row: {
+          action_items: Json | null
+          context: string | null
+          created_at: string
+          decision_date: string
+          fiscal_year: number | null
+          id: string
+          outcome: string
+          participants: Json | null
+          quarter: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          action_items?: Json | null
+          context?: string | null
+          created_at?: string
+          decision_date: string
+          fiscal_year?: number | null
+          id?: string
+          outcome: string
+          participants?: Json | null
+          quarter?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          action_items?: Json | null
+          context?: string | null
+          created_at?: string
+          decision_date?: string
+          fiscal_year?: number | null
+          id?: string
+          outcome?: string
+          participants?: Json | null
+          quarter?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      governance_log: {
+        Row: {
+          agent_name: string
+          created_at: string
+          data_snapshot: Json | null
+          document_url: string | null
+          event_type: string
+          fiscal_year: number | null
+          id: string
+          quarter: string | null
+          summary: string
+        }
+        Insert: {
+          agent_name: string
+          created_at?: string
+          data_snapshot?: Json | null
+          document_url?: string | null
+          event_type: string
+          fiscal_year?: number | null
+          id?: string
+          quarter?: string | null
+          summary: string
+        }
+        Update: {
+          agent_name?: string
+          created_at?: string
+          data_snapshot?: Json | null
+          document_url?: string | null
+          event_type?: string
+          fiscal_year?: number | null
+          id?: string
+          quarter?: string | null
+          summary?: string
+        }
+        Relationships: []
       }
       land_listing_outreach: {
         Row: {
@@ -2411,6 +2710,47 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_notes: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string | null
+          follow_up_at: string | null
+          id: string
+          lead_id: string
+          reason_tag: string | null
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by?: string | null
+          follow_up_at?: string | null
+          id?: string
+          lead_id: string
+          reason_tag?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          follow_up_at?: string | null
+          id?: string
+          lead_id?: string
+          reason_tag?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_notes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           call_id: string | null
@@ -2422,7 +2762,7 @@ export type Database = {
           id: string
           qualification_status: string
           quote_request_id: string | null
-          source_channel: string
+          source_channel: Database["public"]["Enums"]["lead_source_channel"]
           updated_at: string
         }
         Insert: {
@@ -2435,7 +2775,7 @@ export type Database = {
           id?: string
           qualification_status?: string
           quote_request_id?: string | null
-          source_channel?: string
+          source_channel?: Database["public"]["Enums"]["lead_source_channel"]
           updated_at?: string
         }
         Update: {
@@ -2448,7 +2788,7 @@ export type Database = {
           id?: string
           qualification_status?: string
           quote_request_id?: string | null
-          source_channel?: string
+          source_channel?: Database["public"]["Enums"]["lead_source_channel"]
           updated_at?: string
         }
         Relationships: [
@@ -2841,6 +3181,128 @@ export type Database = {
             columns: ["mission_id"]
             isOneToOne: true
             referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mission_costings: {
+        Row: {
+          admin_cost_amount: number
+          admin_cost_pct: number
+          compared_package: string | null
+          converted_to_quote_id: string | null
+          created_at: string
+          created_by: string | null
+          depreciation_amount: number
+          depreciation_pct: number
+          editing_fee: number
+          equipment_rental: number
+          expenses_subtotal: number
+          id: string
+          insurance_premium: number
+          margin_pct: number
+          meals: number
+          mission_name: string | null
+          notes: string | null
+          overhead_amount: number
+          overhead_pct: number
+          package_price: number | null
+          pilot_hours: number
+          pilot_rate: number
+          profit_amount: number
+          service_type: string | null
+          status: string
+          surcharge_warning: boolean
+          tax_estimate: number
+          total_charge: number
+          total_expenses: number
+          travel_gas: number
+          travel_hotel: number
+          travel_rental: number
+          updated_at: string
+          vo_hours: number
+          vo_rate: number
+        }
+        Insert: {
+          admin_cost_amount?: number
+          admin_cost_pct?: number
+          compared_package?: string | null
+          converted_to_quote_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          depreciation_amount?: number
+          depreciation_pct?: number
+          editing_fee?: number
+          equipment_rental?: number
+          expenses_subtotal?: number
+          id?: string
+          insurance_premium?: number
+          margin_pct?: number
+          meals?: number
+          mission_name?: string | null
+          notes?: string | null
+          overhead_amount?: number
+          overhead_pct?: number
+          package_price?: number | null
+          pilot_hours?: number
+          pilot_rate?: number
+          profit_amount?: number
+          service_type?: string | null
+          status?: string
+          surcharge_warning?: boolean
+          tax_estimate?: number
+          total_charge?: number
+          total_expenses?: number
+          travel_gas?: number
+          travel_hotel?: number
+          travel_rental?: number
+          updated_at?: string
+          vo_hours?: number
+          vo_rate?: number
+        }
+        Update: {
+          admin_cost_amount?: number
+          admin_cost_pct?: number
+          compared_package?: string | null
+          converted_to_quote_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          depreciation_amount?: number
+          depreciation_pct?: number
+          editing_fee?: number
+          equipment_rental?: number
+          expenses_subtotal?: number
+          id?: string
+          insurance_premium?: number
+          margin_pct?: number
+          meals?: number
+          mission_name?: string | null
+          notes?: string | null
+          overhead_amount?: number
+          overhead_pct?: number
+          package_price?: number | null
+          pilot_hours?: number
+          pilot_rate?: number
+          profit_amount?: number
+          service_type?: string | null
+          status?: string
+          surcharge_warning?: boolean
+          tax_estimate?: number
+          total_charge?: number
+          total_expenses?: number
+          travel_gas?: number
+          travel_hotel?: number
+          travel_rental?: number
+          updated_at?: string
+          vo_hours?: number
+          vo_rate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mission_costings_converted_to_quote_id_fkey"
+            columns: ["converted_to_quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
         ]
@@ -3963,6 +4425,9 @@ export type Database = {
           preferred_date: string | null
           source: string
           status: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
         }
         Insert: {
           address?: string | null
@@ -3978,6 +4443,9 @@ export type Database = {
           preferred_date?: string | null
           source?: string
           status?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Update: {
           address?: string | null
@@ -3993,6 +4461,9 @@ export type Database = {
           preferred_date?: string | null
           source?: string
           status?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Relationships: [
           {
@@ -4149,6 +4620,76 @@ export type Database = {
             columns: ["mission_id"]
             isOneToOne: false
             referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduled_emails: {
+        Row: {
+          context: Json | null
+          created_at: string
+          email_tracking_id: string | null
+          id: string
+          lead_id: string | null
+          recipient_email: string
+          recipient_name: string | null
+          scheduled_for: string
+          sent_at: string | null
+          sequence_step: number
+          sequence_type: Database["public"]["Enums"]["drip_sequence_type"]
+          skip_reason: string | null
+          status: Database["public"]["Enums"]["scheduled_email_status"]
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          email_tracking_id?: string | null
+          id?: string
+          lead_id?: string | null
+          recipient_email: string
+          recipient_name?: string | null
+          scheduled_for: string
+          sent_at?: string | null
+          sequence_step: number
+          sequence_type: Database["public"]["Enums"]["drip_sequence_type"]
+          skip_reason?: string | null
+          status?: Database["public"]["Enums"]["scheduled_email_status"]
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          email_tracking_id?: string | null
+          id?: string
+          lead_id?: string | null
+          recipient_email?: string
+          recipient_name?: string | null
+          scheduled_for?: string
+          sent_at?: string | null
+          sequence_step?: number
+          sequence_type?: Database["public"]["Enums"]["drip_sequence_type"]
+          skip_reason?: string | null
+          status?: Database["public"]["Enums"]["scheduled_email_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_emails_email_tracking_id_fkey"
+            columns: ["email_tracking_id"]
+            isOneToOne: false
+            referencedRelation: "email_tracking"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_emails_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "drone_client_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_emails_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "drone_leads"
             referencedColumns: ["id"]
           },
         ]
@@ -5219,6 +5760,16 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_activity: {
+        Row: {
+          event_at: string | null
+          event_type: string | null
+          lead_id: string | null
+          source_id: string | null
+          summary: string | null
+        }
+        Relationships: []
+      }
       packages: {
         Row: {
           active: boolean | null
@@ -5333,6 +5884,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      lead_stats: { Args: { time_window?: string }; Returns: Json }
       log_flight: {
         Args: {
           p_aircraft_id: string
@@ -5410,6 +5962,7 @@ export type Database = {
         | "full_reshoot"
         | "incomplete_package"
       contact_method: "email" | "phone" | "text"
+      drip_sequence_type: "outreach_drip" | "post_delivery" | "vapi_followup"
       drone_job_status:
         | "intake"
         | "scheduled"
@@ -5439,6 +5992,12 @@ export type Database = {
         | "marketing"
       equipment_type: "aircraft" | "battery" | "controller" | "accessory"
       lead_gen_job_status: "pending" | "running" | "completed" | "failed"
+      lead_source_channel:
+        | "voice_bot"
+        | "web_form"
+        | "manual"
+        | "email_outreach"
+        | "social"
       lead_status: "new" | "contacted" | "responded" | "qualified" | "client"
       maintenance_type:
         | "scheduled"
@@ -5514,6 +6073,7 @@ export type Database = {
         | "quoted"
         | "closed"
         | "declined"
+      scheduled_email_status: "pending" | "sent" | "skipped" | "cancelled"
       tfr_status: "active" | "scheduled" | "expired" | "cancelled"
       weather_determination: "GO" | "CAUTION" | "NO_GO"
     }
@@ -5641,6 +6201,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       accessory_type: [
@@ -5673,6 +6236,7 @@ export const Constants = {
         "incomplete_package",
       ],
       contact_method: ["email", "phone", "text"],
+      drip_sequence_type: ["outreach_drip", "post_delivery", "vapi_followup"],
       drone_job_status: [
         "intake",
         "scheduled",
@@ -5704,6 +6268,13 @@ export const Constants = {
       ],
       equipment_type: ["aircraft", "battery", "controller", "accessory"],
       lead_gen_job_status: ["pending", "running", "completed", "failed"],
+      lead_source_channel: [
+        "voice_bot",
+        "web_form",
+        "manual",
+        "email_outreach",
+        "social",
+      ],
       lead_status: ["new", "contacted", "responded", "qualified", "client"],
       maintenance_type: [
         "scheduled",
@@ -5789,6 +6360,7 @@ export const Constants = {
         "closed",
         "declined",
       ],
+      scheduled_email_status: ["pending", "sent", "skipped", "cancelled"],
       tfr_status: ["active", "scheduled", "expired", "cancelled"],
       weather_determination: ["GO", "CAUTION", "NO_GO"],
     },
