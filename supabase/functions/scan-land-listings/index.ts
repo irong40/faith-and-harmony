@@ -115,6 +115,10 @@ serve(async (req) => {
       const newListings = await deduplicateListings(supabase, allListings);
       console.log(`After dedup: ${newListings.length} new listings`);
 
+      // Step 5.5: Mark stale listings as expired (not seen in 14+ days)
+      const staleCount = await markStaleListings(supabase);
+      console.log(`Marked ${staleCount} stale listings as expired`);
+
       // Step 6: Score opportunities
       const scoredListings = scoreListings(newListings);
       console.log(`Scored ${scoredListings.length} listings`);
@@ -223,25 +227,34 @@ async function searchForListings(
 ): Promise<RawListing[]> {
   const allListings: RawListing[] = [];
 
-  const landQueries = [
-    "land for sale",
+  // Use site-specific searches to get individual listing pages, not directory pages
+  const siteQueries = [
+    { site: "zillow.com/homedetails", label: "zillow" },
+    { site: "landwatch.com", label: "landwatch" },
+    { site: "land.com", label: "land.com" },
+    { site: "landandfarm.com", label: "landandfarm" },
+    { site: "redfin.com/VA", label: "redfin-va" },
+    { site: "redfin.com/NC", label: "redfin-nc" },
+  ];
+
+  const landTerms = [
+    "land for sale acres",
     "vacant lot for sale",
-    "farm land for sale",
-    "acreage for sale",
+    "farm acreage for sale",
     "waterfront land for sale",
-    "commercial land for sale",
   ];
 
   for (const region of regions) {
     for (const city of region.cities) {
       const state = region.states[0];
-      const selectedQueries = landQueries
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 2);
+      // Pick 2 random site targets and 1 random land term per city
+      const shuffledSites = siteQueries.sort(() => Math.random() - 0.5).slice(0, 2);
+      const landTerm = landTerms[Math.floor(Math.random() * landTerms.length)];
 
-      for (const landQuery of selectedQueries) {
+      for (const sq of shuffledSites) {
         try {
-          const query = `${landQuery} ${city} ${state}`;
+          // Search for individual listings on specific sites
+          const query = `site:${sq.site} ${landTerm} ${city} ${state}`;
 
           const response = await fetch("https://google.serper.dev/search", {
             method: "POST",
@@ -264,6 +277,8 @@ async function searchForListings(
           const results = data.organic || [];
 
           for (const result of results) {
+            // Skip directory/index/search result pages
+            if (isDirectoryPage(result.title, result.link)) continue;
             if (isListingSite(result.link)) {
               const listing = parseSerperResult(result, city, state);
               if (listing) allListings.push(listing);
@@ -281,6 +296,51 @@ async function searchForListings(
   return allListings;
 }
 
+function extractAddressFromUrl(url: string): string | undefined {
+  try {
+    const urlObj = new URL(url);
+    const path = urlObj.pathname;
+
+    // Zillow: /homedetails/123-Main-St-City-ST-12345/zpid_
+    const zillowMatch = path.match(/\/homedetails\/([^/]+)\//);
+    if (zillowMatch) {
+      const slug = zillowMatch[1];
+      // Remove trailing zpid number and state+zip suffix, then convert dashes to spaces
+      const cleaned = slug
+        .replace(/_zpid$/, "")
+        .replace(/-\d{5,}$/, "") // trailing zip
+        .replace(/-([A-Z]{2})$/, "") // trailing state abbreviation
+        .replace(/-/g, " ");
+      if (/\d/.test(cleaned)) return cleaned; // must contain a house number
+    }
+
+    // Redfin: /VA/Chesapeake/123-Main-St-12345/home/...
+    const redfinMatch = path.match(/\/[A-Z]{2}\/[^/]+\/([^/]+)\//);
+    if (redfinMatch && url.includes("redfin.com")) {
+      const slug = redfinMatch[1];
+      const cleaned = slug
+        .replace(/-\d{5,}$/, "") // trailing zip
+        .replace(/-/g, " ");
+      if (/\d/.test(cleaned)) return cleaned;
+    }
+
+    // LandWatch: /county/city/property-name paths often contain address-like segments
+    if (url.includes("landwatch.com")) {
+      const segments = path.split("/").filter(Boolean);
+      // Look for a segment that starts with a number (likely an address)
+      for (const seg of segments) {
+        if (/^\d+-.+/.test(seg)) {
+          return seg.replace(/-/g, " ");
+        }
+      }
+    }
+
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function isListingSite(url: string): boolean {
   const listingSites = [
     "landwatch.com", "land.com", "landsofamerica.com", "landandfarm.com",
@@ -292,30 +352,136 @@ function isListingSite(url: string): boolean {
   return listingSites.some((site) => url.includes(site));
 }
 
+function isDirectoryPage(title: string, url: string): boolean {
+  const lower = title.toLowerCase();
+  // Directory/search pages have these patterns
+  const directoryPatterns = [
+    /\d+\s*listings/i,           // "60 Listings"
+    /\d+\s*properties/i,         // "97 Properties"
+    /\d+\s*homes\s*(for|&)/i,    // "256 Homes for Sale"
+    /land\s*(&|and)\s*lots\s*for\s*sale\s*$/i,  // generic "Land & Lots For Sale"
+    /land\s*for\s*sale\s*-?\s*(landwatch|zillow|redfin|realtor|homes\.com|trulia)/i,
+    /for\s*sale\s*-\s*\d+/i,     // "For Sale - 60"
+    /real\s*estate\s*(for\s*sale|properties)/i,  // "Real Estate for Sale"
+    /commercial\s*(real\s*estate|properties)\s*for/i,
+    /waterfront\s*(homes|properties)\s*for\s*sale\s*(in|&|\||-)/i,
+    /farmhouses\s*for\s*sale\s*-/i,
+    /farms?\s*(for\s*sale|and\s*ranches)\s*(in|-|\|)/i,
+    /lot\/land\s*for\s*sale/i,
+  ];
+
+  // URL patterns that indicate directory pages
+  const urlDirectoryPatterns = [
+    /\/land\/?$/,                 // ends with /land/
+    /\/land-for-sale\/?$/,
+    /\/type-land\/?$/,
+    /search\//,                   // search pages
+    /filter/,
+    /\/city\//,
+  ];
+
+  if (directoryPatterns.some((p) => p.test(lower))) return true;
+  if (urlDirectoryPatterns.some((p) => p.test(url))) return true;
+
+  return false;
+}
+
 // deno-lint-ignore no-explicit-any
 function parseSerperResult(result: any, city: string, state: string): RawListing | null {
   const title = result.title || "";
   const snippet = result.snippet || "";
   const url = result.link || "";
+  const combined = title + " " + snippet;
 
-  const priceMatch = (title + " " + snippet).match(/\$[\d,]+/);
-  const price = priceMatch ? parseFloat(priceMatch[0].replace(/[$,]/g, "")) : undefined;
+  // --- Better price extraction ---
+  // Find all dollar amounts in the combined text
+  const priceRegex = /\$[\d,]+(?:\.\d{2})?/g;
+  let price: number | undefined;
+  let priceMatchResult;
+  while ((priceMatchResult = priceRegex.exec(combined)) !== null) {
+    const candidate = parseFloat(priceMatchResult[0].replace(/[$,]/g, ""));
+    const idx = priceMatchResult.index;
+    // Get surrounding context (40 chars each side) to check what this price refers to
+    const surroundingText = combined.substring(Math.max(0, idx - 40), Math.min(combined.length, idx + priceMatchResult[0].length + 40)).toLowerCase();
+    // Skip prices that appear near count/directory words (these are result counts, not prices)
+    const isCountContext = /(?:listings?|results?|homes\s+for|properties\s+for|matches)/.test(surroundingText);
+    // Accept prices near land/sale keywords
+    const isLandContext = /(?:acres?|lot|land|sale|price|asking|\bper\b)/.test(surroundingText);
+    if (isCountContext && !isLandContext) continue;
+    // Use the first valid price found
+    price = candidate;
+    break;
+  }
 
-  const acreageMatch = (title + " " + snippet).match(/([\d.]+)\s*(?:acres?|ac)/i);
-  const acreage = acreageMatch ? parseFloat(acreageMatch[1]) : undefined;
+  const acreageMatch = combined.match(/([\d,.]+)\s*(?:acres?|ac\b)/i);
+  const acreage = acreageMatch ? parseFloat(acreageMatch[1].replace(/,/g, "")) : undefined;
 
-  const landType = classifyLandType(title + " " + snippet);
+  // Try to extract a street address from the title or snippet
+  // Common patterns: "123 Main St, City, ST" or "123 Main St City ST 12345"
+  const addressMatch = combined.match(
+    /(\d+[A-Z]?\s+(?:[A-Z][a-z]+\.?\s*){1,4}(?:St|Rd|Ave|Blvd|Dr|Ln|Ct|Way|Trl|Pkwy|Hwy|Loop|Cir|Run|Pl)\b[^,]*)/i
+  );
+  let address = addressMatch ? addressMatch[1].trim() : undefined;
+
+  // Fallback: extract address from URL if regex didn't find one
+  if (!address) {
+    address = extractAddressFromUrl(url);
+  }
+
+  // Try to extract agent name from snippet
+  // Patterns: "Listed by John Smith" or "Agent: John Smith" or "Broker: RE/MAX"
+  const agentMatch = snippet.match(/(?:listed\s*by|agent|broker|courtesy\s*of)\s*:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})/i);
+  let agentName = agentMatch ? agentMatch[1].trim() : undefined;
+
+  const companyMatch = snippet.match(/(?:courtesy\s*of|brokered\s*by|office|brokerage)\s*:?\s*([A-Z][^,.\n]{3,40})/i);
+  let agentCompany = companyMatch ? companyMatch[1].trim() : undefined;
+
+  // Extract agent info from Serper sitelinks if available
+  if (result.sitelinks && Array.isArray(result.sitelinks)) {
+    for (const sitelink of result.sitelinks) {
+      const slTitle = (sitelink.title || "").toLowerCase();
+      const slSnippet = sitelink.snippet || "";
+      // Look for agent/broker sitelinks
+      if (/agent|broker|contact|team|realtor/i.test(slTitle)) {
+        if (!agentName) {
+          const slAgentMatch = slSnippet.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})/);
+          if (slAgentMatch) agentName = slAgentMatch[1].trim();
+        }
+        if (!agentCompany) {
+          const slCompanyMatch = slSnippet.match(/(?:with|at|of|from)\s+([A-Z][^,.\n]{3,40})/i);
+          if (slCompanyMatch) agentCompany = slCompanyMatch[1].trim();
+        }
+      }
+    }
+  }
+
+  // Extract photo count if mentioned — handles "12 Photos", "View 24 photos", "12 photos · 2 baths"
+  const photoMatch = snippet.match(/(?:view\s+)?(\d+)\s*(?:photos?|images?|pics?)\s*(?:[·|,·\-]|$)/i)
+    || snippet.match(/(\d+)\s*(?:photos?|images?|pics?)/i);
+  const photoCount = photoMatch ? parseInt(photoMatch[1]) : 0;
+
+  const landType = classifyLandType(combined);
+
+  // Extract listing date from Serper result.date if available
+  const listingDate = result.date || undefined;
+
+  // Use address as title if we found one, otherwise use the original title
+  const displayTitle = address || title.substring(0, 200);
 
   return {
-    title: title.substring(0, 200),
+    title: displayTitle,
     url,
     description: snippet,
     price,
     acreage,
+    address,
     city,
     state,
     land_type: landType,
-    photo_count: 0,
+    photo_count: photoCount,
+    listing_agent_name: agentName,
+    listing_agent_company: agentCompany,
+    listing_date: listingDate,
     source_slug: "serper-search",
     external_id: url,
     raw_data: result,
@@ -430,6 +596,30 @@ async function deduplicateListings(
   }
 
   return unique;
+}
+
+// ============================================
+// Step 5.5: Mark Stale Listings
+// ============================================
+
+async function markStaleListings(supabase: ReturnType<typeof createClient>): Promise<number> {
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+  const cutoff = fourteenDaysAgo.toISOString();
+
+  const { data, error } = await supabase
+    .from("land_listings")
+    .update({ status: "expired" })
+    .lt("last_checked_at", cutoff)
+    .neq("status", "expired")
+    .select("id");
+
+  if (error) {
+    console.error("Error marking stale listings:", error);
+    return 0;
+  }
+
+  return data?.length || 0;
 }
 
 // ============================================
