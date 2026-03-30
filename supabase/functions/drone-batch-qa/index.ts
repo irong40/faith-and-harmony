@@ -306,12 +306,15 @@ serve(async (req) => {
       console.log("N8N_PROCESSING_WEBHOOK_URL not configured - skipping processing webhook");
     }
 
+    const n8nTriggered = !!(n8nWebhookUrl && overallRecommendation === "deliver_as_planned" && newStatus !== "review_pending");
+
     return new Response(
       JSON.stringify({
         success: true,
         job_id,
         qa_score: avgScore,
         status: newStatus,
+        n8n_triggered: n8nTriggered,
         summary: batchSummary
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

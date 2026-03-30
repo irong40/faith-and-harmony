@@ -120,23 +120,27 @@ def process_webodm_batch(
         if not nodeodm_client.health_check():
             raise RuntimeError("NodeODM server is not reachable")
 
-        print(f"  [WebODM] Downloading {len(assets)} images")
+        print(f"  [WebODM] Resolving {len(assets)} images")
         local_paths = []
         for asset in assets:
             file_path = asset.get("file_path", "")
             file_name = asset.get("file_name", os.path.basename(file_path))
-            local_path = os.path.join(download_dir, file_name)
 
-            if file_path.startswith("http"):
+            # Local path on the rig (from desktop ingest)
+            if os.path.isfile(file_path):
+                local_paths.append(file_path)
+            elif file_path.startswith("http"):
+                local_path = os.path.join(download_dir, file_name)
                 resp = httpx.get(file_path, timeout=120)
                 resp.raise_for_status()
                 with open(local_path, "wb") as f:
                     f.write(resp.content)
+                local_paths.append(local_path)
             else:
+                # Supabase storage relative path
                 supabase_client.download_asset(file_path, download_dir)
                 local_path = os.path.join(download_dir, os.path.basename(file_path))
-
-            local_paths.append(local_path)
+                local_paths.append(local_path)
 
         options = processing_options or config.DEFAULT_OPTIONS
         print(f"  [WebODM] Creating NodeODM task with {len(local_paths)} images")

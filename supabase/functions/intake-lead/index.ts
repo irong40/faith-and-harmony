@@ -203,7 +203,85 @@ export async function handleRequest(req: Request): Promise<Response> {
       }
     }
 
-    console.log(`Intake: client=${client_id} (new=${clientCreated}) qr=${qr.id} lead=${lead.id}`);
+    // Step 5: For voice_bot orders, create a drone_job directly.
+    // The customer already agreed on the phone so we skip the manual
+    // quote review flow and put the job straight into intake status.
+    let drone_job_id: string | null = null;
+    try {
+      // Upsert into the customers table (drone_jobs FK target, separate from clients)
+      const { data: customerResult, error: custError } = await supabase
+        .rpc('upsert_customer_from_quote_request', { p_qr_id: qr.id });
+
+      if (custError) {
+        console.error('Customer upsert failed (non-fatal):', custError.message);
+      } else {
+        const customer_id = customerResult as string;
+
+        // Find the best matching drone package by job_type
+        const { data: pkg } = await supabase
+          .from('drone_packages')
+          .select('id')
+          .eq('active', true)
+          .or(`category.eq.${payload.service_type},code.eq.${payload.service_type}`)
+          .limit(1)
+          .maybeSingle();
+
+        // Fallback to cheapest active package
+        let package_id = pkg?.id;
+        if (!package_id) {
+          const { data: fallback } = await supabase
+            .from('drone_packages')
+            .select('id')
+            .eq('active', true)
+            .order('price', { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          package_id = fallback?.id;
+        }
+
+        // Create drone_job in intake status
+        const { data: job, error: jobError } = await supabase
+          .from('drone_jobs')
+          .insert({
+            customer_id,
+            package_id: package_id || null,
+            status: 'intake',
+            property_address: payload.property_address || `Address pending (voice order from ${payload.caller_name})`,
+            scheduled_date: payload.preferred_date || null,
+            admin_notes: `Voice order via Vapi. Call ID: ${payload.call_id}. Service: ${payload.service_type}. Description: ${payload.job_description}`,
+          })
+          .select('id')
+          .single();
+
+        if (jobError) {
+          console.error('Drone job creation failed (non-fatal):', jobError.message);
+        } else {
+          drone_job_id = job.id;
+          console.log(`Voice order: drone_job created ${drone_job_id}`);
+        }
+
+        // Create admin notification (the DB trigger will send the email)
+        const { error: notifError } = await supabase
+          .from('notifications')
+          .insert({
+            user_email: 'info@faithandharmonyllc.com',
+            type: 'voice_order',
+            title: `Voice order from ${payload.caller_name}`,
+            body: `${payload.service_type}: ${payload.job_description.substring(0, 150)}`,
+            link: drone_job_id ? `/admin/drone-jobs/${drone_job_id}` : '/admin/quote-requests',
+          });
+
+        if (notifError) {
+          console.warn('Notification insert warning (non-fatal):', notifError.message);
+        }
+      }
+    } catch (stepError) {
+      // Voice order job creation is best-effort. The quote_request and lead
+      // are already saved, so the admin can still act on them manually.
+      console.error('Voice order drone_job step failed (non-fatal):', stepError);
+    }
+
+    console.log(`Intake: client=${client_id} (new=${clientCreated}) qr=${qr.id} lead=${lead.id} job=${drone_job_id || 'none'}`);
 
     return json({
       success: true,
@@ -211,6 +289,7 @@ export async function handleRequest(req: Request): Promise<Response> {
       lead_id: lead.id,
       client_id,
       client_created: clientCreated,
+      drone_job_id,
     }, 201);
 
   } catch (error) {

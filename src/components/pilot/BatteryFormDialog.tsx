@@ -118,10 +118,10 @@ export default function BatteryFormDialog({ open, onOpenChange, battery }: Batte
           </div>
           <div>
             <Label className="text-xs">Assigned Aircraft</Label>
-            <Select value={form.aircraft_id} onValueChange={v => setForm(f => ({ ...f, aircraft_id: v }))}>
+            <Select value={form.aircraft_id || "unassigned"} onValueChange={v => setForm(f => ({ ...f, aircraft_id: v === "unassigned" ? "" : v }))}>
               <SelectTrigger><SelectValue placeholder="None (unassigned)" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Unassigned</SelectItem>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
                 {aircraft?.map(a => (
                   <SelectItem key={a.id} value={a.id}>{a.nickname || a.model}</SelectItem>
                 ))}

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   ArrowLeft, Camera, Building2, Plus, Clock,
-  DollarSign, Package, Zap, CalendarDays, Users,
+  DollarSign, Package, Zap, CalendarDays, Users, History,
 } from 'lucide-react';
 import {
   Dialog,
@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import PricingEngine from '@/components/PricingEngine';
+import { useMissionCostings, type MissionCostingRow } from '@/hooks/useMissionCostings';
 
 const RESIDENTIAL_PACKAGES = [
   {
@@ -178,6 +179,72 @@ function PackageCard({ name, price, unit, features, code }: {
   );
 }
 
+function SavedCostings() {
+  const { data: costings, isLoading } = useMissionCostings();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Clock className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!costings || costings.length === 0) {
+    return (
+      <Card>
+        <CardContent className="pt-6 text-center text-muted-foreground">
+          <DollarSign className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <p>No saved costings yet</p>
+          <p className="text-xs mt-1">Use the Quote Calculator tab to create mission costings.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const fmt = (n: number) => "$" + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  return (
+    <div className="space-y-3">
+      {costings.map((c: MissionCostingRow) => (
+        <Card key={c.id}>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-semibold">{c.mission_name || "Untitled"}</span>
+                <Badge
+                  className={
+                    c.status === 'converted'
+                      ? 'ml-2 bg-green-500 text-white'
+                      : c.status === 'finalized'
+                      ? 'ml-2 bg-blue-500 text-white'
+                      : 'ml-2 bg-slate-500 text-white'
+                  }
+                >
+                  {c.status}
+                </Badge>
+                {c.surcharge_warning && (
+                  <Badge variant="destructive" className="ml-1 text-[10px]">SURCHARGE</Badge>
+                )}
+              </div>
+              <div className="text-right">
+                <div className="text-lg font-bold font-mono">{fmt(c.total_charge)}</div>
+                <div className="text-xs text-muted-foreground">
+                  Floor: {fmt(c.total_expenses)} | Margin: {c.margin_pct}%
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+              <span>{new Date(c.created_at).toLocaleDateString()}</span>
+              {c.service_type && <span>{c.service_type}</span>}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 export default function SentinelPricing() {
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -266,6 +333,9 @@ export default function SentinelPricing() {
             </TabsTrigger>
             <TabsTrigger value="calculator" className="gap-1">
               <DollarSign className="h-4 w-4" /> Quote Calculator
+            </TabsTrigger>
+            <TabsTrigger value="history" className="gap-1">
+              <History className="h-4 w-4" /> Saved Costings
             </TabsTrigger>
           </TabsList>
 
@@ -426,6 +496,10 @@ export default function SentinelPricing() {
 
           <TabsContent value="calculator">
             <PricingEngine />
+          </TabsContent>
+
+          <TabsContent value="history">
+            <SavedCostings />
           </TabsContent>
         </Tabs>
       </main>

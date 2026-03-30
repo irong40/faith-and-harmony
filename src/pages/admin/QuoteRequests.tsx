@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminNav from "./components/AdminNav";
 import QuoteBuilder from "./components/QuoteBuilder";
@@ -21,7 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { RefreshCw, FileText, Inbox, Send, RotateCcw, Phone, Globe, PenLine } from "lucide-react";
+import { RefreshCw, FileText, Inbox, Send, RotateCcw, Phone, Globe, PenLine, Archive, ArchiveRestore } from "lucide-react";
 
 interface QuoteRequest {
   id: string;
@@ -35,6 +35,7 @@ interface QuoteRequest {
   status: string;
   source: "web" | "voice_bot" | "manual" | null;
   brand_slug: string | null;
+  archived_at: string | null;
 }
 
 interface Quote {
@@ -71,11 +72,15 @@ function QuoteActionRow({
   quote,
   onOpenBuilder,
   onRefresh,
+  isArchived,
+  onArchive,
 }: {
   request: QuoteRequest;
   quote: Quote | undefined;
   onOpenBuilder: () => void;
   onRefresh: () => void;
+  isArchived: boolean;
+  onArchive: () => void;
 }) {
   const { sendQuote, isSending, reviseQuote, isRevising } = useQuoteActions({
     request,
@@ -140,6 +145,10 @@ function QuoteActionRow({
       {quoteStatus === "expired" && (
         <Badge className="bg-gray-400 text-white w-fit">Expired</Badge>
       )}
+      <Button size="sm" variant="ghost" className="gap-1.5 text-muted-foreground" onClick={onArchive}>
+        {isArchived ? <ArchiveRestore className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
+        {isArchived ? "Restore" : "Archive"}
+      </Button>
     </div>
   );
 }
@@ -148,14 +157,21 @@ export default function QuoteRequests() {
   const [selectedRequest, setSelectedRequest] = useState<QuoteRequest | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const queryClient = useQueryClient();
+  const [showArchived, setShowArchived] = useState(false);
 
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ["quote-requests"],
+    queryKey: ["quote-requests", showArchived],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("quote_requests")
-        .select("id, name, email, phone, address, job_type, description, status, created_at, source, brand_slug")
+        .select("id, name, email, phone, address, job_type, description, status, created_at, source, brand_slug, archived_at")
         .order("created_at", { ascending: false });
+      if (showArchived) {
+        query = query.not("archived_at", "is", null);
+      } else {
+        query = query.is("archived_at", null);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data as QuoteRequest[];
     },
@@ -192,6 +208,14 @@ export default function QuoteRequests() {
     queryClient.invalidateQueries({ queryKey: ["quotes"] });
   };
 
+  const archiveMutation = useMutation({
+    mutationFn: async ({ id, restore }: { id: string; restore: boolean }) => {
+      const { error } = await supabase.from("quote_requests").update({ archived_at: restore ? null : new Date().toISOString() }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["quote-requests"] }); },
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <AdminNav />
@@ -207,15 +231,21 @@ export default function QuoteRequests() {
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            className="gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button variant={showArchived ? "default" : "outline"} size="sm" onClick={() => setShowArchived(!showArchived)} className="gap-2">
+              <Archive className="h-4 w-4" />
+              {showArchived ? "Viewing Archived" : "Show Archived"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              className="gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Status filter bar */}
@@ -323,6 +353,8 @@ export default function QuoteRequests() {
                           quote={quote}
                           onOpenBuilder={() => setSelectedRequest(request)}
                           onRefresh={handleRefresh}
+                          isArchived={showArchived}
+                          onArchive={() => archiveMutation.mutate({ id: request.id, restore: showArchived })}
                         />
                       </TableCell>
                     </TableRow>

@@ -33,3 +33,9 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/

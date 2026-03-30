@@ -1,0 +1,149 @@
+{
+  "name": "WF7 - Drip Sequence Processor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "triggerAtHour": 8 },
+            { "triggerAtHour": 10 },
+            { "triggerAtHour": 12 },
+            { "triggerAtHour": 14 },
+            { "triggerAtHour": 16 },
+            { "triggerAtHour": 18 }
+          ]
+        }
+      },
+      "id": "drip-cron-trigger",
+      "name": "Cron: Every 2 Hours (8am-6pm ET)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/functions/v1/process-drip",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "call-process-drip",
+      "name": "Call process-drip Edge Function",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-sent",
+              "leftValue": "={{ $json.sent }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "check-results",
+      "name": "Any Emails Sent?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/app_health_history",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $env.SUPABASE_SERVICE_KEY }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_name\": \"wf7-drip-processor\",\n  \"status\": \"ok\",\n  \"details\": {{ JSON.stringify({ sent: $json.sent, skipped: $json.skipped, failed: $json.failed, processed: $json.processed }) }}\n}"
+      },
+      "id": "log-activity",
+      "name": "Log Activity to Health History",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 200]
+    },
+    {
+      "parameters": {},
+      "id": "no-op-quiet",
+      "name": "No Emails Due (Quiet)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [960, 400]
+    }
+  ],
+  "connections": {
+    "Cron: Every 2 Hours (8am-6pm ET)": {
+      "main": [
+        [{ "node": "Call process-drip Edge Function", "type": "main", "index": 0 }]
+      ]
+    },
+    "Call process-drip Edge Function": {
+      "main": [
+        [{ "node": "Any Emails Sent?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Any Emails Sent?": {
+      "main": [
+        [{ "node": "Log Activity to Health History", "type": "main", "index": 0 }],
+        [{ "node": "No Emails Due (Quiet)", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York"
+  },
+  "tags": [
+    { "name": "marketing" },
+    { "name": "drip" },
+    { "name": "cron" }
+  ]
+}

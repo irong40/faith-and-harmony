@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw, LogOut, Plane, Play, RotateCcw, Cog, LayoutDashboard, MapIcon, Route } from "lucide-react";
+import { RefreshCw, LogOut, Plane, Play, RotateCcw, Cog, LayoutDashboard, MapIcon, Route, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isToday, isBefore, startOfDay } from "date-fns";
 import PilotCard from "@/components/pilot/PilotCard";
@@ -262,7 +262,7 @@ export default function PilotDashboard() {
 
                 {/* Quick Links */}
                 <div className="space-y-2 mb-6">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                         <Link to="/pilot/map">
                             <Button variant="outline" className="w-full justify-start gap-2">
                                 <MapIcon className="h-4 w-4" />
@@ -273,6 +273,12 @@ export default function PilotDashboard() {
                             <Button variant="outline" className="w-full justify-start gap-2">
                                 <Plane className="h-4 w-4" />
                                 Fleet
+                            </Button>
+                        </Link>
+                        <Link to="/pilot/portfolio">
+                            <Button variant="outline" className="w-full justify-start gap-2">
+                                <Camera className="h-4 w-4" />
+                                Portfolio
                             </Button>
                         </Link>
                     </div>

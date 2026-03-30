@@ -8,6 +8,31 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// SAI Brand constants (matches sentinel-landing)
+const SAI = {
+  name: "Sentinel Aerial Inspections",
+  tagline: "Professional Drone Services",
+  email: "info@sentinelaerialinspections.com",
+  website: "sentinelaerialinspections.com",
+  orange: "#e85d26",
+  orangeDark: "#c44a1a",
+  dark950: "#0a0a0a",
+  dark900: "#0f0f0f",
+  dark800: "#1a1a1a",
+  cream: "#f0ebe4",
+  creamDim: "#d9d0c4",
+};
+
+/** Escape HTML special characters to prevent XSS in email templates. */
+function esc(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 interface ProposalEmailRequest {
   proposal: {
     proposal_number: string;
@@ -31,11 +56,11 @@ serve(async (req) => {
 
   try {
     const { proposal, client, deliverables }: ProposalEmailRequest = await req.json();
-    
+
     const proposalUrl = `${req.headers.get("origin") || "https://faithandharmonyllc.com"}/proposal/${proposal.approval_token}`;
-    
+
     const deliverablesHtml = deliverables
-      .map(d => `<li style="margin-bottom: 8px;"><strong>${d.name}</strong>: ${d.description}</li>`)
+      .map(d => `<li style="margin-bottom: 8px;"><strong>${esc(d.name)}</strong>: ${esc(d.description)}</li>`)
       .join("");
 
     const emailHtml = `
@@ -52,31 +77,31 @@ serve(async (req) => {
         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #2b0a3d 0%, #4a1259 100%); padding: 40px 40px 30px; text-align: center;">
-              <h1 style="color: #dfae62; margin: 0; font-size: 28px; font-weight: 700;">Faith & Harmony LLC</h1>
-              <p style="color: #ffffff; margin: 10px 0 0; font-size: 14px; opacity: 0.9;">Technology & Creative Services</p>
+            <td style="background: ${SAI.dark950}; padding: 40px 40px 30px; text-align: center;">
+              <h1 style="color: ${SAI.orange}; margin: 0; font-size: 28px; font-weight: 700;">${SAI.name}</h1>
+              <p style="color: ${SAI.cream}; margin: 10px 0 0; font-size: 14px; opacity: 0.9;">${SAI.tagline}</p>
             </td>
           </tr>
-          
+
           <!-- Content -->
           <tr>
             <td style="padding: 40px;">
-              <h2 style="color: #2b0a3d; margin: 0 0 20px; font-size: 24px;">Your Proposal is Ready</h2>
-              
+              <h2 style="color: ${SAI.dark800}; margin: 0 0 20px; font-size: 24px;">Your Proposal is Ready</h2>
+
               <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
-                Dear ${client.name},
+                Dear ${esc(client.name)},
               </p>
-              
+
               <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
-                Thank you for your interest in working with Faith & Harmony LLC. We're excited to present our proposal for your project.
+                Thank you for your interest in working with ${SAI.name}. We're excited to present our proposal for your project.
               </p>
-              
+
               <!-- Proposal Summary Box -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f4fc; border-radius: 8px; margin: 25px 0;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fdf6f3; border-radius: 8px; margin: 25px 0;">
                 <tr>
                   <td style="padding: 25px;">
                     <p style="margin: 0 0 8px; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Proposal</p>
-                    <h3 style="margin: 0 0 15px; color: #2b0a3d; font-size: 20px;">${proposal.title}</h3>
+                    <h3 style="margin: 0 0 15px; color: ${SAI.dark800}; font-size: 20px;">${esc(proposal.title)}</h3>
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="color: #666; font-size: 14px; padding: 5px 0;">Proposal #:</td>
@@ -84,7 +109,7 @@ serve(async (req) => {
                       </tr>
                       <tr>
                         <td style="color: #666; font-size: 14px; padding: 5px 0;">Total:</td>
-                        <td style="color: #2b0a3d; font-size: 18px; padding: 5px 0; text-align: right; font-weight: 700;">$${proposal.total.toLocaleString()}</td>
+                        <td style="color: ${SAI.orange}; font-size: 18px; padding: 5px 0; text-align: right; font-weight: 700;">$${proposal.total.toLocaleString()}</td>
                       </tr>
                       <tr>
                         <td style="color: #666; font-size: 14px; padding: 5px 0;">Valid Until:</td>
@@ -94,34 +119,34 @@ serve(async (req) => {
                   </td>
                 </tr>
               </table>
-              
+
               <!-- Deliverables -->
-              <h4 style="color: #2b0a3d; margin: 25px 0 15px; font-size: 16px;">What's Included:</h4>
+              <h4 style="color: ${SAI.dark800}; margin: 25px 0 15px; font-size: 16px;">What's Included:</h4>
               <ul style="color: #333; font-size: 14px; line-height: 1.6; padding-left: 20px; margin: 0 0 25px;">
                 ${deliverablesHtml}
               </ul>
-              
+
               <!-- CTA Button -->
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center" style="padding: 20px 0;">
-                    <a href="${proposalUrl}" style="display: inline-block; background: linear-gradient(135deg, #dfae62 0%, #c9973e 100%); color: #2b0a3d; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">View Full Proposal</a>
+                    <a href="${proposalUrl}" style="display: inline-block; background: linear-gradient(135deg, ${SAI.orange} 0%, ${SAI.orangeDark} 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">View Full Proposal</a>
                   </td>
                 </tr>
               </table>
-              
+
               <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 20px 0 0; text-align: center;">
                 Click the button above to view the complete proposal, including detailed scope of work, terms, and approval options.
               </p>
             </td>
           </tr>
-          
+
           <!-- Footer -->
           <tr>
-            <td style="background-color: #2b0a3d; padding: 30px 40px; text-align: center;">
-              <p style="color: #dfae62; margin: 0 0 10px; font-size: 14px; font-weight: 600;">Faith & Harmony LLC</p>
-              <p style="color: #ffffff; margin: 0 0 5px; font-size: 12px; opacity: 0.8;">info@faithandharmonyllc.com</p>
-              <p style="color: #ffffff; margin: 0; font-size: 12px; opacity: 0.6;">© ${new Date().getFullYear()} Faith & Harmony LLC. All rights reserved.</p>
+            <td style="background-color: ${SAI.dark950}; padding: 30px 40px; text-align: center;">
+              <p style="color: ${SAI.orange}; margin: 0 0 10px; font-size: 14px; font-weight: 600;">${SAI.name}</p>
+              <p style="color: #ffffff; margin: 0 0 5px; font-size: 12px; opacity: 0.8;">${SAI.email}</p>
+              <p style="color: #ffffff; margin: 0; font-size: 12px; opacity: 0.6;">\u00a9 ${new Date().getFullYear()} ${SAI.name}. All rights reserved.</p>
             </td>
           </tr>
         </table>
@@ -133,9 +158,9 @@ serve(async (req) => {
     `;
 
     const emailResponse = await resend.emails.send({
-      from: "Faith & Harmony <info@faithandharmonyllc.com>",
+      from: `Sentinel Aerial Inspections <${SAI.email}>`,
       to: [client.email],
-      subject: `Your Proposal: ${proposal.title} (${proposal.proposal_number})`,
+      subject: `Your Proposal: ${esc(proposal.title)} (${esc(proposal.proposal_number)})`,
       html: emailHtml,
     });
 
@@ -143,16 +168,16 @@ serve(async (req) => {
 
     // Also send notification to admin
     await resend.emails.send({
-      from: "Faith & Harmony <info@faithandharmonyllc.com>",
-      to: ["info@faithandharmonyllc.com"],
-      subject: `Proposal Sent: ${proposal.proposal_number} - ${client.name}`,
+      from: `Sentinel Aerial Inspections <${SAI.email}>`,
+      to: [SAI.email],
+      subject: `Proposal Sent: ${esc(proposal.proposal_number)} - ${esc(client.name)}`,
       html: `
         <h2>Proposal Sent</h2>
-        <p><strong>Proposal:</strong> ${proposal.proposal_number}</p>
-        <p><strong>Client:</strong> ${client.name} (${client.email})</p>
-        <p><strong>Title:</strong> ${proposal.title}</p>
+        <p><strong>Proposal:</strong> ${esc(proposal.proposal_number)}</p>
+        <p><strong>Client:</strong> ${esc(client.name)} (${esc(client.email)})</p>
+        <p><strong>Title:</strong> ${esc(proposal.title)}</p>
         <p><strong>Total:</strong> $${proposal.total.toLocaleString()}</p>
-        <p><strong>Valid Until:</strong> ${proposal.valid_until}</p>
+        <p><strong>Valid Until:</strong> ${esc(proposal.valid_until)}</p>
       `,
     });
 

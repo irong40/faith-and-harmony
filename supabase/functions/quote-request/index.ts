@@ -17,6 +17,9 @@ interface QuoteRequest {
   service_type: string;
   preferred_date: string;
   message: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
 }
 
 serve(async (req) => {
@@ -25,7 +28,7 @@ serve(async (req) => {
   }
 
   try {
-    const { name, email, phone, service_type, preferred_date, message } =
+    const { name, email, phone, service_type, preferred_date, message, utm_source, utm_medium, utm_campaign } =
       (await req.json()) as QuoteRequest;
 
     if (!name || !email || !service_type) {
@@ -54,6 +57,9 @@ serve(async (req) => {
         source: "web",
         status: "new",
         brand_slug: "sai",
+        utm_source: utm_source || null,
+        utm_medium: utm_medium || null,
+        utm_campaign: utm_campaign || null,
       })
       .select("id")
       .single();
@@ -103,6 +109,31 @@ Reply directly to this email to respond to the prospect.`;
     });
 
     console.log("Quote request email sent:", emailResponse);
+
+    // Send confirmation email to the prospect (non-fatal)
+    if (quoteRow) {
+      try {
+        const confirmUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/quote-confirmation-email`;
+        await fetch(confirmUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({
+            request_id: quoteRow.id,
+            name,
+            email,
+            job_type: service_type,
+            description: message || service_type,
+            brand_slug: "sai",
+          }),
+        });
+        console.log("Confirmation email sent to prospect:", email);
+      } catch (confirmErr) {
+        console.warn("Confirmation email failed (non-fatal):", confirmErr);
+      }
+    }
 
     return new Response(
       JSON.stringify({

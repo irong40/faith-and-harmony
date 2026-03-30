@@ -43,6 +43,8 @@ import {
   Eye,
   Send,
   Trash2,
+  Archive,
+  ArchiveRestore,
   ExternalLink,
   FileText,
   Clock,
@@ -97,6 +99,7 @@ interface Proposal {
   customer_notes: string | null;
   admin_notes: string | null;
   created_at: string;
+  archived_at: string | null;
   service_request_id: string;
   service_requests: {
     client_name: string;
@@ -139,18 +142,17 @@ export default function Proposals() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
   const [deleteProposal, setDeleteProposal] = useState<Proposal | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const { data: proposals, isLoading } = useQuery({
-    queryKey: ["proposals"],
+    queryKey: ["proposals", showArchived],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("proposals")
-        .select("*, service_requests(client_name, client_email, company_name, metadata, services(name)), invoices(status)")
-        .order("created_at", { ascending: false });
-
+      const q = supabase.from("proposals").select("*, service_requests(client_name, client_email, company_name, metadata, services(name)), invoices(status)").order("created_at", { ascending: false });
+      if (showArchived) { q.not("archived_at", "is", null); } else { q.is("archived_at", null); }
+      const { data, error } = await q;
       if (error) throw error;
       return data as unknown as Proposal[];
     },
@@ -375,18 +377,18 @@ export default function Proposals() {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("proposals").delete().eq("id", id);
+  const archiveMutation = useMutation({
+    mutationFn: async ({ id, restore }: { id: string; restore: boolean }) => {
+      const { error } = await supabase.from("proposals").update({ archived_at: restore ? null : new Date().toISOString() }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["proposals"] });
-      toast({ title: "Proposal deleted" });
+      toast({ title: showArchived ? "Proposal restored" : "Proposal archived" });
       setDeleteProposal(null);
     },
     onError: (error) => {
-      toast({ title: "Failed to delete", description: error.message, variant: "destructive" });
+      toast({ title: "Failed", description: error.message, variant: "destructive" });
     },
   });
 
@@ -476,6 +478,10 @@ export default function Proposals() {
               ))}
             </SelectContent>
           </Select>
+          <Button variant={showArchived ? "default" : "outline"} size="sm" onClick={() => setShowArchived(!showArchived)} className="gap-2">
+            <Archive className="h-4 w-4" />
+            {showArchived ? "Viewing Archived" : "Show Archived"}
+          </Button>
         </div>
 
         {/* Proposals Table */}
@@ -589,9 +595,9 @@ export default function Proposals() {
                             variant="ghost"
                             size="icon"
                             onClick={() => setDeleteProposal(proposal)}
-                            title="Delete"
+                            title={showArchived ? "Restore" : "Archive"}
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            {showArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                           </Button>
                         </div>
                       </TableCell>
@@ -876,22 +882,23 @@ export default function Proposals() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
+      {/* Archive/Restore Confirmation */}
       <AlertDialog open={!!deleteProposal} onOpenChange={() => setDeleteProposal(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Proposal?</AlertDialogTitle>
+            <AlertDialogTitle>{showArchived ? "Restore" : "Archive"} Proposal?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete proposal {deleteProposal?.proposal_number}. This action cannot be undone.
+              {showArchived
+                ? `This will restore proposal ${deleteProposal?.proposal_number} back to your active proposals.`
+                : `This will archive proposal ${deleteProposal?.proposal_number}. You can restore it later from the archived view.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => deleteProposal && deleteMutation.mutate(deleteProposal.id)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteProposal && archiveMutation.mutate({ id: deleteProposal.id, restore: showArchived })}
             >
-              Delete
+              {showArchived ? "Restore" : "Archive"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

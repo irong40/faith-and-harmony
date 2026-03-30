@@ -19,17 +19,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Search, RefreshCw, Plus, Eye, Camera, Calendar, CheckCircle, AlertTriangle, XCircle, Send, User } from "lucide-react";
 import { format } from "date-fns";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AdminNav from "./components/AdminNav";
-import DroneJobForm from "./components/DroneJobForm";
 import type { Database } from "@/integrations/supabase/types";
 
 type DroneJobStatus = Database["public"]["Enums"]["drone_job_status"];
@@ -85,12 +78,18 @@ const STATUS_CONFIG: Record<DroneJobStatus, { label: string; color: string }> = 
   scheduled: { label: "Scheduled", color: "bg-blue-500" },
   captured: { label: "Captured", color: "bg-indigo-500" },
   uploaded: { label: "Uploaded", color: "bg-purple-500" },
+  ingested: { label: "Ingested", color: "bg-purple-600" },
   complete: { label: "Complete", color: "bg-teal-500" },
+  paid: { label: "Paid", color: "bg-emerald-600" },
   processing: { label: "Processing", color: "bg-amber-500" },
   review_pending: { label: "Review Pending", color: "bg-violet-500" },
   qa: { label: "QA Review", color: "bg-orange-500" },
   revision: { label: "Revision", color: "bg-red-500" },
+  video_grading: { label: "Video Grading", color: "bg-cyan-600" },
+  video_editing: { label: "Video Editing", color: "bg-cyan-500" },
+  video_exporting: { label: "Video Exporting", color: "bg-cyan-400" },
   delivered: { label: "Delivered", color: "bg-green-500" },
+  photos_delivered: { label: "Photos Delivered", color: "bg-green-600" },
   failed: { label: "Failed", color: "bg-red-700" },
   cancelled: { label: "Cancelled", color: "bg-gray-500" },
 };
@@ -110,7 +109,6 @@ export default function DroneJobs() {
   const [deliveryFilter, setDeliveryFilter] = useState<string>(searchParams.get("delivery") || "all");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
-  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -506,22 +504,6 @@ export default function DroneJobs() {
         </div>
       </main>
 
-      {/* Create Job Dialog */}
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create New Drone Job</DialogTitle>
-          </DialogHeader>
-          <DroneJobForm
-            onSuccess={() => {
-              setIsFormOpen(false);
-              fetchJobs();
-              toast({ title: "Drone job created successfully" });
-            }}
-            onCancel={() => setIsFormOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

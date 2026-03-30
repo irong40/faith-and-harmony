@@ -26,7 +26,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import AdminNav from "./components/AdminNav";
 import PaymentsPanel from "./components/PaymentsPanel";
-import DroneJobForm from "./components/DroneJobForm";
+import { Input } from "@/components/ui/input";
+import ClientAutocomplete from "@/components/admin/ClientAutocomplete";
 import QASummaryCard from "@/components/drone/QASummaryCard";
 import QAAssetGrid from "@/components/drone/QAAssetGrid";
 import AdminAssetUpload from "@/components/drone/AdminAssetUpload";
@@ -53,6 +54,8 @@ interface DroneJob {
   site_address: string | null;
   client_id: string | null;
   processing_template_id: string | null;
+  pilot_id: string | null;
+  aircraft_id: string | null;
   pilot_notes: string | null;
   admin_notes: string | null;
   qa_score: number | null;
@@ -71,7 +74,7 @@ interface DroneJob {
   drone_packages?: { id: string; name: string; code: string; price: number; edit_budget_minutes: number; processing_profile: Json | null } | null;
   service_requests?: { id: string; project_title: string | null } | null;
   clients?: { id: string; name: string; company: string | null; email: string | null; phone: string | null } | null;
-  processing_templates?: { id: string; display_name: string | null; path_code: string | null; description: string | null } | null;
+  processing_templates?: { id: string; display_name: string | null; path_code: string | null; description: string | null; preset_name: string | null; lightroom_preset: string | null; output_format: string | null; qa_threshold: number | null } | null;
 }
 
 const STATUS_CONFIG: Record<DroneJobStatus, { label: string; color: string }> = {
@@ -79,19 +82,41 @@ const STATUS_CONFIG: Record<DroneJobStatus, { label: string; color: string }> = 
   scheduled: { label: "Scheduled", color: "bg-blue-500" },
   captured: { label: "Captured", color: "bg-indigo-500" },
   uploaded: { label: "Uploaded", color: "bg-purple-500" },
+  ingested: { label: "Ingested", color: "bg-purple-600" },
   complete: { label: "Complete", color: "bg-teal-500" },
+  paid: { label: "Paid", color: "bg-emerald-600" },
   processing: { label: "Processing", color: "bg-amber-500" },
   review_pending: { label: "Review Pending", color: "bg-violet-500" },
   qa: { label: "QA Review", color: "bg-orange-500" },
   revision: { label: "Revision", color: "bg-red-500" },
+  video_grading: { label: "Video Grading", color: "bg-cyan-600" },
+  video_editing: { label: "Video Editing", color: "bg-cyan-500" },
+  video_exporting: { label: "Video Exporting", color: "bg-cyan-400" },
   delivered: { label: "Delivered", color: "bg-green-500" },
+  photos_delivered: { label: "Photos Delivered", color: "bg-green-600" },
   failed: { label: "Failed", color: "bg-red-700" },
   cancelled: { label: "Cancelled", color: "bg-gray-500" },
 };
 
+// Statuses visible in the progress stepper (admin happy path)
+// Internal/automated statuses (ingested, paid, video_*, photos_delivered) are
+// tracked but hidden from the stepper — they advance automatically.
 const STATUS_ORDER: DroneJobStatus[] = [
-  "intake", "scheduled", "captured", "uploaded", "complete", "processing", "review_pending", "qa", "revision", "delivered"
+  "intake", "scheduled", "captured", "uploaded", "processing", "qa", "delivered"
 ];
+
+// Map internal statuses to the nearest stepper step so the indicator stays accurate
+const STATUS_TO_STEP: Partial<Record<DroneJobStatus, DroneJobStatus>> = {
+  ingested: "uploaded",
+  complete: "uploaded",
+  paid: "processing",
+  review_pending: "qa",
+  revision: "qa",
+  video_grading: "processing",
+  video_editing: "processing",
+  video_exporting: "processing",
+  photos_delivered: "delivered",
+};
 
 function ProcessingJobCard({ missionId, processingTemplateId }: {
   missionId: string;
@@ -266,6 +291,203 @@ function ProcessingJobCard({ missionId, processingTemplateId }: {
   );
 }
 
+function JobEditForm({ job, onSuccess, onCancel }: { job: DroneJob; onSuccess: () => void; onCancel: () => void }) {
+  const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
+  const [editData, setEditData] = useState({
+    client_id: job.clients?.id || job.client_id || "",
+    processing_template_id: job.processing_template_id || "",
+    site_address: job.site_address || job.property_address || "",
+    scheduled_date: job.scheduled_date || "",
+    scheduled_time: job.scheduled_time || "",
+    pilot_id: job.pilot_id || "",
+    aircraft_id: job.aircraft_id || "",
+    pilot_notes: job.pilot_notes || "",
+    admin_notes: job.admin_notes || "",
+  });
+
+  const [templates, setTemplates] = useState<{ id: string; path_code: string | null; display_name: string | null; preset_name: string }[]>([]);
+  const [pilots, setPilots] = useState<{ id: string; full_name: string | null }[]>([]);
+  const [aircraft, setAircraft] = useState<{ id: string; model: string; nickname: string | null }[]>([]);
+
+  useEffect(() => {
+    const loadOptions = async () => {
+      const [tmplRes, pilotRoleRes, aircraftRes] = await Promise.all([
+        supabase.from("processing_templates").select("id, path_code, display_name, preset_name").eq("active", true).order("path_code"),
+        supabase.from("user_roles").select("user_id").eq("role", "pilot"),
+        supabase.from("aircraft").select("id, model, nickname").eq("status", "active").order("model"),
+      ]);
+      if (tmplRes.data) setTemplates(tmplRes.data);
+      if (aircraftRes.data) setAircraft(aircraftRes.data);
+      if (pilotRoleRes.data && pilotRoleRes.data.length > 0) {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", pilotRoleRes.data.map(r => r.user_id))
+          .order("full_name");
+        if (profileData) setPilots(profileData);
+      }
+    };
+    loadOptions();
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    const { error } = await supabase
+      .from("drone_jobs")
+      .update({
+        client_id: editData.client_id || null,
+        processing_template_id: editData.processing_template_id || null,
+        site_address: editData.site_address,
+        property_address: editData.site_address,
+        scheduled_date: editData.scheduled_date || null,
+        scheduled_time: editData.scheduled_time || null,
+        pilot_id: editData.pilot_id || null,
+        aircraft_id: editData.aircraft_id || null,
+        pilot_notes: editData.pilot_notes || null,
+        admin_notes: editData.admin_notes || null,
+      })
+      .eq("id", job.id);
+
+    if (error) {
+      toast({ title: "Error updating job", description: error.message, variant: "destructive" });
+    } else {
+      onSuccess();
+    }
+    setSaving(false);
+  };
+
+  return (
+    <form onSubmit={handleSave} className="space-y-4">
+      <div className="space-y-2">
+        <Label>Client</Label>
+        <ClientAutocomplete
+          value={editData.client_id}
+          onChange={(id) => setEditData({ ...editData, client_id: id })}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Job Type</Label>
+        <Select
+          value={editData.processing_template_id}
+          onValueChange={(v) => setEditData({ ...editData, processing_template_id: v === "none" ? "" : v })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select job type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None</SelectItem>
+            {templates.map((t) => (
+              <SelectItem key={t.id} value={t.id}>
+                {t.path_code ? `${t.path_code} – ` : ""}{t.display_name || t.preset_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Site Address *</Label>
+        <Input
+          value={editData.site_address}
+          onChange={(e) => setEditData({ ...editData, site_address: e.target.value })}
+          required
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label>Scheduled Date</Label>
+          <Input
+            type="date"
+            value={editData.scheduled_date}
+            onChange={(e) => setEditData({ ...editData, scheduled_date: e.target.value })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Time</Label>
+          <Input
+            type="time"
+            value={editData.scheduled_time}
+            onChange={(e) => setEditData({ ...editData, scheduled_time: e.target.value })}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label>Pilot</Label>
+          <Select
+            value={editData.pilot_id || "unassigned"}
+            onValueChange={(v) => setEditData({ ...editData, pilot_id: v === "unassigned" ? "" : v })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
+              {pilots.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.full_name || "Unknown"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Aircraft</Label>
+          <Select
+            value={editData.aircraft_id || "unassigned"}
+            onValueChange={(v) => setEditData({ ...editData, aircraft_id: v === "unassigned" ? "" : v })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="unassigned">Unassigned</SelectItem>
+              {aircraft.map((a) => (
+                <SelectItem key={a.id} value={a.id}>
+                  {a.model}{a.nickname ? ` (${a.nickname})` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Pilot Notes</Label>
+        <Textarea
+          value={editData.pilot_notes}
+          onChange={(e) => setEditData({ ...editData, pilot_notes: e.target.value })}
+          placeholder="Access instructions, weather considerations..."
+          rows={2}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Admin Notes</Label>
+        <Textarea
+          value={editData.admin_notes}
+          onChange={(e) => setEditData({ ...editData, admin_notes: e.target.value })}
+          placeholder="Internal notes..."
+          rows={2}
+        />
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
+        <Button type="submit" disabled={saving}>
+          {saving ? "Saving..." : "Update Job"}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 export default function DroneJobDetail() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
@@ -321,7 +543,7 @@ export default function DroneJobDetail() {
     const [jobRes, assetsRes] = await Promise.all([
       supabase
         .from("drone_jobs")
-        .select("*, customers(id, name, email, phone), drone_packages(id, name, code, price, edit_budget_minutes, processing_profile), service_requests(id, project_title), clients(id, name, company, email, phone), processing_templates(id, display_name, path_code, description)")
+        .select("*, customers(id, name, email, phone), drone_packages(id, name, code, price, edit_budget_minutes, processing_profile), service_requests(id, project_title), clients(id, name, company, email, phone), processing_templates(id, display_name, path_code, description, preset_name, lightroom_preset, output_format, qa_threshold)")
         .eq("id", id)
         .single(),
       supabase
@@ -484,15 +706,33 @@ export default function DroneJobDetail() {
     if (!job) return;
     setTriggeringProcessing(true);
 
-    // Manually trigger batch-qa which will send the webhook if configured
-    const { error } = await supabase.functions.invoke("drone-batch-qa", {
+    const { data, error } = await supabase.functions.invoke("drone-batch-qa", {
       body: { job_id: job.id },
     });
 
     if (error) {
       toast({ title: "Failed to trigger processing", description: error.message, variant: "destructive" });
+    } else if (data?.status === "revision") {
+      toast({
+        title: "QA flagged issues",
+        description: `Score: ${data.qa_score ?? "N/A"}% — job moved to Revision. Review QA tab for details.`,
+        variant: "destructive",
+      });
+      fetchJob();
+    } else if (data?.status === "review_pending") {
+      toast({
+        title: "Awaiting your review",
+        description: `Score: ${data.qa_score ?? "N/A"}% — premium package needs sky replacement review before processing.`,
+      });
+      fetchJob();
+    } else if (data?.status === "qa") {
+      toast({
+        title: "QA passed — processing triggered",
+        description: `Score: ${data.qa_score ?? "N/A"}%. ${data.n8n_triggered !== false ? "Sent to n8n pipeline." : "N8N webhook not configured — process manually."}`,
+      });
+      fetchJob();
     } else {
-      toast({ title: "Processing triggered", description: "Job sent to n8n processing workflow" });
+      toast({ title: "Processing triggered" });
       fetchJob();
     }
     setTriggeringProcessing(false);
@@ -590,28 +830,49 @@ export default function DroneJobDetail() {
         <Card className="mb-6">
           <CardContent className="py-4">
             <div className="flex items-center justify-between overflow-x-auto gap-2">
-              {STATUS_ORDER.map((status, index) => {
-                const currentIndex = STATUS_ORDER.indexOf(job.status);
+              {STATUS_ORDER.map((step, index) => {
+                const displayStatus = STATUS_TO_STEP[job.status] ?? job.status;
+                const currentIndex = STATUS_ORDER.indexOf(displayStatus);
                 const isPast = index < currentIndex;
                 const isCurrent = index === currentIndex;
-                const config = STATUS_CONFIG[status];
+                const config = STATUS_CONFIG[step];
+                // Show actual status label when it differs from the stepper step
+                const actualConfig = STATUS_CONFIG[job.status];
+                const showActualLabel = isCurrent && displayStatus !== job.status;
 
                 return (
-                  <button
-                    key={status}
-                    onClick={() => handleStatusChange(status)}
-                    className={`flex-shrink-0 px-3 py-1.5 rounded text-sm font-medium transition-colors ${isCurrent
-                      ? `${config.color} text-white`
+                  <div
+                    key={step}
+                    className={`flex-shrink-0 px-3 py-1.5 rounded text-sm font-medium ${isCurrent
+                      ? `${actualConfig.color} text-white`
                       : isPast
                         ? "bg-muted text-muted-foreground"
-                        : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                        : "bg-muted/50 text-muted-foreground"
                       }`}
                   >
-                    {config.label}
-                  </button>
+                    {showActualLabel ? actualConfig.label : config.label}
+                  </div>
                 );
               })}
             </div>
+            {/* Manual override — only when needed */}
+            {(job.status === "failed" || job.status === "cancelled" || job.status === "revision") && (
+              <div className="mt-3 pt-3 border-t flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">Override:</span>
+                <Select value={job.status} onValueChange={(v) => handleStatusChange(v as DroneJobStatus)}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(STATUS_CONFIG).map(([value, config]) => (
+                      <SelectItem key={value} value={value}>
+                        {config.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -1020,8 +1281,8 @@ export default function DroneJobDetail() {
                 </Card>
               )}
 
-              {/* Processing Profile Card */}
-              {job.drone_packages?.processing_profile && (
+              {/* Processing Profile Card — prefer processing_templates, fallback to legacy drone_packages.processing_profile */}
+              {(job.processing_templates || job.drone_packages?.processing_profile) && (
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between">
                     <div>
@@ -1030,7 +1291,9 @@ export default function DroneJobDetail() {
                         Processing Profile
                       </CardTitle>
                       <CardDescription>
-                        {(job.drone_packages.processing_profile as unknown as ProcessingProfile)?.lightroom_preset || "Default preset"}
+                        {job.processing_templates
+                          ? (job.processing_templates.display_name || job.processing_templates.preset_name || "Template")
+                          : (job.drone_packages?.processing_profile as unknown as ProcessingProfile)?.lightroom_preset || "Default preset"}
                       </CardDescription>
                     </div>
                     <Button
@@ -1053,35 +1316,55 @@ export default function DroneJobDetail() {
                     </Button>
                   </CardHeader>
                   <CardContent>
-                    {(() => {
+                    {job.processing_templates ? (
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {job.processing_templates.path_code && (
+                          <div className="space-y-2 p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm font-medium text-muted-foreground">Path Code</p>
+                            <Badge variant="outline" className="font-mono">{job.processing_templates.path_code}</Badge>
+                          </div>
+                        )}
+                        <div className="space-y-2 p-4 rounded-lg bg-muted/50">
+                          <p className="text-sm font-medium text-muted-foreground">Lightroom Preset</p>
+                          <p className="font-mono text-sm">{job.processing_templates.lightroom_preset || job.processing_templates.preset_name}</p>
+                        </div>
+                        {job.processing_templates.output_format && (
+                          <div className="space-y-2 p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm font-medium text-muted-foreground">Output Format</p>
+                            <p className="text-sm">{job.processing_templates.output_format}</p>
+                          </div>
+                        )}
+                        {job.processing_templates.qa_threshold !== null && (
+                          <div className="space-y-2 p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm font-medium text-muted-foreground">QA Threshold</p>
+                            <p className="text-sm">{job.processing_templates.qa_threshold}%</p>
+                          </div>
+                        )}
+                        {job.processing_templates.description && (
+                          <div className="md:col-span-2 lg:col-span-3 space-y-2 p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm font-medium text-muted-foreground">Description</p>
+                            <p className="text-sm">{job.processing_templates.description}</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (() => {
                       const profile = job.drone_packages?.processing_profile as unknown as ProcessingProfile;
                       if (!profile) return null;
 
                       return (
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                          {/* Lightroom Settings */}
                           <div className="space-y-2 p-4 rounded-lg bg-muted/50">
                             <p className="text-sm font-medium text-muted-foreground">Lightroom Preset</p>
                             <p className="font-mono text-sm">{profile.lightroom_preset}</p>
                           </div>
-
-                          {/* Corrections */}
                           <div className="space-y-2 p-4 rounded-lg bg-muted/50">
                             <p className="text-sm font-medium text-muted-foreground">Auto Corrections</p>
                             <div className="flex flex-wrap gap-1">
-                              {profile.lens_correction && (
-                                <Badge variant="secondary" className="text-xs">Lens</Badge>
-                              )}
-                              {profile.horizon_straighten && (
-                                <Badge variant="secondary" className="text-xs">Horizon</Badge>
-                              )}
-                              {profile.sky_enhance && (
-                                <Badge variant="secondary" className="text-xs">Sky Enhance</Badge>
-                              )}
+                              {profile.lens_correction && <Badge variant="secondary" className="text-xs">Lens</Badge>}
+                              {profile.horizon_straighten && <Badge variant="secondary" className="text-xs">Horizon</Badge>}
+                              {profile.sky_enhance && <Badge variant="secondary" className="text-xs">Sky Enhance</Badge>}
                             </div>
                           </div>
-
-                          {/* Exposure Balance */}
                           {profile.exposure_balance && (
                             <div className="space-y-2 p-4 rounded-lg bg-muted/50">
                               <p className="text-sm font-medium text-muted-foreground">Exposure Balance</p>
@@ -1094,8 +1377,6 @@ export default function DroneJobDetail() {
                               </div>
                             </div>
                           )}
-
-                          {/* Output Settings */}
                           <div className="space-y-2 p-4 rounded-lg bg-muted/50">
                             <p className="text-sm font-medium text-muted-foreground">Output Formats</p>
                             <div className="flex flex-wrap gap-1">
@@ -1104,8 +1385,6 @@ export default function DroneJobDetail() {
                               ))}
                             </div>
                           </div>
-
-                          {/* Quality Settings */}
                           <div className="space-y-2 p-4 rounded-lg bg-muted/50">
                             <p className="text-sm font-medium text-muted-foreground">Quality</p>
                             <p className="text-sm">
@@ -1113,14 +1392,10 @@ export default function DroneJobDetail() {
                               {profile.resize_max_px && ` • ${profile.resize_max_px}px max`}
                             </p>
                           </div>
-
-                          {/* Vibrance */}
                           <div className="space-y-2 p-4 rounded-lg bg-muted/50">
                             <p className="text-sm font-medium text-muted-foreground">Vibrance Boost</p>
                             <p className="text-sm">+{profile.vibrance_boost || 0}</p>
                           </div>
-
-                          {/* Sky Replacement (Premium) */}
                           {profile.sky_replace && profile.sky_replace !== false && (
                             <div className="space-y-2 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
                               <p className="text-sm font-medium text-amber-600 flex items-center gap-2">
@@ -1128,14 +1403,10 @@ export default function DroneJobDetail() {
                                 Sky Replacement
                               </p>
                               <p className="text-sm">
-                                {profile.sky_replace === "manual_review"
-                                  ? "Manual review required"
-                                  : "Auto-replace enabled"}
+                                {profile.sky_replace === "manual_review" ? "Manual review required" : "Auto-replace enabled"}
                               </p>
                             </div>
                           )}
-
-                          {/* Labeling (Construction) */}
                           {profile.labeling?.enabled && (
                             <div className="space-y-2 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
                               <p className="text-sm font-medium text-blue-600 flex items-center gap-2">
@@ -1149,16 +1420,10 @@ export default function DroneJobDetail() {
                               </div>
                             </div>
                           )}
-
-                          {/* Review Gate (Premium) */}
                           {profile.review_gate && (
                             <div className="md:col-span-2 lg:col-span-3 p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                              <p className="text-sm font-medium text-purple-600">
-                                Premium Review Gate Active
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                This job requires manual approval before delivery
-                              </p>
+                              <p className="text-sm font-medium text-purple-600">Premium Review Gate Active</p>
+                              <p className="text-sm text-muted-foreground">This job requires manual approval before delivery</p>
                             </div>
                           )}
                         </div>
@@ -1378,21 +1643,8 @@ export default function DroneJobDetail() {
           <DialogHeader>
             <DialogTitle>Edit Job {job.job_number}</DialogTitle>
           </DialogHeader>
-          <DroneJobForm
-            initialData={{
-              id: job.id,
-              customer_id: job.customers?.id,
-              package_id: job.drone_packages?.id,
-              property_address: job.property_address,
-              property_city: job.property_city || "",
-              property_state: job.property_state || "",
-              property_zip: job.property_zip || "",
-              property_type: job.property_type,
-              scheduled_date: job.scheduled_date || "",
-              scheduled_time: job.scheduled_time || "",
-              pilot_notes: job.pilot_notes || "",
-              admin_notes: job.admin_notes || "",
-            }}
+          <JobEditForm
+            job={job}
             onSuccess={() => {
               setIsEditOpen(false);
               fetchJob();

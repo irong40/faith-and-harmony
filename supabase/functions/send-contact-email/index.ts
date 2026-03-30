@@ -19,6 +19,16 @@ const BRAND = {
   website: "faithandharmonyllc.com",
 };
 
+/** Escape HTML special characters to prevent XSS in email templates. */
+function esc(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 interface ContactRequest {
   name: string;
   email: string;
@@ -43,7 +53,7 @@ const handler = async (req: Request): Promise<Response> => {
     const adminEmailResponse = await resend.emails.send({
       from: "Faith & Harmony <info@faithandharmonyllc.com>",
       to: [BRAND.email],
-      subject: `New Contact Form: ${subject}`,
+      subject: `New Contact Form: ${esc(subject)}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -63,25 +73,25 @@ const handler = async (req: Request): Promise<Response> => {
                 <table style="border-collapse: collapse; width: 100%;">
                   <tr>
                     <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; color: ${BRAND.purple};">Name:</td>
-                    <td style="padding: 12px; border-bottom: 1px solid #eee;">${name}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee;">${esc(name)}</td>
                   </tr>
                   <tr>
                     <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; color: ${BRAND.purple};">Email:</td>
-                    <td style="padding: 12px; border-bottom: 1px solid #eee;"><a href="mailto:${email}" style="color: ${BRAND.purple};">${email}</a></td>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee;"><a href="mailto:${esc(email)}" style="color: ${BRAND.purple};">${esc(email)}</a></td>
                   </tr>
                   ${phone ? `
                   <tr>
                     <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; color: ${BRAND.purple};">Phone:</td>
-                    <td style="padding: 12px; border-bottom: 1px solid #eee;">${phone}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee;">${esc(phone)}</td>
                   </tr>
                   ` : ''}
                   <tr>
                     <td style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; color: ${BRAND.purple};">Subject:</td>
-                    <td style="padding: 12px; border-bottom: 1px solid #eee;">${subject}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee;">${esc(subject)}</td>
                   </tr>
                 </table>
                 <h3 style="margin-top: 24px; color: ${BRAND.purple};">Message:</h3>
-                <div style="background: ${BRAND.cream}; padding: 20px; border-radius: 8px; border-left: 4px solid ${BRAND.gold}; white-space: pre-wrap; color: #333;">${message}</div>
+                <div style="background: ${BRAND.cream}; padding: 20px; border-radius: 8px; border-left: 4px solid ${BRAND.gold}; white-space: pre-wrap; color: #333;">${esc(message)}</div>
               </td>
             </tr>
           </table>
@@ -117,13 +127,13 @@ const handler = async (req: Request): Promise<Response> => {
             <!-- Content -->
             <tr>
               <td style="padding: 32px;">
-                <h2 style="color: ${BRAND.purple}; margin: 0 0 20px 0;">Thank you for reaching out, ${name}!</h2>
+                <h2 style="color: ${BRAND.purple}; margin: 0 0 20px 0;">Thank you for reaching out, ${esc(name)}!</h2>
                 <p style="color: #333; line-height: 1.6;">We've received your message and will get back to you as soon as possible.</p>
                 
                 <div style="background: ${BRAND.cream}; padding: 20px; border-radius: 8px; margin: 24px 0; border-left: 4px solid ${BRAND.gold};">
                   <h3 style="margin: 0 0 12px 0; color: ${BRAND.purple};">Your message:</h3>
-                  <p style="color: #666; margin: 0 0 8px 0;"><strong>Subject:</strong> ${subject}</p>
-                  <p style="white-space: pre-wrap; color: #333; margin: 0;">${message}</p>
+                  <p style="color: #666; margin: 0 0 8px 0;"><strong>Subject:</strong> ${esc(subject)}</p>
+                  <p style="white-space: pre-wrap; color: #333; margin: 0;">${esc(message)}</p>
                 </div>
                 
                 <p style="color: #333; line-height: 1.6;">

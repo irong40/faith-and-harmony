@@ -8,6 +8,19 @@ The operations platform for Sentinel Aerial Inspections (Faith & Harmony LLC), a
 
 A prospective client can find Sentinel through search or phone, get qualified, receive a quote, and book a drone job without Iron personally fielding the call or manually creating the request.
 
+## Current Milestone: v2.1 Leads Admin Upgrade
+
+**Goal:** Transform the read-only leads table into an actionable lead management tool with one-click conversion, multi-source intake, follow-up tracking, and performance stats.
+
+**Target features:**
+- One-click convert lead to client + quote request
+- Lead detail drawer with call transcript, recording, notes, timeline
+- Notes and follow-up tracking with tags and dates
+- Manual lead entry for referrals, job sites, networking
+- Multi-source support (voice bot, web form, manual, email, social)
+- Inline status editing
+- Stats dashboard (conversion rate, leads by source, response time, revenue)
+
 ## Current State
 
 **v2.0 shipped 2026-03-06.** Platform is production ready.
@@ -40,7 +53,13 @@ A prospective client can find Sentinel through search or phone, get qualified, r
 
 ### Active
 
-(None. Ready for next milestone planning.)
+- [ ] One-click lead to client conversion with auto-created quote request
+- [ ] Lead detail drawer showing call transcript, recording, notes, and activity timeline
+- [ ] Notes and follow-up system with reason tags and follow-up dates
+- [ ] Manual lead entry form for non-Vapi sources
+- [ ] Multi-source channel support (voice_bot, web_form, manual, email_outreach, social)
+- [ ] Inline qualification status editing from table view
+- [ ] Stats cards: conversion rate, leads by source, avg response time, revenue from leads
 
 ### Out of Scope
 
@@ -113,4 +132,4 @@ Client accepts proposal. 50% deposit via Square. Mission scheduled and completed
 | Domain-aware routing in App.tsx | Single codebase serves both domains | Good |
 
 ---
-*Last updated: 2026-03-06 after v2.0 milestone*
+*Last updated: 2026-03-10 after v2.1 milestone start*

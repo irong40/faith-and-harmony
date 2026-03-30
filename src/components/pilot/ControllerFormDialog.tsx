@@ -114,10 +114,10 @@ export default function ControllerFormDialog({ open, onOpenChange, controller }:
           </div>
           <div>
             <Label className="text-xs">Paired Aircraft</Label>
-            <Select value={form.paired_aircraft_id} onValueChange={v => setForm(f => ({ ...f, paired_aircraft_id: v }))}>
+            <Select value={form.paired_aircraft_id || "none"} onValueChange={v => setForm(f => ({ ...f, paired_aircraft_id: v === "none" ? "" : v }))}>
               <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 {aircraft?.map(a => (
                   <SelectItem key={a.id} value={a.id}>{a.nickname || a.model}</SelectItem>
                 ))}

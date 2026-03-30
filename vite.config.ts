@@ -45,7 +45,8 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        globPatterns: ["**/*.{js,css,ico,png,svg,woff2}"],
+        navigateFallback: null, // Let NetworkFirst handle navigation
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB — aerial photos exceed default 2 MiB
         runtimeCaching: [
           {
