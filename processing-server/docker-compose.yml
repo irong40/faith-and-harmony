@@ -1,0 +1,28 @@
+# Sentinel Aerial Inspections processing stack
+# NodeODM on port 3000 (photogrammetry API used by processing server)
+# WebODM UI on port 8080 (optional admin dashboard, installed separately)
+#
+# Usage:
+#   docker compose up -d              Start NodeODM
+#   docker compose logs -f nodeodm    Watch logs
+#   curl http://localhost:3000/info    Health check
+
+services:
+  nodeodm:
+    image: opendronemap/nodeodm:gpu
+    container_name: sentinel-nodeodm
+    ports:
+      - "3000:3000"
+    volumes:
+      - odm-data:/var/www/data
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  odm-data:

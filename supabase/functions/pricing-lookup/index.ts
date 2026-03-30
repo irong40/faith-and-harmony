@@ -6,6 +6,7 @@
 //
 // Endpoints:
 //   GET ?service_type=re_basic  -> Single package
+//   GET ?mode=floors            -> Floor prices only (for sentinel-core sync)
 //   GET (no params)             -> All packages + add-ons
 //   OPTIONS                     -> CORS preflight
 
@@ -18,36 +19,50 @@ const corsHeaders: Record<string, string> = {
 };
 
 // Canonical prices from CLAUDE.md. Do not modify without updating CLAUDE.md.
-export const PACKAGES: Record<string, { name: string; price: number; unit?: string; deliverables: string[] }> = {
+// floor_price = approximate break-even cost (update after running mission costing calculator).
+// pricing_model: "starting_at" — listed prices are minimums, final price depends on mission scope.
+export const PACKAGES: Record<string, { name: string; price: number; floor_price: number; unit?: string; deliverables: string[]; pricing_model: string }> = {
   re_basic: {
     name: 'Listing Lite',
     price: 225,
+    floor_price: 180,
+    pricing_model: 'starting_at',
     deliverables: ['10 photos', 'Sky replacement', 'Next day delivery'],
   },
   re_standard: {
     name: 'Listing Pro',
     price: 450,
+    floor_price: 360,
+    pricing_model: 'starting_at',
     deliverables: ['25 photos', '60 second reel', '2D boundary overlay', '48 hour turnaround'],
   },
   re_premium: {
     name: 'Luxury Listing',
     price: 750,
+    floor_price: 600,
+    pricing_model: 'starting_at',
     deliverables: ['40+ photos', '2 minute cinematic video', 'Twilight shoot', '24 hour priority'],
   },
   construction: {
     name: 'Construction Progress',
     price: 450,
+    floor_price: 360,
     unit: '/visit',
+    pricing_model: 'starting_at',
     deliverables: ['Orthomosaic', 'Site overview', 'Date stamped archive'],
   },
   commercial: {
     name: 'Commercial Marketing',
     price: 850,
+    floor_price: 680,
+    pricing_model: 'starting_at',
     deliverables: ['4K video', '3D model', 'Raw footage', 'Perpetual license'],
   },
   inspection: {
     name: 'Inspection Data',
     price: 1200,
+    floor_price: 960,
+    pricing_model: 'starting_at',
     deliverables: ['Inspection grid photography', 'Annotated report', 'Exportable data'],
   },
 };
@@ -91,7 +106,17 @@ export function handleRequest(req: Request): Response {
   }
 
   const url = new URL(req.url);
+  const mode = url.searchParams.get('mode');
   const serviceType = url.searchParams.get('service_type');
+
+  // Floor prices only (for sentinel-core sync)
+  if (mode === 'floors') {
+    const floors: Record<string, number> = {};
+    for (const [code, pkg] of Object.entries(PACKAGES)) {
+      floors[code] = pkg.floor_price;
+    }
+    return json({ pricing_model: 'starting_at', floors });
+  }
 
   // No filter: return all packages and add-ons
   if (!serviceType) {

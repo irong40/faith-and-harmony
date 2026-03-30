@@ -1,40 +1,82 @@
 /**
- * Sentinel Aerial Inspections - Brand Constants
+ * Brand Constants for both entities
  *
- * Centralized branding for consistent use across the application,
- * PDFs, emails, and all customer-facing documents.
+ * SAI (Sentinel Aerial Inspections) = drone services brand
+ * F&H (Faith & Harmony LLC) = parent company / general services
+ *
+ * Use SAI_BRAND for all drone, aerial, inspection, and proposal work.
+ * Use FH_BRAND for parent company pages and general business.
  */
 
-export const BRAND = {
-  // Company Information
+export const SAI_BRAND = {
   name: "Sentinel Aerial Inspections",
   dba: "Sentinel Aerial Inspections",
-  app: "Trestle",
-  tagline: "Veteran-owned aerial inspection services in Hampton Roads, Virginia.",
-  email: "info@faithandharmonyllc.com",
+  tagline: "Professional Drone Services",
+  email: "info@sentinelaerialinspections.com",
   emailPayment: "faithandharmonyllc@gmail.com",
   phone: "(757) 609-3268",
   website: "sentinelaerialinspections.com",
   location: "Hampton Roads, Virginia",
+  app: "Trestle",
 
-  // Payment Options
   payments: {
     paypal: "faithandharmonyllc@gmail.com",
     cashApp: "$FaithandHarmony",
   },
 
-  // Brand Colors - Hex format for edge functions/emails/PDFs
   colors: {
-    purple: "#2b0a3d",      // Primary dark purple
-    purpleLight: "#753679", // Lighter purple accent
-    gold: "#dfae62",        // Primary gold accent
-    cream: "#eae3d9",       // Background cream
-    slate: "#5b657a",       // Muted slate
+    primary: "#e85d26",       // Orange 500
+    primaryDark: "#c44a1a",   // Orange 600
+    primaryLight: "#f07040",  // Orange 400
+    accent: "#f4976c",        // Orange 300
+    bg: "#0a0a0a",            // Dark 950
+    bgCard: "#0f0f0f",        // Dark 900
+    bgElevated: "#1a1a1a",    // Dark 800
+    border: "#252525",        // Dark 700
+    muted: "#333333",         // Dark 600
+    textMuted: "#666666",     // Dark 400
+    textSecondary: "#999999", // Dark 300
+    cream: "#f0ebe4",         // Cream 100
+    creamDim: "#d9d0c4",      // Cream 200
+    white: "#ffffff",
+    black: "#0a0a0a",
+  },
+
+  copyright: `\u00a9 ${new Date().getFullYear()} Sentinel Aerial Inspections. All rights reserved.`,
+} as const;
+
+export const FH_BRAND = {
+  name: "Faith & Harmony LLC",
+  tagline: "Veteran-Owned Professional Services",
+  email: "info@faithandharmonyllc.com",
+  emailPayment: "faithandharmonyllc@gmail.com",
+  phone: "(757) 843-8772",
+  website: "faithandharmonyllc.com",
+  location: "Hampton Roads, Virginia",
+
+  payments: {
+    paypal: "faithandharmonyllc@gmail.com",
+    cashApp: "$FaithandHarmony",
+  },
+
+  colors: {
+    primary: "#dfae62",       // Gold
+    primaryDark: "#2b0a3d",   // Purple
+    primaryLight: "#e8c88a",  // Gold light
+    accent: "#753679",        // Purple light
+    bg: "#110820",            // Dark purple bg
+    bgCard: "#1a0628",        // Purple dark
+    bgElevated: "#3d1555",    // Purple light
+    border: "#3a2050",        // Purple border
+    muted: "#64607a",         // Slate
+    textMuted: "#b5a99a",     // Cream dim
+    textSecondary: "#64607a", // Slate
+    cream: "#e8ddd0",         // Cream
+    creamDim: "#b5a99a",      // Cream dim
     white: "#ffffff",
     black: "#1a1a1a",
   },
 
-  // HSL values for CSS (matches index.css)
   hsl: {
     purple: "280 73% 14%",
     purpleLight: "298 37% 34%",
@@ -43,20 +85,23 @@ export const BRAND = {
     slate: "220 15% 42%",
   },
 
-  // Copyright
-  copyright: `\u00a9 ${new Date().getFullYear()} Sentinel Aerial Inspections. All rights reserved.`,
+  copyright: `\u00a9 ${new Date().getFullYear()} Faith & Harmony LLC. All rights reserved.`,
 } as const;
 
-// Edge function / Email specific brand object
+// Default BRAND points to SAI (most customer-facing documents are SAI)
+export const BRAND = SAI_BRAND;
+
+// Edge function / Email brand object (SAI by default)
 export const EMAIL_BRAND = {
-  purple: BRAND.colors.purple,
-  gold: BRAND.colors.gold,
-  cream: BRAND.colors.cream,
-  companyName: BRAND.dba,
-  tagline: BRAND.tagline,
-  email: BRAND.email,
-  phone: BRAND.phone,
-  website: BRAND.website,
+  primary: SAI_BRAND.colors.primary,
+  primaryDark: SAI_BRAND.colors.primaryDark,
+  bg: SAI_BRAND.colors.bg,
+  cream: SAI_BRAND.colors.cream,
+  companyName: SAI_BRAND.name,
+  tagline: SAI_BRAND.tagline,
+  email: SAI_BRAND.email,
+  phone: SAI_BRAND.phone,
+  website: SAI_BRAND.website,
 } as const;
 
 export default BRAND;

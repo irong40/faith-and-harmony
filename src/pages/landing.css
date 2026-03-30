@@ -19,7 +19,7 @@
 }
 
 .fh-landing {
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
   color: var(--fh-cream);
   background: var(--fh-bg-dark);
   min-height: 100vh;
@@ -107,10 +107,7 @@
   background: var(--fh-bg-dark);
 }
 .fh-hero-glow {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center, var(--fh-purple-light) 0%, transparent 70%);
-  opacity: 0.3;
+  display: none;
 }
 .fh-hero-content {
   position: relative;
@@ -151,8 +148,10 @@
   gap: 14px;
 }
 .fh-divider {
-  height: 3px;
-  background: linear-gradient(to right, transparent, var(--fh-gold), transparent);
+  height: 2px;
+  max-width: 200px;
+  margin: 0 auto;
+  background: var(--fh-gold);
 }
 
 /* ─── Buttons ─── */
@@ -175,7 +174,6 @@
 }
 .fh-btn-primary:hover {
   opacity: 0.9;
-  transform: translateY(-1px);
 }
 .fh-btn-outline {
   border: 1px solid var(--fh-border);
@@ -232,16 +230,13 @@
   font-weight: 800;
   color: var(--fh-cream);
   text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 2px;
   margin: 0;
 }
 .fh-title-bar {
-  height: 3px;
+  height: 2px;
   width: 80px;
-  background: linear-gradient(to right, var(--fh-gold), var(--fh-gold-light));
+  background: var(--fh-gold);
   margin: 14px auto 0;
-  border-radius: 2px;
 }
 .fh-section-subtitle {
   text-align: center;
@@ -262,15 +257,14 @@
 .fh-card {
   background: var(--fh-purple-dark);
   border: 1px solid var(--fh-border);
-  border-radius: 14px;
+  border-radius: 10px;
   padding: 32px;
-  transition: border-color 0.2s, transform 0.15s, box-shadow 0.15s;
+  transition: border-color 0.2s;
   position: relative;
 }
 .fh-card:hover {
   border-color: rgba(223, 174, 98, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 .fh-card-featured {
   border-color: rgba(223, 174, 98, 0.3);
@@ -291,8 +285,6 @@
   font-size: 22px;
   font-weight: 700;
   color: var(--fh-gold);
-  text-transform: uppercase;
-  letter-spacing: 1px;
   margin: 0 0 12px;
 }
 .fh-card-desc {
@@ -338,7 +330,7 @@
 .fh-stat {
   background: var(--fh-purple-dark);
   border: 1px solid var(--fh-border);
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 24px;
   text-align: center;
 }
@@ -350,8 +342,6 @@
 .fh-stat-label {
   font-size: 12px;
   color: var(--fh-cream-dim);
-  text-transform: uppercase;
-  letter-spacing: 1px;
   margin-top: 4px;
 }
 
@@ -367,8 +357,6 @@
   font-size: 18px;
   font-weight: 600;
   color: var(--fh-cream);
-  text-transform: uppercase;
-  letter-spacing: 1px;
 }
 
 /* ─── Quote Form ─── */
@@ -393,8 +381,6 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--fh-cream-dim);
-  text-transform: uppercase;
-  letter-spacing: 1px;
 }
 .fh-quote-field input,
 .fh-quote-field select,
@@ -446,13 +432,12 @@
   padding: 40px;
   background: var(--fh-purple-dark);
   border: 1px solid var(--fh-gold);
-  border-radius: 14px;
+  border-radius: 10px;
 }
 .fh-quote-confirmation h3 {
   font-size: 24px;
   font-weight: 700;
   color: var(--fh-gold);
-  letter-spacing: 2px;
   margin: 0 0 12px;
 }
 .fh-quote-confirmation p {

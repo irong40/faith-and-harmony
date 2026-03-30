@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { Json } from "@/integrations/supabase/types";
+import { SAI_BRAND } from "@/lib/brand";
 
 interface Deliverable {
   name: string;
@@ -322,12 +323,14 @@ export default function CustomerProposal() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-[#2b0a3d] text-white py-8">
+      <header style={{ backgroundColor: SAI_BRAND.colors.bg }} className="text-white py-8">
         <div className="container max-w-4xl mx-auto px-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-[#dfae62]">
-            Sentinel Aerial Inspections
+          <h1 className="text-2xl md:text-3xl font-bold" style={{ color: SAI_BRAND.colors.primary }}>
+            {SAI_BRAND.name}
           </h1>
-          <p className="text-white/80 text-sm mt-1">Aerial Inspection Services</p>
+          <p style={{ color: SAI_BRAND.colors.cream }} className="text-sm mt-1 opacity-80">
+            {SAI_BRAND.tagline}
+          </p>
         </div>
       </header>
 
@@ -524,12 +527,12 @@ export default function CustomerProposal() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#2b0a3d] text-white py-6 mt-12">
+      <footer style={{ backgroundColor: SAI_BRAND.colors.bg }} className="text-white py-6 mt-12">
         <div className="container max-w-4xl mx-auto px-4 text-center">
-          <p className="text-[#dfae62] font-semibold">Sentinel Aerial Inspections</p>
-          <p className="text-sm text-white/60 mt-1">info@faithandharmonyllc.com</p>
-          <p className="text-xs text-white/40 mt-2">
-            &copy; {new Date().getFullYear()} Faith &amp; Harmony LLC DBA Sentinel Aerial Inspections. All rights reserved.
+          <p style={{ color: SAI_BRAND.colors.primary }} className="font-semibold">{SAI_BRAND.name}</p>
+          <p className="text-sm mt-1" style={{ color: SAI_BRAND.colors.creamDim }}>{SAI_BRAND.email}</p>
+          <p className="text-xs mt-2" style={{ color: SAI_BRAND.colors.textMuted }}>
+            {SAI_BRAND.copyright}
           </p>
         </div>
       </footer>

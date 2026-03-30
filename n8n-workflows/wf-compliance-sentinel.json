@@ -1,0 +1,1595 @@
+{
+  "name": "Compliance Sentinel",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "cs-0001-0001-0001-000000000001",
+      "name": "[TRIGGER] Weekly Monday 8AM ET",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 2-7"
+            }
+          ]
+        }
+      },
+      "id": "cs-0002-0002-0002-000000000002",
+      "name": "[TRIGGER] Daily Tue-Sun 8AM ET",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 800]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/compliance_obligations?status=in.(pending,in_progress,overdue)&select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0003-0003-0003-000000000003",
+      "name": "[SCAN] Query All Obligations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/compliance_obligations?status=in.(pending,in_progress,overdue)&select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0004-0004-0004-000000000004",
+      "name": "[SCAN] Query Urgent Obligations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 800]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calculate days until due and assign threshold bucket for each obligation\nconst today = new Date();\ntoday.setHours(0, 0, 0, 0);\n\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const ob = item.json;\n  const dueDate = new Date(ob.due_date);\n  dueDate.setHours(0, 0, 0, 0);\n  const daysUntilDue = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));\n\n  let threshold = 'no_action';\n  if (ob.status === 'overdue' || daysUntilDue < 0) threshold = 'overdue';\n  else if (daysUntilDue === 0) threshold = 'due_today';\n  else if (daysUntilDue <= 14) threshold = '14_day';\n  else if (daysUntilDue <= 30) threshold = '30_day';\n\n  // Calculate current quarter for logging\n  const month = today.getMonth();\n  const quarter = 'Q' + (Math.floor(month / 3) + 1);\n\n  // Build email HTML based on threshold\n  const urgencyMap = {\n    '30_day': { color: '#3b82f6', label: 'Informational', prefix: 'Upcoming' },\n    '14_day': { color: '#f59e0b', label: 'ESCALATION', prefix: 'Action Needed Soon' },\n    'due_today': { color: '#ef4444', label: 'ACTION REQUIRED', prefix: 'Due Today' },\n    'overdue': { color: '#dc2626', label: 'OVERDUE', prefix: 'Past Due' }\n  };\n\n  let email_html = '';\n  let email_subject = '';\n  const style = urgencyMap[threshold];\n  if (style) {\n    email_subject = `Compliance ${style.label}: ${ob.obligation_name} due ${ob.due_date}`;\n    email_html = `<!DOCTYPE html><html><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\"><div style=\"border-left: 4px solid ${style.color}; padding: 16px; margin: 16px 0;\"><h2 style=\"color: ${style.color}; margin: 0 0 8px;\">${style.prefix}: ${ob.obligation_name}</h2><p><strong>Status:</strong> ${style.label}</p><p><strong>Due Date:</strong> ${ob.due_date}</p><p><strong>Days Until Due:</strong> ${daysUntilDue}</p><p><strong>Description:</strong> ${ob.description || 'N/A'}</p><p><strong>Owner:</strong> ${ob.owner || 'N/A'}</p><p><strong>Category:</strong> ${ob.category || 'N/A'}</p>${ob.notes ? '<p><strong>Notes:</strong> ' + ob.notes + '</p>' : ''}</div><p style=\"color: #666; font-size: 12px;\">Compliance Sentinel | Faith & Harmony LLC | Automated Governance System</p></body></html>`;\n  }\n\n  results.push({\n    json: {\n      ...ob,\n      days_until_due: daysUntilDue,\n      threshold,\n      needs_sms: threshold === '14_day' || threshold === 'overdue',\n      needs_email: threshold !== 'no_action',\n      email_html,\n      email_subject,\n      current_quarter: quarter,\n      fiscal_year: today.getFullYear(),\n      sms_message: (threshold === '14_day' || threshold === 'overdue')\n        ? `COMPLIANCE ${style ? style.label : 'ALERT'}: ${ob.obligation_name} due in ${daysUntilDue} days. Action needed. Check email for details.`\n        : ''\n    }\n  });\n}\n\nreturn results;"
+      },
+      "id": "cs-0005-0005-0005-000000000005",
+      "name": "[LOGIC] Calculate Days Until Due",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter for 14-day and overdue obligations only (daily path)\nconst today = new Date();\ntoday.setHours(0, 0, 0, 0);\n\nconst items = $input.all();\nconst results = [];\n\nfor (const item of items) {\n  const ob = item.json;\n  const dueDate = new Date(ob.due_date);\n  dueDate.setHours(0, 0, 0, 0);\n  const daysUntilDue = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));\n\n  let threshold = 'no_action';\n  if (ob.status === 'overdue' || daysUntilDue < 0) threshold = 'overdue';\n  else if (daysUntilDue === 0) threshold = 'due_today';\n  else if (daysUntilDue <= 14) threshold = '14_day';\n\n  // Only pass through obligations due within 14 days or overdue\n  if (threshold === 'no_action') continue;\n\n  const month = today.getMonth();\n  const quarter = 'Q' + (Math.floor(month / 3) + 1);\n\n  const urgencyMap = {\n    '14_day': { color: '#f59e0b', label: 'ESCALATION', prefix: 'Action Needed Soon' },\n    'due_today': { color: '#ef4444', label: 'ACTION REQUIRED', prefix: 'Due Today' },\n    'overdue': { color: '#dc2626', label: 'OVERDUE', prefix: 'Past Due' }\n  };\n\n  const style = urgencyMap[threshold];\n  const email_subject = `Compliance ${style.label}: ${ob.obligation_name} due ${ob.due_date}`;\n  const email_html = `<!DOCTYPE html><html><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\"><div style=\"border-left: 4px solid ${style.color}; padding: 16px; margin: 16px 0;\"><h2 style=\"color: ${style.color}; margin: 0 0 8px;\">${style.prefix}: ${ob.obligation_name}</h2><p><strong>Status:</strong> ${style.label}</p><p><strong>Due Date:</strong> ${ob.due_date}</p><p><strong>Days Until Due:</strong> ${daysUntilDue}</p><p><strong>Description:</strong> ${ob.description || 'N/A'}</p><p><strong>Owner:</strong> ${ob.owner || 'N/A'}</p><p><strong>Category:</strong> ${ob.category || 'N/A'}</p>${ob.notes ? '<p><strong>Notes:</strong> ' + ob.notes + '</p>' : ''}</div><p style=\"color: #666; font-size: 12px;\">Compliance Sentinel | Faith & Harmony LLC | Automated Governance System</p></body></html>`;\n\n  results.push({\n    json: {\n      ...ob,\n      days_until_due: daysUntilDue,\n      threshold,\n      needs_sms: threshold === '14_day' || threshold === 'overdue',\n      needs_email: true,\n      email_html,\n      email_subject,\n      current_quarter: quarter,\n      fiscal_year: today.getFullYear(),\n      sms_message: (threshold === '14_day' || threshold === 'overdue')\n        ? `COMPLIANCE ${style.label}: ${ob.obligation_name} due in ${daysUntilDue} days. Action needed. Check email for details.`\n        : ''\n    }\n  });\n}\n\nreturn results.length > 0 ? results : [{ json: { _empty: true, threshold: 'no_action' } }];"
+      },
+      "id": "cs-0006-0006-0006-000000000006",
+      "name": "[LOGIC] Filter 14-Day and Overdue Only",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 800]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check for recently completed recurring obligations that need auto-renewal\n// Only runs on weekly Monday path\nconst items = $input.all();\nconst results = [];\nconst renewals = [];\n\nconst today = new Date();\nconst sevenDaysAgo = new Date(today);\nsevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);\n\nfor (const item of items) {\n  const ob = item.json;\n  // Pass through all items for downstream processing\n  results.push(item);\n\n  // Check if this obligation was recently completed and is recurring\n  if (ob.status === 'complete' && ob.completed_at) {\n    const completedAt = new Date(ob.completed_at);\n    const recurrence = ob.recurrence;\n\n    // Skip non-recurring obligations\n    if (recurrence === 'one_time' || recurrence === 'as_needed') continue;\n\n    // Only process completions within the last 7 days\n    if (completedAt < sevenDaysAgo) continue;\n\n    // Calculate next due date\n    let nextDueDate = new Date(completedAt);\n    switch (recurrence) {\n      case 'monthly':\n        nextDueDate.setMonth(nextDueDate.getMonth() + 1);\n        break;\n      case 'quarterly':\n        nextDueDate.setMonth(nextDueDate.getMonth() + 3);\n        break;\n      case 'annual':\n        nextDueDate.setFullYear(nextDueDate.getFullYear() + 1);\n        break;\n      case 'biennial':\n        nextDueDate.setFullYear(nextDueDate.getFullYear() + 2);\n        break;\n      default:\n        continue;\n    }\n\n    renewals.push({\n      json: {\n        obligation_name: ob.obligation_name,\n        category: ob.category,\n        description: ob.description,\n        due_date: nextDueDate.toISOString().split('T')[0],\n        recurrence: ob.recurrence,\n        status: 'pending',\n        owner: ob.owner,\n        source_document: ob.source_document,\n        notes: `Auto-renewed from completed obligation (completed ${completedAt.toISOString().split('T')[0]})`,\n        _is_renewal: true,\n        _parent_obligation_name: ob.obligation_name\n      }\n    });\n  }\n}\n\n// Output 0: all obligations for threshold routing\n// Output 1: renewals to create (may be empty)\n// n8n Code node can only return one output, so we tag renewals\nreturn results.concat(renewals);"
+      },
+      "id": "cs-0007-0007-0007-000000000007",
+      "name": "[LOGIC] Check Completed For Renewal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.threshold }}",
+                    "rightValue": "30_day",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "30_day"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.threshold }}",
+                    "rightValue": "14_day",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "14_day"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.threshold }}",
+                    "rightValue": "due_today",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "due_today"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.threshold }}",
+                    "rightValue": "overdue",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "overdue"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json._is_renewal }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "renewal"
+            }
+          ],
+          "fallbackOutput": {
+            "type": "extra",
+            "extraOutputKey": "no_action"
+          }
+        },
+        "options": {
+          "allMatchingOutputs": false
+        }
+      },
+      "id": "cs-0008-0008-0008-000000000008",
+      "name": "[ROUTE] Split By Threshold",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.threshold }}",
+                    "rightValue": "14_day",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "14_day"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.threshold }}",
+                    "rightValue": "due_today",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "due_today"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.threshold }}",
+                    "rightValue": "overdue",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "overdue"
+            }
+          ],
+          "fallbackOutput": {
+            "type": "extra",
+            "extraOutputKey": "no_action"
+          }
+        },
+        "options": {
+          "allMatchingOutputs": false
+        }
+      },
+      "id": "cs-0009-0009-0009-000000000009",
+      "name": "[ROUTE] Daily Split By Threshold",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [880, 800]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.RESEND_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: 'Faith & Harmony <info@faithandharmonyllc.com>', to: [$env.FOUNDER_EMAIL], subject: $json.email_subject, html: $json.email_html }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0010-0010-0010-000000000010",
+      "name": "[NOTIFY] 30d Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 100],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.RESEND_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: 'Faith & Harmony <info@faithandharmonyllc.com>', to: [$env.FOUNDER_EMAIL], subject: $json.email_subject, html: $json.email_html }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0011-0011-0011-000000000011",
+      "name": "[NOTIFY] 14d Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 250],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/message/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.VAPI_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ type: 'sms', to: $env.FOUNDER_PHONE, message: $json.sms_message }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0012-0012-0012-000000000012",
+      "name": "[NOTIFY] 14d SMS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 250],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.RESEND_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: 'Faith & Harmony <info@faithandharmonyllc.com>', to: [$env.FOUNDER_EMAIL], subject: $json.email_subject, html: $json.email_html }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0013-0013-0013-000000000013",
+      "name": "[NOTIFY] Due Today Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 400],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/compliance_obligations?id=eq.{{ $json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'overdue', updated_at: new Date().toISOString() }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0014-0014-0014-000000000014",
+      "name": "[MARK] Set Overdue Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 400],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.RESEND_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: 'Faith & Harmony <info@faithandharmonyllc.com>', to: [$env.FOUNDER_EMAIL], subject: $json.email_subject, html: $json.email_html }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0015-0015-0015-000000000015",
+      "name": "[NOTIFY] Overdue Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 550],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/message/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.VAPI_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ type: 'sms', to: $env.FOUNDER_PHONE, message: $json.sms_message }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0016-0016-0016-000000000016",
+      "name": "[NOTIFY] Overdue SMS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 550],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/compliance_obligations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=representation" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ obligation_name: $json.obligation_name, category: $json.category, description: $json.description, due_date: $json.due_date, recurrence: $json.recurrence, status: $json.status, owner: $json.owner, source_document: $json.source_document, notes: $json.notes }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0017-0017-0017-000000000017",
+      "name": "[RENEW] Auto-Create Next Occurrence",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 700],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/governance_log",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ agent_name: 'compliance_sentinel', event_type: 'reminder', summary: 'Sent ' + $json.threshold + ' reminder for ' + $json.obligation_name + ' (due ' + $json.due_date + ')', data_snapshot: { id: $json.id, obligation_name: $json.obligation_name, category: $json.category, due_date: $json.due_date, status: $json.status, threshold: $json.threshold, days_until_due: $json.days_until_due, owner: $json.owner, description: $json.description }, quarter: $json.current_quarter, fiscal_year: $json.fiscal_year }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0018-0018-0018-000000000018",
+      "name": "[LOG] Log 30d Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 100],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/governance_log",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ agent_name: 'compliance_sentinel', event_type: 'reminder', summary: 'Sent 14-day escalation for ' + $json.obligation_name + ' (due ' + $json.due_date + ') - email + SMS', data_snapshot: { id: $json.id, obligation_name: $json.obligation_name, category: $json.category, due_date: $json.due_date, status: $json.status, threshold: $json.threshold, days_until_due: $json.days_until_due, owner: $json.owner, description: $json.description }, quarter: $json.current_quarter, fiscal_year: $json.fiscal_year }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0019-0019-0019-000000000019",
+      "name": "[LOG] Log 14d Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 250],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/governance_log",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ agent_name: 'compliance_sentinel', event_type: 'status_change', summary: 'Marked ' + $json.obligation_name + ' as OVERDUE (was due ' + $json.due_date + ')', data_snapshot: { id: $json.id, obligation_name: $json.obligation_name, category: $json.category, due_date: $json.due_date, previous_status: $json.status, new_status: 'overdue', owner: $json.owner, description: $json.description }, quarter: $json.current_quarter, fiscal_year: $json.fiscal_year }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0020-0020-0020-000000000020",
+      "name": "[LOG] Log Overdue Status Change",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 400],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/governance_log",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ agent_name: 'compliance_sentinel', event_type: 'reminder', summary: 'Sent overdue reminder for ' + $json.obligation_name + ' (was due ' + $json.due_date + ') - email + SMS', data_snapshot: { id: $json.id, obligation_name: $json.obligation_name, category: $json.category, due_date: $json.due_date, status: $json.status, threshold: $json.threshold, days_until_due: $json.days_until_due, owner: $json.owner, description: $json.description }, quarter: $json.current_quarter, fiscal_year: $json.fiscal_year }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0021-0021-0021-000000000021",
+      "name": "[LOG] Log Overdue Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 550],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/governance_log",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ agent_name: 'compliance_sentinel', event_type: 'status_change', summary: 'Auto-renewed ' + $json.obligation_name + ' (' + $json.recurrence + ') - next due ' + $json.due_date, data_snapshot: { obligation_name: $json.obligation_name, category: $json.category, recurrence: $json.recurrence, new_due_date: $json.due_date, notes: $json.notes }, quarter: 'Q' + (Math.floor(new Date().getMonth() / 3) + 1), fiscal_year: new Date().getFullYear() }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0022-0022-0022-000000000022",
+      "name": "[LOG] Log Renewal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 700],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.RESEND_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: 'Faith & Harmony <info@faithandharmonyllc.com>', to: [$env.FOUNDER_EMAIL], subject: $json.email_subject, html: $json.email_html }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0023-0023-0023-000000000023",
+      "name": "[NOTIFY] Daily 14d Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 720],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/message/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.VAPI_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ type: 'sms', to: $env.FOUNDER_PHONE, message: $json.sms_message }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0024-0024-0024-000000000024",
+      "name": "[NOTIFY] Daily 14d SMS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 720],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.RESEND_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: 'Faith & Harmony <info@faithandharmonyllc.com>', to: [$env.FOUNDER_EMAIL], subject: $json.email_subject, html: $json.email_html }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0025-0025-0025-000000000025",
+      "name": "[NOTIFY] Daily Due Today Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 860],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/compliance_obligations?id=eq.{{ $json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'overdue', updated_at: new Date().toISOString() }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0026-0026-0026-000000000026",
+      "name": "[MARK] Daily Set Overdue Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 860],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.RESEND_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: 'Faith & Harmony <info@faithandharmonyllc.com>', to: [$env.FOUNDER_EMAIL], subject: $json.email_subject, html: $json.email_html }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0027-0027-0027-000000000027",
+      "name": "[NOTIFY] Daily Overdue Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 1000],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/message/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.VAPI_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ type: 'sms', to: $env.FOUNDER_PHONE, message: $json.sms_message }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0028-0028-0028-000000000028",
+      "name": "[NOTIFY] Daily Overdue SMS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 1000],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/governance_log",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ agent_name: 'compliance_sentinel', event_type: 'reminder', summary: 'Daily scan: sent ' + $json.threshold + ' reminder for ' + $json.obligation_name + ' (due ' + $json.due_date + ')', data_snapshot: { id: $json.id, obligation_name: $json.obligation_name, category: $json.category, due_date: $json.due_date, status: $json.status, threshold: $json.threshold, days_until_due: $json.days_until_due, owner: $json.owner }, quarter: $json.current_quarter, fiscal_year: $json.fiscal_year }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "cs-0029-0029-0029-000000000029",
+      "name": "[LOG] Daily Log Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1540, 860],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// SUMMARY_HOOK: Weekly summary pipeline starts here\n// Collect all obligation data for the weekly summary\nconst allObs = $('\\[SCAN\\] Query All Obligations').all();\nconst obligations = allObs.map(item => item.json);\n\nreturn [{ json: { obligations_data: obligations, obligations_count: obligations.length } }];"
+      },
+      "id": "cs-0030-0030-0030-000000000030",
+      "name": "[SUMMARY] Prepare Summary Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1960, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 2048, temperature: 0, system: 'You are a governance compliance reporter for Faith & Harmony LLC. Format the following compliance obligation data into a professional weekly status summary. Include a status overview (counts by status), upcoming deadlines section, overdue items section (if any), and a brief executive summary. Use clear, direct language. No marketing fluff.', messages: [{ role: 'user', content: JSON.stringify($json.obligations_data) }] }) }}",
+        "options": {
+          "response": {
+            "response": { "responseFormat": "json" }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "cs-0031-0031-0031-000000000031",
+      "name": "[SUMMARY] AI Format Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2180, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate minimal PDF for compliance summary\nfunction createCompliancePDF(title, dateStr, summaryText, obligations) {\n  const lines = [];\n  lines.push(title);\n  lines.push('Generated: ' + dateStr);\n  lines.push('');\n\n  if (summaryText) {\n    const summaryLines = summaryText.split('\\n');\n    for (const line of summaryLines) {\n      lines.push(line);\n    }\n  } else {\n    lines.push('Status Summary:');\n    lines.push('');\n    const counts = { pending: 0, in_progress: 0, complete: 0, overdue: 0, waived: 0 };\n    obligations.forEach(ob => { counts[ob.status] = (counts[ob.status] || 0) + 1; });\n    Object.entries(counts).forEach(([status, count]) => {\n      if (count > 0) lines.push('  ' + status + ': ' + count);\n    });\n    lines.push('');\n    lines.push('Obligation Details:');\n    lines.push('');\n    obligations.forEach(ob => {\n      lines.push(ob.obligation_name + ' | ' + ob.status + ' | Due: ' + ob.due_date + ' | Owner: ' + ob.owner);\n    });\n  }\n\n  const pageLines = lines.slice(0, 45);\n  const escapedLines = pageLines.map(line =>\n    line.replace(/\\\\/g, '\\\\\\\\').replace(/\\(/g, '\\\\(').replace(/\\)/g, '\\\\)')\n  );\n  const textContent = escapedLines.map((line, i) =>\n    'BT /F1 10 Tf 50 ' + (750 - i * 16) + ' Td (' + line + ') Tj ET'\n  ).join('\\n');\n\n  const streamLength = textContent.length;\n  return '%PDF-1.4\\n' +\n    '1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\\n' +\n    '2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\\n' +\n    '3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >> endobj\\n' +\n    '4 0 obj << /Length ' + streamLength + ' >> stream\\n' +\n    textContent + '\\n' +\n    'endstream endobj\\n' +\n    '5 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\\n' +\n    'xref\\n0 6\\n' +\n    '0000000000 65535 f \\n' +\n    '0000000009 00000 n \\n' +\n    '0000000058 00000 n \\n' +\n    '0000000115 00000 n \\n' +\n    '0000000266 00000 n \\n' +\n    'trailer << /Size 6 /Root 1 0 R >>\\n' +\n    'startxref\\n' + (350 + streamLength) + '\\n' +\n    '%%EOF';\n}\n\n// Get obligations from upstream\nconst prevNode = $('\\[SUMMARY\\] Prepare Summary Data').first().json;\nconst obligations = prevNode.obligations_data || [];\n\n// Check if AI summary succeeded\nlet aiSummary = null;\ntry {\n  const aiResponse = $input.first().json;\n  if (aiResponse && aiResponse.content && aiResponse.content[0] && aiResponse.content[0].text) {\n    aiSummary = aiResponse.content[0].text;\n  }\n} catch (e) { /* AI failed, use fallback */ }\n\n// Calculate ISO week number\nconst now = new Date();\nconst year = now.getFullYear();\nconst jan1 = new Date(year, 0, 1);\nconst dayOfYear = Math.ceil((now - jan1) / 86400000);\nconst weekNum = Math.ceil((dayOfYear + jan1.getDay() + 1) / 7);\nconst weekStr = 'W' + String(weekNum).padStart(2, '0');\nconst fileName = year + '-' + weekStr + '_compliance_status.pdf';\nconst filePath = 'compliance/' + fileName;\n\nconst pdfContent = createCompliancePDF(\n  'Faith & Harmony LLC - Weekly Compliance Status',\n  now.toISOString(),\n  aiSummary,\n  obligations\n);\n\nconst pdfBase64 = Buffer.from(pdfContent, 'utf-8').toString('base64');\n\nreturn [{\n  json: {\n    file_name: fileName,\n    file_path: filePath,\n    pdf_base64: pdfBase64,\n    obligations_summary: aiSummary || 'AI summary unavailable - raw status table included in PDF',\n    obligations_data: obligations,\n    week_label: year + '-' + weekStr\n  }\n}];"
+      },
+      "id": "cs-0032-0032-0032-000000000032",
+      "name": "[SUMMARY] Generate PDF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2400, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/storage/v1/object/governance/{{ $json.file_path }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/pdf" },
+            { "name": "x-upsert", "value": "true" }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "raw",
+        "rawContentType": "application/pdf",
+        "body": "={{ Buffer.from($json.pdf_base64, 'base64') }}",
+        "options": {
+          "response": {
+            "response": { "responseFormat": "json" }
+          }
+        }
+      },
+      "id": "cs-0033-0033-0033-000000000033",
+      "name": "[STORE] Upload PDF to Supabase Storage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2620, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/storage/v1/object/sign/governance/{{ $json.file_path }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ expiresIn: 604800 }) }}",
+        "options": {
+          "response": {
+            "response": { "responseFormat": "json" }
+          }
+        }
+      },
+      "id": "cs-0034-0034-0034-000000000034",
+      "name": "[STORE] Create Signed URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2840, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "multipart/related; boundary=gsd_boundary" }
+          ]
+        },
+        "sendBody": true,
+        "bodyContentType": "raw",
+        "rawContentType": "multipart/related; boundary=gsd_boundary",
+        "body": "=--gsd_boundary\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{{ JSON.stringify({ name: $json.file_name, parents: [$env.GOOGLE_DRIVE_FOLDER_ID], mimeType: 'application/pdf' }) }}\r\n--gsd_boundary\r\nContent-Type: application/pdf\r\nContent-Transfer-Encoding: base64\r\n\r\n{{ $json.pdf_base64 }}\r\n--gsd_boundary--",
+        "options": {
+          "response": {
+            "response": { "responseFormat": "json" }
+          }
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api"
+      },
+      "id": "cs-0035-0035-0035-000000000035",
+      "name": "[BACKUP] Upload to Google Drive",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3060, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.RESEND_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: 'Faith & Harmony <info@faithandharmonyllc.com>', to: [$env.FOUNDER_EMAIL], subject: 'Weekly Compliance Status - ' + $json.week_label, html: '<!DOCTYPE html><html><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333;\"><h2>Weekly Compliance Status - ' + $json.week_label + '</h2><div style=\"background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 16px 0;\"><pre style=\"white-space: pre-wrap; font-family: Arial, sans-serif;\">' + ($json.obligations_summary || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre></div><p><a href=\"' + $env.SUPABASE_URL + '/storage/v1' + ($json.signedURL || '') + '\" style=\"display: inline-block; padding: 10px 20px; background: #3b82f6; color: white; text-decoration: none; border-radius: 4px;\">Download PDF Report</a></p><p style=\"color: #666; font-size: 12px;\">Compliance Sentinel | Faith &amp; Harmony LLC | Automated Governance System</p></body></html>' }) }}",
+        "options": {
+          "response": {
+            "response": { "responseFormat": "json" }
+          }
+        }
+      },
+      "id": "cs-0036-0036-0036-000000000036",
+      "name": "[DELIVER] Email Weekly Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3280, 300],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/governance_log",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ agent_name: 'compliance_sentinel', event_type: 'summary_generated', summary: 'Weekly compliance summary generated for ' + $json.week_label, document_url: $env.SUPABASE_URL + '/storage/v1' + ($json.signedURL || ''), data_snapshot: $json.obligations_data, quarter: 'Q' + Math.ceil((new Date().getMonth() + 1) / 3), fiscal_year: new Date().getFullYear() }) }}",
+        "options": {}
+      },
+      "id": "cs-0037-0037-0037-000000000037",
+      "name": "[LOG] Log Summary Generation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3500, 300],
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "[TRIGGER] Weekly Monday 8AM ET": {
+      "main": [
+        [
+          {
+            "node": "[SCAN] Query All Obligations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[TRIGGER] Daily Tue-Sun 8AM ET": {
+      "main": [
+        [
+          {
+            "node": "[SCAN] Query Urgent Obligations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[SCAN] Query All Obligations": {
+      "main": [
+        [
+          {
+            "node": "[LOGIC] Calculate Days Until Due",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[SCAN] Query Urgent Obligations": {
+      "main": [
+        [
+          {
+            "node": "[LOGIC] Filter 14-Day and Overdue Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[LOGIC] Calculate Days Until Due": {
+      "main": [
+        [
+          {
+            "node": "[LOGIC] Check Completed For Renewal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[LOGIC] Check Completed For Renewal": {
+      "main": [
+        [
+          {
+            "node": "[ROUTE] Split By Threshold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[LOGIC] Filter 14-Day and Overdue Only": {
+      "main": [
+        [
+          {
+            "node": "[ROUTE] Daily Split By Threshold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ROUTE] Split By Threshold": {
+      "main": [
+        [
+          {
+            "node": "[NOTIFY] 30d Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[NOTIFY] 14d Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[NOTIFY] Due Today Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[NOTIFY] Overdue Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[RENEW] Auto-Create Next Occurrence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[ROUTE] Daily Split By Threshold": {
+      "main": [
+        [
+          {
+            "node": "[NOTIFY] Daily 14d Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[NOTIFY] Daily Due Today Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[NOTIFY] Daily Overdue Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[NOTIFY] 30d Email": {
+      "main": [
+        [
+          {
+            "node": "[LOG] Log 30d Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[NOTIFY] 14d Email": {
+      "main": [
+        [
+          {
+            "node": "[NOTIFY] 14d SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[NOTIFY] 14d SMS": {
+      "main": [
+        [
+          {
+            "node": "[LOG] Log 14d Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[NOTIFY] Due Today Email": {
+      "main": [
+        [
+          {
+            "node": "[MARK] Set Overdue Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[MARK] Set Overdue Status": {
+      "main": [
+        [
+          {
+            "node": "[LOG] Log Overdue Status Change",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[NOTIFY] Overdue Email": {
+      "main": [
+        [
+          {
+            "node": "[NOTIFY] Overdue SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[NOTIFY] Overdue SMS": {
+      "main": [
+        [
+          {
+            "node": "[LOG] Log Overdue Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[RENEW] Auto-Create Next Occurrence": {
+      "main": [
+        [
+          {
+            "node": "[LOG] Log Renewal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[NOTIFY] Daily 14d Email": {
+      "main": [
+        [
+          {
+            "node": "[NOTIFY] Daily 14d SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[NOTIFY] Daily 14d SMS": {
+      "main": [
+        [
+          {
+            "node": "[LOG] Daily Log Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[NOTIFY] Daily Due Today Email": {
+      "main": [
+        [
+          {
+            "node": "[MARK] Daily Set Overdue Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[MARK] Daily Set Overdue Status": {
+      "main": [
+        [
+          {
+            "node": "[LOG] Daily Log Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[NOTIFY] Daily Overdue Email": {
+      "main": [
+        [
+          {
+            "node": "[NOTIFY] Daily Overdue SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[NOTIFY] Daily Overdue SMS": {
+      "main": [
+        [
+          {
+            "node": "[LOG] Daily Log Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[LOG] Log 30d Reminder": {
+      "main": [
+        [
+          {
+            "node": "[SUMMARY] Prepare Summary Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[LOG] Log 14d Reminder": {
+      "main": [
+        [
+          {
+            "node": "[SUMMARY] Prepare Summary Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[LOG] Log Overdue Status Change": {
+      "main": [
+        [
+          {
+            "node": "[SUMMARY] Prepare Summary Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[LOG] Log Overdue Reminder": {
+      "main": [
+        [
+          {
+            "node": "[SUMMARY] Prepare Summary Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[LOG] Log Renewal": {
+      "main": [
+        [
+          {
+            "node": "[SUMMARY] Prepare Summary Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[SUMMARY] Prepare Summary Data": {
+      "main": [
+        [
+          {
+            "node": "[SUMMARY] AI Format Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[SUMMARY] AI Format Summary": {
+      "main": [
+        [
+          {
+            "node": "[SUMMARY] Generate PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[SUMMARY] Generate PDF": {
+      "main": [
+        [
+          {
+            "node": "[STORE] Upload PDF to Supabase Storage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[STORE] Upload PDF to Supabase Storage": {
+      "main": [
+        [
+          {
+            "node": "[STORE] Create Signed URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[STORE] Create Signed URL": {
+      "main": [
+        [
+          {
+            "node": "[BACKUP] Upload to Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[BACKUP] Upload to Google Drive": {
+      "main": [
+        [
+          {
+            "node": "[DELIVER] Email Weekly Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[DELIVER] Email Weekly Summary": {
+      "main": [
+        [
+          {
+            "node": "[LOG] Log Summary Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "",
+    "timezone": "America/New_York"
+  },
+  "versionId": "1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "sentinel-local",
+    "notes": "Complete Compliance Sentinel workflow. Plan 02-01: dual triggers, scan, threshold routing, notifications, auto-renewal, logging. Plan 02-02: weekly summary pipeline (Claude AI formatting, PDF generation, Supabase Storage upload + signed URL, Google Drive backup, Resend email delivery, summary log entry)."
+  },
+  "id": "wf-compliance-sentinel",
+  "tags": [
+    {
+      "createdAt": "2026-03-12T00:00:00.000Z",
+      "updatedAt": "2026-03-12T00:00:00.000Z",
+      "id": "governance",
+      "name": "governance"
+    },
+    {
+      "createdAt": "2026-03-12T00:00:00.000Z",
+      "updatedAt": "2026-03-12T00:00:00.000Z",
+      "id": "compliance",
+      "name": "compliance"
+    }
+  ]
+}

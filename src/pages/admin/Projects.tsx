@@ -40,18 +40,20 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import type { LucideIcon } from "lucide-react";
-import { 
-  Search, 
-  FolderKanban, 
-  Rocket, 
-  Wrench, 
-  Eye, 
-  RefreshCw, 
-  CheckCircle, 
-  Pause, 
+import {
+  Search,
+  FolderKanban,
+  Rocket,
+  Wrench,
+  Eye,
+  RefreshCw,
+  CheckCircle,
+  Pause,
   XCircle,
   Mail,
-  MailX
+  MailX,
+  Archive,
+  ArchiveRestore
 } from "lucide-react";
 
 type ProjectStatus = 'kickoff' | 'in_progress' | 'review' | 'revision' | 'complete' | 'on_hold' | 'cancelled';
@@ -66,6 +68,7 @@ interface Project {
   started_at: string | null;
   completed_at: string | null;
   created_at: string;
+  archived_at: string | null;
   customer: { name: string; email: string; company_name: string | null } | null;
   service: { name: string; code: string } | null;
   proposal: { proposal_number: string; total: number } | null;
@@ -90,24 +93,18 @@ export default function Projects() {
   const [newStatus, setNewStatus] = useState<ProjectStatus | "">("");
   const [sendEmail, setSendEmail] = useState(true);
   const [customMessage, setCustomMessage] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
   const [showStatusConfirm, setShowStatusConfirm] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Fetch projects
   const { data: projects, isLoading } = useQuery({
-    queryKey: ["admin-projects"],
+    queryKey: ["admin-projects", showArchived],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("projects")
-        .select(`
-          *,
-          customer:customers(name, email, company_name),
-          service:services(name, code),
-          proposal:proposals(proposal_number, total)
-        `)
-        .order("created_at", { ascending: false });
-
+      const q = supabase.from("projects").select(`*, customer:customers(name, email, company_name), service:services(name, code), proposal:proposals(proposal_number, total)`).order("created_at", { ascending: false });
+      if (showArchived) { q.not("archived_at", "is", null); } else { q.is("archived_at", null); }
+      const { data, error } = await q;
       if (error) throw error;
       return data as Project[];
     },
@@ -160,6 +157,18 @@ export default function Projects() {
     },
   });
 
+  const archiveMutation = useMutation({
+    mutationFn: async ({ id, restore }: { id: string; restore: boolean }) => {
+      const { error } = await supabase.from("projects").update({ archived_at: restore ? null : new Date().toISOString() }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-projects"] });
+      toast({ title: variables.restore ? "Project restored" : "Project archived" });
+    },
+    onError: (error) => { toast({ title: "Failed", description: error.message, variant: "destructive" }); },
+  });
+
   // Filter projects
   const filteredProjects = projects?.filter((project) => {
     const matchesSearch = 
@@ -208,6 +217,12 @@ export default function Projects() {
               <h1 className="text-3xl font-bold text-foreground">Projects</h1>
               <p className="text-muted-foreground">Track service project progress</p>
             </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant={showArchived ? "default" : "outline"} size="sm" onClick={() => setShowArchived(!showArchived)} className="gap-2">
+              <Archive className="h-4 w-4" />
+              {showArchived ? "Viewing Archived" : "Show Archived"}
+            </Button>
           </div>
         </div>
 
@@ -317,6 +332,9 @@ export default function Projects() {
                           onClick={() => setSelectedProject(project)}
                         >
                           View
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => archiveMutation.mutate({ id: project.id, restore: showArchived })} title={showArchived ? "Restore" : "Archive"}>
+                          {showArchived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
                         </Button>
                       </TableCell>
                     </TableRow>

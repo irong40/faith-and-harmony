@@ -438,14 +438,14 @@ export default function JobIntake() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Assigned Pilot</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={v => field.onChange(v === "unassigned" ? "" : v)} value={field.value || "unassigned"}>
                         <FormControl>
                           <SelectTrigger className="min-h-[44px]">
                             <SelectValue placeholder="Assign later" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Unassigned</SelectItem>
+                          <SelectItem value="unassigned">Unassigned</SelectItem>
                           {pilots.map((p) => (
                             <SelectItem key={p.id} value={p.id}>
                               {p.full_name || "Unknown"}
@@ -464,14 +464,14 @@ export default function JobIntake() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Aircraft</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={v => field.onChange(v === "unassigned" ? "" : v)} value={field.value || "unassigned"}>
                         <FormControl>
                           <SelectTrigger className="min-h-[44px]">
                             <SelectValue placeholder="Assign later" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Unassigned</SelectItem>
+                          <SelectItem value="unassigned">Unassigned</SelectItem>
                           {aircraft.map((a) => (
                             <SelectItem key={a.id} value={a.id}>
                               {a.model}{a.nickname ? ` (${a.nickname})` : ""}

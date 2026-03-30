@@ -55,12 +55,14 @@ const WeatherOperations = lazy(() => import("./pages/admin/WeatherOperations"));
 const CallLogs = lazy(() => import("./pages/admin/CallLogs"));
 const AdminLeads = lazy(() => import("./pages/admin/Leads"));
 const Accessories = lazy(() => import("./pages/admin/Accessories"));
+const Governance = lazy(() => import("./pages/admin/Governance"));
 
 // Lazy — pilot pages
 const PilotDashboard = lazy(() => import("./pages/pilot/PilotDashboard"));
 const PilotMissionDetail = lazy(() => import("./pages/pilot/PilotMissionDetail"));
 const PilotMap = lazy(() => import("./pages/pilot/PilotMap"));
 const PilotRouteOptimizer = lazy(() => import("./pages/pilot/PilotRouteOptimizer"));
+const PortfolioFlights = lazy(() => import("./pages/pilot/PortfolioFlights"));
 const FleetOverview = lazy(() => import("./components/pilot/FleetOverview"));
 const MaintenanceHistory = lazy(() => import("./components/pilot/MaintenanceHistory"));
 
@@ -170,12 +172,14 @@ const App = () => (
               <Route path="/admin/call-logs" element={<AdminRoute><CallLogs /></AdminRoute>} />
               <Route path="/admin/leads" element={<AdminRoute><AdminLeads /></AdminRoute>} />
               <Route path="/admin/accessories" element={<AdminRoute><Accessories /></AdminRoute>} />
+              <Route path="/admin/governance" element={<AdminRoute><Governance /></AdminRoute>} />
 
               {/* Pilot portal routes */}
               <Route path="/pilot" element={<PilotRoute><PilotDashboard /></PilotRoute>} />
               <Route path="/pilot/mission/:id" element={<PilotRoute><PilotMissionDetail /></PilotRoute>} />
               <Route path="/pilot/map" element={<PilotRoute><PilotMap /></PilotRoute>} />
               <Route path="/pilot/route" element={<PilotRoute><PilotRouteOptimizer /></PilotRoute>} />
+              <Route path="/pilot/portfolio" element={<PilotRoute><PortfolioFlights /></PilotRoute>} />
               <Route path="/pilot/fleet" element={<PilotRoute><FleetOverview /></PilotRoute>} />
               <Route path="/pilot/fleet/maintenance" element={<PilotRoute><MaintenanceHistory /></PilotRoute>} />
 

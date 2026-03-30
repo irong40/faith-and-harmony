@@ -32,6 +32,7 @@ import {
   Phone,
   Wrench,
   TicketCheck,
+  Shield,
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -96,6 +97,16 @@ const navCategories: NavCategory[] = [
       { href: "/admin/messages", label: "Messages", icon: MessageSquare },
     ],
   },
+  {
+    label: "Governance",
+    icon: Shield,
+    items: [
+      { href: "/admin/governance", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/admin/governance?tab=agents", label: "Agents", icon: Activity },
+      { href: "/admin/governance?tab=documents", label: "Documents", icon: FileText },
+      { href: "/admin/governance?tab=decisions", label: "Decisions", icon: ClipboardList },
+    ],
+  },
 ];
 
 // Standalone links (not dropdowns)
@@ -106,10 +117,20 @@ export default function AdminNav() {
   const location = useLocation();
 
   const isCategoryActive = (category: NavCategory) => {
-    return category.items.some(item => location.pathname === item.href);
+    return category.items.some(item => {
+      const [path, query] = item.href.split("?");
+      if (path !== location.pathname) return false;
+      if (!query) return true;
+      return location.search === `?${query}`;
+    });
   };
 
-  const isItemActive = (href: string) => location.pathname === href;
+  const isItemActive = (href: string) => {
+    const [path, query] = href.split("?");
+    if (path !== location.pathname) return false;
+    if (!query) return !location.search;
+    return location.search === `?${query}`;
+  };
 
   return (
     <header className="border-b border-border bg-card">
