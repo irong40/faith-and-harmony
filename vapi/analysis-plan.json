@@ -37,13 +37,21 @@
         },
         "qualification_status": {
           "type": "string",
-          "enum": ["qualified", "declined", "transferred", "pending"],
-          "description": "Outcome of the qualification conversation"
+          "enum": ["qualified", "declined", "transferred", "callback_requested", "pending"],
+          "description": "Outcome of the qualification conversation. Use 'transferred' if call was transferred to Adam. Use 'callback_requested' if caller asked for a callback or asked to speak with Adam but transfer failed."
         },
         "sentiment": {
           "type": "string",
           "enum": ["positive", "neutral", "negative"],
           "description": "Overall caller sentiment"
+        },
+        "owner_notification_needed": {
+          "type": "boolean",
+          "description": "True if the caller asked to speak with Adam, the owner, or a manager, or requested a callback. Also true if caller was upset or had a complaint."
+        },
+        "notification_reason": {
+          "type": "string",
+          "description": "Brief reason the owner should be notified, e.g. 'Caller requested callback', 'Existing client follow-up', 'Complaint about service'"
         }
       },
       "required": ["caller_name", "caller_phone", "service_type", "job_description"]

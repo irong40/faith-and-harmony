@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AdminNav from "./components/AdminNav";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +46,7 @@ import {
   AlertCircle,
   Eye,
   Users,
+  Plane,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -231,9 +233,13 @@ function FlagPills({ flags }: { flags: string[] | null }) {
 function ListingDetailModal({
   listing,
   onClose,
+  onStatusChange,
+  onConvertToMission,
 }: {
   listing: LandListing;
   onClose: () => void;
+  onStatusChange: (id: string, status: string) => void;
+  onConvertToMission: (listing: LandListing) => void;
 }) {
   const { toast } = useToast();
 
@@ -274,6 +280,46 @@ function ListingDetailModal({
           <div className="mt-2">
             <FlagPills flags={listing.opportunity_flags} />
           </div>
+        </div>
+
+        {/* Actions bar */}
+        <div className="flex items-center gap-3 mt-3 pt-3 border-t">
+          <Select
+            value={listing.status}
+            onValueChange={(val) => onStatusChange(listing.id, val)}
+          >
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="new">New</SelectItem>
+              <SelectItem value="reviewed">Reviewed</SelectItem>
+              <SelectItem value="contacted">Contacted</SelectItem>
+              <SelectItem value="quoted">Quoted</SelectItem>
+              <SelectItem value="booked">Booked</SelectItem>
+              <SelectItem value="passed">Passed</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Button
+            onClick={() => onConvertToMission(listing)}
+            variant="default"
+            size="sm"
+            className="gap-1.5"
+            disabled={listing.status === "booked"}
+          >
+            <Plane className="h-4 w-4" />
+            {listing.status === "booked" ? "Mission Created" : "Convert to Mission"}
+          </Button>
+
+          <div className="flex-1" />
+
+          <Button asChild variant="outline" size="sm">
+            <a href={listing.source_url} target="_blank" rel="noopener noreferrer">
+              View Listing <ExternalLink className="ml-1 h-3 w-3" />
+            </a>
+          </Button>
         </div>
 
         <Tabs defaultValue="overview" className="mt-4">
@@ -318,12 +364,6 @@ function ListingDetailModal({
                 </CardContent>
               </Card>
             )}
-
-            <Button asChild variant="default" size="sm">
-              <a href={listing.source_url} target="_blank" rel="noopener noreferrer">
-                View Original Listing <ExternalLink className="ml-2 h-3 w-3" />
-              </a>
-            </Button>
           </TabsContent>
 
           <TabsContent value="pitch">
@@ -465,6 +505,89 @@ export default function LandMonitor() {
     if (sortBy === "newest") list.sort((a, b) => new Date(b.first_seen_at).getTime() - new Date(a.first_seen_at).getTime());
     return list;
   }, [listings, sortBy]);
+
+  const navigate = useNavigate();
+
+  const handleStatusChange = async (listingId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from("land_listings" as any)
+        .update({ status: newStatus })
+        .eq("id", listingId);
+      if (error) throw error;
+      toast({ title: `Status updated to ${newStatus}` });
+      queryClient.invalidateQueries({ queryKey: ["land-listings"] });
+      if (selectedListing?.id === listingId) {
+        setSelectedListing({ ...selectedListing, status: newStatus });
+      }
+    } catch (err) {
+      toast({
+        title: "Update failed",
+        description: (err as Error).message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleConvertToMission = async (listing: LandListing) => {
+    try {
+      const address = listing.title || "Unknown Address";
+      const jobNumber = `SAI-LM-${Date.now().toString(36).toUpperCase()}`;
+
+      const { data, error } = await supabase
+        .from("drone_jobs")
+        .insert({
+          job_number: jobNumber,
+          property_address: address,
+          property_city: listing.city || "",
+          property_state: listing.state || "VA",
+          property_type: "land",
+          status: "intake" as any,
+          admin_notes: [
+            `Converted from Land Monitor listing (score: ${listing.opportunity_score || 0})`,
+            listing.acreage ? `Acreage: ${listing.acreage}` : null,
+            listing.price ? `Listing price: $${listing.price.toLocaleString()}` : null,
+            listing.listing_agent_name ? `Agent: ${listing.listing_agent_name}` : null,
+            listing.listing_agent_company ? `Company: ${listing.listing_agent_company}` : null,
+            `Source: ${listing.source_url}`,
+          ].filter(Boolean).join("\n"),
+          is_test: false,
+          weather_hold: false,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update listing status to booked
+      await supabase
+        .from("land_listings" as any)
+        .update({ status: "booked" })
+        .eq("id", listing.id);
+
+      queryClient.invalidateQueries({ queryKey: ["land-listings"] });
+
+      toast({
+        title: "Mission created",
+        description: `${jobNumber} — ${address}`,
+      });
+
+      // Navigate to the new job
+      if (data?.id) {
+        onClose();
+        navigate(`/admin/drone-jobs/${data.id}`);
+      }
+    } catch (err) {
+      toast({
+        title: "Failed to create mission",
+        description: (err as Error).message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Wrap onClose for navigate access
+  const onClose = () => setSelectedListing(null);
 
   const handleScan = async () => {
     setIsScanning(true);
@@ -747,7 +870,9 @@ export default function LandMonitor() {
       {selectedListing && (
         <ListingDetailModal
           listing={selectedListing}
-          onClose={() => setSelectedListing(null)}
+          onClose={onClose}
+          onStatusChange={handleStatusChange}
+          onConvertToMission={handleConvertToMission}
         />
       )}
     </div>

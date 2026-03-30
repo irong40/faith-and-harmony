@@ -47,13 +47,13 @@
     "destinations": [
       {
         "type": "number",
-        "number": "+1IRON_PHONE_PLACEHOLDER",
-        "message": "Let me connect you with someone who can help directly. Please hold for just a moment."
+        "number": "+18033097344",
+        "message": "Let me connect you with Adam now. Please hold for just a moment."
       }
     ],
     "function": {
       "name": "transferToSpecialist",
-      "description": "Transfer the caller to a Sentinel specialist. Use this when the caller is outside the service area, has a commercial job over twelve hundred dollars, has a payment question, or is an existing client following up.",
+      "description": "Transfer the caller to Adam, the owner. Use this when: the caller asks to speak with Adam, the owner, or a manager; the caller is outside the service area; the caller has a commercial job over twelve hundred dollars; the caller has a payment dispute or billing question; or the caller is an existing client following up on a job.",
       "parameters": {
         "type": "object",
         "properties": {
