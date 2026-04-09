@@ -7,6 +7,7 @@ import "./landing.css";
 export default function LandingPage() {
   return (
     <div className="fh-landing">
+      <a href="#main-content" className="fh-skip-link">Skip to content</a>
       <LandingPageHelmet />
       <LandingPageJsonLd />
 
@@ -14,7 +15,7 @@ export default function LandingPage() {
       <nav className="fh-nav">
         <div className="fh-container fh-nav-inner">
           <div className="fh-nav-brand">
-            <span className="fh-nav-logo">Faith &amp; Harmony</span>
+            <span className="fh-nav-logo">Faith & Harmony</span>
             <span className="fh-nav-llc">LLC</span>
           </div>
           <div className="fh-nav-links">
@@ -22,20 +23,18 @@ export default function LandingPage() {
             <a href="#about">About</a>
             <a href="#contact">Contact</a>
             <span className="fh-nav-phone">757.843.8772</span>
-            <a href="https://trestle.sentinelaerialinspections.com/auth" className="fh-nav-login">Pilot Portal</a>
-            <Link to="/auth" className="fh-nav-login">Login</Link>
+            <Link to="/auth" className="fh-nav-login">Client Portal</Link>
           </div>
         </div>
       </nav>
 
-      {/* Hero */}
-      <header className="fh-hero">
+      {/* Hero — left-aligned */}
+      <header className="fh-hero" id="main-content">
         <div className="fh-hero-glow" />
         <div className="fh-container fh-hero-content">
           <h1 className="fh-hero-title">
             Faith &amp; Harmony
-            <br />
-            <span className="fh-hero-accent">LLC</span>
+            <span className="fh-hero-accent">Limited Liability Company</span>
           </h1>
           <p className="fh-hero-subtitle">Veteran-Owned Professional Services</p>
           <p className="fh-hero-desc">
@@ -43,11 +42,10 @@ export default function LandingPage() {
             management — headquartered in Hampton Roads, Virginia.
           </p>
           <div className="fh-hero-actions">
-            <a href="#contact" className="fh-btn fh-btn-primary">Get Started</a>
+            <a href="#contact" className="fh-btn fh-btn-primary">Request a Quote</a>
             <a href="tel:7578438772" className="fh-btn fh-btn-outline">757.843.8772</a>
           </div>
         </div>
-        <div className="fh-divider" />
       </header>
 
       {/* Trust Bar */}
@@ -146,8 +144,8 @@ export default function LandingPage() {
             <div className="fh-about-stats">
               {[
                 { value: "3", label: "Enterprise Drones" },
-                { value: "HR", label: "Hampton Roads Based" },
-                { value: "24h", label: "Standard Turnaround" },
+                { value: "HR", label: "Hampton Roads" },
+                { value: "24h", label: "Turnaround" },
                 { value: "100%", label: "Veteran Owned" },
               ].map((s) => (
                 <div key={s.label} className="fh-stat">
@@ -161,8 +159,8 @@ export default function LandingPage() {
       </section>
 
       {/* Service Area */}
-      <section className="fh-section fh-section-dark">
-        <div className="fh-container" style={{ textAlign: "center" }}>
+      <section className="fh-section fh-section-dark fh-section--centered">
+        <div className="fh-container">
           <h2 className="fh-section-title">Service Area</h2>
           <div className="fh-title-bar" />
           <p className="fh-section-subtitle">
@@ -181,7 +179,7 @@ export default function LandingPage() {
       </section>
 
       {/* Contact */}
-      <section id="contact" className="fh-section fh-section-darker">
+      <section id="contact" className="fh-section fh-section-darker fh-section--centered">
         <div className="fh-container">
           <h2 className="fh-section-title">Get in Touch</h2>
           <div className="fh-title-bar" />
@@ -190,7 +188,7 @@ export default function LandingPage() {
           </p>
           <QuoteForm />
           <div style={{ textAlign: "center", marginTop: "2rem" }}>
-            <Link to="/projects" className="fh-btn fh-btn-outline">View Our Live Projects</Link>
+            <Link to="/projects" className="fh-btn fh-btn-outline">View Live Projects</Link>
           </div>
         </div>
       </section>
@@ -201,11 +199,15 @@ export default function LandingPage() {
           <div>
             <div className="fh-footer-brand">Faith &amp; Harmony LLC</div>
             <p className="fh-footer-sub">Hampton Roads, Virginia</p>
+            <div className="fh-footer-links">
+              <a href="/privacy">Privacy</a>
+              <a href="/terms">Terms</a>
+            </div>
           </div>
           <div className="fh-footer-right">
             <p><a href="tel:7578438772">757.843.8772</a></p>
             <p><a href="mailto:info@faithandharmonyllc.com">info@faithandharmonyllc.com</a></p>
-            <p>&copy; {new Date().getFullYear()} Faith &amp; Harmony LLC. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Faith &amp; Harmony LLC</p>
           </div>
         </div>
       </footer>
