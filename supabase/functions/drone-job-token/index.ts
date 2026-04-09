@@ -191,15 +191,6 @@ serve(async (req) => {
         );
       }
 
-      // Trigger video processing asynchronously (non-blocking) for videos
-      if (file_type === "video") {
-        EdgeRuntime.waitUntil(
-          supabase.functions.invoke("drone-process-video", {
-            body: { asset_id: asset.id },
-          }).catch((err: Error) => console.error("Video processing trigger failed:", err))
-        );
-      }
-
       return new Response(
         JSON.stringify({
           success: true,

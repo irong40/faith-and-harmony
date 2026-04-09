@@ -8,8 +8,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   LayoutDashboard,
-  Server,
-  Megaphone,
   Camera,
   ClipboardList,
   Activity,
@@ -26,13 +24,10 @@ import {
   Route,
   ExternalLink,
   Inbox,
-  Satellite,
   CalendarDays,
   Cloud,
   Phone,
   Wrench,
-  TicketCheck,
-  Shield,
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -48,9 +43,6 @@ const navCategories: NavCategory[] = [
     icon: LayoutDashboard,
     items: [
       { href: "/admin/dashboard", label: "Overview", icon: LayoutDashboard },
-      { href: "/admin/apps", label: "Apps", icon: Server },
-      { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
-      { href: "/admin/tickets", label: "Tickets", icon: TicketCheck },
     ],
   },
   {
@@ -64,7 +56,6 @@ const navCategories: NavCategory[] = [
       { href: "/admin/pilots", label: "Pilots", icon: Users },
       { href: "/pilot", label: "Pilot Portal", icon: Target },
       { href: "/admin/processing-templates", label: "Templates", icon: Route },
-      { href: "/admin/land-monitor", label: "Land Monitor", icon: Satellite },
       { href: "/admin/accessories", label: "Accessories", icon: Wrench },
     ],
   },
@@ -95,16 +86,6 @@ const navCategories: NavCategory[] = [
     items: [
       { href: "/admin/people", label: "Directory", icon: Users },
       { href: "/admin/messages", label: "Messages", icon: MessageSquare },
-    ],
-  },
-  {
-    label: "Governance",
-    icon: Shield,
-    items: [
-      { href: "/admin/governance", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/admin/governance?tab=agents", label: "Agents", icon: Activity },
-      { href: "/admin/governance?tab=documents", label: "Documents", icon: FileText },
-      { href: "/admin/governance?tab=decisions", label: "Decisions", icon: ClipboardList },
     ],
   },
 ];
