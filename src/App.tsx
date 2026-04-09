@@ -33,9 +33,6 @@ const DroneJobs = lazy(() => import("./pages/admin/DroneJobs"));
 const DroneJobDetail = lazy(() => import("./pages/admin/DroneJobDetail"));
 const People = lazy(() => import("./pages/admin/People"));
 const Messages = lazy(() => import("./pages/admin/Messages"));
-const Apps = lazy(() => import("./pages/admin/Apps"));
-const Announcements = lazy(() => import("./pages/admin/Announcements"));
-const Tickets = lazy(() => import("./pages/admin/Tickets"));
 const Documents = lazy(() => import("./pages/admin/Documents"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
 const Invoices = lazy(() => import("./pages/admin/Invoices"));
@@ -49,13 +46,11 @@ const JobIntake = lazy(() => import("./pages/admin/JobIntake"));
 const ProcessingTemplates = lazy(() => import("./pages/admin/ProcessingTemplates"));
 const DeliveryReview = lazy(() => import("./pages/admin/DeliveryReview"));
 const QuoteRequests = lazy(() => import("./pages/admin/QuoteRequests"));
-const LandMonitor = lazy(() => import("./pages/admin/LandMonitor"));
 const Scheduling = lazy(() => import("./pages/admin/Scheduling"));
 const WeatherOperations = lazy(() => import("./pages/admin/WeatherOperations"));
 const CallLogs = lazy(() => import("./pages/admin/CallLogs"));
 const AdminLeads = lazy(() => import("./pages/admin/Leads"));
 const Accessories = lazy(() => import("./pages/admin/Accessories"));
-const Governance = lazy(() => import("./pages/admin/Governance"));
 
 // Lazy — pilot pages
 const PilotDashboard = lazy(() => import("./pages/pilot/PilotDashboard"));
@@ -156,9 +151,6 @@ const App = () => (
               <Route path="/admin/people" element={<AdminRoute><People /></AdminRoute>} />
               <Route path="/admin/invoices" element={<AdminRoute><Invoices /></AdminRoute>} />
               <Route path="/admin/messages" element={<AdminRoute><Messages /></AdminRoute>} />
-              <Route path="/admin/apps" element={<AdminRoute><Apps /></AdminRoute>} />
-              <Route path="/admin/announcements" element={<AdminRoute><Announcements /></AdminRoute>} />
-              <Route path="/admin/tickets" element={<AdminRoute><Tickets /></AdminRoute>} />
               <Route path="/admin/documents" element={<AdminRoute><Documents /></AdminRoute>} />
               <Route path="/admin/pricing" element={<AdminRoute><SentinelPricing /></AdminRoute>} />
               <Route path="/admin/settings" element={<AdminRoute><Settings /></AdminRoute>} />
@@ -166,13 +158,11 @@ const App = () => (
               <Route path="/admin/jobs/new" element={<AdminRoute><JobIntake /></AdminRoute>} />
               <Route path="/admin/processing-templates" element={<AdminRoute><ProcessingTemplates /></AdminRoute>} />
               <Route path="/admin/quote-requests" element={<AdminRoute><QuoteRequests /></AdminRoute>} />
-              <Route path="/admin/land-monitor" element={<AdminRoute><LandMonitor /></AdminRoute>} />
               <Route path="/admin/scheduling" element={<AdminRoute><Scheduling /></AdminRoute>} />
               <Route path="/admin/weather" element={<AdminRoute><WeatherOperations /></AdminRoute>} />
               <Route path="/admin/call-logs" element={<AdminRoute><CallLogs /></AdminRoute>} />
               <Route path="/admin/leads" element={<AdminRoute><AdminLeads /></AdminRoute>} />
               <Route path="/admin/accessories" element={<AdminRoute><Accessories /></AdminRoute>} />
-              <Route path="/admin/governance" element={<AdminRoute><Governance /></AdminRoute>} />
 
               {/* Pilot portal routes */}
               <Route path="/pilot" element={<PilotRoute><PilotDashboard /></PilotRoute>} />

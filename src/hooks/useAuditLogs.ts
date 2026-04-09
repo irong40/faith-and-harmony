@@ -34,5 +34,4 @@ export async function logAuditEvent(event: AuditLogEvent): Promise<void> {
   }
 }
 
-// Export for compatibility with useMissionControlAdmin
 export default { logAuditEvent };
