@@ -1,4 +1,3 @@
-Initialising login role...
 export type Json =
   | string
   | number
@@ -12,31 +11,6 @@ export type Database = {
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.1"
-  }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
   }
   public: {
     Tables: {
@@ -257,123 +231,6 @@ export type Database = {
           notes?: string | null
           updated_at?: string
           zero_grid?: boolean
-        }
-        Relationships: []
-      }
-      app_health_history: {
-        Row: {
-          app_id: string
-          checked_at: string | null
-          id: string
-          metrics: Json | null
-          response_time_ms: number | null
-          source: string
-          status: string
-          version: string | null
-        }
-        Insert: {
-          app_id: string
-          checked_at?: string | null
-          id?: string
-          metrics?: Json | null
-          response_time_ms?: number | null
-          source?: string
-          status: string
-          version?: string | null
-        }
-        Update: {
-          app_id?: string
-          checked_at?: string | null
-          id?: string
-          metrics?: Json | null
-          response_time_ms?: number | null
-          source?: string
-          status?: string
-          version?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "app_health_history_app_id_fkey"
-            columns: ["app_id"]
-            isOneToOne: false
-            referencedRelation: "app_status_overview"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "app_health_history_app_id_fkey"
-            columns: ["app_id"]
-            isOneToOne: false
-            referencedRelation: "apps"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      apps: {
-        Row: {
-          active: boolean
-          alert_on_failure: boolean | null
-          api_key_created_at: string | null
-          api_key_hash: string | null
-          api_key_prefix: string | null
-          code: string
-          consecutive_failures: number | null
-          created_at: string
-          health_check_url: string | null
-          heartbeat_interval_seconds: number | null
-          id: string
-          last_health_check: string | null
-          last_heartbeat_at: string | null
-          name: string
-          owner_email: string | null
-          owner_name: string | null
-          status: string
-          updated_at: string
-          url: string | null
-          version: string | null
-        }
-        Insert: {
-          active?: boolean
-          alert_on_failure?: boolean | null
-          api_key_created_at?: string | null
-          api_key_hash?: string | null
-          api_key_prefix?: string | null
-          code: string
-          consecutive_failures?: number | null
-          created_at?: string
-          health_check_url?: string | null
-          heartbeat_interval_seconds?: number | null
-          id?: string
-          last_health_check?: string | null
-          last_heartbeat_at?: string | null
-          name: string
-          owner_email?: string | null
-          owner_name?: string | null
-          status?: string
-          updated_at?: string
-          url?: string | null
-          version?: string | null
-        }
-        Update: {
-          active?: boolean
-          alert_on_failure?: boolean | null
-          api_key_created_at?: string | null
-          api_key_hash?: string | null
-          api_key_prefix?: string | null
-          code?: string
-          consecutive_failures?: number | null
-          created_at?: string
-          health_check_url?: string | null
-          heartbeat_interval_seconds?: number | null
-          id?: string
-          last_health_check?: string | null
-          last_heartbeat_at?: string | null
-          name?: string
-          owner_email?: string | null
-          owner_name?: string | null
-          status?: string
-          updated_at?: string
-          url?: string | null
-          version?: string | null
         }
         Relationships: []
       }
@@ -691,57 +548,6 @@ export type Database = {
         }
         Relationships: []
       }
-      budget_baselines: {
-        Row: {
-          created_at: string
-          expense_budget: number
-          expense_categories: Json
-          fiscal_year: number
-          id: string
-          job_volume_target: number
-          label: string
-          monthly_expense_avg: number
-          monthly_jobs_avg: number
-          monthly_revenue_avg: number
-          net_income_target: number
-          net_margin_target: number
-          revenue_mix: Json
-          revenue_target: number
-        }
-        Insert: {
-          created_at?: string
-          expense_budget: number
-          expense_categories: Json
-          fiscal_year: number
-          id?: string
-          job_volume_target: number
-          label: string
-          monthly_expense_avg: number
-          monthly_jobs_avg: number
-          monthly_revenue_avg: number
-          net_income_target: number
-          net_margin_target: number
-          revenue_mix: Json
-          revenue_target: number
-        }
-        Update: {
-          created_at?: string
-          expense_budget?: number
-          expense_categories?: Json
-          fiscal_year?: number
-          id?: string
-          job_volume_target?: number
-          label?: string
-          monthly_expense_avg?: number
-          monthly_jobs_avg?: number
-          monthly_revenue_avg?: number
-          net_income_target?: number
-          net_margin_target?: number
-          revenue_mix?: Json
-          revenue_target?: number
-        }
-        Relationships: []
-      }
       clients: {
         Row: {
           address: string | null
@@ -790,54 +596,6 @@ export type Database = {
           state?: string | null
           updated_at?: string | null
           zip?: string | null
-        }
-        Relationships: []
-      }
-      compliance_obligations: {
-        Row: {
-          category: string
-          completed_at: string | null
-          created_at: string
-          description: string | null
-          due_date: string
-          id: string
-          notes: string | null
-          obligation_name: string
-          owner: string
-          recurrence: string
-          source_document: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          category: string
-          completed_at?: string | null
-          created_at?: string
-          description?: string | null
-          due_date: string
-          id?: string
-          notes?: string | null
-          obligation_name: string
-          owner?: string
-          recurrence: string
-          source_document?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          category?: string
-          completed_at?: string | null
-          created_at?: string
-          description?: string | null
-          due_date?: string
-          id?: string
-          notes?: string | null
-          obligation_name?: string
-          owner?: string
-          recurrence?: string
-          source_document?: string | null
-          status?: string
-          updated_at?: string
         }
         Relationships: []
       }
@@ -979,7 +737,6 @@ export type Database = {
       }
       conversations: {
         Row: {
-          app_id: string | null
           created_at: string
           customer_email: string
           customer_name: string
@@ -991,7 +748,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          app_id?: string | null
           created_at?: string
           customer_email: string
           customer_name: string
@@ -1003,7 +759,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          app_id?: string | null
           created_at?: string
           customer_email?: string
           customer_name?: string
@@ -1014,29 +769,7 @@ export type Database = {
           ticket_id?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "conversations_app_id_fkey"
-            columns: ["app_id"]
-            isOneToOne: false
-            referencedRelation: "app_status_overview"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "conversations_app_id_fkey"
-            columns: ["app_id"]
-            isOneToOne: false
-            referencedRelation: "apps"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "conversations_ticket_id_fkey"
-            columns: ["ticket_id"]
-            isOneToOne: false
-            referencedRelation: "maintenance_tickets"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       cost_tracking: {
         Row: {
@@ -2054,69 +1787,6 @@ export type Database = {
           },
         ]
       }
-      financial_actuals: {
-        Row: {
-          created_at: string
-          expense_contractor: number | null
-          expense_equipment: number | null
-          expense_insurance: number | null
-          expense_marketing: number | null
-          expense_misc: number | null
-          expense_professional: number | null
-          expense_software: number | null
-          expense_vehicle: number | null
-          id: string
-          jobs_completed: number | null
-          month: string
-          notes: string | null
-          revenue_commercial: number | null
-          revenue_other: number | null
-          revenue_residential: number | null
-          revenue_retainer: number | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          expense_contractor?: number | null
-          expense_equipment?: number | null
-          expense_insurance?: number | null
-          expense_marketing?: number | null
-          expense_misc?: number | null
-          expense_professional?: number | null
-          expense_software?: number | null
-          expense_vehicle?: number | null
-          id?: string
-          jobs_completed?: number | null
-          month: string
-          notes?: string | null
-          revenue_commercial?: number | null
-          revenue_other?: number | null
-          revenue_residential?: number | null
-          revenue_retainer?: number | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          expense_contractor?: number | null
-          expense_equipment?: number | null
-          expense_insurance?: number | null
-          expense_marketing?: number | null
-          expense_misc?: number | null
-          expense_professional?: number | null
-          expense_software?: number | null
-          expense_vehicle?: number | null
-          id?: string
-          jobs_completed?: number | null
-          month?: string
-          notes?: string | null
-          revenue_commercial?: number | null
-          revenue_other?: number | null
-          revenue_residential?: number | null
-          revenue_retainer?: number | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       flight_logs: {
         Row: {
           checklist_data: Json
@@ -2225,427 +1895,92 @@ export type Database = {
           },
         ]
       }
-      governance_decisions: {
+      job_reports: {
         Row: {
-          action_items: Json | null
-          context: string | null
-          created_at: string
-          decision_date: string
-          fiscal_year: number | null
-          id: string
-          outcome: string
-          participants: Json | null
-          quarter: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          action_items?: Json | null
-          context?: string | null
-          created_at?: string
-          decision_date: string
-          fiscal_year?: number | null
-          id?: string
-          outcome: string
-          participants?: Json | null
-          quarter?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          action_items?: Json | null
-          context?: string | null
-          created_at?: string
-          decision_date?: string
-          fiscal_year?: number | null
-          id?: string
-          outcome?: string
-          participants?: Json | null
-          quarter?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      governance_log: {
-        Row: {
-          agent_name: string
-          created_at: string
-          data_snapshot: Json | null
-          document_url: string | null
-          event_type: string
-          fiscal_year: number | null
-          id: string
-          quarter: string | null
-          summary: string
-        }
-        Insert: {
-          agent_name: string
-          created_at?: string
-          data_snapshot?: Json | null
-          document_url?: string | null
-          event_type: string
-          fiscal_year?: number | null
-          id?: string
-          quarter?: string | null
-          summary: string
-        }
-        Update: {
-          agent_name?: string
-          created_at?: string
-          data_snapshot?: Json | null
-          document_url?: string | null
-          event_type?: string
-          fiscal_year?: number | null
-          id?: string
-          quarter?: string | null
-          summary?: string
-        }
-        Relationships: []
-      }
-      land_listing_outreach: {
-        Row: {
-          contact_date: string | null
-          contact_method: string
+          active_sections: string[] | null
+          classification: string | null
+          client_id: string | null
           created_at: string | null
-          created_by: string | null
-          followup_date: string | null
+          generated_document_id: string | null
           id: string
-          listing_id: string
-          message: string | null
-          notes: string | null
-          outcome: string | null
-          quoted_price: number | null
-          response: string | null
-          subject: string | null
-        }
-        Insert: {
-          contact_date?: string | null
-          contact_method: string
-          created_at?: string | null
-          created_by?: string | null
-          followup_date?: string | null
-          id?: string
-          listing_id: string
-          message?: string | null
-          notes?: string | null
-          outcome?: string | null
-          quoted_price?: number | null
-          response?: string | null
-          subject?: string | null
-        }
-        Update: {
-          contact_date?: string | null
-          contact_method?: string
-          created_at?: string | null
-          created_by?: string | null
-          followup_date?: string | null
-          id?: string
-          listing_id?: string
-          message?: string | null
-          notes?: string | null
-          outcome?: string | null
-          quoted_price?: number | null
-          response?: string | null
-          subject?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "land_listing_outreach_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "land_listing_opportunities"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "land_listing_outreach_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "land_listings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      land_listing_sources: {
-        Row: {
-          base_url: string
-          config: Json | null
-          created_at: string | null
-          id: string
-          is_active: boolean | null
-          last_checked_at: string | null
-          name: string
-          rate_limit_ms: number | null
-          slug: string
-          source_type: string
-        }
-        Insert: {
-          base_url: string
-          config?: Json | null
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          last_checked_at?: string | null
-          name: string
-          rate_limit_ms?: number | null
-          slug: string
-          source_type: string
-        }
-        Update: {
-          base_url?: string
-          config?: Json | null
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          last_checked_at?: string | null
-          name?: string
-          rate_limit_ms?: number | null
-          slug?: string
-          source_type?: string
-        }
-        Relationships: []
-      }
-      land_listings: {
-        Row: {
-          acreage: number | null
-          address: string | null
-          ai_pitch_body: string | null
-          ai_pitch_subject: string | null
-          city: string | null
-          contacted_at: string | null
-          county: string | null
-          created_at: string | null
-          created_by: string | null
-          dedup_key: string
-          description: string | null
-          expires_at: string | null
-          external_id: string | null
-          first_seen_at: string | null
-          has_aerial_photos: boolean | null
-          id: string
-          is_fsbo: boolean | null
-          land_type: string | null
-          last_checked_at: string | null
-          latitude: number | null
-          listing_agent_company: string | null
-          listing_agent_email: string | null
-          listing_agent_name: string | null
-          listing_agent_phone: string | null
-          listing_date: string | null
-          longitude: number | null
-          notes: string | null
-          opportunity_flags: string[] | null
-          opportunity_score: number | null
-          photo_count: number | null
-          photo_quality_score: number | null
-          photo_urls: string[] | null
-          price: number | null
-          price_per_acre: number | null
-          priority: string | null
-          raw_data: Json | null
-          source_id: string | null
-          source_url: string
-          state: string | null
-          status: string | null
+          job_id: string | null
+          prepared_by: string | null
+          report_date: string | null
+          section_data: Json
+          status: Database["public"]["Enums"]["report_status"]
+          template_id: string
           title: string
           updated_at: string | null
-          zip_code: string | null
         }
         Insert: {
-          acreage?: number | null
-          address?: string | null
-          ai_pitch_body?: string | null
-          ai_pitch_subject?: string | null
-          city?: string | null
-          contacted_at?: string | null
-          county?: string | null
+          active_sections?: string[] | null
+          classification?: string | null
+          client_id?: string | null
           created_at?: string | null
-          created_by?: string | null
-          dedup_key: string
-          description?: string | null
-          expires_at?: string | null
-          external_id?: string | null
-          first_seen_at?: string | null
-          has_aerial_photos?: boolean | null
+          generated_document_id?: string | null
           id?: string
-          is_fsbo?: boolean | null
-          land_type?: string | null
-          last_checked_at?: string | null
-          latitude?: number | null
-          listing_agent_company?: string | null
-          listing_agent_email?: string | null
-          listing_agent_name?: string | null
-          listing_agent_phone?: string | null
-          listing_date?: string | null
-          longitude?: number | null
-          notes?: string | null
-          opportunity_flags?: string[] | null
-          opportunity_score?: number | null
-          photo_count?: number | null
-          photo_quality_score?: number | null
-          photo_urls?: string[] | null
-          price?: number | null
-          price_per_acre?: number | null
-          priority?: string | null
-          raw_data?: Json | null
-          source_id?: string | null
-          source_url: string
-          state?: string | null
-          status?: string | null
+          job_id?: string | null
+          prepared_by?: string | null
+          report_date?: string | null
+          section_data?: Json
+          status?: Database["public"]["Enums"]["report_status"]
+          template_id: string
           title: string
           updated_at?: string | null
-          zip_code?: string | null
         }
         Update: {
-          acreage?: number | null
-          address?: string | null
-          ai_pitch_body?: string | null
-          ai_pitch_subject?: string | null
-          city?: string | null
-          contacted_at?: string | null
-          county?: string | null
+          active_sections?: string[] | null
+          classification?: string | null
+          client_id?: string | null
           created_at?: string | null
-          created_by?: string | null
-          dedup_key?: string
-          description?: string | null
-          expires_at?: string | null
-          external_id?: string | null
-          first_seen_at?: string | null
-          has_aerial_photos?: boolean | null
+          generated_document_id?: string | null
           id?: string
-          is_fsbo?: boolean | null
-          land_type?: string | null
-          last_checked_at?: string | null
-          latitude?: number | null
-          listing_agent_company?: string | null
-          listing_agent_email?: string | null
-          listing_agent_name?: string | null
-          listing_agent_phone?: string | null
-          listing_date?: string | null
-          longitude?: number | null
-          notes?: string | null
-          opportunity_flags?: string[] | null
-          opportunity_score?: number | null
-          photo_count?: number | null
-          photo_quality_score?: number | null
-          photo_urls?: string[] | null
-          price?: number | null
-          price_per_acre?: number | null
-          priority?: string | null
-          raw_data?: Json | null
-          source_id?: string | null
-          source_url?: string
-          state?: string | null
-          status?: string | null
+          job_id?: string | null
+          prepared_by?: string | null
+          report_date?: string | null
+          section_data?: Json
+          status?: Database["public"]["Enums"]["report_status"]
+          template_id?: string
           title?: string
           updated_at?: string | null
-          zip_code?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "land_listings_source_id_fkey"
-            columns: ["source_id"]
+            foreignKeyName: "job_reports_client_id_fkey"
+            columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: "land_listing_sources"
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_reports_generated_document_id_fkey"
+            columns: ["generated_document_id"]
+            isOneToOne: false
+            referencedRelation: "generated_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_reports_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "drone_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_reports_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_reports_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "report_templates"
             referencedColumns: ["id"]
           },
         ]
-      }
-      land_monitor_jobs: {
-        Row: {
-          api_cost: number | null
-          completed_at: string | null
-          created_at: string | null
-          created_by: string | null
-          duplicates_skipped: number | null
-          duration_seconds: number | null
-          error_details: Json | null
-          error_message: string | null
-          high_opportunity_count: number | null
-          id: string
-          job_type: string | null
-          listings_scanned: number | null
-          new_listings_found: number | null
-          region_ids: string[] | null
-          source_ids: string[] | null
-          started_at: string | null
-          status: string | null
-          updated_listings: number | null
-        }
-        Insert: {
-          api_cost?: number | null
-          completed_at?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          duplicates_skipped?: number | null
-          duration_seconds?: number | null
-          error_details?: Json | null
-          error_message?: string | null
-          high_opportunity_count?: number | null
-          id?: string
-          job_type?: string | null
-          listings_scanned?: number | null
-          new_listings_found?: number | null
-          region_ids?: string[] | null
-          source_ids?: string[] | null
-          started_at?: string | null
-          status?: string | null
-          updated_listings?: number | null
-        }
-        Update: {
-          api_cost?: number | null
-          completed_at?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          duplicates_skipped?: number | null
-          duration_seconds?: number | null
-          error_details?: Json | null
-          error_message?: string | null
-          high_opportunity_count?: number | null
-          id?: string
-          job_type?: string | null
-          listings_scanned?: number | null
-          new_listings_found?: number | null
-          region_ids?: string[] | null
-          source_ids?: string[] | null
-          started_at?: string | null
-          status?: string | null
-          updated_listings?: number | null
-        }
-        Relationships: []
-      }
-      land_monitor_regions: {
-        Row: {
-          bounding_box: Json | null
-          cities: string[]
-          created_at: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          states: string[]
-          zip_codes: string[] | null
-        }
-        Insert: {
-          bounding_box?: Json | null
-          cities: string[]
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          states: string[]
-          zip_codes?: string[] | null
-        }
-        Update: {
-          bounding_box?: Json | null
-          cities?: string[]
-          created_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          states?: string[]
-          zip_codes?: string[] | null
-        }
-        Relationships: []
       }
       lead_gen_jobs: {
         Row: {
@@ -2808,54 +2143,6 @@ export type Database = {
           },
         ]
       }
-      maintenance_announcements: {
-        Row: {
-          created_at: string | null
-          created_by: string | null
-          ends_at: string | null
-          id: string
-          is_active: boolean | null
-          message: string
-          priority: number | null
-          starts_at: string
-          target_all_apps: boolean | null
-          target_app_ids: string[] | null
-          title: string
-          type: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          ends_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          message: string
-          priority?: number | null
-          starts_at?: string
-          target_all_apps?: boolean | null
-          target_app_ids?: string[] | null
-          title: string
-          type?: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string | null
-          ends_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          message?: string
-          priority?: number | null
-          starts_at?: string
-          target_all_apps?: boolean | null
-          target_app_ids?: string[] | null
-          title?: string
-          type?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       maintenance_log: {
         Row: {
           cost_cents: number | null
@@ -2905,178 +2192,6 @@ export type Database = {
             columns: ["performed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      maintenance_logs: {
-        Row: {
-          affected_features: string[] | null
-          app_id: string | null
-          created_at: string
-          description: string
-          hours: number
-          id: string
-          module: string | null
-          ticket_id: string | null
-          type: string
-        }
-        Insert: {
-          affected_features?: string[] | null
-          app_id?: string | null
-          created_at?: string
-          description: string
-          hours: number
-          id?: string
-          module?: string | null
-          ticket_id?: string | null
-          type: string
-        }
-        Update: {
-          affected_features?: string[] | null
-          app_id?: string | null
-          created_at?: string
-          description?: string
-          hours?: number
-          id?: string
-          module?: string | null
-          ticket_id?: string | null
-          type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "maintenance_logs_app_id_fkey"
-            columns: ["app_id"]
-            isOneToOne: false
-            referencedRelation: "app_status_overview"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "maintenance_logs_app_id_fkey"
-            columns: ["app_id"]
-            isOneToOne: false
-            referencedRelation: "apps"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "maintenance_logs_ticket_id_fkey"
-            columns: ["ticket_id"]
-            isOneToOne: false
-            referencedRelation: "maintenance_tickets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      maintenance_tickets: {
-        Row: {
-          actual_behavior: string | null
-          app_id: string | null
-          assigned_to: string | null
-          browser_info: Json | null
-          category: string | null
-          created_at: string
-          description: string
-          error_stack: string | null
-          expected_behavior: string | null
-          external_reference: string | null
-          id: string
-          page_url: string | null
-          priority: string
-          reporter_email: string | null
-          reporter_name: string | null
-          resolution: string | null
-          resolved_at: string | null
-          screenshot_url: string | null
-          source: string | null
-          status: string
-          steps_to_reproduce: string | null
-          submitted_via: string | null
-          tags: string[] | null
-          ticket_number: string
-          time_spent_hours: number | null
-          title: string
-          type: string
-          updated_at: string
-          url: string | null
-          user_agent: string | null
-        }
-        Insert: {
-          actual_behavior?: string | null
-          app_id?: string | null
-          assigned_to?: string | null
-          browser_info?: Json | null
-          category?: string | null
-          created_at?: string
-          description: string
-          error_stack?: string | null
-          expected_behavior?: string | null
-          external_reference?: string | null
-          id?: string
-          page_url?: string | null
-          priority?: string
-          reporter_email?: string | null
-          reporter_name?: string | null
-          resolution?: string | null
-          resolved_at?: string | null
-          screenshot_url?: string | null
-          source?: string | null
-          status?: string
-          steps_to_reproduce?: string | null
-          submitted_via?: string | null
-          tags?: string[] | null
-          ticket_number: string
-          time_spent_hours?: number | null
-          title: string
-          type: string
-          updated_at?: string
-          url?: string | null
-          user_agent?: string | null
-        }
-        Update: {
-          actual_behavior?: string | null
-          app_id?: string | null
-          assigned_to?: string | null
-          browser_info?: Json | null
-          category?: string | null
-          created_at?: string
-          description?: string
-          error_stack?: string | null
-          expected_behavior?: string | null
-          external_reference?: string | null
-          id?: string
-          page_url?: string | null
-          priority?: string
-          reporter_email?: string | null
-          reporter_name?: string | null
-          resolution?: string | null
-          resolved_at?: string | null
-          screenshot_url?: string | null
-          source?: string | null
-          status?: string
-          steps_to_reproduce?: string | null
-          submitted_via?: string | null
-          tags?: string[] | null
-          ticket_number?: string
-          time_spent_hours?: number | null
-          title?: string
-          type?: string
-          updated_at?: string
-          url?: string | null
-          user_agent?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "maintenance_tickets_app_id_fkey"
-            columns: ["app_id"]
-            isOneToOne: false
-            referencedRelation: "app_status_overview"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "maintenance_tickets_app_id_fkey"
-            columns: ["app_id"]
-            isOneToOne: false
-            referencedRelation: "apps"
             referencedColumns: ["id"]
           },
         ]
@@ -3495,7 +2610,6 @@ export type Database = {
       }
       notifications: {
         Row: {
-          app_id: string | null
           body: string | null
           created_at: string
           id: string
@@ -3506,7 +2620,6 @@ export type Database = {
           user_email: string
         }
         Insert: {
-          app_id?: string | null
           body?: string | null
           created_at?: string
           id?: string
@@ -3517,7 +2630,6 @@ export type Database = {
           user_email: string
         }
         Update: {
-          app_id?: string | null
           body?: string | null
           created_at?: string
           id?: string
@@ -3527,22 +2639,7 @@ export type Database = {
           type?: string
           user_email?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "notifications_app_id_fkey"
-            columns: ["app_id"]
-            isOneToOne: false
-            referencedRelation: "app_status_overview"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notifications_app_id_fkey"
-            columns: ["app_id"]
-            isOneToOne: false
-            referencedRelation: "apps"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       order_items: {
         Row: {
@@ -3770,6 +2867,7 @@ export type Database = {
       }
       personas: {
         Row: {
+          blotato_template_id: string | null
           brand: string
           canva_brand_kit_id: string | null
           canva_carousel_template_id: string | null
@@ -3777,9 +2875,12 @@ export type Database = {
           created_at: string | null
           expertise_areas: string[]
           heygen_avatar_id: string | null
+          heygen_voice_id: string | null
           id: string
           is_active: boolean | null
           name: string
+          newsletter_cta: string | null
+          newsletter_url: string | null
           platform_accounts: Json
           profile_image_url: string | null
           tagline: string | null
@@ -3788,6 +2889,7 @@ export type Database = {
           voice_style: string
         }
         Insert: {
+          blotato_template_id?: string | null
           brand: string
           canva_brand_kit_id?: string | null
           canva_carousel_template_id?: string | null
@@ -3795,9 +2897,12 @@ export type Database = {
           created_at?: string | null
           expertise_areas: string[]
           heygen_avatar_id?: string | null
+          heygen_voice_id?: string | null
           id?: string
           is_active?: boolean | null
           name: string
+          newsletter_cta?: string | null
+          newsletter_url?: string | null
           platform_accounts: Json
           profile_image_url?: string | null
           tagline?: string | null
@@ -3806,6 +2911,7 @@ export type Database = {
           voice_style: string
         }
         Update: {
+          blotato_template_id?: string | null
           brand?: string
           canva_brand_kit_id?: string | null
           canva_carousel_template_id?: string | null
@@ -3813,9 +2919,12 @@ export type Database = {
           created_at?: string | null
           expertise_areas?: string[]
           heygen_avatar_id?: string | null
+          heygen_voice_id?: string | null
           id?: string
           is_active?: boolean | null
           name?: string
+          newsletter_cta?: string | null
+          newsletter_url?: string | null
           platform_accounts?: Json
           profile_image_url?: string | null
           tagline?: string | null
@@ -4426,8 +3535,10 @@ export type Database = {
           source: string
           status: string
           utm_campaign: string | null
+          utm_content: string | null
           utm_medium: string | null
           utm_source: string | null
+          utm_term: string | null
         }
         Insert: {
           address?: string | null
@@ -4444,8 +3555,10 @@ export type Database = {
           source?: string
           status?: string
           utm_campaign?: string | null
+          utm_content?: string | null
           utm_medium?: string | null
           utm_source?: string | null
+          utm_term?: string | null
         }
         Update: {
           address?: string | null
@@ -4462,8 +3575,10 @@ export type Database = {
           source?: string
           status?: string
           utm_campaign?: string | null
+          utm_content?: string | null
           utm_medium?: string | null
           utm_source?: string | null
+          utm_term?: string | null
         }
         Relationships: [
           {
@@ -4536,6 +3651,89 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      report_images: {
+        Row: {
+          caption: string | null
+          created_at: string | null
+          id: string
+          image_url: string
+          metadata: Json | null
+          report_id: string
+          section_key: Database["public"]["Enums"]["report_section_key"]
+          sort_order: number | null
+          thumbnail_url: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          image_url: string
+          metadata?: Json | null
+          report_id: string
+          section_key: Database["public"]["Enums"]["report_section_key"]
+          sort_order?: number | null
+          thumbnail_url?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          metadata?: Json | null
+          report_id?: string
+          section_key?: Database["public"]["Enums"]["report_section_key"]
+          sort_order?: number | null
+          thumbnail_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_images_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "job_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_templates: {
+        Row: {
+          brand_config: Json | null
+          code: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sections_manifest: Json
+          service_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          brand_config?: Json | null
+          code: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sections_manifest: Json
+          service_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          brand_config?: Json | null
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sections_manifest?: Json
+          service_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       retainers: {
         Row: {
@@ -5552,107 +4750,32 @@ export type Database = {
         }
         Relationships: []
       }
+      workflow_locks: {
+        Row: {
+          expires_at: string
+          id: string
+          lock_token: string
+          locked_at: string
+          workflow_id: string
+        }
+        Insert: {
+          expires_at: string
+          id?: string
+          lock_token?: string
+          locked_at?: string
+          workflow_id: string
+        }
+        Update: {
+          expires_at?: string
+          id?: string
+          lock_token?: string
+          locked_at?: string
+          workflow_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      active_announcements: {
-        Row: {
-          created_at: string | null
-          created_by: string | null
-          display_status: string | null
-          ends_at: string | null
-          id: string | null
-          is_active: boolean | null
-          message: string | null
-          priority: number | null
-          starts_at: string | null
-          target_all_apps: boolean | null
-          target_app_ids: string[] | null
-          title: string | null
-          type: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          display_status?: never
-          ends_at?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          message?: string | null
-          priority?: number | null
-          starts_at?: string | null
-          target_all_apps?: boolean | null
-          target_app_ids?: string[] | null
-          title?: string | null
-          type?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string | null
-          display_status?: never
-          ends_at?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          message?: string | null
-          priority?: number | null
-          starts_at?: string | null
-          target_all_apps?: boolean | null
-          target_app_ids?: string[] | null
-          title?: string | null
-          type?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      app_status_overview: {
-        Row: {
-          active: boolean | null
-          api_key_created_at: string | null
-          code: string | null
-          consecutive_failures: number | null
-          has_api_key: boolean | null
-          heartbeat_status: string | null
-          id: string | null
-          last_heartbeat_at: string | null
-          name: string | null
-          open_ticket_count: number | null
-          status: string | null
-          url: string | null
-          version: string | null
-        }
-        Insert: {
-          active?: boolean | null
-          api_key_created_at?: string | null
-          code?: string | null
-          consecutive_failures?: number | null
-          has_api_key?: never
-          heartbeat_status?: never
-          id?: string | null
-          last_heartbeat_at?: string | null
-          name?: string | null
-          open_ticket_count?: never
-          status?: string | null
-          url?: string | null
-          version?: string | null
-        }
-        Update: {
-          active?: boolean | null
-          api_key_created_at?: string | null
-          code?: string | null
-          consecutive_failures?: number | null
-          has_api_key?: never
-          heartbeat_status?: never
-          id?: string | null
-          last_heartbeat_at?: string | null
-          name?: string | null
-          open_ticket_count?: never
-          status?: string | null
-          url?: string | null
-          version?: string | null
-        }
-        Relationships: []
-      }
       cost_summary: {
         Row: {
           date: string | null
@@ -5720,46 +4843,6 @@ export type Database = {
           },
         ]
       }
-      land_listing_opportunities: {
-        Row: {
-          acreage: number | null
-          ai_pitch_body: string | null
-          ai_pitch_subject: string | null
-          city: string | null
-          first_seen_at: string | null
-          has_aerial_photos: boolean | null
-          id: string | null
-          land_type: string | null
-          last_outreach_date: string | null
-          listing_agent_company: string | null
-          listing_agent_name: string | null
-          opportunity_flags: string[] | null
-          opportunity_score: number | null
-          outreach_count: number | null
-          photo_count: number | null
-          photo_quality_score: number | null
-          price: number | null
-          price_per_acre: number | null
-          priority: string | null
-          source_name: string | null
-          source_url: string | null
-          state: string | null
-          status: string | null
-          title: string | null
-        }
-        Relationships: []
-      }
-      land_monitor_summary: {
-        Row: {
-          avg_duration_seconds: number | null
-          scan_date: string | null
-          total_cost: number | null
-          total_high_opportunity: number | null
-          total_new_listings: number | null
-          total_scans: number | null
-        }
-        Relationships: []
-      }
       lead_activity: {
         Row: {
           event_at: string | null
@@ -5809,6 +4892,18 @@ export type Database = {
           price?: number | null
           processing_profile?: Json | null
           shot_manifest?: Json | null
+        }
+        Relationships: []
+      }
+      quote_attribution: {
+        Row: {
+          first_quote: string | null
+          latest_quote: string | null
+          total_quotes: number | null
+          unique_leads: number | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
         }
         Relationships: []
       }
@@ -5863,7 +4958,6 @@ export type Database = {
       generate_app_api_key: { Args: { p_app_id: string }; Returns: string }
       generate_drone_job_number: { Args: never; Returns: string }
       generate_proposal_number: { Args: never; Returns: string }
-      generate_ticket_number: { Args: never; Returns: string }
       get_app_announcements: {
         Args: { p_app_id: string }
         Returns: {
@@ -6066,6 +5160,27 @@ export type Database = {
         | "declined"
         | "revised"
         | "expired"
+      report_section_key:
+        | "cover_page"
+        | "executive_summary"
+        | "methodology"
+        | "equipment"
+        | "flight_data"
+        | "weather_conditions"
+        | "findings"
+        | "species_table"
+        | "population_estimate"
+        | "confidence_interval"
+        | "detection_heatmap"
+        | "transect_map"
+        | "annotated_imagery"
+        | "change_detection"
+        | "anomaly_log"
+        | "volumetrics"
+        | "deliverables_manifest"
+        | "appendix_flight_logs"
+        | "appendix_raw_data"
+      report_status: "draft" | "final" | "archived"
       request_status:
         | "new"
         | "contacted"
@@ -6201,9 +5316,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       accessory_type: [
@@ -6352,6 +5464,28 @@ export const Constants = {
         "revised",
         "expired",
       ],
+      report_section_key: [
+        "cover_page",
+        "executive_summary",
+        "methodology",
+        "equipment",
+        "flight_data",
+        "weather_conditions",
+        "findings",
+        "species_table",
+        "population_estimate",
+        "confidence_interval",
+        "detection_heatmap",
+        "transect_map",
+        "annotated_imagery",
+        "change_detection",
+        "anomaly_log",
+        "volumetrics",
+        "deliverables_manifest",
+        "appendix_flight_logs",
+        "appendix_raw_data",
+      ],
+      report_status: ["draft", "final", "archived"],
       request_status: [
         "new",
         "contacted",

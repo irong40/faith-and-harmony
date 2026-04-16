@@ -88,6 +88,28 @@ export const FH_BRAND = {
   copyright: `\u00a9 ${new Date().getFullYear()} Faith & Harmony LLC. All rights reserved.`,
 } as const;
 
+// Report-specific colors: light, printable, high-contrast on white paper
+export const REPORT_COLORS = {
+  primary: "#e85d26",        // SAI Orange — headings, accent lines
+  primaryDark: "#c44a1a",    // Darker orange — hover, emphasis
+  heading: "#1a1a1a",        // Near-black — section headings
+  text: "#333333",           // Dark gray — body text
+  textSecondary: "#666666",  // Medium gray — captions, labels
+  textMuted: "#999999",      // Light gray — footnotes
+  bg: "#ffffff",             // White — page background
+  bgCard: "#f9f7f5",         // Warm off-white — card/stat backgrounds
+  bgTable: "#faf8f6",        // Slightly warm — alternating table rows
+  border: "#e5e0da",         // Warm light gray — table borders, dividers
+  borderAccent: "#e85d26",   // Orange — accent dividers under headings
+  badgeCritical: "#dc2626",  // Red
+  badgeHigh: "#ea580c",      // Orange
+  badgeMedium: "#d97706",    // Amber
+  badgeLow: "#2563eb",       // Blue
+  badgeInfo: "#6b7280",      // Gray
+  tableHeader: "#2b0a3d",    // F&H Purple — table header bg
+  tableHeaderText: "#ffffff", // White — table header text
+} as const;
+
 // Default BRAND points to SAI (most customer-facing documents are SAI)
 export const BRAND = SAI_BRAND;
 

@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle, ScanSearch, Zap, Settings2, Image as ImageIcon, AlertTriangle, ExternalLink, Link2, Calendar, DollarSign } from "lucide-react";
+import { ArrowLeft, RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle, ScanSearch, Zap, Settings2, Image as ImageIcon, AlertTriangle, ExternalLink, Link2, Calendar, DollarSign, FileText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import AdminNav from "./components/AdminNav";
@@ -1527,8 +1527,14 @@ export default function DroneJobDetail() {
 
           {/* Delivery Tab */}
           <TabsContent value="delivery" className="space-y-4">
-            {/* Open Delivery Review */}
-            <div className="flex justify-end">
+            {/* Open Delivery Review + Create Report */}
+            <div className="flex justify-end gap-2">
+              <Link to={`/admin/reports/new?job_id=${job.id}`}>
+                <Button variant="outline" size="sm">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Create Report
+                </Button>
+              </Link>
               <Link to={`/admin/drone-jobs/${job.id}/delivery`}>
                 <Button variant="outline" size="sm">
                   <ExternalLink className="mr-2 h-4 w-4" />
