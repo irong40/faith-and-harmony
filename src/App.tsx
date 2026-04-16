@@ -51,6 +51,8 @@ const WeatherOperations = lazy(() => import("./pages/admin/WeatherOperations"));
 const CallLogs = lazy(() => import("./pages/admin/CallLogs"));
 const AdminLeads = lazy(() => import("./pages/admin/Leads"));
 const Accessories = lazy(() => import("./pages/admin/Accessories"));
+const Reports = lazy(() => import("./pages/admin/Reports"));
+const ReportBuilder = lazy(() => import("./pages/admin/ReportBuilder"));
 
 // Lazy — pilot pages
 const PilotDashboard = lazy(() => import("./pages/pilot/PilotDashboard"));
@@ -163,6 +165,9 @@ const App = () => (
               <Route path="/admin/call-logs" element={<AdminRoute><CallLogs /></AdminRoute>} />
               <Route path="/admin/leads" element={<AdminRoute><AdminLeads /></AdminRoute>} />
               <Route path="/admin/accessories" element={<AdminRoute><Accessories /></AdminRoute>} />
+              <Route path="/admin/reports" element={<AdminRoute><Reports /></AdminRoute>} />
+              <Route path="/admin/reports/new" element={<AdminRoute><ReportBuilder /></AdminRoute>} />
+              <Route path="/admin/reports/:id/edit" element={<AdminRoute><ReportBuilder /></AdminRoute>} />
 
               {/* Pilot portal routes */}
               <Route path="/pilot" element={<PilotRoute><PilotDashboard /></PilotRoute>} />

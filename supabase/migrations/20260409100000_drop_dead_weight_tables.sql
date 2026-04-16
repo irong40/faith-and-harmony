@@ -38,7 +38,8 @@ DROP FUNCTION IF EXISTS public.set_ticket_number();
 -- ============================================
 
 -- Drop storage bucket
-DELETE FROM storage.buckets WHERE id = 'governance';
+-- DELETE FROM storage.buckets WHERE id = 'governance';
+-- Skipped: Supabase blocks direct storage.buckets DELETE. Use Dashboard or Storage API to remove.
 
 -- Drop tables
 DROP TABLE IF EXISTS public.governance_decisions CASCADE;

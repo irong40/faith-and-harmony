@@ -241,8 +241,80 @@ Deno.serve(async (req) => {
       });
     }
 
+    // POST /generate-report - Log a report PDF generation (client-side print)
+    if (action === "generate-report" && req.method === "POST") {
+      const { report_id } = await req.json();
+
+      if (!report_id) {
+        return new Response(
+          JSON.stringify({ error: "report_id required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Fetch the report
+      const { data: report, error: reportError } = await supabase
+        .from("job_reports")
+        .select("*, report_templates(code, name), clients(name, company)")
+        .eq("id", report_id)
+        .single();
+
+      if (reportError || !report) {
+        return new Response(
+          JSON.stringify({ error: "Report not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const templateCode = report.report_templates?.code || "report";
+      const filename = `${templateCode}-${report.title?.replace(/[^a-z0-9]/gi, "-").toLowerCase()}-${timestamp}.pdf`;
+
+      // Log the generation in generated_documents
+      const { data: logEntry, error: logError } = await supabase
+        .from("generated_documents")
+        .insert({
+          template_code: templateCode,
+          user_id: userId,
+          file_name: filename,
+          file_path: `reports/${filename}`,
+          file_size: null, // client-side PDF, size unknown at server
+          output_format: "pdf",
+          input_data: { report_id, title: report.title },
+          metadata: {
+            generated_at: new Date().toISOString(),
+            generation_method: "client_print",
+            report_status: report.status,
+          },
+        })
+        .select("id")
+        .single();
+
+      if (logError) {
+        console.error("Log error:", logError);
+      }
+
+      // Update the job_report with the generated_document_id
+      if (logEntry?.id) {
+        await supabase
+          .from("job_reports")
+          .update({ generated_document_id: logEntry.id })
+          .eq("id", report_id);
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          document_id: logEntry?.id,
+          filename,
+          generation_method: "client_print",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
-      JSON.stringify({ error: "Invalid action. Use: templates, schema, generate, or history" }),
+      JSON.stringify({ error: "Invalid action. Use: templates, schema, generate, generate-report, or history" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
