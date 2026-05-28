@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{DOCUMENT_TITLE}} — Sentinel Aerial Inspections</title>
+<style>
+  @page {
+    size: letter;
+    margin: 0.75in 0.9in;
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      font-size: 8pt;
+      color: #64607a;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: #1a1a1a;
+    background: #ffffff;
+  }
+
+  /* --- HEADER / LETTERHEAD --- */
+  .letterhead-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 4px solid #c44a1a;
+    margin-bottom: 20px;
+  }
+  .letterhead-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .letterhead-logo {
+    height: 56px;
+    width: auto;
+  }
+  .letterhead-company {
+    font-size: 17pt;
+    font-weight: 800;
+    color: #0f0f0f;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .letterhead-tagline {
+    font-size: 8.5pt;
+    color: #c44a1a;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+  .letterhead-contact {
+    text-align: right;
+    font-size: 8.5pt;
+    color: #3a3a3a;
+    line-height: 1.65;
+  }
+  .letterhead-contact strong {
+    color: #0f0f0f;
+  }
+  .letterhead-contact a {
+    color: #c44a1a;
+    text-decoration: none;
+  }
+
+  /* --- CLASSIFICATION BANNER (for CUI/FOUO) --- */
+  .classification-banner {
+    background: #8b1a1a;
+    color: #ffffff;
+    text-align: center;
+    padding: 6px;
+    font-size: 10pt;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .classification-banner.unclassified {
+    background: #2d7a3a;
+  }
+
+  /* --- DOCUMENT META BLOCK --- */
+  .doc-title-block {
+    border-left: 5px solid #c44a1a;
+    padding-left: 16px;
+    margin-bottom: 24px;
+  }
+  .doc-type {
+    font-size: 9pt;
+    color: #c44a1a;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .doc-title {
+    font-size: 20pt;
+    font-weight: 700;
+    color: #0f0f0f;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+  .doc-subtitle {
+    font-size: 11pt;
+    color: #64607a;
+    font-weight: 400;
+  }
+
+  /* --- METADATA GRID --- */
+  .metadata-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 24px;
+    background: #f7f5f2;
+    border: 1px solid #e5e0d8;
+    border-left: 4px solid #c44a1a;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    font-size: 9.5pt;
+  }
+  .metadata-grid .row {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dotted #d0ccc4;
+    padding: 3px 0;
+  }
+  .metadata-grid .label {
+    color: #64607a;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 8.5pt;
+    letter-spacing: 0.5px;
+  }
+  .metadata-grid .value {
+    color: #0f0f0f;
+    font-weight: 500;
+    text-align: right;
+  }
+
+  /* --- CONTENT --- */
+  .content { margin-bottom: 30px; }
+  h1 {
+    font-size: 16pt;
+    color: #0f0f0f;
+    margin: 24px 0 12px 0;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #c44a1a;
+  }
+  h2 {
+    font-size: 13pt;
+    color: #0f0f0f;
+    border-bottom: 1px solid #c44a1a;
+    padding-bottom: 4px;
+    margin: 20px 0 10px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  h3 {
+    font-size: 11pt;
+    color: #c44a1a;
+    margin: 14px 0 6px 0;
+    font-weight: 700;
+  }
+  h4 {
+    font-size: 10pt;
+    color: #0f0f0f;
+    margin: 10px 0 4px 0;
+    font-weight: 700;
+  }
+  p { margin-bottom: 8px; }
+  ul, ol { margin: 8px 0 8px 22px; }
+  li { margin-bottom: 3px; }
+
+  /* --- CALLOUTS --- */
+  .callout {
+    background: #fff3ec;
+    border-left: 4px solid #c44a1a;
+    padding: 10px 14px;
+    margin: 12px 0;
+    font-size: 10pt;
+  }
+  .callout.warning {
+    background: #fef5e7;
+    border-left-color: #dfae62;
+  }
+  .callout.danger {
+    background: #fce9e9;
+    border-left-color: #8b1a1a;
+  }
+  .callout.success {
+    background: #eaf5ec;
+    border-left-color: #2d7a3a;
+  }
+  .callout-title {
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 9pt;
+    letter-spacing: 0.8px;
+    margin-bottom: 4px;
+    color: #0f0f0f;
+  }
+
+  /* --- TABLES --- */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 9.5pt;
+  }
+  th {
+    background: #0f0f0f;
+    color: #ffffff;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #e5e0d8;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #faf8f4; }
+
+  .sev-1, .status-done, .priority-low { color: #2d7a3a; font-weight: 600; }
+  .sev-2, .status-pending, .priority-medium { color: #dfae62; font-weight: 600; }
+  .sev-3, .priority-high { color: #e85d26; font-weight: 600; }
+  .sev-4 { color: #c44a1a; font-weight: 700; }
+  .sev-5, .status-critical { color: #8b1a1a; font-weight: 700; text-transform: uppercase; }
+
+  /* --- EVIDENCE / PHOTO CARDS --- */
+  .evidence-card {
+    border: 1px solid #e5e0d8;
+    padding: 12px;
+    margin: 10px 0;
+    page-break-inside: avoid;
+  }
+  .evidence-card .caption {
+    font-size: 9pt;
+    color: #64607a;
+    border-top: 1px dotted #d0ccc4;
+    padding-top: 6px;
+    margin-top: 8px;
+  }
+  .evidence-card img {
+    width: 100%;
+    max-height: 4.5in;
+    object-fit: contain;
+  }
+
+  /* --- ATTESTATION / SIGNATURE --- */
+  .attestation {
+    border: 2px solid #0f0f0f;
+    padding: 16px;
+    margin: 24px 0;
+    background: #faf8f4;
+  }
+  .signature-block {
+    margin-top: 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+  }
+  .signature-line {
+    border-bottom: 1px solid #0f0f0f;
+    margin-bottom: 4px;
+    height: 30px;
+  }
+  .signature-label {
+    font-size: 9pt;
+    color: #64607a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* --- FOOTER --- */
+  .letterhead-footer {
+    border-top: 3px solid #c44a1a;
+    padding-top: 10px;
+    margin-top: 30px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 7.5pt;
+    color: #64607a;
+  }
+  .letterhead-footer-legal {
+    font-size: 7pt;
+    color: #8a8578;
+    margin-top: 3px;
+    max-width: 4.5in;
+  }
+  .footer-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #c44a1a;
+    color: #ffffff;
+    font-size: 7pt;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-right: 4px;
+  }
+
+  /* --- PRINT --- */
+  @media print {
+    body { font-size: 10pt; }
+    .letterhead-header { page-break-inside: avoid; }
+    .classification-banner { position: running(classification); }
+    h1, h2 { page-break-after: avoid; }
+    table, .evidence-card, .attestation, .callout { page-break-inside: avoid; }
+    .page-break { page-break-before: always; }
+  }
+</style>
+</head>
+<body>
+
+<!-- CLASSIFICATION BANNER (for CUI/FOUO docs; delete for unclassified) -->
+<!-- <div class="classification-banner">{{CLASSIFICATION_MARKING}}</div> -->
+
+<!-- HEADER -->
+<div class="letterhead-header">
+  <div class="letterhead-brand">
+    <img src="assets/sai-logo.png" alt="Sentinel Aerial Inspections" class="letterhead-logo">
+    <div>
+      <div class="letterhead-company">Sentinel Aerial Inspections</div>
+      <div class="letterhead-tagline">Veteran-Owned &middot; FAA Part 107 Certified &middot; Insured</div>
+    </div>
+  </div>
+  <div class="letterhead-contact">
+    <strong>Faith &amp; Harmony LLC (DBA)</strong><br>
+    Hampton Roads, Virginia<br>
+    (757) 843-8772<br>
+    <a href="mailto:info@sentinelaerialinspections.com">info@sentinelaerialinspections.com</a><br>
+    <a href="https://sentinelaerialinspections.com">sentinelaerialinspections.com</a>
+  </div>
+</div>
+
+<!-- DOCUMENT TITLE BLOCK -->
+<div class="doc-title-block">
+  <div class="doc-type">{{DOCUMENT_TYPE}}</div>
+  <div class="doc-title">{{DOCUMENT_TITLE}}</div>
+  <div class="doc-subtitle">{{CLIENT_NAME}} &middot; {{SITE_NAME}}</div>
+</div>
+
+<!-- UNIVERSAL METADATA GRID -->
+<div class="metadata-grid">
+  <div class="row"><span class="label">Report ID</span><span class="value">{{REPORT_ID}}</span></div>
+  <div class="row"><span class="label">Project #</span><span class="value">{{PROJECT_NUMBER}}</span></div>
+  <div class="row"><span class="label">Client</span><span class="value">{{CLIENT_NAME}}</span></div>
+  <div class="row"><span class="label">Contract / PO</span><span class="value">{{CONTRACT_ID}}</span></div>
+  <div class="row"><span class="label">Site Address</span><span class="value">{{SITE_ADDRESS}}</span></div>
+  <div class="row"><span class="label">Coordinates</span><span class="value">{{LAT_LONG}}</span></div>
+  <div class="row"><span class="label">Flight Date(s)</span><span class="value">{{FLIGHT_DATES}}</span></div>
+  <div class="row"><span class="label">Report Date</span><span class="value">{{REPORT_DATE}}</span></div>
+  <div class="row"><span class="label">Remote PIC</span><span class="value">{{PIC_NAME}}</span></div>
+  <div class="row"><span class="label">Part 107 Cert #</span><span class="value">{{PIC_CERT}}</span></div>
+  <div class="row"><span class="label">Aircraft</span><span class="value">{{AIRCRAFT_MODEL}}</span></div>
+  <div class="row"><span class="label">FAA Registration</span><span class="value">{{FAA_REG}}</span></div>
+  <div class="row"><span class="label">Sensor(s)</span><span class="value">{{SENSORS}}</span></div>
+  <div class="row"><span class="label">Airspace Class</span><span class="value">{{AIRSPACE}}</span></div>
+  <div class="row"><span class="label">LAANC / Waiver</span><span class="value">{{LAANC_ID}}</span></div>
+  <div class="row"><span class="label">Classification</span><span class="value">{{CLASSIFICATION}}</span></div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+{{CONTENT}}
+</div>
+
+<!-- FOOTER -->
+<div class="letterhead-footer">
+  <div>
+    <span class="footer-badge">SDVOSB</span><span class="footer-badge">FAA Part 107</span>
+    Sentinel Aerial Inspections &mdash; a DBA of Faith &amp; Harmony LLC
+    <div class="letterhead-footer-legal">
+      This document contains proprietary information prepared for the exclusive use of the named client.
+      Unauthorized reproduction, distribution, or disclosure is prohibited. All imagery, data, and analysis are
+      provided under the terms of the Sentinel Aerial Inspections Master Services Agreement. Findings reflect
+      conditions observed on the stated flight date only.
+    </div>
+  </div>
+  <div style="text-align: right;">
+    &copy; {{YEAR}} Faith &amp; Harmony LLC<br>
+    All rights reserved.<br>
+    Report ID: {{REPORT_ID}}
+  </div>
+</div>
+
+</body>
+</html>
