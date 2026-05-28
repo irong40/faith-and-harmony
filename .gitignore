@@ -39,3 +39,6 @@ __pycache__/
 *.pyc
 venv/
 .venv/
+
+# Supabase CLI local state (machine-specific)
+supabase/.temp/

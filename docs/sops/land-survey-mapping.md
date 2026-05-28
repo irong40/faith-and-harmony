@@ -111,14 +111,28 @@ The mapping software handles individual photo capture. Your job:
 ### WebODM (Local — on your RTX 5060 Ti)
 
 1. Import all photos into WebODM
-2. Set processing parameters:
-   - `--dsm` for elevation model
-   - `--dtm` for bare-earth terrain model
-   - `--orthophoto-resolution 2` (cm/pixel)
-   - Enable `--pc-quality high` for point cloud
+2. **Identify the terrain type** and select the matching profile below
 3. Add GCP file if used
 4. Process (15 min - 2 hours depending on photo count)
-5. Export deliverables
+5. QC the orthomosaic before running analysis — check for black gaps, island artifacts, or stitching seams
+6. Export deliverables
+
+### Processing Profiles by Terrain Type
+
+| Terrain | feature-quality | min-num-features | matcher-neighbors | orthophoto-resolution | Notes |
+|---------|----------------|-----------------|-------------------|----------------------|-------|
+| **Built environment** (houses, roads, structures) | high | 10,000 | 8 (default) | 2 cm | Lots of texture and distinct features — default settings work well |
+| **Open land** (fields, gravel, dirt) | high | 12,000 | 12 | 3 cm | Moderate texture; increase matcher range |
+| **Winter canopy** (bare deciduous, mixed forest) | **ultra** | **15,000** | **16** | **5 cm** | Low texture, repetitive patterns. Ultra features + wide matcher essential. Crop=1 to avoid edge loss |
+| **Summer canopy** (full leaf-on forest) | high | 12,000 | 12 | 3 cm | Better texture than winter but uniform green. Moderate bump. |
+| **Water/wetland** (reflective surfaces) | ultra | 15,000 | 16 | 5 cm | Water is near-zero texture. Expect gaps over open water. |
+| **Snow cover** | ultra | 15,000 | 16 | 5 cm | Worst case — white-on-white. Consider crosshatch flight. |
+
+**Key rules:**
+- Low-texture scenes need **ultra feature quality** and **15,000+ min features** — the default 10,000 at high quality will produce scattered islands instead of a continuous mosaic
+- Never use 2 cm resolution on sparse/low-texture terrain — you're interpolating gaps that don't have data. Use 5 cm.
+- If the first run produces island artifacts (scattered patches on black background), re-run with the low-texture profile before adjusting anything else
+- Winter tree census is a documented hard case for photogrammetric stitching. Budget extra processing time and QC passes.
 
 ### Deliverables
 
