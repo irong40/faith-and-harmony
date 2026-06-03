@@ -1,0 +1,442 @@
+{
+  "name": "Governance Scribe Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 1-7 1,4,7,10 1"
+            }
+          ]
+        }
+      },
+      "id": "gs-0001",
+      "name": "Quarterly CRON",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "governance-scribe",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "gs-0002",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Determine which quarter to report on\nconst webhookData = $input.first().json.body || $input.first().json;\nlet quarter, fiscalYear, quarterStart, quarterEnd, previousQuarter, previousFiscalYear;\n\nif (webhookData.quarter && webhookData.fiscal_year) {\n  // Manual override\n  quarter = webhookData.quarter;\n  fiscalYear = Number(webhookData.fiscal_year);\n} else {\n  // Auto-detect: report on PREVIOUS quarter\n  const now = new Date();\n  const currentMonth = now.getMonth(); // 0-indexed\n  const currentYear = now.getFullYear();\n  const currentQ = Math.floor(currentMonth / 3) + 1;\n  \n  // Previous quarter\n  let prevQ = currentQ - 1;\n  let prevYear = currentYear;\n  if (prevQ === 0) {\n    prevQ = 4;\n    prevYear = currentYear - 1;\n  }\n  quarter = 'Q' + prevQ;\n  fiscalYear = prevYear;\n}\n\n// Calculate quarter date boundaries\nconst qNum = parseInt(quarter.replace('Q', ''));\nconst startMonth = (qNum - 1) * 3; // 0-indexed: Q1=0, Q2=3, Q3=6, Q4=9\nquarterStart = fiscalYear + '-' + String(startMonth + 1).padStart(2, '0') + '-01';\n\n// End of quarter: last day of the 3rd month\nconst endMonth = startMonth + 3; // next quarter start month (0-indexed)\nconst lastDay = new Date(fiscalYear, endMonth, 0).getDate();\nquarterEnd = fiscalYear + '-' + String(startMonth + 3).padStart(2, '0') + '-' + String(lastDay).padStart(2, '0');\n\n// Previous quarter for SCRB-05 review lookup\nlet prevQNum = qNum - 1;\nlet prevFY = fiscalYear;\nif (prevQNum === 0) {\n  prevQNum = 4;\n  prevFY = fiscalYear - 1;\n}\npreviousQuarter = 'Q' + prevQNum;\npreviousFiscalYear = prevFY;\n\nreturn [{\n  json: {\n    quarter,\n    fiscalYear,\n    quarterStart,\n    quarterEnd,\n    previousQuarter,\n    previousFiscalYear\n  }\n}];"
+      },
+      "id": "gs-0003",
+      "name": "Determine Quarter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 400]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/drone_jobs?select=id,job_number,package_id,status,property_type,scheduled_date,delivered_at,created_at,drone_packages(code,name,category,price)&scheduled_date=gte.{{ $json.quarterStart }}&scheduled_date=lte.{{ $json.quarterEnd }}&status=in.(delivered,completed)",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": { "response": { "response": { "responseFormat": "json" } }, "timeout": 15000 }
+      },
+      "id": "gs-0004",
+      "name": "Query drone_jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [780, 100]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/governance_decisions?quarter=eq.{{ $json.quarter }}&fiscal_year=eq.{{ $json.fiscalYear }}&order=decision_date.asc&select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": { "response": { "response": { "responseFormat": "json" } }, "timeout": 15000 }
+      },
+      "id": "gs-0005",
+      "name": "Query governance_decisions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [780, 280]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/compliance_obligations?select=*&order=due_date.asc",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": { "response": { "response": { "responseFormat": "json" } }, "timeout": 15000 }
+      },
+      "id": "gs-0006",
+      "name": "Query compliance_obligations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [780, 460]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/financial_actuals?month=gte.{{ $json.quarterStart }}&month=lte.{{ $json.quarterEnd }}&order=month.asc&select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": { "response": { "response": { "responseFormat": "json" } }, "timeout": 15000 }
+      },
+      "id": "gs-0007",
+      "name": "Query financial_actuals",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [780, 640]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/governance_log?quarter=eq.{{ $json.quarter }}&fiscal_year=eq.{{ $json.fiscalYear }}&order=created_at.asc&select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": { "response": { "response": { "responseFormat": "json" } }, "timeout": 15000 }
+      },
+      "id": "gs-0008",
+      "name": "Query governance_log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [780, 820]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/governance_log?agent_name=eq.governance_scribe&event_type=eq.generation&quarter=eq.{{ $json.previousQuarter }}&fiscal_year=eq.{{ $json.previousFiscalYear }}&order=created_at.desc&limit=1&select=*",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "options": { "response": { "response": { "responseFormat": "json" } }, "timeout": 15000 }
+      },
+      "id": "gs-0009",
+      "name": "Query previous scribe output",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [780, 1000]
+    },
+    {
+      "parameters": {
+        "jsCode": "const quarterData = $('Determine Quarter').first().json;\nconst droneJobs = $('Query drone_jobs').first().json;\nconst decisions = $('Query governance_decisions').first().json;\nconst obligations = $('Query compliance_obligations').first().json;\nconst financials = $('Query financial_actuals').first().json;\nconst govLog = $('Query governance_log').first().json;\nconst prevScribe = $('Query previous scribe output').first().json;\n\n// Handle Supabase REST responses (arrays)\nconst droneJobsArr = Array.isArray(droneJobs) ? droneJobs : [];\nconst decisionsArr = Array.isArray(decisions) ? decisions : [];\nconst obligationsArr = Array.isArray(obligations) ? obligations : [];\nconst financialsArr = Array.isArray(financials) ? financials : [];\nconst govLogArr = Array.isArray(govLog) ? govLog : [];\nconst prevScribeArr = Array.isArray(prevScribe) ? prevScribe : [];\n\nreturn [{\n  json: {\n    quarter: quarterData.quarter,\n    fiscalYear: quarterData.fiscalYear,\n    quarterStart: quarterData.quarterStart,\n    quarterEnd: quarterData.quarterEnd,\n    collectedData: {\n      drone_jobs: droneJobsArr,\n      governance_decisions: decisionsArr,\n      compliance_obligations: obligationsArr,\n      financial_actuals: financialsArr,\n      governance_log: govLogArr,\n      previous_scribe_output: prevScribeArr.length > 0 ? prevScribeArr[0] : null\n    }\n  }\n}];"
+      },
+      "id": "gs-0010",
+      "name": "Merge Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 8192, temperature: 0, system: 'You are a governance scribe for Faith & Harmony LLC, a Virginia single-member LLC providing drone inspection services. Generate formal quarterly meeting minutes as structured JSON.\\n\\nWriting standards:\\n- Active voice throughout\\n- No dashes or hyphens in prose (use commas or periods instead)\\n- Direct, conversational tone\\n- No marketing fluff or corporate jargon\\n- Be specific with numbers\\n\\nEvery section must be present in the output even if data is limited. For empty data sections, write \"No activity reported this quarter\" rather than leaving blank.\\n\\nFormat governance decisions as formal resolutions with reference numbers in the format RES-{YYYY}-{QN}-{NNN} where NNN is a zero-padded sequential number starting at 001.', messages: [{ role: 'user', content: 'Generate quarterly meeting minutes for ' + $json.quarter + ' ' + $json.fiscalYear + '.\\n\\nIs this the inaugural meeting (no prior quarter data)? ' + ($json.collectedData.previous_scribe_output === null ? 'Yes' : 'No') + '\\n\\nCollected data:\\n' + JSON.stringify($json.collectedData, null, 2) + '\\n\\nRespond with raw JSON only. No markdown code fences. No explanatory text.\\n\\nRequired JSON structure:\\n{\\n  \"call_to_order\": { \"date\": \"...\", \"time\": \"9:00 AM ET\", \"attendees\": [\"Dradamo Pierce, Sole Member and Managing Member\"], \"quorum_statement\": \"...\" },\\n  \"previous_quarter_review\": { \"summary\": \"...\", \"action_items\": [{ \"item\": \"...\", \"status\": \"completed|in_progress|deferred\", \"notes\": \"...\" }] },\\n  \"financial_report\": { \"revenue_summary\": \"...\", \"expense_summary\": \"...\", \"cash_position\": \"...\", \"notable_variances\": [\"...\"] },\\n  \"operations_report\": { \"jobs_summary\": \"...\", \"package_mix\": \"...\", \"equipment_status\": \"...\", \"platform_updates\": \"...\" },\\n  \"compliance_report\": { \"completed\": [\"...\"], \"approaching\": [\"...\"], \"overdue\": [\"...\"], \"summary\": \"...\" },\\n  \"decisions_and_resolutions\": [{ \"reference\": \"RES-YYYY-QN-NNN\", \"title\": \"...\", \"context\": \"...\", \"resolution\": \"...\" }],\\n  \"action_items\": [{ \"item\": \"...\", \"owner\": \"...\", \"due_date\": \"...\" }],\\n  \"adjournment\": { \"next_meeting_date\": \"...\", \"closing_statement\": \"...\" }\\n}' }] }) }}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "gs-0011",
+      "name": "Generate Minutes AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $json;\nconst mergeData = $('Merge Data').first().json;\n\nlet minutes;\ntry {\n  let text = response.content[0].text.trim();\n  // Strip markdown code fences if present\n  if (text.startsWith('```')) {\n    text = text.replace(/^```(?:json)?\\n?/, '').replace(/\\n?```$/, '').trim();\n  }\n  minutes = JSON.parse(text);\n} catch (e) {\n  const raw = response.content ? response.content[0].text.substring(0, 200) : 'No content';\n  throw new Error('Failed to parse Claude response as JSON: ' + e.message + '. First 200 chars: ' + raw);\n}\n\n// Validate all 8 required keys\nconst required = ['call_to_order', 'previous_quarter_review', 'financial_report', 'operations_report', 'compliance_report', 'decisions_and_resolutions', 'action_items', 'adjournment'];\nconst missing = required.filter(k => !minutes[k]);\nif (missing.length > 0) {\n  throw new Error('Missing required sections: ' + missing.join(', '));\n}\n\nreturn [{\n  json: {\n    quarter: mergeData.quarter,\n    fiscalYear: mergeData.fiscalYear,\n    quarterStart: mergeData.quarterStart,\n    quarterEnd: mergeData.quarterEnd,\n    minutes: minutes,\n    collectedData: mergeData.collectedData\n  }\n}];"
+      },
+      "id": "gs-0012",
+      "name": "Validate AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } = require('docx');\n\nconst { quarter, fiscalYear, minutes } = $json;\nconst children = [];\n\n// Title block\nchildren.push(new Paragraph({ text: 'Faith & Harmony LLC', heading: HeadingLevel.TITLE, alignment: AlignmentType.CENTER }));\nchildren.push(new Paragraph({ text: 'Quarterly Governance Meeting Minutes', heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }));\nchildren.push(new Paragraph({ text: quarter + ' ' + fiscalYear, heading: HeadingLevel.HEADING_2, alignment: AlignmentType.CENTER }));\nchildren.push(new Paragraph({ text: '' }));\n\n// Helper: add paragraphs from text or array\nfunction addText(text) {\n  if (!text) return;\n  const parts = String(text).split('\\n\\n');\n  for (const p of parts) {\n    if (p.trim()) children.push(new Paragraph({ text: p.trim() }));\n  }\n}\n\nfunction addBullets(items) {\n  if (!items || !Array.isArray(items) || items.length === 0) {\n    children.push(new Paragraph({ text: 'No items reported.' }));\n    return;\n  }\n  for (const item of items) {\n    children.push(new Paragraph({ text: typeof item === 'string' ? item : JSON.stringify(item), bullet: { level: 0 } }));\n  }\n}\n\n// Section 1: Call to Order\nchildren.push(new Paragraph({ text: '1. Call to Order', heading: HeadingLevel.HEADING_2 }));\nconst cto = minutes.call_to_order || {};\nchildren.push(new Paragraph({ text: 'Date: ' + (cto.date || 'Not specified') }));\nchildren.push(new Paragraph({ text: 'Time: ' + (cto.time || '9:00 AM ET') }));\nchildren.push(new Paragraph({ text: 'Attendees: ' + (cto.attendees ? cto.attendees.join(', ') : 'Dradamo Pierce, Sole Member') }));\nchildren.push(new Paragraph({ text: cto.quorum_statement || 'Sole member present constitutes quorum.' }));\nchildren.push(new Paragraph({ text: '' }));\n\n// Section 2: Previous Quarter Review\nchildren.push(new Paragraph({ text: '2. Review of Previous Quarter', heading: HeadingLevel.HEADING_2 }));\nconst pqr = minutes.previous_quarter_review || {};\naddText(pqr.summary || 'No prior quarter data available. This is the inaugural meeting.');\nif (pqr.action_items && pqr.action_items.length > 0) {\n  children.push(new Paragraph({ text: '' }));\n  for (const ai of pqr.action_items) {\n    children.push(new Paragraph({\n      children: [\n        new TextRun({ text: (ai.item || 'Item') + ' ', bold: true }),\n        new TextRun({ text: '[' + (ai.status || 'unknown') + '] ' + (ai.notes || '') })\n      ],\n      bullet: { level: 0 }\n    }));\n  }\n}\nchildren.push(new Paragraph({ text: '' }));\n\n// Section 3: Financial Report\nchildren.push(new Paragraph({ text: '3. Financial Report', heading: HeadingLevel.HEADING_2 }));\nconst fin = minutes.financial_report || {};\naddText(fin.revenue_summary || 'No revenue data reported.');\naddText(fin.expense_summary || 'No expense data reported.');\naddText(fin.cash_position || '');\nif (fin.notable_variances && fin.notable_variances.length > 0) {\n  children.push(new Paragraph({ children: [new TextRun({ text: 'Notable Variances:', bold: true })] }));\n  addBullets(fin.notable_variances);\n}\nchildren.push(new Paragraph({ text: '' }));\n\n// Section 4: Operations Report\nchildren.push(new Paragraph({ text: '4. Operations Report', heading: HeadingLevel.HEADING_2 }));\nconst ops = minutes.operations_report || {};\naddText(ops.jobs_summary || 'No operations data reported.');\naddText(ops.package_mix || '');\naddText(ops.equipment_status || '');\naddText(ops.platform_updates || '');\nchildren.push(new Paragraph({ text: '' }));\n\n// Section 5: Compliance Report\nchildren.push(new Paragraph({ text: '5. Compliance Report', heading: HeadingLevel.HEADING_2 }));\nconst comp = minutes.compliance_report || {};\naddText(comp.summary || 'No compliance activity reported.');\nif (comp.completed && comp.completed.length > 0) {\n  children.push(new Paragraph({ children: [new TextRun({ text: 'Completed:', bold: true })] }));\n  addBullets(comp.completed);\n}\nif (comp.approaching && comp.approaching.length > 0) {\n  children.push(new Paragraph({ children: [new TextRun({ text: 'Approaching Deadlines:', bold: true })] }));\n  addBullets(comp.approaching);\n}\nif (comp.overdue && comp.overdue.length > 0) {\n  children.push(new Paragraph({ children: [new TextRun({ text: 'Overdue:', bold: true })] }));\n  addBullets(comp.overdue);\n}\nchildren.push(new Paragraph({ text: '' }));\n\n// Section 6: Decisions and Resolutions\nchildren.push(new Paragraph({ text: '6. Decisions and Resolutions', heading: HeadingLevel.HEADING_2 }));\nconst resolutions = minutes.decisions_and_resolutions || [];\nif (resolutions.length === 0) {\n  children.push(new Paragraph({ text: 'No formal resolutions recorded this quarter.' }));\n} else {\n  for (const res of resolutions) {\n    children.push(new Paragraph({ children: [new TextRun({ text: (res.reference || 'RES') + ': ' + (res.title || 'Untitled'), bold: true })] }));\n    addText(res.context || '');\n    addText(res.resolution || '');\n    children.push(new Paragraph({ text: '' }));\n  }\n}\nchildren.push(new Paragraph({ text: '' }));\n\n// Section 7: Action Items\nchildren.push(new Paragraph({ text: '7. Action Items', heading: HeadingLevel.HEADING_2 }));\nconst actions = minutes.action_items || [];\nif (actions.length === 0) {\n  children.push(new Paragraph({ text: 'No action items assigned.' }));\n} else {\n  for (const ai of actions) {\n    children.push(new Paragraph({\n      children: [\n        new TextRun({ text: (ai.item || 'Item'), bold: true }),\n        new TextRun({ text: ' | Owner: ' + (ai.owner || 'Unassigned') + ' | Due: ' + (ai.due_date || 'TBD') })\n      ],\n      bullet: { level: 0 }\n    }));\n  }\n}\nchildren.push(new Paragraph({ text: '' }));\n\n// Section 8: Adjournment\nchildren.push(new Paragraph({ text: '8. Adjournment', heading: HeadingLevel.HEADING_2 }));\nconst adj = minutes.adjournment || {};\nchildren.push(new Paragraph({ text: 'Next Meeting: ' + (adj.next_meeting_date || 'To be determined') }));\naddText(adj.closing_statement || 'Meeting adjourned.');\nchildren.push(new Paragraph({ text: '' }));\n\n// Footer\nchildren.push(new Paragraph({\n  children: [new TextRun({ text: 'Minutes prepared by Governance Scribe Agent | Generated ' + new Date().toISOString().slice(0, 10), italics: true })],\n  alignment: AlignmentType.RIGHT\n}));\n\nconst doc = new Document({ sections: [{ children }] });\nconst buffer = await Packer.toBuffer(doc);\nconst filename = fiscalYear + '-' + quarter + '_meeting_minutes.docx';\nconst storagePath = 'governance/scribe/' + filename;\n\nconst binaryData = await this.helpers.prepareBinaryData(\n  Buffer.from(buffer),\n  filename,\n  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'\n);\n\nreturn [{\n  json: {\n    filename,\n    storagePath,\n    quarter: $json.quarter,\n    fiscalYear: $json.fiscalYear,\n    minutes: $json.minutes,\n    collectedData: $json.collectedData\n  },\n  binary: { data: binaryData }\n}];"
+      },
+      "id": "gs-0013",
+      "name": "Generate DOCX",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1800, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/storage/v1/object/governance/scribe/{{ $json.filename }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
+            { "name": "x-upsert", "value": "true" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": { "timeout": 30000 }
+      },
+      "id": "gs-0014",
+      "name": "Upload DOCX to Storage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2040, 400],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const docxData = $('Generate DOCX').first().json;\nconst collectedData = docxData.collectedData;\n\nconst dataSnapshot = {\n  quarter: docxData.quarter,\n  fiscal_year: docxData.fiscalYear,\n  drone_jobs_count: collectedData.drone_jobs ? collectedData.drone_jobs.length : 0,\n  governance_decisions_count: collectedData.governance_decisions ? collectedData.governance_decisions.length : 0,\n  compliance_obligations_count: collectedData.compliance_obligations ? collectedData.compliance_obligations.length : 0,\n  financial_actuals_months: collectedData.financial_actuals ? collectedData.financial_actuals.length : 0,\n  governance_log_entries: collectedData.governance_log ? collectedData.governance_log.length : 0,\n  has_previous_scribe_output: collectedData.previous_scribe_output !== null,\n  ai_response: docxData.minutes\n};\n\nreturn [{\n  json: {\n    dataSnapshot,\n    storagePath: docxData.storagePath,\n    filename: docxData.filename,\n    quarter: docxData.quarter,\n    fiscalYear: docxData.fiscalYear\n  }\n}];"
+      },
+      "id": "gs-0015",
+      "name": "Build Data Snapshot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2280, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/rest/v1/governance_log",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Prefer", "value": "return=minimal" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ agent_name: 'governance_scribe', event_type: 'generation', summary: 'Generated ' + $json.quarter + ' ' + $json.fiscalYear + ' quarterly meeting minutes', document_url: $json.storagePath, data_snapshot: $json.dataSnapshot, quarter: $json.quarter, fiscal_year: $json.fiscalYear }) }}"
+      },
+      "id": "gs-0016",
+      "name": "Log to Governance Log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2520, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SUPABASE_URL }}/storage/v1/object/sign/governance/scribe/{{ $('Generate DOCX').first().json.filename }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ expiresIn: 604800 }) }}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "gs-0017",
+      "name": "Create Signed URL",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2760, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.RESEND_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ from: 'Faith & Harmony <info@faithandharmonyllc.com>', to: [$env.FOUNDER_EMAIL], subject: $('Build Data Snapshot').first().json.quarter + ' ' + $('Build Data Snapshot').first().json.fiscalYear + ' Quarterly Meeting Minutes Ready', html: '<h2>Quarterly Meeting Minutes Generated</h2><p>Your ' + $('Build Data Snapshot').first().json.quarter + ' ' + $('Build Data Snapshot').first().json.fiscalYear + ' quarterly governance meeting minutes have been generated and stored.</p><p><a href=\"' + $env.SUPABASE_URL + '/storage/v1' + ($json.signedURL || $json.signedUrl || '') + '\" style=\"display:inline-block;padding:12px 24px;background-color:#2563eb;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:bold;\">Download Meeting Minutes (DOCX)</a></p><p style=\"color:#6b7280;font-size:12px;\">This link expires in 7 days.</p>' }) }}"
+      },
+      "id": "gs-0018",
+      "name": "Send Email Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3000, 400]
+    }
+  ],
+  "connections": {
+    "Quarterly CRON": {
+      "main": [
+        [{ "node": "Determine Quarter", "type": "main", "index": 0 }]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [{ "node": "Determine Quarter", "type": "main", "index": 0 }]
+      ]
+    },
+    "Determine Quarter": {
+      "main": [
+        [
+          { "node": "Query drone_jobs", "type": "main", "index": 0 },
+          { "node": "Query governance_decisions", "type": "main", "index": 0 },
+          { "node": "Query compliance_obligations", "type": "main", "index": 0 },
+          { "node": "Query financial_actuals", "type": "main", "index": 0 },
+          { "node": "Query governance_log", "type": "main", "index": 0 },
+          { "node": "Query previous scribe output", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Query drone_jobs": {
+      "main": [
+        [{ "node": "Merge Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Query governance_decisions": {
+      "main": [
+        [{ "node": "Merge Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Query compliance_obligations": {
+      "main": [
+        [{ "node": "Merge Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Query financial_actuals": {
+      "main": [
+        [{ "node": "Merge Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Query governance_log": {
+      "main": [
+        [{ "node": "Merge Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Query previous scribe output": {
+      "main": [
+        [{ "node": "Merge Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [{ "node": "Generate Minutes AI", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate Minutes AI": {
+      "main": [
+        [{ "node": "Validate AI Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Validate AI Response": {
+      "main": [
+        [{ "node": "Generate DOCX", "type": "main", "index": 0 }]
+      ]
+    },
+    "Generate DOCX": {
+      "main": [
+        [{ "node": "Upload DOCX to Storage", "type": "main", "index": 0 }]
+      ]
+    },
+    "Upload DOCX to Storage": {
+      "main": [
+        [{ "node": "Build Data Snapshot", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Data Snapshot": {
+      "main": [
+        [{ "node": "Log to Governance Log", "type": "main", "index": 0 }]
+      ]
+    },
+    "Log to Governance Log": {
+      "main": [
+        [{ "node": "Create Signed URL", "type": "main", "index": 0 }]
+      ]
+    },
+    "Create Signed URL": {
+      "main": [
+        [{ "node": "Send Email Notification", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/New_York"
+  },
+  "tags": [
+    { "name": "governance" },
+    { "name": "governance-scribe" }
+  ]
+}
