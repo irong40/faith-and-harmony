@@ -21,6 +21,7 @@ export default function LandingPage() {
           <div className="fh-nav-links">
             <a href="#services">Services</a>
             <a href="#about">About</a>
+            <Link to="/capabilities">Capabilities</Link>
             <a href="#contact">Contact</a>
             <span className="fh-nav-phone">757.843.8772</span>
             <Link to="/auth" className="fh-nav-login">Client Portal</Link>
@@ -200,6 +201,7 @@ export default function LandingPage() {
             <div className="fh-footer-brand">Faith &amp; Harmony LLC</div>
             <p className="fh-footer-sub">Hampton Roads, Virginia</p>
             <div className="fh-footer-links">
+              <Link to="/capabilities">Government Contracting</Link>
               <a href="/privacy">Privacy</a>
               <a href="/terms">Terms</a>
             </div>

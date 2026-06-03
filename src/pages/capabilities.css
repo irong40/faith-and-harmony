@@ -1,0 +1,290 @@
+/* ═══════════════════════════════════════════
+   Sentinel Aerial Inspections — Capability Statement
+   Reuses Faith & Harmony brand tokens from landing.css
+   ═══════════════════════════════════════════ */
+
+.fh-cap {
+  background: var(--fh-bg-dark);
+}
+
+/* ─── Capability header / masthead ─── */
+.fh-cap-masthead {
+  padding: 132px 0 56px;
+  position: relative;
+  overflow: hidden;
+  background: var(--fh-bg-dark);
+}
+.fh-cap-masthead .fh-hero-glow {
+  top: -160px;
+}
+.fh-cap-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fh-gold);
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  margin: 0 0 14px;
+}
+.fh-cap-title {
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: clamp(34px, 6vw, 60px);
+  font-weight: 900;
+  line-height: 1;
+  color: var(--fh-cream);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 0;
+}
+.fh-cap-tagline {
+  margin-top: 18px;
+  font-size: 16px;
+  color: var(--fh-cream-dim);
+  max-width: 720px;
+  line-height: 1.7;
+}
+.fh-cap-actions {
+  margin-top: 32px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+/* ─── Document body ─── */
+.fh-cap-body {
+  padding: 24px 0 96px;
+}
+.fh-cap-block {
+  margin-top: 56px;
+}
+.fh-cap-block:first-child {
+  margin-top: 0;
+}
+.fh-cap-block-title {
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: clamp(24px, 3.5vw, 34px);
+  font-weight: 900;
+  color: var(--fh-cream);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 0 0 6px;
+}
+.fh-cap-block-title + .fh-title-bar {
+  margin-bottom: 28px;
+}
+
+/* Identification — definition grid */
+.fh-cap-idgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 48px;
+}
+.fh-cap-idrow {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(58, 32, 80, 0.45);
+  align-items: baseline;
+}
+.fh-cap-idterm {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--fh-gold);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+.fh-cap-iddef {
+  font-size: 15px;
+  color: var(--fh-cream);
+  line-height: 1.55;
+  word-break: break-word;
+}
+.fh-cap-iddef a {
+  color: var(--fh-cream);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(223, 174, 98, 0.4);
+  transition: color 0.2s var(--fh-ease);
+}
+.fh-cap-iddef a:hover {
+  color: var(--fh-gold);
+}
+.fh-cap-iddef strong {
+  color: var(--fh-gold-light);
+}
+
+/* Capability cards */
+.fh-cap-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+.fh-cap-card {
+  background: rgba(61, 21, 85, 0.32);
+  border: 1px solid var(--fh-border);
+  border-radius: 12px;
+  padding: 28px;
+}
+.fh-cap-card h3 {
+  font-family: 'Saira Condensed', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--fh-gold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 14px;
+}
+.fh-cap-card p {
+  font-size: 14.5px;
+  color: var(--fh-cream-dim);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* Bulleted lists (differentiators, performance, teaming) */
+.fh-cap-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 14px;
+}
+.fh-cap-list li {
+  position: relative;
+  padding-left: 22px;
+  font-size: 15px;
+  color: var(--fh-cream);
+  line-height: 1.65;
+}
+.fh-cap-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 7px;
+  height: 7px;
+  background: var(--fh-gold);
+  border-radius: 1px;
+  transform: rotate(45deg);
+}
+.fh-cap-list li strong {
+  color: var(--fh-cream);
+  font-weight: 700;
+}
+.fh-cap-list-label {
+  color: var(--fh-gold);
+  font-weight: 700;
+}
+
+.fh-cap-footnote {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--fh-border);
+  font-size: 12px;
+  color: var(--fh-slate);
+  line-height: 1.6;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .fh-cap-masthead {
+    padding: 112px 0 40px;
+  }
+  .fh-cap-idgrid {
+    grid-template-columns: 1fr;
+  }
+  .fh-cap-idrow {
+    grid-template-columns: 1fr;
+    gap: 2px;
+    padding: 10px 0;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   Print / Save-as-PDF stylesheet
+   ═══════════════════════════════════════════ */
+@media print {
+  /* Hide chrome and interactive controls */
+  .fh-nav,
+  .lp-sticky-nav,
+  .fh-footer,
+  .fh-cap-actions,
+  .fh-skip-link,
+  .fh-cap-noprint {
+    display: none !important;
+  }
+
+  /* White paper, black ink */
+  html,
+  body,
+  .fh-landing,
+  .fh-cap {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+
+  .fh-cap-masthead,
+  .fh-cap-body {
+    background: #ffffff !important;
+    padding: 0 !important;
+  }
+  .fh-cap-masthead {
+    padding-top: 8px !important;
+    border-bottom: 2px solid #b8862b !important;
+    padding-bottom: 12px !important;
+  }
+  .fh-hero-glow,
+  .fh-section-darker::before {
+    display: none !important;
+  }
+
+  .fh-cap-eyebrow,
+  .fh-cap-idterm,
+  .fh-cap-list-label {
+    color: #8a6516 !important;
+  }
+  .fh-cap-title,
+  .fh-cap-block-title,
+  .fh-cap-card h3 {
+    color: #111111 !important;
+  }
+  .fh-cap-tagline,
+  .fh-cap-iddef,
+  .fh-cap-card p,
+  .fh-cap-list li,
+  .fh-cap-footnote {
+    color: #1a1a1a !important;
+  }
+  .fh-cap-iddef strong,
+  .fh-cap-list li strong {
+    color: #000000 !important;
+  }
+  .fh-title-bar {
+    background: #b8862b !important;
+  }
+
+  .fh-cap-card {
+    background: #ffffff !important;
+    border: 1px solid #cccccc !important;
+    break-inside: avoid;
+  }
+  .fh-cap-idrow {
+    border-bottom: 1px solid #dddddd !important;
+  }
+  .fh-cap-iddef a {
+    color: #111111 !important;
+    border-bottom: none !important;
+  }
+  .fh-cap-block {
+    break-inside: avoid;
+    margin-top: 24px !important;
+  }
+  .fh-cap-list li::before,
+  .fh-trust-badge::before {
+    background: #b8862b !important;
+  }
+
+  /* Tighter page margins */
+  @page {
+    margin: 14mm;
+  }
+}

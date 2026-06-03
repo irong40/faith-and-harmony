@@ -26,6 +26,7 @@ export default function StickyNav() {
           <a href="#services" onClick={() => setIsMenuOpen(false)}>Services</a>
           <a href="#pricing" onClick={() => setIsMenuOpen(false)}>Pricing</a>
           <a href="#portfolio" onClick={() => setIsMenuOpen(false)}>Portfolio</a>
+          <a href="/capabilities" onClick={() => setIsMenuOpen(false)}>Capabilities</a>
           <a href="#contact" onClick={() => setIsMenuOpen(false)}>Contact</a>
         </div>
         <div className="lp-sticky-nav__actions">

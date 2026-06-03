@@ -18,6 +18,7 @@ import LandingPage from "./pages/LandingPage";
 
 // Lazy — tokenized client routes (no auth required)
 const LiveProjects = lazy(() => import('./pages/Projects'));
+const Capabilities = lazy(() => import('./pages/Capabilities'));
 const CustomerProposal = lazy(() => import("./pages/CustomerProposal"));
 const CustomerInvoice = lazy(() => import("./pages/CustomerInvoice"));
 const DroneUpload = lazy(() => import("./pages/DroneUpload"));
@@ -131,6 +132,10 @@ const App = () => (
               <Route path="/" element={<RootRedirect />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/projects" element={<LiveProjects />} />
+
+              {/* Public capability statement — alias /government-contracting */}
+              <Route path="/capabilities" element={<ErrorBoundary><Capabilities /></ErrorBoundary>} />
+              <Route path="/government-contracting" element={<ErrorBoundary><Capabilities /></ErrorBoundary>} />
 
               {/* Tokenized client routes — no auth required */}
               <Route path="/proposal/:token" element={<ErrorBoundary><CustomerProposal /></ErrorBoundary>} />
