@@ -28,6 +28,7 @@ import {
   Cloud,
   Phone,
   Wrench,
+  Shield,
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -86,6 +87,16 @@ const navCategories: NavCategory[] = [
     items: [
       { href: "/admin/people", label: "Directory", icon: Users },
       { href: "/admin/messages", label: "Messages", icon: MessageSquare },
+    ],
+  },
+  {
+    label: "Governance",
+    icon: Shield,
+    items: [
+      { href: "/admin/governance", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/admin/governance?tab=agents", label: "Agents", icon: Activity },
+      { href: "/admin/governance?tab=documents", label: "Documents", icon: FileText },
+      { href: "/admin/governance?tab=decisions", label: "Decisions", icon: ClipboardList },
     ],
   },
 ];
