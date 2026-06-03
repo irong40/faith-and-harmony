@@ -28,6 +28,8 @@ import {
   Cloud,
   Phone,
   Wrench,
+  Sunrise,
+  ShoppingBag,
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -64,6 +66,7 @@ const navCategories: NavCategory[] = [
     icon: FileText,
     items: [
       { href: "/admin/quote-requests", label: "Quote Requests", icon: Inbox },
+      { href: "/admin/marketplace-offers", label: "Marketplace Offers", icon: ShoppingBag },
       { href: "/admin/call-logs", label: "Call Logs", icon: Phone },
       { href: "/admin/leads", label: "Leads", icon: Target },
     ],
@@ -91,6 +94,7 @@ const navCategories: NavCategory[] = [
 ];
 
 // Standalone links (not dropdowns)
+const todayLink = { href: "/admin/today", label: "Today", icon: Sunrise };
 const reportsLink = { href: "/admin/reports", label: "Reports", icon: FileText };
 const documentsLink = { href: "/admin/documents", label: "Documents", icon: FileOutput };
 const settingsLink = { href: "/admin/settings", label: "Settings", icon: Settings };
@@ -132,6 +136,18 @@ export default function AdminNav() {
               <ExternalLink className="h-4 w-4" />
             </a>
             <nav className="flex gap-1">
+              {/* Today - standalone link (default landing) */}
+              <Link to={todayLink.href}>
+                <Button
+                  variant={isItemActive(todayLink.href) ? "default" : "ghost"}
+                  size="sm"
+                  className="gap-1.5"
+                >
+                  <todayLink.icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{todayLink.label}</span>
+                </Button>
+              </Link>
+
               {navCategories.map((category) => (
                 <DropdownMenu key={category.label}>
                   <DropdownMenuTrigger asChild>

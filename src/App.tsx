@@ -25,6 +25,8 @@ const ClientJobPortal = lazy(() => import("./pages/ClientJobPortal"));
 const QuoteAcceptancePage = lazy(() => import("./pages/QuoteAcceptancePage"));
 
 // Lazy — admin pages
+const Today = lazy(() => import("./pages/admin/Today"));
+const MarketplaceOffers = lazy(() => import("./pages/admin/MarketplaceOffers"));
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
 const ServiceRequests = lazy(() => import("./pages/admin/ServiceRequests"));
 const Proposals = lazy(() => import("./pages/admin/Proposals"));
@@ -84,7 +86,7 @@ function RootRedirect() {
     if (isTrestleDomain()) return <Navigate to="/auth" replace />;
     return <LandingPage />;
   }
-  if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
+  if (isAdmin) return <Navigate to="/admin/today" replace />;
   if (isPilot) return <Navigate to="/pilot" replace />;
   // User is authenticated but has no admin/pilot role — show landing page on F&H domain,
   // or redirect to auth on Trestle domain (auth page will show "no role" state)
@@ -139,6 +141,8 @@ const App = () => (
               <Route path="/quote/:token" element={<ErrorBoundary><QuoteAcceptancePage /></ErrorBoundary>} />
 
               {/* Admin routes */}
+              <Route path="/admin/today" element={<AdminRoute><Today /></AdminRoute>} />
+              <Route path="/admin/marketplace-offers" element={<AdminRoute><MarketplaceOffers /></AdminRoute>} />
               <Route path="/admin/dashboard" element={<AdminRoute><Dashboard /></AdminRoute>} />
               <Route path="/admin/service-requests" element={<AdminRoute><ServiceRequests /></AdminRoute>} />
               <Route path="/admin/proposals" element={<AdminRoute><Proposals /></AdminRoute>} />
