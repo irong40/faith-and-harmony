@@ -29,6 +29,7 @@ import {
   Phone,
   Wrench,
   Shield,
+  DollarSign,
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -79,6 +80,7 @@ const navCategories: NavCategory[] = [
       { href: "/admin/proposals", label: "Proposals", icon: ClipboardList },
       { href: "/admin/projects", label: "Projects", icon: FolderKanban },
       { href: "/admin/invoices", label: "Invoices", icon: FileText },
+      { href: "/admin/pricing", label: "Pricing", icon: DollarSign },
     ],
   },
   {

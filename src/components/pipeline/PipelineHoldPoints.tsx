@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { PauseCircle, Eye } from 'lucide-react';
+import { PauseCircle, Eye, ClipboardCheck, Map } from 'lucide-react';
 import PipelineStepper from './PipelineStepper';
 import type { PipelineStep } from './PipelineStepper';
 import type { PipelineJobRow, ProcessingJobStep } from '@/types/pipeline';
@@ -41,6 +41,13 @@ export default function PipelineHoldPoints({ holdPoints }: PipelineHoldPointsPro
         const droneJob = job.drone_jobs;
         const steps = (job.steps ?? []) as ProcessingJobStep[];
         const holdStep = steps.find((s) => s.status === 'awaiting_manual_edit');
+        const missionId = droneJob?.id ?? job.mission_id;
+        const holdKind =
+          holdStep?.name === 'qa_review'
+            ? 'qa'
+            : holdStep?.name === 'coverage_review'
+              ? 'coverage'
+              : null;
         const pipelineSteps: PipelineStep[] = steps.map((s) => ({
           name: s.name,
           label: s.label,
@@ -75,6 +82,22 @@ export default function PipelineHoldPoints({ holdPoints }: PipelineHoldPointsPro
                     <Badge variant="secondary" className="bg-amber-100 text-amber-700">
                       {holdStep.label ?? holdStep.name}
                     </Badge>
+                  )}
+                  {holdKind === 'qa' && (
+                    <Link to={`/admin/pipeline/qa/${missionId}`}>
+                      <Button variant="outline" size="sm" className="h-7 gap-1.5">
+                        <ClipboardCheck className="h-3.5 w-3.5" />
+                        QA Review
+                      </Button>
+                    </Link>
+                  )}
+                  {holdKind === 'coverage' && (
+                    <Link to={`/admin/pipeline/coverage/${missionId}`}>
+                      <Button variant="outline" size="sm" className="h-7 gap-1.5">
+                        <Map className="h-3.5 w-3.5" />
+                        Coverage Review
+                      </Button>
+                    </Link>
                   )}
                   {droneJob && (
                     <Link to={`/admin/drone-jobs/${droneJob.id}`}>
