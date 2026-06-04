@@ -23,6 +23,8 @@ const CustomerInvoice = lazy(() => import("./pages/CustomerInvoice"));
 const DroneUpload = lazy(() => import("./pages/DroneUpload"));
 const ClientJobPortal = lazy(() => import("./pages/ClientJobPortal"));
 const QuoteAcceptancePage = lazy(() => import("./pages/QuoteAcceptancePage"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
 
 // Lazy — admin pages
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
@@ -131,6 +133,8 @@ const App = () => (
               <Route path="/" element={<RootRedirect />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/projects" element={<LiveProjects />} />
+              <Route path="/privacy" element={<ErrorBoundary><Privacy /></ErrorBoundary>} />
+              <Route path="/terms" element={<ErrorBoundary><Terms /></ErrorBoundary>} />
 
               {/* Tokenized client routes — no auth required */}
               <Route path="/proposal/:token" element={<ErrorBoundary><CustomerProposal /></ErrorBoundary>} />
