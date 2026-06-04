@@ -17,7 +17,7 @@ export function WebsiteFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Is this a new website or a redesign?</Label>
-        <Select value={metadata.websiteType || ''} onValueChange={(v) => onMetadataChange('websiteType', v)}>
+        <Select value={(metadata.websiteType as string) || ''} onValueChange={(v) => onMetadataChange('websiteType', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select option" />
           </SelectTrigger>
@@ -30,7 +30,7 @@ export function WebsiteFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Approximate number of pages</Label>
-        <Select value={metadata.pageCount || ''} onValueChange={(v) => onMetadataChange('pageCount', v)}>
+        <Select value={(metadata.pageCount as string) || ''} onValueChange={(v) => onMetadataChange('pageCount', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select page count" />
           </SelectTrigger>
@@ -44,7 +44,7 @@ export function WebsiteFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Do you already have a logo and branding?</Label>
-        <Select value={metadata.hasBranding || ''} onValueChange={(v) => onMetadataChange('hasBranding', v)}>
+        <Select value={(metadata.hasBranding as string) || ''} onValueChange={(v) => onMetadataChange('hasBranding', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select option" />
           </SelectTrigger>
@@ -58,7 +58,7 @@ export function WebsiteFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Do you already have written content?</Label>
-        <Select value={metadata.hasContent || ''} onValueChange={(v) => onMetadataChange('hasContent', v)}>
+        <Select value={(metadata.hasContent as string) || ''} onValueChange={(v) => onMetadataChange('hasContent', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select option" />
           </SelectTrigger>
@@ -72,7 +72,7 @@ export function WebsiteFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Preferred domain approach</Label>
-        <Select value={metadata.domainApproach || ''} onValueChange={(v) => onMetadataChange('domainApproach', v)}>
+        <Select value={(metadata.domainApproach as string) || ''} onValueChange={(v) => onMetadataChange('domainApproach', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select domain approach" />
           </SelectTrigger>

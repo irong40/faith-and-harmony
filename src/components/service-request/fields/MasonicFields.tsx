@@ -14,7 +14,7 @@ const PROJECT_TYPES = ['Lectures', 'Virtual lodge', 'Archive digitization', 'Stu
 const INTENDED_USES = ['Education', 'Ritual instruction', 'Public outreach', 'Other'];
 
 export function MasonicFields({ metadata, onMetadataChange }: FieldProps) {
-  const selectedUses = metadata.intendedUses || [];
+  const selectedUses = (metadata.intendedUses as string[]) || [];
 
   const toggleUse = (use: string) => {
     const updated = selectedUses.includes(use)
@@ -29,7 +29,7 @@ export function MasonicFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Organization type</Label>
-        <Select value={metadata.organizationType || ''} onValueChange={(v) => onMetadataChange('organizationType', v)}>
+        <Select value={(metadata.organizationType as string) || ''} onValueChange={(v) => onMetadataChange('organizationType', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select organization type" />
           </SelectTrigger>
@@ -43,7 +43,7 @@ export function MasonicFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Type of project</Label>
-        <Select value={metadata.projectType || ''} onValueChange={(v) => onMetadataChange('projectType', v)}>
+        <Select value={(metadata.projectType as string) || ''} onValueChange={(v) => onMetadataChange('projectType', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select project type" />
           </SelectTrigger>
@@ -60,7 +60,7 @@ export function MasonicFields({ metadata, onMetadataChange }: FieldProps) {
         <Input
           type="number"
           min="1"
-          value={metadata.lectureCount || ''}
+          value={(metadata.lectureCount as string) || ''}
           onChange={(e) => onMetadataChange('lectureCount', e.target.value)}
           placeholder="Number of lectures/modules"
         />
@@ -68,7 +68,7 @@ export function MasonicFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Do you already have written material?</Label>
-        <Select value={metadata.hasWrittenMaterial || ''} onValueChange={(v) => onMetadataChange('hasWrittenMaterial', v)}>
+        <Select value={(metadata.hasWrittenMaterial as string) || ''} onValueChange={(v) => onMetadataChange('hasWrittenMaterial', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select option" />
           </SelectTrigger>

@@ -18,7 +18,7 @@ export function CybersecurityFields({ metadata, onMetadataChange }: FieldProps) 
 
       <div className="space-y-2">
         <Label>Organization type</Label>
-        <Select value={metadata.organizationType || ''} onValueChange={(v) => onMetadataChange('organizationType', v)}>
+        <Select value={(metadata.organizationType as string) || ''} onValueChange={(v) => onMetadataChange('organizationType', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select organization type" />
           </SelectTrigger>
@@ -32,7 +32,7 @@ export function CybersecurityFields({ metadata, onMetadataChange }: FieldProps) 
 
       <div className="space-y-2">
         <Label>Estimated number of users or staff</Label>
-        <Select value={metadata.staffSize || ''} onValueChange={(v) => onMetadataChange('staffSize', v)}>
+        <Select value={(metadata.staffSize as string) || ''} onValueChange={(v) => onMetadataChange('staffSize', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select staff size" />
           </SelectTrigger>
@@ -46,7 +46,7 @@ export function CybersecurityFields({ metadata, onMetadataChange }: FieldProps) 
 
       <div className="space-y-2">
         <Label>Primary concern</Label>
-        <Select value={metadata.primaryConcern || ''} onValueChange={(v) => onMetadataChange('primaryConcern', v)}>
+        <Select value={(metadata.primaryConcern as string) || ''} onValueChange={(v) => onMetadataChange('primaryConcern', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select primary concern" />
           </SelectTrigger>
@@ -60,7 +60,7 @@ export function CybersecurityFields({ metadata, onMetadataChange }: FieldProps) 
 
       <div className="space-y-2">
         <Label>One-time assessment or ongoing program?</Label>
-        <Select value={metadata.programType || ''} onValueChange={(v) => onMetadataChange('programType', v)}>
+        <Select value={(metadata.programType as string) || ''} onValueChange={(v) => onMetadataChange('programType', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select option" />
           </SelectTrigger>
@@ -73,7 +73,7 @@ export function CybersecurityFields({ metadata, onMetadataChange }: FieldProps) 
 
       <div className="space-y-2">
         <Label>Do you have an internal IT or security team?</Label>
-        <Select value={metadata.hasITTeam || ''} onValueChange={(v) => onMetadataChange('hasITTeam', v)}>
+        <Select value={(metadata.hasITTeam as string) || ''} onValueChange={(v) => onMetadataChange('hasITTeam', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select option" />
           </SelectTrigger>

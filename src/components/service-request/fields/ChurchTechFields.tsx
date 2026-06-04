@@ -12,7 +12,7 @@ const TECH_AREAS = ['Sound system', 'Livestream', 'Recording', 'Monitors', 'Wire
 const SANCTUARY_SIZES = ['Under 100', '100-300', '300-500', '500+'];
 
 export function ChurchTechFields({ metadata, onMetadataChange }: FieldProps) {
-  const selectedAreas = metadata.techAreas || [];
+  const selectedAreas = (metadata.techAreas as string[]) || [];
 
   const toggleArea = (area: string) => {
     const updated = selectedAreas.includes(area)
@@ -43,7 +43,7 @@ export function ChurchTechFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Size of sanctuary (seating capacity)</Label>
-        <Select value={metadata.sanctuarySize || ''} onValueChange={(v) => onMetadataChange('sanctuarySize', v)}>
+        <Select value={(metadata.sanctuarySize as string) || ''} onValueChange={(v) => onMetadataChange('sanctuarySize', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select sanctuary size" />
           </SelectTrigger>
@@ -57,7 +57,7 @@ export function ChurchTechFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Do you currently have a mixer and audio team?</Label>
-        <Select value={metadata.hasAudioTeam || ''} onValueChange={(v) => onMetadataChange('hasAudioTeam', v)}>
+        <Select value={(metadata.hasAudioTeam as string) || ''} onValueChange={(v) => onMetadataChange('hasAudioTeam', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select option" />
           </SelectTrigger>

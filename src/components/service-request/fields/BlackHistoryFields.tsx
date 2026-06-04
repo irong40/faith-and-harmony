@@ -18,7 +18,7 @@ export function BlackHistoryFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Focus area</Label>
-        <Select value={metadata.focusArea || ''} onValueChange={(v) => onMetadataChange('focusArea', v)}>
+        <Select value={(metadata.focusArea as string) || ''} onValueChange={(v) => onMetadataChange('focusArea', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select focus area" />
           </SelectTrigger>
@@ -32,7 +32,7 @@ export function BlackHistoryFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Do you have source documents to provide?</Label>
-        <Select value={metadata.hasSourceDocs || ''} onValueChange={(v) => onMetadataChange('hasSourceDocs', v)}>
+        <Select value={(metadata.hasSourceDocs as string) || ''} onValueChange={(v) => onMetadataChange('hasSourceDocs', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select option" />
           </SelectTrigger>
@@ -46,7 +46,7 @@ export function BlackHistoryFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Preferred output</Label>
-        <Select value={metadata.preferredOutput || ''} onValueChange={(v) => onMetadataChange('preferredOutput', v)}>
+        <Select value={(metadata.preferredOutput as string) || ''} onValueChange={(v) => onMetadataChange('preferredOutput', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select output type" />
           </SelectTrigger>
@@ -60,7 +60,7 @@ export function BlackHistoryFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Intended audience</Label>
-        <Select value={metadata.intendedAudience || ''} onValueChange={(v) => onMetadataChange('intendedAudience', v)}>
+        <Select value={(metadata.intendedAudience as string) || ''} onValueChange={(v) => onMetadataChange('intendedAudience', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select audience" />
           </SelectTrigger>
