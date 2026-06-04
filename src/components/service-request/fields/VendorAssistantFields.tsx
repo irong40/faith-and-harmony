@@ -14,7 +14,7 @@ const ATTENDEE_SIZES = ['Under 50', '50-100', '100-250', '250-500', '500+'];
 const SERVICES = ['Intake forms', 'QR codes', 'Payment links', 'Inventory tracking', 'Reporting & analytics', 'Other'];
 
 export function VendorAssistantFields({ metadata, onMetadataChange }: FieldProps) {
-  const selectedServices = metadata.servicesNeeded || [];
+  const selectedServices = (metadata.servicesNeeded as string[]) || [];
 
   const toggleService = (service: string) => {
     const updated = selectedServices.includes(service)
@@ -29,7 +29,7 @@ export function VendorAssistantFields({ metadata, onMetadataChange }: FieldProps
 
       <div className="space-y-2">
         <Label>Type of event</Label>
-        <Select value={metadata.eventType || ''} onValueChange={(v) => onMetadataChange('eventType', v)}>
+        <Select value={(metadata.eventType as string) || ''} onValueChange={(v) => onMetadataChange('eventType', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select event type" />
           </SelectTrigger>
@@ -45,14 +45,14 @@ export function VendorAssistantFields({ metadata, onMetadataChange }: FieldProps
         <Label>Event date</Label>
         <Input
           type="date"
-          value={metadata.eventDate || ''}
+          value={(metadata.eventDate as string) || ''}
           onChange={(e) => onMetadataChange('eventDate', e.target.value)}
         />
       </div>
 
       <div className="space-y-2">
         <Label>Estimated number of attendees</Label>
-        <Select value={metadata.attendeeCount || ''} onValueChange={(v) => onMetadataChange('attendeeCount', v)}>
+        <Select value={(metadata.attendeeCount as string) || ''} onValueChange={(v) => onMetadataChange('attendeeCount', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select attendee count" />
           </SelectTrigger>
@@ -82,7 +82,7 @@ export function VendorAssistantFields({ metadata, onMetadataChange }: FieldProps
 
       <div className="space-y-2">
         <Label>Support type</Label>
-        <Select value={metadata.supportType || ''} onValueChange={(v) => onMetadataChange('supportType', v)}>
+        <Select value={(metadata.supportType as string) || ''} onValueChange={(v) => onMetadataChange('supportType', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select support type" />
           </SelectTrigger>

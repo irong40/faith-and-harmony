@@ -13,7 +13,7 @@ const PLATFORMS = ['YouTube', 'TikTok', 'Instagram', 'Facebook', 'LinkedIn', 'We
 const GOALS = ['Education', 'Promotion', 'Social media growth', 'Membership engagement', 'Documentation', 'Other'];
 
 export function AIVideoFields({ metadata, onMetadataChange }: FieldProps) {
-  const selectedPlatforms = metadata.platforms || [];
+  const selectedPlatforms = (metadata.platforms as string[]) || [];
 
   const togglePlatform = (platform: string) => {
     const updated = selectedPlatforms.includes(platform)
@@ -28,7 +28,7 @@ export function AIVideoFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Primary goal of the videos</Label>
-        <Select value={metadata.primaryGoal || ''} onValueChange={(v) => onMetadataChange('primaryGoal', v)}>
+        <Select value={(metadata.primaryGoal as string) || ''} onValueChange={(v) => onMetadataChange('primaryGoal', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select primary goal" />
           </SelectTrigger>
@@ -58,7 +58,7 @@ export function AIVideoFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Do you already have a script or outline?</Label>
-        <Select value={metadata.hasScript || ''} onValueChange={(v) => onMetadataChange('hasScript', v)}>
+        <Select value={(metadata.hasScript as string) || ''} onValueChange={(v) => onMetadataChange('hasScript', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select option" />
           </SelectTrigger>
@@ -75,7 +75,7 @@ export function AIVideoFields({ metadata, onMetadataChange }: FieldProps) {
         <Input
           type="number"
           min="1"
-          value={metadata.videoCount || ''}
+          value={(metadata.videoCount as string) || ''}
           onChange={(e) => onMetadataChange('videoCount', e.target.value)}
           placeholder="Number of videos"
         />
@@ -83,7 +83,7 @@ export function AIVideoFields({ metadata, onMetadataChange }: FieldProps) {
 
       <div className="space-y-2">
         <Label>Do you want automation for scheduling and posting?</Label>
-        <Select value={metadata.wantAutomation || ''} onValueChange={(v) => onMetadataChange('wantAutomation', v)}>
+        <Select value={(metadata.wantAutomation as string) || ''} onValueChange={(v) => onMetadataChange('wantAutomation', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select option" />
           </SelectTrigger>
