@@ -1,0 +1,19 @@
+# Dependabot configuration
+# Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+    ignore:
+      # vite 8 is incompatible with @vitejs/plugin-react-swc@3.x, whose peer
+      # range is vite ^4 || ^5 || ^6 || ^7. Bumping to 8 fails npm install with
+      # ERESOLVE and breaks the Vercel build. Upgrade vite to 7 (plugin-
+      # compatible) deliberately, with a build test, rather than auto-bumping.
+      - dependency-name: "vite"
+        versions: [">=8.0.0"]
