@@ -200,8 +200,8 @@ export default function LandingPage() {
             <div className="fh-footer-brand">Faith &amp; Harmony LLC</div>
             <p className="fh-footer-sub">Hampton Roads, Virginia</p>
             <div className="fh-footer-links">
-              <a href="/privacy">Privacy</a>
-              <a href="/terms">Terms</a>
+              <Link to="/privacy">Privacy</Link>
+              <Link to="/terms">Terms</Link>
             </div>
           </div>
           <div className="fh-footer-right">

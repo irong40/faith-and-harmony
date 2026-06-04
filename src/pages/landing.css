@@ -5,28 +5,47 @@
    ═══════════════════════════════════════════ */
 
 :root {
-  --fh-purple: #2b0a3d;
-  --fh-purple-light: #3d1555;
-  --fh-purple-dark: #1a0628;
-  --fh-gold: #dfae62;
-  --fh-gold-light: #e8c88a;
-  --fh-cream: #e8ddd0;
-  --fh-cream-dim: #b5a99a;
-  --fh-slate: #64607a;
-  --fh-white: #ffffff;
-  --fh-bg-dark: #110820;
-  --fh-bg-darker: #0c0518;
-  --fh-border: #3a2050;
-  --fh-ease: cubic-bezier(0.23, 1, 0.32, 1);
+  /* ─── Brand anchors — LOCKED (purple + gold), expressed in OKLCH.
+        Values map pixel-exact to the prior #2b0a3d / #dfae62 hex. ─── */
+  --fh-purple:       oklch(0.232 0.093 310);   /* #2b0a3d */
+  --fh-purple-light: oklch(0.305 0.105 311);   /* #3d1555 */
+  --fh-purple-dark:  oklch(0.175 0.075 311);   /* #1a0628 */
+  --fh-gold:         oklch(0.780 0.110 77);    /* #dfae62 */
+  --fh-gold-light:   oklch(0.835 0.085 82);    /* #e8c88a */
+
+  /* ─── Neutrals, tinted toward the purple brand hue for cohesion ─── */
+  --fh-cream:        oklch(0.895 0.018 78);    /* warm near-white */
+  --fh-cream-dim:    oklch(0.740 0.018 72);
+  --fh-slate:        oklch(0.460 0.035 296);
+  --fh-white:        oklch(0.985 0.002 78);
+  --fh-bg-dark:      oklch(0.160 0.050 305);
+  --fh-bg-darker:    oklch(0.120 0.045 305);
+  --fh-border:       oklch(0.300 0.075 312);
+
+  /* ─── Type ─── */
+  --fh-font-display: 'Saira Condensed', 'Arial Narrow', sans-serif;
+  --fh-font-body:    'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+
+  /* ─── Spacing — 4pt scale ─── */
+  --fh-s1: 0.25rem;  --fh-s2: 0.5rem;   --fh-s3: 0.75rem;  --fh-s4: 1rem;
+  --fh-s6: 1.5rem;   --fh-s8: 2rem;     --fh-s12: 3rem;     --fh-s16: 4rem;
+  --fh-s24: 6rem;
+
+  /* ─── Motion ─── */
+  --fh-ease:      cubic-bezier(0.23, 1, 0.32, 1);
+  --fh-ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ─── Base ─── */
 .fh-landing {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--fh-font-body);
   color: var(--fh-cream);
   background: var(--fh-bg-dark);
   min-height: 100dvh;
   scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'ss01', 'cv05';
 }
 
 .fh-container {
@@ -82,7 +101,7 @@
   gap: 6px;
 }
 .fh-nav-logo {
-  font-family: 'Saira Condensed', sans-serif;
+  font-family: var(--fh-font-display);
   font-size: 24px;
   font-weight: 700;
   color: var(--fh-cream);
@@ -141,38 +160,67 @@
 /* ─── Hero ─── */
 .fh-hero {
   position: relative;
-  padding: 160px 0 100px;
+  padding: 168px 0 104px;
   overflow: hidden;
   background: var(--fh-bg-dark);
+  isolation: isolate;
+}
+/* Aerial banner — duotone, masked to the right so left text stays legible */
+.fh-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 58%;
+  z-index: 0;
+  background:
+    linear-gradient(90deg, var(--fh-bg-dark) 0%, rgba(17, 8, 32, 0) 58%),
+    linear-gradient(0deg, var(--fh-bg-dark) 1%, rgba(17, 8, 32, 0) 36%),
+    linear-gradient(125deg,
+      color-mix(in oklch, var(--fh-purple) 82%, transparent),
+      color-mix(in oklch, var(--fh-purple-dark) 60%, transparent)),
+    url('/assets/landing/hero-banner.jpg');
+  background-size: cover;
+  background-position: right center;
+  background-repeat: no-repeat;
+  background-blend-mode: normal, normal, multiply, normal;
+  opacity: 0;
+  clip-path: inset(0 0 0 12%);
+  animation: heroReveal 1.4s var(--fh-ease-expo) 0.2s forwards;
 }
 .fh-hero-glow {
   position: absolute;
-  top: -120px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 800px;
-  height: 500px;
+  top: -140px;
+  left: 18%;
+  width: 760px;
+  height: 520px;
+  z-index: 1;
   background: radial-gradient(
     ellipse at center,
-    rgba(43, 10, 61, 0.8) 0%,
-    rgba(223, 174, 98, 0.06) 40%,
-    transparent 70%
+    rgba(61, 21, 85, 0.55) 0%,
+    rgba(223, 174, 98, 0.07) 42%,
+    transparent 72%
   );
   pointer-events: none;
 }
 .fh-hero-content {
   position: relative;
-  max-width: 720px;
+  z-index: 2;
+  max-width: 660px;
+}
+@keyframes heroReveal {
+  from { opacity: 0; clip-path: inset(0 0 0 18%); transform: scale(1.04); }
+  to   { opacity: 1; clip-path: inset(0 0 0 0);   transform: scale(1); }
 }
 .fh-hero-title {
-  font-family: 'Saira Condensed', sans-serif;
-  font-size: clamp(56px, 12vw, 110px);
+  font-family: var(--fh-font-display);
+  font-size: clamp(56px, 11.5vw, 108px);
   font-weight: 900;
-  line-height: 0.9;
+  line-height: 0.86;
   color: var(--fh-cream);
-  letter-spacing: 3px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
   margin: 0;
+  text-wrap: balance;
   animation: fadeUp 0.8s var(--fh-ease) both;
 }
 .fh-hero-accent {
@@ -313,7 +361,7 @@
   pointer-events: none;
 }
 .fh-section-title {
-  font-family: 'Saira Condensed', sans-serif;
+  font-family: var(--fh-font-display);
   font-size: clamp(36px, 5vw, 52px);
   font-weight: 900;
   color: var(--fh-cream);
@@ -323,9 +371,16 @@
 }
 .fh-title-bar {
   height: 2px;
-  width: 48px;
+  width: 56px;
   background: var(--fh-gold);
-  margin: 16px 0 0;
+  margin: 18px 0 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: ruleDraw 0.9s var(--fh-ease-expo) 0.15s forwards;
+}
+.fh-section--centered .fh-title-bar { transform-origin: center; }
+@keyframes ruleDraw {
+  to { transform: scaleX(1); }
 }
 .fh-section-subtitle {
   color: var(--fh-cream-dim);
@@ -387,7 +442,7 @@
   width: fit-content;
 }
 .fh-card-title {
-  font-family: 'Saira Condensed', sans-serif;
+  font-family: var(--fh-font-display);
   font-size: 24px;
   font-weight: 700;
   color: var(--fh-gold);
@@ -460,7 +515,7 @@
   border-color: rgba(223, 174, 98, 0.25);
 }
 .fh-stat-value {
-  font-family: 'Saira Condensed', sans-serif;
+  font-family: var(--fh-font-display);
   font-size: 40px;
   font-weight: 900;
   color: var(--fh-gold);
@@ -576,7 +631,7 @@
   border-radius: 12px;
 }
 .fh-quote-confirmation h3 {
-  font-family: 'Saira Condensed', sans-serif;
+  font-family: var(--fh-font-display);
   font-size: 28px;
   font-weight: 700;
   color: var(--fh-gold);
@@ -610,7 +665,7 @@
   gap: 24px;
 }
 .fh-footer-brand {
-  font-family: 'Saira Condensed', sans-serif;
+  font-family: var(--fh-font-display);
   font-size: 22px;
   font-weight: 700;
   color: var(--fh-cream);
@@ -653,6 +708,55 @@
 }
 .fh-footer-links a:hover {
   color: var(--fh-gold);
+}
+
+/* ─── Legal pages (Privacy / Terms) ─── */
+.fh-legal {
+  max-width: 760px;
+}
+.fh-legal-meta {
+  color: var(--fh-slate);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 16px 0 0;
+}
+.fh-legal-intro {
+  color: var(--fh-cream);
+  font-size: 18px;
+  line-height: 1.7;
+  margin: 28px 0 0;
+}
+.fh-legal h2 {
+  font-family: var(--fh-font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--fh-cream);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 40px 0 12px;
+}
+.fh-legal p,
+.fh-legal li {
+  color: var(--fh-cream-dim);
+  font-size: 16px;
+  line-height: 1.75;
+}
+.fh-legal p { margin: 0 0 16px; }
+.fh-legal ul { margin: 0 0 16px; padding-left: 22px; }
+.fh-legal li { margin: 0 0 8px; }
+.fh-legal li::marker { color: var(--fh-gold); }
+.fh-legal a { color: var(--fh-gold); text-decoration: none; }
+.fh-legal a:hover { text-decoration: underline; }
+.fh-legal-note {
+  margin-top: 44px;
+  padding: 20px 24px;
+  border: 1px solid var(--fh-border);
+  border-radius: 12px;
+  background: rgba(61, 21, 85, 0.25);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--fh-cream-dim);
 }
 
 /* ─── Skip Link (a11y) ─── */
@@ -717,4 +821,32 @@
     font-size: 11px;
     letter-spacing: 2px;
   }
+  /* Pull the hero image to a calmer band behind the text on small screens */
+  .fh-hero::after {
+    width: 100%;
+    background:
+      linear-gradient(180deg, var(--fh-bg-dark) 6%, rgba(17, 8, 32, 0.35) 45%, var(--fh-bg-dark) 94%),
+      linear-gradient(125deg,
+        color-mix(in oklch, var(--fh-purple) 84%, transparent),
+        color-mix(in oklch, var(--fh-purple-dark) 64%, transparent)),
+      url('/assets/landing/hero-banner.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-blend-mode: normal, multiply, normal;
+  }
+}
+
+/* ─── Reduced motion (a11y) ─── */
+@media (prefers-reduced-motion: reduce) {
+  .fh-landing *,
+  .fh-landing *::before,
+  .fh-landing *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .fh-hero::after { opacity: 1; clip-path: none; transform: none; }
+  .fh-title-bar { transform: scaleX(1); }
 }
