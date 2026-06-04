@@ -110,6 +110,23 @@ Reply directly to this email to respond to the prospect.`;
 
     console.log("Quote request email sent:", emailResponse);
 
+    // In-app bell for the team so web leads are as visible as voice orders.
+    // The detailed reply-to email already went out above, so this notification
+    // opts out of the trigger email (send_email: false) to avoid a duplicate.
+    if (quoteRow) {
+      const { error: notifError } = await supabase.from("notifications").insert({
+        user_email: "info@faithandharmonyllc.com",
+        type: "quote_request",
+        title: `New web quote request from ${name}`,
+        body: `${service_type}${message ? `: ${message.substring(0, 150)}` : ""}`,
+        link: "/admin/quote-requests",
+        send_email: false,
+      });
+      if (notifError) {
+        console.warn("Bell notification insert warning (non-fatal):", notifError.message);
+      }
+    }
+
     // Send confirmation email to the prospect (non-fatal)
     if (quoteRow) {
       try {

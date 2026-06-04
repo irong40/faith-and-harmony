@@ -92,6 +92,7 @@ export default function DeliveryReview() {
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [markingDelivered, setMarkingDelivered] = useState(false);
+  const [sendingInvoice, setSendingInvoice] = useState(false);
 
   const fetchData = async () => {
     if (!id) return;
@@ -211,6 +212,36 @@ export default function DeliveryReview() {
       fetchData();
     }
     setMarkingDelivered(false);
+  };
+
+  const handleSendBalanceInvoice = async () => {
+    if (!job) return;
+    setSendingInvoice(true);
+
+    const { data, error } = await supabase.functions.invoke("create-balance-invoice", {
+      body: { job_id: job.id },
+    });
+
+    if (error || data?.error) {
+      toast({
+        title: "Balance invoice failed",
+        description: error?.message || data?.error,
+        variant: "destructive",
+      });
+    } else {
+      await emitActivityEvent({
+        event_type: "invoice_sent",
+        entity_type: "invoice",
+        entity_id: job.id,
+        summary: `Balance invoice sent for ${siteLabel}`,
+        metadata: { job_number: job.job_number, client_email: clientEmail },
+      });
+      toast({
+        title: "Balance invoice sent",
+        description: clientEmail ? `Invoice sent to ${clientEmail}` : "Invoice created",
+      });
+    }
+    setSendingInvoice(false);
   };
 
   if (loading) {
@@ -506,6 +537,27 @@ export default function DeliveryReview() {
                   Mark Delivered (no email)
                 </Button>
               )}
+
+              <div className="border-t border-border pt-3">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleSendBalanceInvoice}
+                  disabled={sendingInvoice || !clientEmail}
+                >
+                  {sendingInvoice ? (
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <FileText className="mr-2 h-4 w-4" />
+                  )}
+                  Send Balance Invoice
+                </Button>
+                {!clientEmail && (
+                  <p className="mt-2 text-xs text-muted-foreground text-center">
+                    Assign a client with an email to invoice
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
