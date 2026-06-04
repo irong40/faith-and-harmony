@@ -164,6 +164,28 @@ export default function ServiceRequestForm({
         const { error } = await supabase.from("service_requests").insert(payload);
         if (error) throw error;
         toast({ title: "Service request created" });
+
+        // Notify the team and confirm to the client (non-fatal — never block the save).
+        try {
+          const selectedService = services.find((s) => s.id === formData.serviceId);
+          await supabase.functions.invoke("send-service-request-emails", {
+            body: {
+              clientName: formData.clientName,
+              clientEmail: formData.clientEmail,
+              clientPhone: formData.clientPhone,
+              preferredContactMethod: formData.preferredContactMethod,
+              serviceName: selectedService?.name || "Service Request",
+              projectTitle: formData.projectTitle || undefined,
+              projectDescription: formData.projectDescription,
+              budgetRange: formData.budgetRange || undefined,
+              targetStartDate: formData.targetStartDate || undefined,
+              targetEndDate: formData.targetEndDate || undefined,
+              metadata,
+            },
+          });
+        } catch (emailErr) {
+          console.warn("Service request emails failed (non-fatal):", emailErr);
+        }
       }
 
       onSuccess();
