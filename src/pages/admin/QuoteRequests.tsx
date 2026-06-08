@@ -158,6 +158,7 @@ export default function QuoteRequests() {
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const queryClient = useQueryClient();
   const [showArchived, setShowArchived] = useState(false);
+  const [descRequest, setDescRequest] = useState<QuoteRequest | null>(null);
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["quote-requests", showArchived],
@@ -315,10 +316,21 @@ export default function QuoteRequests() {
                       <TableCell className="text-sm">
                         {request.job_type ?? "N/A"}
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
-                        {request.description.length > 60
-                          ? `${request.description.slice(0, 60)}...`
-                          : request.description}
+                      <TableCell className="text-sm max-w-xs">
+                        {request.description ? (
+                          <button
+                            type="button"
+                            onClick={() => setDescRequest(request)}
+                            title="Click to read the full description"
+                            className="block max-w-xs truncate text-left text-muted-foreground hover:text-foreground hover:underline cursor-pointer"
+                          >
+                            {request.description.length > 60
+                              ? `${request.description.slice(0, 60)}...`
+                              : request.description}
+                          </button>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -391,6 +403,45 @@ export default function QuoteRequests() {
               handleRefresh();
             }}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Full Description Dialog */}
+      <Dialog
+        open={descRequest !== null}
+        onOpenChange={(open) => {
+          if (!open) setDescRequest(null);
+        }}
+      >
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {descRequest ? `Request from ${descRequest.name}` : ""}
+            </DialogTitle>
+          </DialogHeader>
+          {descRequest && (
+            <div className="space-y-3 text-sm">
+              <div className="flex flex-wrap gap-x-6 gap-y-1 text-muted-foreground">
+                <span>
+                  <span className="font-medium text-foreground">Service:</span>{" "}
+                  {descRequest.job_type ?? "N/A"}
+                </span>
+                <span>
+                  <span className="font-medium text-foreground">Email:</span>{" "}
+                  {descRequest.email}
+                </span>
+                {descRequest.phone && (
+                  <span>
+                    <span className="font-medium text-foreground">Phone:</span>{" "}
+                    {descRequest.phone}
+                  </span>
+                )}
+              </div>
+              <div className="whitespace-pre-wrap break-words rounded-md border bg-muted/30 p-3">
+                {descRequest.description || "(no description provided)"}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
