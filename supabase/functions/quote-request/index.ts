@@ -8,21 +8,24 @@ const corsHeaders = {
 };
 
 // Sender must be a verified Resend identity. info@faithandharmonyllc.com is
-// verified and delivers reliably (forwards to owner); inquiries@ was not
-// verified, which silently dropped every quote-request notification.
+// verified and delivers reliably; inquiries@ was not verified, which silently
+// dropped every quote-request notification.
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
-interface QuoteRequest {
-  name: string;
-  email: string;
-  phone: string;
-  service_type: string;
-  preferred_date: string;
-  message: string;
-  utm_source?: string;
-  utm_medium?: string;
-  utm_campaign?: string;
-}
+// OPORD intake forward (server-side). Both come from Supabase function secrets;
+// never hardcode. If OPORD_WEBHOOK_URL is unset the forward is skipped — the lead
+// is still saved + emailed, and the OPORD draft can be regenerated from raw_intake.
+const OPORD_WEBHOOK_URL = Deno.env.get("OPORD_WEBHOOK_URL");
+const OPORD_SENTINEL_KEY = Deno.env.get("OPORD_SENTINEL_KEY");
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const isoDate = (v: unknown): string | null =>
+  typeof v === "string" && ISO_DATE.test(v.trim()) ? v.trim() : null;
+
+const clean = (v: unknown): string | null => {
+  const s = (v ?? "").toString().trim();
+  return s ? s : null;
+};
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -30,136 +33,173 @@ serve(async (req) => {
   }
 
   try {
-    const { name, email, phone, service_type, preferred_date, message, utm_source, utm_medium, utm_campaign } =
-      (await req.json()) as QuoteRequest;
+    const body = await req.json();
 
-    if (!name || !email || !service_type) {
+    // ── Honeypot: a filled hidden field means a bot. Ack 200, do nothing. ──
+    if (clean(body.website_hp)) {
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Normalize new (public /quote form) and legacy payloads ──────────────
+    // New: { raw_intake, source, full_name, email, phone, company, job_type,
+    //        location, target_date, deliverable_pref, referral_source, utm_* }
+    // Legacy: { name, email, phone, service_type, preferred_date, message, utm_* }
+    const name = clean(body.full_name) ?? clean(body.name);
+    const email = clean(body.email);
+    const phone = clean(body.phone);
+    const company = clean(body.company);
+    const location = clean(body.location);
+    const jobType = clean(body.job_type) ?? clean(body.service_type);
+    const targetDate = isoDate(body.target_date) ?? isoDate(body.preferred_date);
+    const source = clean(body.source) ?? (body.raw_intake ? "web_form" : "web");
+
+    // description is NOT NULL in quote_requests — always provide something.
+    // raw_intake (the composed prose) is the canonical description for new leads.
+    const rawIntake = clean(body.raw_intake);
+    const description =
+      rawIntake ??
+      clean(body.message) ??
+      [jobType, targetDate ? `target date: ${targetDate}` : null].filter(Boolean).join(" — ") ??
+      "Quote request";
+
+    if (!name || !email) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields" }),
+        JSON.stringify({ error: "Missing required fields (name, email)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Insert into quote_requests table (service role bypasses RLS)
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // ── Persist the lead (service role bypasses RLS) ────────────────────────
     const { data: quoteRow, error: dbError } = await supabase
       .from("quote_requests")
       .insert({
         name,
         email,
         phone,
-        address: null,
-        job_type: service_type,
-        description: message || `${service_type}${preferred_date ? ` — preferred date: ${preferred_date}` : ''}`,
-        preferred_date: preferred_date || null,
-        source: "web",
+        address: location,        // form `location` → quote_requests.address
+        job_type: jobType,
+        description,              // form `raw_intake` → quote_requests.description
+        preferred_date: targetDate,
+        source,
         status: "new",
         brand_slug: "sai",
-        utm_source: utm_source || null,
-        utm_medium: utm_medium || null,
-        utm_campaign: utm_campaign || null,
+        utm_source: clean(body.utm_source),
+        utm_medium: clean(body.utm_medium),
+        utm_campaign: clean(body.utm_campaign),
+        utm_content: clean(body.utm_content),
+        utm_term: clean(body.utm_term),
       })
       .select("id")
       .single();
 
     if (dbError) {
       console.error("Failed to insert quote_request:", dbError);
-      // Continue to send email even if DB insert fails — don't lose the lead
+      // Continue — never lose the lead; email below is the fallback record.
     } else {
       console.log("Quote request saved:", quoteRow.id);
     }
 
-    // Send notification email
-    if (!RESEND_API_KEY) {
-      console.error("RESEND_API_KEY not configured");
-      // If DB insert succeeded, still return success — the quote is saved
-      if (quoteRow) {
-        return new Response(
-          JSON.stringify({ success: true, quote_request_id: quoteRow.id, email_sent: false }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+    // ── Forward to OPORD intake (fire-and-forget, never blocks the 200) ─────
+    if (OPORD_WEBHOOK_URL && rawIntake) {
+      try {
+        const ac = new AbortController();
+        const timer = setTimeout(() => ac.abort(), 5000);
+        const fwd = await fetch(OPORD_WEBHOOK_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-sentinel-key": OPORD_SENTINEL_KEY ?? "",
+          },
+          body: JSON.stringify({ raw_intake: rawIntake, source }),
+          signal: ac.signal,
+        });
+        clearTimeout(timer);
+        console.log("OPORD forward status:", fwd.status);
+      } catch (fwdErr) {
+        // Non-fatal: lead is saved; the OPORD draft can be regenerated from raw_intake.
+        console.warn("OPORD forward failed (non-fatal):", String(fwdErr));
       }
-      return new Response(
-        JSON.stringify({ error: "Email service not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    } else if (!OPORD_WEBHOOK_URL) {
+      console.log("OPORD_WEBHOOK_URL not set — skipping forward (lead saved; draft regenerable).");
     }
 
-    const resend = new Resend(RESEND_API_KEY);
+    // ── Notify the team (reply-to prospect) ─────────────────────────────────
+    if (RESEND_API_KEY) {
+      const resend = new Resend(RESEND_API_KEY);
+      const emailBody = `New quote request from the Sentinel website.
 
-    const emailBody = `New quote request submitted from the Sentinel website.
-
-Name: ${name}
+Name: ${name}${company ? ` (${company})` : ""}
 Email: ${email}
-Phone: ${phone}
-Service Type: ${service_type}
-Preferred Date: ${preferred_date}
-Message: ${message || "(none)"}
+Phone: ${phone ?? "(none)"}
+Location: ${location ?? "(none)"}
+Job Type: ${jobType ?? "(not sure)"}
+Target Date: ${targetDate ?? "(flexible)"}
+
+Details:
+${description}
 ${quoteRow ? `\nQuote Request ID: ${quoteRow.id}` : ""}
 Reply directly to this email to respond to the prospect.`;
 
-    const emailResponse = await resend.emails.send({
-      from: "Sentinel Aerial Inquiries <info@faithandharmonyllc.com>",
-      to: ["info@faithandharmonyllc.com"],
-      replyTo: email,
-      subject: `New Quote Request: ${service_type} from ${name}`,
-      text: emailBody,
-    });
+      try {
+        await resend.emails.send({
+          from: "Sentinel Aerial Inquiries <info@faithandharmonyllc.com>",
+          to: ["info@faithandharmonyllc.com"],
+          cc: ["draopierce@faithandharmonyllc.com"],
+          replyTo: email,
+          subject: `New Quote Request: ${jobType ?? "general"} from ${name}`,
+          text: emailBody,
+        });
+        console.log("Quote request email sent");
+      } catch (mailErr) {
+        console.warn("Notification email failed (non-fatal):", String(mailErr));
+      }
+    } else {
+      console.error("RESEND_API_KEY not configured");
+    }
 
-    console.log("Quote request email sent:", emailResponse);
-
-    // In-app bell for the team so web leads are as visible as voice orders.
-    // The detailed reply-to email already went out above, so this notification
-    // opts out of the trigger email (send_email: false) to avoid a duplicate.
+    // ── In-app bell + prospect confirmation (existing behavior, non-fatal) ──
     if (quoteRow) {
       const { error: notifError } = await supabase.from("notifications").insert({
         user_email: "info@faithandharmonyllc.com",
         type: "quote_request",
         title: `New web quote request from ${name}`,
-        body: `${service_type}${message ? `: ${message.substring(0, 150)}` : ""}`,
+        body: `${jobType ?? "general"}${description ? `: ${description.substring(0, 150)}` : ""}`,
         link: "/admin/quote-requests",
         send_email: false,
       });
-      if (notifError) {
-        console.warn("Bell notification insert warning (non-fatal):", notifError.message);
-      }
-    }
+      if (notifError) console.warn("Bell notification warning (non-fatal):", notifError.message);
 
-    // Send confirmation email to the prospect (non-fatal)
-    if (quoteRow) {
       try {
-        const confirmUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/quote-confirmation-email`;
-        await fetch(confirmUrl, {
+        await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/quote-confirmation-email`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
           },
           body: JSON.stringify({
             request_id: quoteRow.id,
             name,
             email,
-            job_type: service_type,
-            description: message || service_type,
+            job_type: jobType,
+            description,
             brand_slug: "sai",
           }),
         });
-        console.log("Confirmation email sent to prospect:", email);
       } catch (confirmErr) {
-        console.warn("Confirmation email failed (non-fatal):", confirmErr);
+        console.warn("Confirmation email failed (non-fatal):", String(confirmErr));
       }
     }
 
+    // Lead is saved + emailed; return 200 regardless of forward/email outcome.
     return new Response(
-      JSON.stringify({
-        success: true,
-        quote_request_id: quoteRow?.id || null,
-        email_sent: true,
-      }),
+      JSON.stringify({ success: true, quote_request_id: quoteRow?.id ?? null }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import LandingPageHelmet from "@/components/seo/LandingPageHelmet";
 import LandingPageJsonLd from "@/components/seo/LandingPageJsonLd";
-import QuoteForm from "@/components/landing/QuoteForm";
+import RequestQuoteForm from "@/components/landing/RequestQuoteForm";
 import "./landing.css";
 
 export default function LandingPage() {
@@ -186,7 +186,7 @@ export default function LandingPage() {
           <p className="fh-section-subtitle">
             Tell us about your project and we'll get back to you within one business day.
           </p>
-          <QuoteForm />
+          <RequestQuoteForm />
           <div style={{ textAlign: "center", marginTop: "2rem" }}>
             <Link to="/projects" className="fh-btn fh-btn-outline">View Live Projects</Link>
           </div>
