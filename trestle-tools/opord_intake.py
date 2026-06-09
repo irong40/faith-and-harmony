@@ -15,7 +15,10 @@ Entry points:
   parse_intake(raw)            -> guardrailed OPORD dict
   ingest(raw, source, **meta)  -> inserts a draft, returns new id
   regenerate(proposal_id)      -> re-parses the stored raw_intake, updates the row
-  serve(port)                  -> tiny stdlib HTTP endpoint for n8n / web form / Vapi
+  watch(interval, once)        -> PULL mode: poll quote_requests for web-form leads
+                                  missing an OPORD draft and create them (self-healing,
+                                  no exposed port). This is the default lead->OPORD path.
+  serve(port)                  -> optional PUSH endpoint (needs a tunnel; not required)
 
 CLI:
   python opord_intake.py "Client needs a 250-acre roof thermal scan near Norfolk base next Tuesday"
@@ -25,6 +28,7 @@ CLI:
 import os
 import re
 import json
+import time
 import urllib.request
 
 from pricing_core import (
@@ -380,7 +384,57 @@ def finalize(proposal_id: str, sign_ttl: int = None) -> str:
 
 
 # ---------------------------------------------------------------------------
-# tiny stdlib webhook server (n8n / web form / Vapi POST here)
+# Pull-mode poller (self-healing). Drafts OPORDs for web-form leads that don't
+# have one yet, by polling Supabase. No tunnel, no exposed port, no secrets.
+# Catches up on any leads that arrived while this machine was off.
+#   Run:  python opord_intake.py watch
+# ---------------------------------------------------------------------------
+LEAD_SOURCE = "web_form"
+SKIP_STATUSES = ("spam", "test_data")
+
+
+def process_pending() -> int:
+    """Draft an OPORD for every web-form lead missing one. Idempotent: links
+    opord_proposals.quote_request_id so a lead is never double-drafted."""
+    sb = get_client()
+    leads = (sb.table("quote_requests")
+             .select("id,description,status")
+             .eq("source", LEAD_SOURCE).execute().data) or []
+    drafted = {r["quote_request_id"]
+               for r in (sb.table(TABLE).select("quote_request_id").execute().data or [])
+               if r.get("quote_request_id")}
+    pending = [l for l in leads
+               if l["id"] not in drafted
+               and (l.get("status") or "") not in SKIP_STATUSES
+               and (l.get("description") or "").strip()]
+    done = 0
+    for lead in pending:
+        try:
+            pid = ingest(lead["description"], source=LEAD_SOURCE, quote_request_id=lead["id"])
+            print(f"  drafted {pid} for lead {lead['id']}")
+            done += 1
+        except Exception as ex:
+            print(f"  FAILED lead {lead['id']}: {ex}")
+    return done
+
+
+def watch(interval: int = 60, once: bool = False):
+    """Poll quote_requests for new web-form leads and draft OPORDs for them."""
+    print(f"OPORD poller: source={LEAD_SOURCE}, every {interval}s, model={OLLAMA_MODEL}")
+    while True:
+        try:
+            n = process_pending()
+            if n:
+                print(f"drafted {n} new proposal(s)")
+        except Exception as ex:
+            print(f"poll error (will retry): {ex}")
+        if once:
+            break
+        time.sleep(interval)
+
+
+# ---------------------------------------------------------------------------
+# tiny stdlib webhook server (optional push path; pull/watch is the default)
 # ---------------------------------------------------------------------------
 def serve(host: str = "0.0.0.0", port: int = 8787):
     from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -414,9 +468,12 @@ def serve(host: str = "0.0.0.0", port: int = 8787):
 
 if __name__ == "__main__":
     import sys
-    if len(sys.argv) > 1 and sys.argv[1] == "serve":
+    argv = sys.argv
+    if len(argv) > 1 and argv[1] == "watch":
+        watch(interval=int(os.environ.get("OPORD_POLL_INTERVAL", "60")), once="--once" in argv)
+    elif len(argv) > 1 and argv[1] == "serve":
         serve()
-    elif len(sys.argv) > 1:
-        print(json.dumps(parse_intake(" ".join(sys.argv[1:])), indent=2))
+    elif len(argv) > 1:
+        print(json.dumps(parse_intake(" ".join(argv[1:])), indent=2))
     else:
-        print("usage: python opord_intake.py 'raw intake text'   |   python opord_intake.py serve")
+        print("usage: python opord_intake.py 'raw intake text' | watch [--once] | serve")

@@ -12,11 +12,10 @@ const corsHeaders = {
 // dropped every quote-request notification.
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
-// OPORD intake forward (server-side). Both come from Supabase function secrets;
-// never hardcode. If OPORD_WEBHOOK_URL is unset the forward is skipped — the lead
-// is still saved + emailed, and the OPORD draft can be regenerated from raw_intake.
-const OPORD_WEBHOOK_URL = Deno.env.get("OPORD_WEBHOOK_URL");
-const OPORD_SENTINEL_KEY = Deno.env.get("OPORD_SENTINEL_KEY");
+// OPORD drafting is handled by the LOCAL pull poller (opord_intake.py watch),
+// which polls quote_requests for web-form leads and drafts proposals — so this
+// function just persists + emails the lead. No webhook forward, no exposed port,
+// no secrets. (The draft links back via opord_proposals.quote_request_id.)
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const isoDate = (v: unknown): string | null =>
@@ -106,29 +105,8 @@ serve(async (req) => {
       console.log("Quote request saved:", quoteRow.id);
     }
 
-    // ── Forward to OPORD intake (fire-and-forget, never blocks the 200) ─────
-    if (OPORD_WEBHOOK_URL && rawIntake) {
-      try {
-        const ac = new AbortController();
-        const timer = setTimeout(() => ac.abort(), 5000);
-        const fwd = await fetch(OPORD_WEBHOOK_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-sentinel-key": OPORD_SENTINEL_KEY ?? "",
-          },
-          body: JSON.stringify({ raw_intake: rawIntake, source }),
-          signal: ac.signal,
-        });
-        clearTimeout(timer);
-        console.log("OPORD forward status:", fwd.status);
-      } catch (fwdErr) {
-        // Non-fatal: lead is saved; the OPORD draft can be regenerated from raw_intake.
-        console.warn("OPORD forward failed (non-fatal):", String(fwdErr));
-      }
-    } else if (!OPORD_WEBHOOK_URL) {
-      console.log("OPORD_WEBHOOK_URL not set — skipping forward (lead saved; draft regenerable).");
-    }
+    // OPORD draft is generated asynchronously by the local pull poller
+    // (opord_intake.py watch) from the saved raw_intake — nothing to forward here.
 
     // ── Notify the team (reply-to prospect) ─────────────────────────────────
     if (RESEND_API_KEY) {
