@@ -646,6 +646,82 @@
   margin: 0;
 }
 
+/* Required marker + inline hints + per-field validation */
+.fh-req { color: var(--fh-gold); }
+.fh-quote-hint {
+  font-size: 12px;
+  color: var(--fh-slate);
+  margin: -2px 0 2px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.fh-field-err {
+  display: none;
+  font-size: 12px;
+  color: #f87171;
+}
+.fh-field-bad input,
+.fh-field-bad select,
+.fh-field-bad textarea { border-color: #f87171; }
+.fh-field-bad .fh-field-err { display: block; }
+
+/* Deliverable chips (multiselect) with hover tooltips */
+.fh-quote-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.fh-quote-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(26, 6, 40, 0.6);
+  border: 1px solid var(--fh-border);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 13px;
+  color: var(--fh-cream-dim);
+  cursor: pointer;
+  user-select: none;
+  text-transform: none;
+  letter-spacing: 0;
+  transition: border-color 0.2s var(--fh-ease), background 0.2s var(--fh-ease), color 0.2s var(--fh-ease);
+}
+.fh-quote-chip input { width: auto; margin: 0; accent-color: var(--fh-gold); }
+.fh-quote-chip:has(input:checked) {
+  border-color: var(--fh-gold);
+  color: var(--fh-cream);
+  background: rgba(223, 174, 98, 0.12);
+}
+.fh-quote-chip[data-tip] { position: relative; }
+.fh-quote-chip[data-tip]:hover, .fh-quote-chip[data-tip]:focus-within { border-color: var(--fh-gold); }
+.fh-quote-chip[data-tip]:hover::after, .fh-quote-chip[data-tip]:focus-within::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240px;
+  background: var(--fh-purple-dark);
+  color: var(--fh-cream-dim);
+  border: 1px solid var(--fh-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 400;
+  text-align: left;
+  z-index: 10;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+/* Honeypot — visually hidden, off-screen */
+.fh-quote-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 @media (max-width: 768px) {
   .fh-quote-row {
     grid-template-columns: 1fr;
