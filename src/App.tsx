@@ -23,6 +23,7 @@ const CustomerInvoice = lazy(() => import("./pages/CustomerInvoice"));
 const DroneUpload = lazy(() => import("./pages/DroneUpload"));
 const ClientJobPortal = lazy(() => import("./pages/ClientJobPortal"));
 const QuoteAcceptancePage = lazy(() => import("./pages/QuoteAcceptancePage"));
+const RequestQuote = lazy(() => import("./pages/RequestQuote"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 
@@ -133,6 +134,7 @@ const App = () => (
               <Route path="/" element={<RootRedirect />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/projects" element={<LiveProjects />} />
+              <Route path="/quote" element={<ErrorBoundary><RequestQuote /></ErrorBoundary>} />
               <Route path="/privacy" element={<ErrorBoundary><Privacy /></ErrorBoundary>} />
               <Route path="/terms" element={<ErrorBoundary><Terms /></ErrorBoundary>} />
 
