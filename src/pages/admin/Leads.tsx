@@ -40,6 +40,9 @@ import {
   ExternalLink,
   Star,
   Loader2,
+  Send,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { OUTCOME_COLORS } from "./CallLogs";
 import {
@@ -120,6 +123,7 @@ type DroneLeadRow = {
   created_at: string;
   company_name: string;
   email: string | null;
+  email_status: string | null;
   phone: string | null;
   website: string | null;
   city: string | null;
@@ -651,6 +655,16 @@ function DroneLeadsTab() {
   const [enrichMax, setEnrichMax] = useState(10);
   const [enrichOpen, setEnrichOpen] = useState(false);
 
+  // Outreach enrollment state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [enrollingId, setEnrollingId] = useState<string | null>(null);
+  const [bulkEnrolling, setBulkEnrolling] = useState(false);
+  type EnrollResult = { id: string; name: string; status: "success" | "error"; error?: string };
+  const [enrollResults, setEnrollResults] = useState<EnrollResult[]>([]);
+
+  // Clear selection when the visible set changes
+  useEffect(() => { setSelectedIds(new Set()); }, [page, statusFilter, search]);
+
   // Fetch drone leads
   const { data, isLoading } = useQuery({
     queryKey: ["drone-leads", statusFilter, search, page],
@@ -658,7 +672,7 @@ function DroneLeadsTab() {
       let query = supabase
         .from("drone_leads")
         .select(
-          "id, created_at, company_name, email, phone, website, city, state, portfolio_type, google_rating, review_count, hunter_io_score, ai_email_subject, ai_email_body, status, priority, email_tracking(open_count, click_count)",
+          "id, created_at, company_name, email, email_status, phone, website, city, state, portfolio_type, google_rating, review_count, hunter_io_score, ai_email_subject, ai_email_body, status, priority, email_tracking(open_count, click_count)",
           { count: "exact" },
         )
         .order("created_at", { ascending: false })
@@ -734,6 +748,76 @@ function DroneLeadsTab() {
   const leads = data?.leads ?? [];
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  // --- Outreach enrollment (calls enqueue-drip) ---
+  const SB_URL = import.meta.env.VITE_SUPABASE_URL || "https://qjpujskwqaehxnqypxzu.supabase.co";
+
+  // Lead IDs that already have a pending outreach sequence (avoid double-enroll)
+  const { data: enrolledIds } = useQuery({
+    queryKey: ["drone-leads-enrolled"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("scheduled_emails" as never)
+        .select("lead_id")
+        .eq("sequence_type", "outreach_drip")
+        .eq("status", "pending");
+      if (error) throw error;
+      return new Set((data ?? []).map((r) => (r as { lead_id: string }).lead_id));
+    },
+    staleTime: 30_000,
+  });
+
+  const leadHasPendingOutreach = (l: DroneLeadRow) => enrolledIds?.has(l.id) ?? false;
+  const isEnrollable = (l: DroneLeadRow) => !!l.email && l.status === "new" && !leadHasPendingOutreach(l);
+
+  async function enrollOne(leadId: string): Promise<void> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("Not authenticated");
+    const res = await fetch(`${SB_URL}/functions/v1/enqueue-drip`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ lead_id: leadId, sequence_type: "outreach_drip" }),
+    });
+    if (res.status === 409) return; // already enrolled — treat as success
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      throw new Error((err as { error?: string }).error || `HTTP ${res.status}`);
+    }
+  }
+
+  const enrollMutation = useMutation({
+    mutationFn: async (leadId: string) => { setEnrollingId(leadId); await enrollOne(leadId); },
+    onSuccess: () => {
+      toast({ title: "Outreach started", description: "Email 1 sends on the next cycle; follow-ups on day 4 and 10." });
+      queryClient.invalidateQueries({ queryKey: ["drone-leads"] });
+      queryClient.invalidateQueries({ queryKey: ["drone-leads-enrolled"] });
+    },
+    onError: (err: Error) => toast({ title: "Enroll failed", description: err.message, variant: "destructive" }),
+    onSettled: () => setEnrollingId(null),
+  });
+
+  async function handleBulkOutreach() {
+    setBulkEnrolling(true);
+    setEnrollResults([]);
+    const toEnroll = leads.filter((l) => selectedIds.has(l.id));
+    const settled = await Promise.allSettled(toEnroll.map((l) => enrollOne(l.id)));
+    const res: EnrollResult[] = settled.map((r, i) => ({
+      id: toEnroll[i].id,
+      name: toEnroll[i].company_name,
+      status: r.status === "fulfilled" ? "success" : "error",
+      error: r.status === "rejected" ? String((r as PromiseRejectedResult).reason) : undefined,
+    }));
+    setEnrollResults(res);
+    setBulkEnrolling(false);
+    setSelectedIds(new Set());
+    queryClient.invalidateQueries({ queryKey: ["drone-leads"] });
+    queryClient.invalidateQueries({ queryKey: ["drone-leads-enrolled"] });
+    const ok = res.filter((r) => r.status === "success").length;
+    const fail = res.filter((r) => r.status === "error").length;
+    toast({ title: `Outreach: ${ok} started${fail ? `, ${fail} failed` : ""}`, variant: fail ? "destructive" : "default" });
+  }
+
+  const enrollableOnPage = leads.filter(isEnrollable);
 
   const priorityColor: Record<string, string> = {
     high: "bg-red-500 text-white",
@@ -847,6 +931,46 @@ function DroneLeadsTab() {
         />
       </div>
 
+      {/* Bulk outreach bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 mb-3 p-3 bg-muted rounded-md border flex-wrap">
+          <span className="text-sm font-medium">{selectedIds.size} selected</span>
+          {(() => {
+            const unverified = leads.filter((l) => selectedIds.has(l.id) && l.email_status !== "verified").length;
+            return unverified > 0 ? (
+              <span className="text-xs text-amber-600 flex items-center gap-1">
+                <AlertCircle className="h-3.5 w-3.5" />{unverified} unverified email{unverified !== 1 ? "s" : ""} (may bounce)
+              </span>
+            ) : (
+              <span className="text-xs text-green-600 flex items-center gap-1">
+                <CheckCircle2 className="h-3.5 w-3.5" />all emails verified
+              </span>
+            );
+          })()}
+          <Button size="sm" onClick={handleBulkOutreach} disabled={bulkEnrolling} className="gap-2">
+            {bulkEnrolling && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {bulkEnrolling ? "Starting..." : `Start Outreach (${selectedIds.size})`}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} disabled={bulkEnrolling}>
+            Clear
+          </Button>
+        </div>
+      )}
+
+      {enrollResults.length > 0 && (
+        <div className="mb-3 space-y-1">
+          {enrollResults.map((r) => (
+            <div key={r.id} className="flex items-center gap-2 text-sm">
+              <Badge className={r.status === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"}>
+                {r.status === "success" ? "OK" : "Failed"}
+              </Badge>
+              <span>{r.name}</span>
+              {r.error && <span className="text-muted-foreground text-xs">({r.error})</span>}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Table */}
       {isLoading ? (
         <div className="text-center py-12 text-muted-foreground">Loading leads...</div>
@@ -863,6 +987,15 @@ function DroneLeadsTab() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={enrollableOnPage.length > 0 && enrollableOnPage.every((l) => selectedIds.has(l.id))}
+                    onCheckedChange={(checked) =>
+                      setSelectedIds(checked ? new Set(enrollableOnPage.map((l) => l.id)) : new Set())
+                    }
+                    aria-label="Select all enrollable leads"
+                  />
+                </TableHead>
                 <TableHead>Company</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Contact</TableHead>
@@ -871,6 +1004,7 @@ function DroneLeadsTab() {
                 <TableHead>Engagement</TableHead>
                 <TableHead>Priority</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Outreach</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -880,6 +1014,15 @@ function DroneLeadsTab() {
 
                 return (
                   <TableRow key={lead.id}>
+                    <TableCell className="w-10">
+                      {isEnrollable(lead) && (
+                        <Checkbox
+                          checked={selectedIds.has(lead.id)}
+                          onCheckedChange={() => setSelectedIds(toggleLeadSelection(selectedIds, lead.id))}
+                          aria-label={`Select ${lead.company_name}`}
+                        />
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">{lead.company_name}</p>
@@ -897,6 +1040,11 @@ function DroneLeadsTab() {
                           <div className="flex items-center gap-1 text-sm">
                             <Mail className="h-3 w-3 text-muted-foreground" />
                             <span className="truncate max-w-[160px]">{lead.email}</span>
+                            {lead.email_status === "verified" ? (
+                              <CheckCircle2 className="h-3 w-3 text-green-500 shrink-0" aria-label="verified email" />
+                            ) : (
+                              <AlertCircle className="h-3 w-3 text-amber-500 shrink-0" aria-label="unverified email" />
+                            )}
                           </div>
                         )}
                         {lead.phone && (
@@ -969,6 +1117,32 @@ function DroneLeadsTab() {
                       <Badge className={statusColor[lead.status] || "bg-gray-400 text-white"}>
                         {lead.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {leadHasPendingOutreach(lead) ? (
+                        <Badge className="bg-amber-500 text-white gap-1">
+                          <Send className="h-3 w-3" /> Active
+                        </Badge>
+                      ) : lead.status !== "new" ? (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      ) : !lead.email ? (
+                        <span className="text-xs text-muted-foreground">No email</span>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1"
+                          disabled={enrollingId === lead.id}
+                          onClick={() => enrollMutation.mutate(lead.id)}
+                        >
+                          {enrollingId === lead.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Send className="h-3 w-3" />
+                          )}
+                          Start Outreach
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 );
