@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AdminNav from "./components/AdminNav";
-import N8nHealthIndicator from "@/components/pipeline/N8nHealthIndicator";
 import ComplianceAlertsCard from "@/components/admin/ComplianceAlertsCard";
 import ActivityFeed from "@/components/admin/ActivityFeed";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +11,6 @@ import { format, isToday } from "date-fns";
 import {
   Activity,
   CalendarClock,
-  Cog,
   Send,
   Users,
 } from "lucide-react";
@@ -33,19 +31,6 @@ interface MissionRow {
   clients: { name: string } | null;
   customers: { name: string } | null;
   profiles: { full_name: string | null } | null;
-}
-
-interface ProcessingRow {
-  id: string;
-  mission_id: string;
-  status: string;
-  path_code: string | null;
-  started_at: string | null;
-  drone_jobs: {
-    job_number: string;
-    site_address: string | null;
-    property_address: string;
-  } | null;
 }
 
 // -------------------------------------------------------
@@ -140,22 +125,6 @@ export default function Dashboard() {
     },
   });
 
-  // Processing queue
-  const { data: processingJobs, isLoading: processingLoading } = useQuery({
-    queryKey: ["dashboard-processing-jobs"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("processing_jobs")
-        .select("id, mission_id, status, path_code, started_at, drone_jobs(job_number, site_address, property_address)")
-        .in("status", ["queued", "running"])
-        .order("started_at", { ascending: false })
-        .limit(10);
-      if (error) throw error;
-      return (data || []) as ProcessingRow[];
-    },
-    staleTime: 30_000,
-  });
-
   // -------------------------------------------------------
   // Derived data
   // -------------------------------------------------------
@@ -177,8 +146,6 @@ export default function Dashboard() {
 
   const activeMissionCount = activeMissions?.length ?? 0;
   const pendingDeliveryCount = pendingDeliveries?.length ?? 0;
-  const processingCount = processingJobs?.length ?? 0;
-  const globalLoading = activeMissionsLoading || deliveriesLoading || processingLoading;
 
   return (
     <div className="min-h-screen bg-background">
@@ -186,17 +153,14 @@ export default function Dashboard() {
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between gap-4">
-            <h1 className="text-3xl font-bold">Mission Control</h1>
-            <N8nHealthIndicator />
-          </div>
+          <h1 className="text-3xl font-bold">Mission Control</h1>
           <p className="text-muted-foreground mt-1">
-            Real-time overview of all missions, pipeline, and team activity
+            Real-time overview of all missions and team activity
           </p>
         </div>
 
         {/* Row 1 — Key Metrics */}
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-4 mb-8">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 mb-8">
           <MetricCard
             label="Active Missions"
             value={activeMissionCount}
@@ -211,13 +175,6 @@ export default function Dashboard() {
             to="/admin/drone-jobs?delivery=ready"
             loading={deliveriesLoading}
             accent="text-blue-500"
-          />
-          <MetricCard
-            label="Processing Queue"
-            value={processingCount}
-            icon={Cog}
-            to="/admin/pipeline"
-            loading={processingLoading}
           />
           <MetricCard
             label="Today's Missions"
@@ -273,8 +230,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Row 3 + Row 4 — Active Missions by Pilot + Processing Queue */}
-        <div className="grid gap-6 lg:grid-cols-2 mb-8">
+        {/* Row 3 — Active Missions by Pilot */}
+        <div className="mb-8">
           {/* Active Missions by Pilot */}
           <Card>
             <CardHeader>
@@ -328,59 +285,9 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
-
-          {/* Processing Queue */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Cog className="h-5 w-5" />
-                  Processing Queue
-                </CardTitle>
-                <Link to="/admin/pipeline" className="text-xs text-muted-foreground hover:underline">
-                  View all →
-                </Link>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {processingLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
-                </div>
-              ) : !processingJobs || processingJobs.length === 0 ? (
-                <p className="text-muted-foreground text-sm text-center py-4">No jobs currently processing</p>
-              ) : (
-                <div className="space-y-2">
-                  {processingJobs.map((pj) => (
-                    <div key={pj.id} className="flex items-center justify-between gap-2 p-2 rounded-lg border bg-card text-sm">
-                      <div className="min-w-0">
-                        <Link
-                          to={`/admin/drone-jobs/${pj.mission_id}`}
-                          className="font-mono text-xs font-semibold hover:underline text-primary"
-                        >
-                          {pj.drone_jobs?.job_number || pj.mission_id.slice(0, 8)}
-                        </Link>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {pj.drone_jobs?.site_address || pj.drone_jobs?.property_address || ""}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {pj.path_code && (
-                          <Badge variant="outline" className="text-xs font-mono">{pj.path_code}</Badge>
-                        )}
-                        <Badge className={`text-xs ${pj.status === "running" ? "bg-amber-500 text-white" : "bg-slate-400 text-white"}`}>
-                          {pj.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
 
-        {/* Row 5 — Activity Feed + Compliance Alerts */}
+        {/* Row 4 — Activity Feed + Compliance Alerts */}
         <div className="grid gap-6 lg:grid-cols-2">
           <ActivityFeed />
           <ComplianceAlertsCard />

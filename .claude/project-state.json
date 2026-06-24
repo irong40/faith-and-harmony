@@ -1,17 +1,18 @@
 {
-  "lastSession": "2026-04-09",
+  "lastSession": "2026-06-09",
   "branch": "dev",
-  "phase": "Backend refocused. Square cutover ready. Migration pending deploy.",
+  "phase": "Public /quote lead form + OPORD pull poller live in production (PR #28/#29). Trestle tooling under trestle-tools/.",
   "workItems": [
-    "Set 5 Square production secrets in Supabase",
-    "Register Square webhook URL in Developer Console",
-    "Run supabase db push (migration 20260409100000)",
-    "Run supabase gen types typescript",
-    "Test full revenue path with real Square payment",
-    "Complete Q1 mileage reports (April 14 reminder set)",
-    "Consider auto-trigger for balance invoice on job completion"
+    "Run the OPORD poller on host: trestle-tools/opord_intake.py watch (optional: schedule it)",
+    "Resume hybrid-pricing PORT into website TS engine (src/lib/mission-costing.ts + PricingEngine.tsx still legacy cost-plus)",
+    "Delete unused src/components/landing/QuoteForm.tsx",
+    "Reprice/retire marketing packages below $350 floor (business decision)"
   ],
-  "blockers": [
-    "Square production credentials needed from Adam (Developer Console access)"
-  ]
+  "blockers": [],
+  "staleItemsFromApril": {
+    "note": "Carried from 2026-04-09 session; verify status separately, not addressed this session.",
+    "items": [
+      "Square production cutover (secrets, webhook, migration 20260409100000, type gen, revenue path test)"
+    ]
+  }
 }

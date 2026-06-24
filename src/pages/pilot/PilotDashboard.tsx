@@ -1,13 +1,11 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw, LogOut, Plane, Play, RotateCcw, Cog, LayoutDashboard, MapIcon, Route, Camera } from "lucide-react";
+import { RefreshCw, LogOut, Plane, Play, RotateCcw, LayoutDashboard, MapIcon, Route, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isToday, isBefore, startOfDay } from "date-fns";
 import PilotCard from "@/components/pilot/PilotCard";
@@ -17,17 +15,6 @@ import { usePilotMissions } from "@/hooks/usePilotMissions";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { useDeadLetterCount } from "@/hooks/useDeadLetterCount";
 import { DeadLetterBanner } from "@/components/pilot/DeadLetterBanner";
-
-// -------------------------------------------------------
-// Types
-// -------------------------------------------------------
-interface ProcessingStatus {
-  id: string;
-  mission_id: string;
-  status: string;
-  path_code: string | null;
-  job_number: string;
-}
 
 // -------------------------------------------------------
 // Quick Actions component
@@ -71,77 +58,10 @@ function QuickActions({ missions }: { missions: any[] }) {
 }
 
 // -------------------------------------------------------
-// Processing status for pilot's missions
-// -------------------------------------------------------
-function ProcessingStatusCard({ userId }: { userId: string }) {
-    const { data: processing, isLoading } = useQuery({
-        queryKey: ["pilot-processing-status", userId],
-        queryFn: async (): Promise<ProcessingStatus[]> => {
-            // Get active processing jobs for this pilot's missions
-            const { data, error } = await supabase
-                .from("processing_jobs")
-                .select("id, mission_id, status, path_code, drone_jobs(job_number, pilot_id)")
-                .in("status", ["queued", "running"])
-                .order("started_at", { ascending: false })
-                .limit(5);
-            if (error) throw error;
-            // Filter to only this pilot's missions
-            return (data || [])
-                .filter((pj: any) => pj.drone_jobs?.pilot_id === userId)
-                .map((pj: any) => ({
-                    id: pj.id,
-                    mission_id: pj.mission_id,
-                    status: pj.status,
-                    path_code: pj.path_code,
-                    job_number: pj.drone_jobs?.job_number || "Unknown",
-                }));
-        },
-        staleTime: 30_000,
-        refetchInterval: 30_000,
-    });
-
-    if (!isLoading && (!processing || processing.length === 0)) return null;
-
-    return (
-        <Card className="mb-4">
-            <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Cog className="h-4 w-4 text-amber-500" />
-                    Processing Status
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                {isLoading ? (
-                    <Skeleton className="h-10 w-full" />
-                ) : (
-                    <div className="space-y-2">
-                        {processing!.map((pj) => (
-                            <div key={pj.id} className="flex items-center justify-between gap-2 text-sm">
-                                <Link to={`/pilot/mission/${pj.mission_id}`} className="font-mono hover:underline text-primary text-xs">
-                                    {pj.job_number}
-                                </Link>
-                                <div className="flex items-center gap-2">
-                                    {pj.path_code && (
-                                        <Badge variant="outline" className="text-xs font-mono">{pj.path_code}</Badge>
-                                    )}
-                                    <Badge className={`text-xs ${pj.status === "running" ? "bg-amber-500 text-white" : "bg-slate-400 text-white"}`}>
-                                        {pj.status === "running" ? "Processing" : "Queued"}
-                                    </Badge>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
-}
-
-// -------------------------------------------------------
 // Main PilotDashboard
 // -------------------------------------------------------
 export default function PilotDashboard() {
-    const { pilotProfile, user, isAdmin, signOut } = useAuth();
+    const { pilotProfile, isAdmin, signOut } = useAuth();
     const { toast } = useToast();
 
     // TanStack Query for missions (RLS scoped to current pilot)
@@ -256,9 +176,6 @@ export default function PilotDashboard() {
                 {!loading && missions.length > 0 && (
                     <QuickActions missions={missions} />
                 )}
-
-                {/* Processing Status for my missions */}
-                {user?.id && <ProcessingStatusCard userId={user.id} />}
 
                 {/* Quick Links */}
                 <div className="space-y-2 mb-6">

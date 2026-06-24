@@ -207,9 +207,13 @@ serve(async (req) => {
             .update({ status: 'failed', error_message: emailError.message })
             .eq('id', trackingRecord.id);
 
+          // Leave the row PENDING so a transient/config failure (e.g. an
+          // unverified sending domain) retries on the next run instead of being
+          // permanently lost. Only genuine skips (lead converted, no template)
+          // are marked terminal 'skipped' above. The error is recorded for visibility.
           await supabase
             .from('scheduled_emails')
-            .update({ status: 'skipped', skip_reason: `Send failed: ${emailError.message}` })
+            .update({ status: 'pending', skip_reason: `Send failed (will retry): ${emailError.message}` })
             .eq('id', email.id);
 
           results.failed++;

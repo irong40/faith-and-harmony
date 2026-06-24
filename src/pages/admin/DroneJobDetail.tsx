@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle, ScanSearch, Zap, Settings2, Image as ImageIcon, AlertTriangle, ExternalLink, Link2, Calendar, DollarSign, FileText } from "lucide-react";
+import { ArrowLeft, RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle, ScanSearch, Settings2, Image as ImageIcon, AlertTriangle, ExternalLink, Link2, Calendar, DollarSign, FileText, ArrowRight, ListChecks, Trash2, Mail, Phone, MapPin, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import AdminNav from "./components/AdminNav";
@@ -34,9 +34,6 @@ import AdminAssetUpload from "@/components/drone/AdminAssetUpload";
 import type { Database, Json } from "@/integrations/supabase/types";
 import type { DroneAsset, QAResults, ProcessingProfile } from "@/types/drone";
 import { useQueryClient } from "@tanstack/react-query";
-import { useProcessingJob, useTriggerPipeline, useResumeManualEdit } from "@/hooks/usePipeline";
-import type { ProcessingJobStep } from "@/hooks/usePipeline";
-import PipelineStepper from "@/components/pipeline/PipelineStepper";
 
 type DroneJobStatus = Database["public"]["Enums"]["drone_job_status"];
 
@@ -117,179 +114,6 @@ const STATUS_TO_STEP: Partial<Record<DroneJobStatus, DroneJobStatus>> = {
   video_exporting: "processing",
   photos_delivered: "delivered",
 };
-
-function ProcessingJobCard({ missionId, processingTemplateId }: {
-  missionId: string;
-  processingTemplateId: string | null;
-}) {
-  const { toast } = useToast();
-  const { data: processingJob, isLoading } = useProcessingJob(missionId);
-  const triggerPipeline = useTriggerPipeline();
-  const resumeManualEdit = useResumeManualEdit();
-
-  const handleStartProcessing = async () => {
-    if (!processingTemplateId) {
-      toast({
-        title: "No processing template",
-        description: "Assign a processing template to this job before starting.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Pre-flight: warn if n8n automation engine is offline
-    const { data: heartbeat } = await supabase
-      .from('n8n_heartbeat')
-      .select('last_ping')
-      .eq('instance_id', 'primary')
-      .maybeSingle();
-    const ageMin = heartbeat?.last_ping
-      ? (Date.now() - new Date(heartbeat.last_ping).getTime()) / 60_000
-      : Infinity;
-    if (ageMin > 20) {
-      toast({
-        title: "n8n appears offline",
-        description: "The automation engine hasn't reported in. The job will be created but may not process until n8n is back online.",
-        variant: "destructive",
-      });
-    }
-
-    try {
-      const result = await triggerPipeline.mutateAsync({
-        missionId,
-        processingTemplateId,
-      });
-
-      if ((result as { conflict?: boolean }).conflict) {
-        toast({
-          title: "Job already active",
-          description: "A pipeline job for this mission is already running.",
-          variant: "destructive",
-        });
-      } else {
-        toast({ title: "Pipeline started", description: "Processing job created and sent to n8n." });
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      toast({ title: "Failed to start pipeline", description: message, variant: "destructive" });
-    }
-  };
-
-  const handleMarkEditComplete = async (stepName: string, notes?: string) => {
-    if (!processingJob) return;
-    try {
-      await resumeManualEdit.mutateAsync({
-        processingJobId: processingJob.id,
-        stepName,
-        notes,
-      });
-      toast({ title: "Pipeline resumed", description: "Manual edit marked complete. Continuing..." });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      toast({ title: "Resume failed", description: message, variant: "destructive" });
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">
-          <RefreshCw className="mx-auto h-6 w-6 animate-spin mb-2" />
-          <p className="text-sm">Loading pipeline status...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!processingJob) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5" />
-            Start Processing
-          </CardTitle>
-          <CardDescription>
-            No active pipeline job for this mission.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button
-            onClick={handleStartProcessing}
-            disabled={triggerPipeline.isPending || !processingTemplateId}
-            className="w-full sm:w-auto"
-          >
-            {triggerPipeline.isPending ? (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                Starting...
-              </>
-            ) : (
-              <>
-                <Zap className="mr-2 h-4 w-4" />
-                Start Processing Pipeline
-              </>
-            )}
-          </Button>
-          {!processingTemplateId && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              Assign a processing template in the Overview tab first.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const steps = (processingJob.steps ?? []) as ProcessingJobStep[];
-  const statusBadgeClass =
-    processingJob.status === 'complete'
-      ? 'bg-green-100 text-green-700'
-      : processingJob.status === 'failed'
-        ? 'bg-red-100 text-red-700'
-        : processingJob.status === 'running'
-          ? 'bg-blue-100 text-blue-700'
-          : processingJob.status === 'awaiting_manual_edit'
-            ? 'bg-amber-100 text-amber-700'
-            : 'bg-slate-100 text-slate-600';
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5" />
-            Pipeline Status
-          </CardTitle>
-          <Badge variant="secondary" className={statusBadgeClass}>
-            {processingJob.status.replace('_', ' ')}
-          </Badge>
-        </div>
-        {processingJob.started_at && (
-          <CardDescription>
-            Started {format(new Date(processingJob.started_at), "MMM d 'at' h:mm a")}
-            {processingJob.completed_at && (
-              <> &middot; Completed {format(new Date(processingJob.completed_at), "MMM d 'at' h:mm a")}</>
-            )}
-          </CardDescription>
-        )}
-      </CardHeader>
-      <CardContent>
-        {processingJob.error_message && (
-          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 font-mono">
-            {processingJob.error_message}
-          </div>
-        )}
-        <PipelineStepper
-          steps={steps}
-          currentStep={processingJob.current_step}
-          processingJobId={processingJob.id}
-          onMarkEditComplete={handleMarkEditComplete}
-        />
-      </CardContent>
-    </Card>
-  );
-}
 
 function JobEditForm({ job, onSuccess, onCancel }: { job: DroneJob; onSuccess: () => void; onCancel: () => void }) {
   const { toast } = useToast();
@@ -490,9 +314,14 @@ function JobEditForm({ job, onSuccess, onCancel }: { job: DroneJob; onSuccess: (
 
 export default function DroneJobDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   const [job, setJob] = useState<DroneJob | null>(null);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const [assets, setAssets] = useState<DroneAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -503,7 +332,6 @@ export default function DroneJobDetail() {
   const [runningQA, setRunningQA] = useState(false);
   const [tokenCopied, setTokenCopied] = useState(false);
   const [extractingExif, setExtractingExif] = useState(false);
-  const [triggeringProcessing, setTriggeringProcessing] = useState(false);
   const [syncingCalendar, setSyncingCalendar] = useState(false);
   const [calendarConnected, setCalendarConnected] = useState(false);
   const [sendingBalanceInvoice, setSendingBalanceInvoice] = useState(false);
@@ -702,42 +530,6 @@ export default function DroneJobDetail() {
     setExtractingExif(false);
   };
 
-  const triggerProcessingWebhook = async () => {
-    if (!job) return;
-    setTriggeringProcessing(true);
-
-    const { data, error } = await supabase.functions.invoke("drone-batch-qa", {
-      body: { job_id: job.id },
-    });
-
-    if (error) {
-      toast({ title: "Failed to trigger processing", description: error.message, variant: "destructive" });
-    } else if (data?.status === "revision") {
-      toast({
-        title: "QA flagged issues",
-        description: `Score: ${data.qa_score ?? "N/A"}% — job moved to Revision. Review QA tab for details.`,
-        variant: "destructive",
-      });
-      fetchJob();
-    } else if (data?.status === "review_pending") {
-      toast({
-        title: "Awaiting your review",
-        description: `Score: ${data.qa_score ?? "N/A"}% — premium package needs sky replacement review before processing.`,
-      });
-      fetchJob();
-    } else if (data?.status === "qa") {
-      toast({
-        title: "QA passed — processing triggered",
-        description: `Score: ${data.qa_score ?? "N/A"}%. ${data.n8n_triggered !== false ? "Sent to n8n pipeline." : "N8N webhook not configured — process manually."}`,
-      });
-      fetchJob();
-    } else {
-      toast({ title: "Processing triggered" });
-      fetchJob();
-    }
-    setTriggeringProcessing(false);
-  };
-
   const sendDelivery = async () => {
     const recipientEmail = job?.clients?.email || job?.customers?.email;
     if (!job || !recipientEmail) return;
@@ -757,6 +549,42 @@ export default function DroneJobDetail() {
       fetchJob();
     }
     setSending(false);
+  };
+
+  const deleteJob = async () => {
+    if (!job) return;
+    setDeleting(true);
+
+    // Best-effort: remove uploaded files from storage (DB rows cascade on delete).
+    const paths = assets
+      .flatMap((a) => [a.file_path, (a as { thumbnail_path?: string | null }).thumbnail_path])
+      .filter((p): p is string => Boolean(p));
+    if (paths.length > 0) {
+      const { error: storageError } = await supabase.storage.from("drone-jobs").remove(paths);
+      if (storageError) {
+        // Non-fatal — keep going so the job row still gets removed.
+        console.warn("Storage cleanup failed:", storageError.message);
+      }
+    }
+
+    const { error } = await supabase.from("drone_jobs").delete().eq("id", job.id);
+
+    if (error) {
+      const blocked = /foreign key|violates/i.test(error.message);
+      toast({
+        title: "Couldn't delete job",
+        description: blocked
+          ? "This job is still linked to another record (e.g. a marketplace lead). Unlink it first, then try again."
+          : error.message,
+        variant: "destructive",
+      });
+      setDeleting(false);
+      return;
+    }
+
+    toast({ title: "Job deleted", description: `${job.job_number} and its files were removed.` });
+    setDeleteOpen(false);
+    navigate("/admin/drone-jobs");
   };
 
   if (loading) {
@@ -823,6 +651,15 @@ export default function DroneJobDetail() {
               <Edit className="mr-2 h-4 w-4" />
               Edit
             </Button>
+            <Button
+              onClick={() => { setDeleteConfirm(""); setDeleteOpen(true); }}
+              variant="outline"
+              size="sm"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </Button>
           </div>
         </div>
 
@@ -855,29 +692,200 @@ export default function DroneJobDetail() {
                 );
               })}
             </div>
-            {/* Manual override — only when needed */}
-            {(job.status === "failed" || job.status === "cancelled" || job.status === "revision") && (
-              <div className="mt-3 pt-3 border-t flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">Override:</span>
-                <Select value={job.status} onValueChange={(v) => handleStatusChange(v as DroneJobStatus)}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(STATUS_CONFIG).map(([value, config]) => (
-                      <SelectItem key={value} value={value}>
-                        {config.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            {/* Manual status setter — always available */}
+            {(() => {
+              const needsAttention =
+                job.status === "failed" || job.status === "cancelled" || job.status === "revision";
+              return (
+                <div className="mt-3 flex flex-col gap-2 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+                  <span className={`text-sm ${needsAttention ? "font-medium text-destructive" : "text-muted-foreground"}`}>
+                    {needsAttention ? "Needs attention — set status manually:" : "Set status manually"}
+                  </span>
+                  <Select value={job.status} onValueChange={(v) => handleStatusChange(v as DroneJobStatus)}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(STATUS_CONFIG).map(([value, config]) => (
+                        <SelectItem key={value} value={value}>
+                          {config.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
 
+        {/* Next step — context-aware guidance so actions aren't scattered across tabs */}
+        {(() => {
+          const hasAssets = assets.length > 0;
+          const hasQA = !!job.qa_summary;
+          const goto = (tab: string) => () => setActiveTab(tab);
+          let step: { title: string; hint: string; buttons: React.ReactNode } | null = null;
+
+          switch (job.status) {
+            case "intake":
+              step = {
+                title: "Schedule this job",
+                hint: "Set the client, job type, date, pilot and aircraft to get started.",
+                buttons: (
+                  <>
+                    <Button size="sm" onClick={() => setIsEditOpen(true)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit & Schedule
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={generateUploadToken} disabled={generatingToken}>
+                      <Key className="mr-2 h-4 w-4" />
+                      {job.upload_token ? "Regenerate Upload Link" : "Generate Upload Link"}
+                    </Button>
+                  </>
+                ),
+              };
+              break;
+            case "scheduled":
+              step = {
+                title: "Get the files from the field",
+                hint: job.upload_token
+                  ? "Share the upload link, or add the shoot to your calendar."
+                  : "Generate an upload link, or add the shoot to your calendar.",
+                buttons: (
+                  <>
+                    {job.upload_token ? (
+                      <Button size="sm" onClick={copyUploadLink}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        {tokenCopied ? "Copied!" : "Copy Upload Link"}
+                      </Button>
+                    ) : (
+                      <Button size="sm" onClick={generateUploadToken} disabled={generatingToken}>
+                        <Key className="mr-2 h-4 w-4" />
+                        Generate Upload Link
+                      </Button>
+                    )}
+                    {job.scheduled_date && calendarConnected && (
+                      <Button size="sm" variant="outline" onClick={syncToCalendar} disabled={syncingCalendar}>
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {job.google_event_id ? "Update Calendar" : "Add to Calendar"}
+                      </Button>
+                    )}
+                  </>
+                ),
+              };
+              break;
+            case "captured":
+            case "uploaded":
+            case "ingested":
+              step = hasQA
+                ? {
+                    title: "Ready to process",
+                    hint: "QA is done. Review results and process the photos in WebODM.",
+                    buttons: (
+                      <Button size="sm" onClick={goto("processing")}>
+                        Go to Processing
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    ),
+                  }
+                : {
+                    title: hasAssets ? "Run quality analysis" : "Upload the captured files",
+                    hint: hasAssets
+                      ? "Files are in. Run QA before processing."
+                      : "Add the pilot's photos/videos, then run QA.",
+                    buttons: (
+                      <Button size="sm" onClick={goto(hasAssets ? "qa" : "assets")}>
+                        {hasAssets ? "Go to QA" : "Go to Assets"}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    ),
+                  };
+              break;
+            case "qa":
+            case "review_pending":
+            case "revision":
+              step = {
+                title: "Review needed",
+                hint: "This job is waiting on your review before it can move forward.",
+                buttons: (
+                  <Button size="sm" onClick={goto(job.status === "review_pending" ? "processing" : "qa")}>
+                    Review Now
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                ),
+              };
+              break;
+            case "processing":
+            case "video_grading":
+            case "video_editing":
+            case "video_exporting":
+              step = {
+                title: "Processing in progress",
+                hint: "Check processing status, or upload the finished deliverables when ready.",
+                buttons: (
+                  <Button size="sm" variant="outline" onClick={goto("processing")}>
+                    View Processing
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                ),
+              };
+              break;
+            case "complete":
+              step = {
+                title: "Wrap up & deliver",
+                hint: "Send the balance invoice and deliver the final files to the client.",
+                buttons: (
+                  <>
+                    <Button size="sm" onClick={goto("billing")}>
+                      <DollarSign className="mr-2 h-4 w-4" />
+                      Billing
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={goto("delivery")}>
+                      Delivery
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </>
+                ),
+              };
+              break;
+            case "paid":
+            case "delivered":
+            case "photos_delivered":
+              step = {
+                title: "Delivered",
+                hint: "Share the customer portal link or resend the delivery email.",
+                buttons: (
+                  <Button size="sm" variant="outline" onClick={goto("delivery")}>
+                    Go to Delivery
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                ),
+              };
+              break;
+          }
+
+          if (!step) return null;
+          return (
+            <Card className="mb-6 border-primary/30 bg-primary/[0.03]">
+              <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 rounded-full bg-primary/10 p-2 text-primary">
+                    <ListChecks className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Next step</p>
+                    <p className="font-semibold leading-tight">{step.title}</p>
+                    <p className="text-sm text-muted-foreground">{step.hint}</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 sm:justify-end">{step.buttons}</div>
+              </CardContent>
+            </Card>
+          );
+        })()}
+
         {/* Tabs */}
-        <Tabs defaultValue="overview">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="assets">
@@ -891,104 +899,149 @@ export default function DroneJobDetail() {
 
           {/* Overview Tab */}
           <TabsContent value="overview">
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* Client & Contact */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Property Details</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    Client & Contact
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <Label className="text-muted-foreground">Address</Label>
-                    <p className="font-medium">{job.property_address}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {[job.property_city, job.property_state, job.property_zip].filter(Boolean).join(", ")}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Property Type</Label>
-                    <p className="capitalize">{job.property_type}</p>
-                  </div>
-                  {job.scheduled_date && (
-                    <div>
-                      <Label className="text-muted-foreground">Scheduled</Label>
-                      <div className="flex items-center gap-2">
-                        <p>
-                          {format(new Date(job.scheduled_date), "MMMM d, yyyy")}
-                          {job.scheduled_time && ` at ${job.scheduled_time}`}
-                        </p>
-                        {job.google_event_id && (
-                          <span title="Synced to calendar">
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                          </span>
-                        )}
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-2"
-                        onClick={syncToCalendar}
-                        disabled={syncingCalendar || !calendarConnected}
-                        title={!calendarConnected ? "Connect Google Calendar in Settings" : undefined}
-                      >
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {syncingCalendar
-                          ? "Syncing..."
-                          : job.google_event_id
-                            ? "Update Calendar"
-                            : "Add to Calendar"}
-                      </Button>
-                      {!calendarConnected && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          <Link to="/admin/settings" className="text-primary hover:underline">
-                            Connect Google Calendar
-                          </Link> to sync events
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Client & Job Type</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 text-sm">
                   {job.clients ? (
-                    <div>
-                      <Label className="text-muted-foreground">Client</Label>
+                    <div className="space-y-1">
                       <button
-                        className="block text-left hover:underline font-medium text-primary"
+                        className="text-left font-medium text-primary hover:underline"
                         onClick={() => {/* TODO Phase 2: open client edit */}}
                       >
                         {job.clients.name}
                       </button>
-                      {job.clients.company && (
-                        <p className="text-sm text-muted-foreground">{job.clients.company}</p>
-                      )}
+                      {job.clients.company && <p className="text-muted-foreground">{job.clients.company}</p>}
                       {job.clients.email && (
-                        <p className="text-sm text-muted-foreground">{job.clients.email}</p>
+                        <a href={`mailto:${job.clients.email}`} className="flex items-center gap-2 text-muted-foreground hover:text-foreground hover:underline">
+                          <Mail className="h-3.5 w-3.5" />
+                          {job.clients.email}
+                        </a>
                       )}
                       {job.clients.phone && (
-                        <p className="text-sm text-muted-foreground">{job.clients.phone}</p>
+                        <a href={`tel:${job.clients.phone}`} className="flex items-center gap-2 text-muted-foreground hover:text-foreground hover:underline">
+                          <Phone className="h-3.5 w-3.5" />
+                          {job.clients.phone}
+                        </a>
                       )}
                     </div>
                   ) : job.customers ? (
-                    <div>
-                      <Label className="text-muted-foreground">Customer (legacy)</Label>
-                      <p className="font-medium">{job.customers.name}</p>
-                      <p className="text-sm text-muted-foreground">{job.customers.email}</p>
+                    <div className="space-y-1">
+                      <p className="font-medium">
+                        {job.customers.name} <span className="text-xs text-muted-foreground">(legacy)</span>
+                      </p>
+                      {job.customers.email && (
+                        <a href={`mailto:${job.customers.email}`} className="flex items-center gap-2 text-muted-foreground hover:text-foreground hover:underline">
+                          <Mail className="h-3.5 w-3.5" />
+                          {job.customers.email}
+                        </a>
+                      )}
                       {job.customers.phone && (
-                        <p className="text-sm text-muted-foreground">{job.customers.phone}</p>
+                        <a href={`tel:${job.customers.phone}`} className="flex items-center gap-2 text-muted-foreground hover:text-foreground hover:underline">
+                          <Phone className="h-3.5 w-3.5" />
+                          {job.customers.phone}
+                        </a>
                       )}
                     </div>
                   ) : (
                     <p className="text-muted-foreground">No client assigned</p>
                   )}
 
+                  {job.service_requests && (
+                    <div className="border-t pt-3">
+                      <Label className="text-xs text-muted-foreground">Service Request</Label>
+                      <Link to="/admin/service-requests" className="block text-primary hover:underline">
+                        {job.service_requests.project_title || "View Request"}
+                      </Link>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Schedule & Location */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    Schedule & Location
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Address</Label>
+                    <p className="font-medium">{job.property_address}</p>
+                    {[job.property_city, job.property_state, job.property_zip].filter(Boolean).length > 0 && (
+                      <p className="text-muted-foreground">
+                        {[job.property_city, job.property_state, job.property_zip].filter(Boolean).join(", ")}
+                      </p>
+                    )}
+                    {job.site_address && job.site_address !== job.property_address && (
+                      <p className="mt-1 text-xs text-muted-foreground">Site: {job.site_address}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Property Type</Label>
+                    <p className="capitalize">{job.property_type}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Scheduled</Label>
+                    {job.scheduled_date ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <p>
+                            {format(new Date(job.scheduled_date), "MMMM d, yyyy")}
+                            {job.scheduled_time && ` at ${job.scheduled_time}`}
+                          </p>
+                          {job.google_event_id && (
+                            <span title="Synced to calendar">
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            </span>
+                          )}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          onClick={syncToCalendar}
+                          disabled={syncingCalendar || !calendarConnected}
+                          title={!calendarConnected ? "Connect Google Calendar in Settings" : undefined}
+                        >
+                          <Calendar className="mr-2 h-4 w-4" />
+                          {syncingCalendar ? "Syncing..." : job.google_event_id ? "Update Calendar" : "Add to Calendar"}
+                        </Button>
+                        {!calendarConnected && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            <Link to="/admin/settings" className="text-primary hover:underline">
+                              Connect Google Calendar
+                            </Link>{" "}
+                            to sync events
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-muted-foreground">Not scheduled</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Job Type & Package */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Settings2 className="h-4 w-4 text-muted-foreground" />
+                    Job Type & Package
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
                   {job.processing_templates ? (
                     <div>
-                      <Label className="text-muted-foreground">Job Type</Label>
                       <div className="flex items-center gap-2">
                         {job.processing_templates.path_code && (
                           <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-mono font-medium text-primary">
@@ -998,64 +1051,53 @@ export default function DroneJobDetail() {
                         <p className="font-medium">{job.processing_templates.display_name}</p>
                       </div>
                       {job.processing_templates.description && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {job.processing_templates.description}
-                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">{job.processing_templates.description}</p>
                       )}
                     </div>
                   ) : job.drone_packages ? (
                     <div>
-                      <Label className="text-muted-foreground">Package (legacy)</Label>
+                      <Label className="text-xs text-muted-foreground">Package (legacy)</Label>
                       <p className="font-medium">{job.drone_packages.name}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground">
                         ${job.drone_packages.price} • {job.drone_packages.edit_budget_minutes} min edit budget
                       </p>
                     </div>
-                  ) : null}
+                  ) : (
+                    <p className="text-muted-foreground">No job type assigned</p>
+                  )}
+                  <div className="border-t pt-3">
+                    <Label className="text-xs text-muted-foreground">Assets</Label>
+                    <p>
+                      {assets.length} file{assets.length !== 1 ? "s" : ""} uploaded
+                      {job.qa_score != null && <> · QA {job.qa_score}%</>}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-                  {job.site_address && (
+            {/* Notes */}
+            {(job.pilot_notes || job.admin_notes) && (
+              <Card className="mt-6">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Notes</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 md:grid-cols-2">
+                  {job.pilot_notes && (
                     <div>
-                      <Label className="text-muted-foreground">Site Address</Label>
-                      <p className="font-medium">{job.site_address}</p>
+                      <Label className="text-xs text-muted-foreground">Pilot Notes</Label>
+                      <p className="whitespace-pre-wrap text-sm">{job.pilot_notes}</p>
                     </div>
                   )}
-
-                  {job.service_requests && (
+                  {job.admin_notes && (
                     <div>
-                      <Label className="text-muted-foreground">Service Request</Label>
-                      <Link
-                        to={`/admin/service-requests`}
-                        className="text-primary hover:underline text-sm"
-                      >
-                        {job.service_requests.project_title || "View Request"}
-                      </Link>
+                      <Label className="text-xs text-muted-foreground">Admin Notes</Label>
+                      <p className="whitespace-pre-wrap text-sm">{job.admin_notes}</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
-
-              {(job.pilot_notes || job.admin_notes) && (
-                <Card className="md:col-span-2">
-                  <CardHeader>
-                    <CardTitle>Notes</CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid gap-4 md:grid-cols-2">
-                    {job.pilot_notes && (
-                      <div>
-                        <Label className="text-muted-foreground">Pilot Notes</Label>
-                        <p className="text-sm whitespace-pre-wrap">{job.pilot_notes}</p>
-                      </div>
-                    )}
-                    {job.admin_notes && (
-                      <div>
-                        <Label className="text-muted-foreground">Admin Notes</Label>
-                        <p className="text-sm whitespace-pre-wrap">{job.admin_notes}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            )}
           </TabsContent>
 
 
@@ -1164,13 +1206,32 @@ export default function DroneJobDetail() {
           {/* Processing Tab */}
           <TabsContent value="processing">
             <div className="space-y-6">
-              {/* New processing_jobs stepper */}
-              {id && (
-                <ProcessingJobCard
-                  missionId={id}
-                  processingTemplateId={job.processing_template_id}
-                />
-              )}
+              {/* Manual processing — WebODM happens off-platform */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings2 className="h-5 w-5" />
+                    Processing
+                  </CardTitle>
+                  <CardDescription>
+                    Photos are processed in WebODM off-platform. Use the profile below as your settings
+                    reference, then mark the job complete when the deliverables are ready to upload.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {(job.status === "complete" || job.status === "delivered" || job.status === "photos_delivered") ? (
+                    <div className="flex items-center gap-2 text-sm text-green-600">
+                      <CheckCircle className="h-4 w-4" />
+                      Processing marked complete.
+                    </div>
+                  ) : (
+                    <Button onClick={() => handleStatusChange("complete")}>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Mark Processing Complete
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Premium Review Approval UI */}
               {job.status === "review_pending" && (
@@ -1284,36 +1345,16 @@ export default function DroneJobDetail() {
               {/* Processing Profile Card — prefer processing_templates, fallback to legacy drone_packages.processing_profile */}
               {(job.processing_templates || job.drone_packages?.processing_profile) && (
                 <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Settings2 className="h-5 w-5" />
-                        Processing Profile
-                      </CardTitle>
-                      <CardDescription>
-                        {job.processing_templates
-                          ? (job.processing_templates.display_name || job.processing_templates.preset_name || "Template")
-                          : (job.drone_packages?.processing_profile as unknown as ProcessingProfile)?.lightroom_preset || "Default preset"}
-                      </CardDescription>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={triggerProcessingWebhook}
-                      disabled={triggeringProcessing || assets.length === 0}
-                    >
-                      {triggeringProcessing ? (
-                        <>
-                          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <Zap className="mr-2 h-4 w-4" />
-                          Send to Processing
-                        </>
-                      )}
-                    </Button>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Settings2 className="h-5 w-5" />
+                      Processing Profile
+                    </CardTitle>
+                    <CardDescription>
+                      {job.processing_templates
+                        ? (job.processing_templates.display_name || job.processing_templates.preset_name || "Template")
+                        : (job.drone_packages?.processing_profile as unknown as ProcessingProfile)?.lightroom_preset || "Default preset"}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {job.processing_templates ? (
@@ -1658,6 +1699,59 @@ export default function DroneJobDetail() {
             }}
             onCancel={() => setIsEditOpen(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete / clean-up confirmation */}
+      <Dialog open={deleteOpen} onOpenChange={(open) => { if (!deleting) setDeleteOpen(open); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Delete {job.job_number}?
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              This permanently removes the mission, its {assets.length} uploaded file
+              {assets.length !== 1 ? "s" : ""}, QA results, processing records, and any reports. Payments stay on
+              record but are unlinked. This can't be undone.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="delete-confirm">
+                Type <span className="font-mono font-semibold text-foreground">{job.job_number}</span> to confirm
+              </Label>
+              <Input
+                id="delete-confirm"
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                placeholder={job.job_number}
+                autoComplete="off"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={deleteJob}
+                disabled={deleting || deleteConfirm.trim() !== job.job_number}
+              >
+                {deleting ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Job
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

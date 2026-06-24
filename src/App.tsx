@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { PipelineRealtimeProvider } from "@/contexts/PipelineRealtimeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
@@ -40,9 +39,6 @@ const Documents = lazy(() => import("./pages/admin/Documents"));
 const Settings = lazy(() => import("./pages/admin/Settings"));
 const Invoices = lazy(() => import("./pages/admin/Invoices"));
 const PilotManagement = lazy(() => import("./pages/admin/PilotManagement"));
-const Pipeline = lazy(() => import("./pages/admin/Pipeline"));
-const PipelineQAReview = lazy(() => import("./pages/admin/PipelineQAReview"));
-const PipelineCoverageReview = lazy(() => import("./pages/admin/PipelineCoverageReview"));
 const SentinelPricing = lazy(() => import("./pages/admin/SentinelPricing"));
 const Clients = lazy(() => import("./pages/admin/Clients"));
 const JobIntake = lazy(() => import("./pages/admin/JobIntake"));
@@ -120,7 +116,6 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <GoogleMapsProvider>
-      <PipelineRealtimeProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -153,9 +148,6 @@ const App = () => (
               <Route path="/admin/drone-jobs" element={<AdminRoute><DroneJobs /></AdminRoute>} />
               <Route path="/admin/drone-jobs/:id" element={<AdminRoute><DroneJobDetail /></AdminRoute>} />
               <Route path="/admin/drone-jobs/:id/delivery" element={<AdminRoute><DeliveryReview /></AdminRoute>} />
-              <Route path="/admin/pipeline" element={<AdminRoute><Pipeline /></AdminRoute>} />
-              <Route path="/admin/pipeline/qa/:missionId" element={<AdminRoute><PipelineQAReview /></AdminRoute>} />
-              <Route path="/admin/pipeline/coverage/:missionId" element={<AdminRoute><PipelineCoverageReview /></AdminRoute>} />
               <Route path="/admin/pilots" element={<AdminRoute><PilotManagement /></AdminRoute>} />
               <Route path="/admin/people" element={<AdminRoute><People /></AdminRoute>} />
               <Route path="/admin/invoices" element={<AdminRoute><Invoices /></AdminRoute>} />
@@ -192,7 +184,6 @@ const App = () => (
           </Suspense>
         </BrowserRouter>
       </TooltipProvider>
-      </PipelineRealtimeProvider>
       </GoogleMapsProvider>
     </AuthProvider>
   </QueryClientProvider>
