@@ -190,6 +190,44 @@ serve(async (req) => {
         // Inject tracking pixel into HTML
         const htmlWithPixel = injectTrackingPixel(template.html, trackingRecord.tracking_id, supabaseUrl);
 
+        // Idempotency guard: atomically claim the row (pending -> sent)
+        // BEFORE sending. Only one run can win the conditional update, so an
+        // overlapping cron invocation (or a retry racing a slow run) can never
+        // double-send the same email. If the send fails below, the row is
+        // reverted to 'pending' for retry.
+        const { data: claimed, error: claimError } = await supabase
+          .from('scheduled_emails')
+          .update({
+            status: 'sent',
+            sent_at: new Date().toISOString(),
+            email_tracking_id: trackingRecord.id,
+          })
+          .eq('id', email.id)
+          .eq('status', 'pending')
+          .select('id');
+
+        if (claimError) {
+          console.error(`Claim failed for ${email.id} (will retry next run):`, claimError);
+          await supabase
+            .from('email_tracking')
+            .update({ status: 'failed', error_message: `Claim failed: ${claimError.message}` })
+            .eq('id', trackingRecord.id);
+          results.failed++;
+          results.errors.push(`Claim: ${claimError.message}`);
+          continue;
+        }
+
+        if (!claimed || claimed.length === 0) {
+          // Another run already claimed this row between fetch and now
+          console.log(`Skipping ${email.id}: already claimed by a concurrent run`);
+          await supabase
+            .from('email_tracking')
+            .update({ status: 'failed', error_message: 'Duplicate claim — row already processed by another run' })
+            .eq('id', trackingRecord.id);
+          results.skipped++;
+          continue;
+        }
+
         // Send via Resend
         const { data: emailResult, error: emailError } = await resend.emails.send({
           from: `${brand.companyName} <${brand.fromEmail}>`,
@@ -207,35 +245,43 @@ serve(async (req) => {
             .update({ status: 'failed', error_message: emailError.message })
             .eq('id', trackingRecord.id);
 
-          // Leave the row PENDING so a transient/config failure (e.g. an
+          // Revert the claim to PENDING so a transient/config failure (e.g. an
           // unverified sending domain) retries on the next run instead of being
           // permanently lost. Only genuine skips (lead converted, no template)
           // are marked terminal 'skipped' above. The error is recorded for visibility.
-          await supabase
+          const { error: revertError } = await supabase
             .from('scheduled_emails')
-            .update({ status: 'pending', skip_reason: `Send failed (will retry): ${emailError.message}` })
+            .update({
+              status: 'pending',
+              sent_at: null,
+              email_tracking_id: null,
+              skip_reason: `Send failed (will retry): ${emailError.message}`,
+            })
             .eq('id', email.id);
+
+          if (revertError) {
+            // Row is stuck 'sent' without a delivered email — fail loud so it
+            // surfaces in logs; it will NOT be retried automatically.
+            console.error(`CRITICAL: failed to revert ${email.id} to pending after send failure — email will not retry:`, revertError);
+            results.errors.push(`Revert: ${revertError.message}`);
+          }
 
           results.failed++;
           results.errors.push(emailError.message);
           continue;
         }
 
-        // Update tracking as sent
-        await supabase
+        // Update tracking as sent. The scheduled_emails row was already marked
+        // 'sent' by the claim above, so a failure here loses only tracking
+        // fidelity — it can never cause a duplicate send.
+        const { error: trackingSentError } = await supabase
           .from('email_tracking')
           .update({ status: 'sent' })
           .eq('id', trackingRecord.id);
 
-        // Update scheduled email as sent
-        await supabase
-          .from('scheduled_emails')
-          .update({
-            status: 'sent',
-            sent_at: new Date().toISOString(),
-            email_tracking_id: trackingRecord.id,
-          })
-          .eq('id', email.id);
+        if (trackingSentError) {
+          console.error(`Post-send tracking update failed for ${email.id} (email WAS sent):`, trackingSentError);
+        }
 
         // Log outreach
         if (email.lead_id) {

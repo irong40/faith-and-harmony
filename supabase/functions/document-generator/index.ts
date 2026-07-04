@@ -22,7 +22,20 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const url = new URL(req.url);
-    const action = url.searchParams.get("action");
+    // Action comes from the query string, or from the JSON body for POSTs —
+    // supabase.functions.invoke() sends { action, ... } in the body.
+    let action = url.searchParams.get("action");
+    let parsedBody: Record<string, unknown> | null = null;
+    if (req.method === "POST") {
+      try {
+        parsedBody = await req.json();
+      } catch {
+        parsedBody = null;
+      }
+      if (!action && parsedBody && typeof parsedBody.action === "string") {
+        action = parsedBody.action;
+      }
+    }
 
     // Get user from auth header if present
     const authHeader = req.headers.get("authorization");
@@ -91,7 +104,7 @@ Deno.serve(async (req) => {
 
     // POST /generate - Generate a document
     if (action === "generate" && req.method === "POST") {
-      const body: GenerateRequest = await req.json();
+      const body = (parsedBody ?? {}) as unknown as GenerateRequest;
       const { template_code, data, filename } = body;
 
       if (!template_code) {
@@ -243,7 +256,7 @@ Deno.serve(async (req) => {
 
     // POST /generate-report - Log a report PDF generation (client-side print)
     if (action === "generate-report" && req.method === "POST") {
-      const { report_id } = await req.json();
+      const report_id = parsedBody?.report_id as string | undefined;
 
       if (!report_id) {
         return new Response(

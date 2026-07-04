@@ -1,9 +1,27 @@
 #!/bin/bash
 # Bulk enqueue outreach_drip for all new drone_leads
 # Calls enqueue-drip edge function for each lead
+#
+# Requires SUPABASE_SERVICE_ROLE_KEY in the environment (or in .env
+# alongside this script). Never commit the key to this file.
 
 SUPABASE_URL="https://qjpujskwqaehxnqypxzu.supabase.co"
-SERVICE_KEY="***REMOVED-REVOKED-KEY***"
+
+# Load .env from the repo root if present (gitignored)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "${SCRIPT_DIR}/.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "${SCRIPT_DIR}/.env"
+  set +a
+fi
+
+SERVICE_KEY="${SUPABASE_SERVICE_ROLE_KEY:-}"
+if [ -z "$SERVICE_KEY" ]; then
+  echo "ERROR: SUPABASE_SERVICE_ROLE_KEY is not set." >&2
+  echo "Export it or add it to ${SCRIPT_DIR}/.env (see .env.example)." >&2
+  exit 1
+fi
 
 LEAD_IDS=(
   "f5b4d90c-82bc-4b0b-b3be-cab08277f208"

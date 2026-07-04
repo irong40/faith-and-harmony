@@ -223,7 +223,7 @@ export function useGenerateReportPDF() {
         window.open(result.download_url, "_blank");
         toast.success("PDF generated");
       } else {
-        toast.info("PDF generation queued");
+        toast.success("Report logged — save as PDF from the print dialog");
       }
     },
     onError: (e: Error) => toast.error(`PDF generation failed: ${e.message}`),

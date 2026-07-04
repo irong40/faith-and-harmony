@@ -74,16 +74,32 @@ async function findOrCreateClient(
 ): Promise<{ client_id: string; created: boolean }> {
   const normalizedPhone = normalizePhone(phone);
 
-  // Try to find existing client by phone (check both raw and normalized)
-  const { data: existing } = await supabase
+  // Try to find existing client by phone (check both raw and normalized).
+  // Uses separate .eq() filters instead of a string-interpolated .or() so
+  // caller-supplied phone values (commas, parens, PostgREST operators)
+  // cannot inject or malform the filter.
+  const { data: existingRaw } = await supabase
     .from('clients')
     .select('id')
-    .or(`phone.eq.${phone},phone.eq.${normalizedPhone}`)
+    .eq('phone', phone)
     .limit(1)
     .maybeSingle();
 
-  if (existing) {
-    return { client_id: existing.id, created: false };
+  if (existingRaw) {
+    return { client_id: existingRaw.id, created: false };
+  }
+
+  if (normalizedPhone && normalizedPhone !== phone) {
+    const { data: existingNormalized } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('phone', normalizedPhone)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingNormalized) {
+      return { client_id: existingNormalized.id, created: false };
+    }
   }
 
   // Create new client

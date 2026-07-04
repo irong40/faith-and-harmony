@@ -23,6 +23,33 @@ interface MarkReadRequest {
   message_ids: string[];
 }
 
+// Authenticate the caller from the Authorization header and return the
+// Supabase user, or null if the token is missing/invalid. get-messages and
+// mark-read return per-user private data, so they must never trust a
+// body-supplied email/id — identity comes from the verified JWT only.
+// (submit-message remains public intake and does not use this.)
+async function getAuthenticatedUser(req: Request) {
+  const authHeader = req.headers.get("Authorization") || "";
+  const token = authHeader.replace(/^Bearer\s+/i, "");
+  if (!token) return null;
+
+  const userClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: `Bearer ${token}` } } }
+  );
+  const { data: { user }, error } = await userClient.auth.getUser();
+  if (error || !user) return null;
+  return user;
+}
+
+function unauthorized(): Response {
+  return new Response(
+    JSON.stringify({ error: "Authentication required" }),
+    { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+  );
+}
+
 serve(async (req: Request): Promise<Response> => {
   console.log("Message API called:", req.method, req.url);
 
@@ -139,17 +166,34 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     if (req.method === "POST" && action === "get-messages") {
-      const body: GetMessagesRequest = await req.json();
-      console.log("Get messages request for:", body.user_email);
+      // Identity comes from the caller's JWT, not the request body (IDOR fix)
+      const user = await getAuthenticatedUser(req);
+      if (!user?.email) return unauthorized();
 
-      // Get all conversations for this user
+      const body: GetMessagesRequest = await req.json();
+
+      // Reject explicit mismatches so a buggy caller fails loudly instead
+      // of silently reading the wrong mailbox
+      if (
+        body.user_email &&
+        body.user_email.toLowerCase() !== user.email.toLowerCase()
+      ) {
+        return new Response(
+          JSON.stringify({ error: "user_email does not match authenticated user" }),
+          { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      console.log("Get messages request for authenticated user:", user.email);
+
+      // Get all conversations for the authenticated user
       const { data: conversations, error: convError } = await supabase
         .from("conversations")
         .select(`
           *,
           messages (*)
         `)
-        .eq("customer_email", body.user_email)
+        .eq("customer_email", user.email)
         .order("last_message_at", { ascending: false });
 
       if (convError) {
@@ -175,13 +219,39 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     if (req.method === "POST" && action === "mark-read") {
+      // Identity comes from the caller's JWT, not the request body (IDOR fix)
+      const user = await getAuthenticatedUser(req);
+      if (!user?.email) return unauthorized();
+
       const body: MarkReadRequest = await req.json();
-      console.log("Mark read request:", body.message_ids);
+      console.log("Mark read request from", user.email, ":", body.message_ids);
+
+      if (!Array.isArray(body.message_ids) || body.message_ids.length === 0) {
+        return new Response(
+          JSON.stringify({ error: "message_ids required" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      // Only messages inside the authenticated user's own conversations
+      // can be marked read — arbitrary message_ids for other users are ignored
+      const { data: ownConversations, error: ownConvError } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("customer_email", user.email);
+
+      if (ownConvError) {
+        console.error("Error fetching user conversations:", ownConvError);
+        throw ownConvError;
+      }
+
+      const ownConversationIds = ownConversations?.map((c) => c.id) || [];
 
       const { error } = await supabase
         .from("messages")
         .update({ read_at: new Date().toISOString() })
-        .in("id", body.message_ids);
+        .in("id", body.message_ids)
+        .in("conversation_id", ownConversationIds);
 
       if (error) {
         console.error("Error marking messages as read:", error);
