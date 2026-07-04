@@ -8,6 +8,7 @@ const corsHeaders = {
 const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID")!;
 const GOOGLE_CLIENT_SECRET = Deno.env.get("GOOGLE_CLIENT_SECRET")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 Deno.serve(async (req) => {
@@ -18,10 +19,46 @@ Deno.serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   try {
-    const body = await req.json();
-    const { action, code, redirect_uri, user_id } = body;
+    // Authenticate the caller: every action operates on per-user calendar
+    // token state, so a valid Supabase user JWT is required. The user_id is
+    // derived from the token — never from the request body — so callers can
+    // only ever read/refresh/disconnect their OWN Google Calendar binding.
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    if (!token) {
+      return new Response(
+        JSON.stringify({ error: "Missing authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    console.log(`[google-calendar-auth] Action: ${action}`);
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Invalid authentication" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const body = await req.json();
+    const { action, code, redirect_uri } = body;
+
+    // Ignore any body-supplied user_id; the authenticated user is the only
+    // identity this function will act on. Reject explicit mismatches so a
+    // buggy caller fails loudly instead of silently acting on the wrong user.
+    if (body.user_id && body.user_id !== user.id) {
+      console.warn(`[google-calendar-auth] user_id mismatch: body=${body.user_id} token=${user.id}`);
+      return new Response(
+        JSON.stringify({ error: "user_id does not match authenticated user" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const user_id = user.id;
+
+    console.log(`[google-calendar-auth] Action: ${action} (user ${user_id})`);
 
     if (action === "get-auth-url") {
       // Generate OAuth URL for user to authorize
@@ -48,9 +85,9 @@ Deno.serve(async (req) => {
 
     if (action === "exchange-code") {
       // Exchange authorization code for tokens
-      if (!code || !redirect_uri || !user_id) {
+      if (!code || !redirect_uri) {
         return new Response(
-          JSON.stringify({ error: "Missing code, redirect_uri, or user_id" }),
+          JSON.stringify({ error: "Missing code or redirect_uri" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -109,14 +146,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "check-connection") {
-      // Check if user has a valid token
-      if (!user_id) {
-        return new Response(
-          JSON.stringify({ error: "Missing user_id" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
+      // Check if the authenticated user has a valid token
       const { data: token, error } = await supabase
         .from("google_calendar_tokens")
         .select("*")
@@ -143,13 +173,6 @@ Deno.serve(async (req) => {
     }
 
     if (action === "disconnect") {
-      if (!user_id) {
-        return new Response(
-          JSON.stringify({ error: "Missing user_id" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
       const { error } = await supabase
         .from("google_calendar_tokens")
         .delete()
@@ -172,14 +195,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "refresh-token") {
-      // Refresh an expired access token
-      if (!user_id) {
-        return new Response(
-          JSON.stringify({ error: "Missing user_id" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
+      // Refresh an expired access token for the authenticated user only
       const { data: token, error: fetchError } = await supabase
         .from("google_calendar_tokens")
         .select("refresh_token")

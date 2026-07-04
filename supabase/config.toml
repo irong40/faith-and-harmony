@@ -18,6 +18,9 @@ verify_jwt = false
 [functions.send-proposal-response-email]
 verify_jwt = false
 
+# message-api: verify_jwt stays false because submit-message is public
+# customer intake. get-messages and mark-read validate the caller's JWT
+# in code and scope all reads/writes to the authenticated user's email.
 [functions.message-api]
 verify_jwt = false
 
@@ -51,8 +54,12 @@ verify_jwt = false
 [functions.document-generator]
 verify_jwt = false
 
+# google-calendar-auth: all callers are authenticated admin pages
+# (Settings.tsx, DroneJobDetail.tsx via supabase.functions.invoke, which
+# attaches the session JWT). The function additionally validates the JWT
+# in code and derives user_id from it — verify_jwt=true is defense in depth.
 [functions.google-calendar-auth]
-verify_jwt = false
+verify_jwt = true
 
 [functions.google-calendar-sync]
 verify_jwt = false
