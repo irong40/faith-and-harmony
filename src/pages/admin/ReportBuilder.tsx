@@ -41,7 +41,56 @@ import type {
   SectionDataMap,
   SectionManifestEntry,
   ReportImage,
+  WeatherData,
 } from "@/types/report";
+
+/** Pull the cached NWS forecast row closest to midday local (16:00 UTC) on the
+ * flight date. Returns null when the cache has no rows for that date. */
+async function fetchWeatherPrefill(dateStr: string): Promise<WeatherData | null> {
+  const { data, error } = await supabase
+    .from("weather_forecast_cache")
+    .select(
+      "forecast_hour, temperature_c, wind_speed_ms, wind_gust_ms, visibility_sm, sky_cover_pct, precipitation_probability"
+    )
+    .gte("forecast_hour", `${dateStr}T00:00:00Z`)
+    .lt("forecast_hour", `${dateStr}T23:59:59Z`)
+    .order("forecast_hour");
+  if (error || !data?.length) return null;
+
+  const midday = new Date(`${dateStr}T16:00:00Z`).getTime();
+  const row = data.reduce((best, r) =>
+    Math.abs(new Date(r.forecast_hour).getTime() - midday) <
+    Math.abs(new Date(best.forecast_hour).getTime() - midday)
+      ? r
+      : best
+  );
+
+  const skyCover = (pct: number | null): string | undefined => {
+    if (pct == null) return undefined;
+    if (pct <= 10) return "Clear";
+    if (pct <= 25) return "Few clouds";
+    if (pct <= 50) return "Scattered";
+    if (pct <= 87) return "Broken";
+    return "Overcast";
+  };
+
+  return {
+    temperature_f:
+      row.temperature_c != null ? Math.round((row.temperature_c * 9) / 5 + 32) : undefined,
+    wind_speed_mph:
+      row.wind_speed_ms != null ? Math.round(row.wind_speed_ms * 2.23694) : undefined,
+    wind_gusts_mph:
+      row.wind_gust_ms != null ? Math.round(row.wind_gust_ms * 2.23694) : undefined,
+    cloud_cover: skyCover(row.sky_cover_pct),
+    visibility: row.visibility_sm != null ? `${row.visibility_sm} SM` : undefined,
+    precipitation:
+      row.precipitation_probability != null
+        ? `${row.precipitation_probability}% chance`
+        : undefined,
+    station: "NWS forecast (cached)",
+    notes: `Prefilled from cached NWS forecast for ${dateStr}; verify against actual flight conditions.`,
+  };
+}
 
 export default function ReportBuilder() {
   const { id } = useParams<{ id: string }>();
@@ -160,6 +209,10 @@ export default function ReportBuilder() {
   const handleCreate = async () => {
     if (!selectedJob || !selectedTemplateId || !template) return;
     const initial = buildInitialSectionData(selectedJob);
+    if (selectedJob.scheduled_date) {
+      const weather = await fetchWeatherPrefill(selectedJob.scheduled_date);
+      if (weather) initial.weather_conditions = weather;
+    }
     const sections = template.sections_manifest.filter((e) => e.required).map((e) => e.key);
     try {
       const newId = await createMutation.mutateAsync({
