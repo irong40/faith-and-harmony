@@ -103,6 +103,7 @@ const navCategories: NavCategory[] = [
 ];
 
 // Standalone links (not dropdowns)
+const contractsLink = { href: "/admin/contracts", label: "Contracts", icon: Target };
 const reportsLink = { href: "/admin/reports", label: "Reports", icon: FileText };
 const documentsLink = { href: "/admin/documents", label: "Documents", icon: FileOutput };
 const settingsLink = { href: "/admin/settings", label: "Settings", icon: Settings };
@@ -172,6 +173,18 @@ export default function AdminNav() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ))}
+
+              {/* Contracts - standalone link */}
+              <Link to={contractsLink.href}>
+                <Button
+                  variant={isItemActive(contractsLink.href) ? "default" : "ghost"}
+                  size="sm"
+                  className="gap-1.5"
+                >
+                  <contractsLink.icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{contractsLink.label}</span>
+                </Button>
+              </Link>
 
               {/* Reports - standalone link */}
               <Link to={reportsLink.href}>
