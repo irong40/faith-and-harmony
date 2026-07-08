@@ -1,0 +1,24 @@
+# gitleaks allowlist — reviewed 2026-07-08.
+# Each entry below was triaged; none is a live secret. Format: commit:file:rule:line
+#
+# .env JWTs — Supabase ANON / PUBLISHABLE keys (VITE_ prefixed = client-side,
+# public by design; RLS protects data). One is for a now-defunct project
+# (cwaxhfmstlkxqpuhbrbv). Not secrets.
+b4fd5a66df8a1e401fed52f270767f880e2b81b4:.env:jwt:2
+44b12a8969b46413e13c4968fb4ec73577863d21:.env:jwt:2
+#
+# READY-TO-DEPLOY.md — an sb_publishable_ key in a Vapi tool-handler header
+# example. Publishable keys ship in the client bundle by design. Not a secret.
+36b19db852b573218a3f61a06aa775dcafc41e59:.planning/phases/02-vapi-voice-bot/vapi-artifacts/READY-TO-DEPLOY.md:generic-api-key:144
+#
+# network-probe.spec.ts — hardcoded test fixture 'test-anon-key'. False positive.
+862e364b3fb8669a5237a75eaec08d1b2a7321e5:src/lib/sync/network-probe.spec.ts:generic-api-key:5
+#
+# .continue-here.md — an old n8n API key (n8n_api_ format). REVOKED: verified
+# 2026-07-08 returns HTTP 401 against the live n8n; the instance now uses a new
+# eyJ-format key. Dead.
+fe9cf3d2ab758601f4d8914a384c28f46a47a874:.planning/.continue-here.md:generic-api-key:22
+#
+# 01-03-SUMMARY.md — an old INTAKE_WEBHOOK_SECRET. ROTATED: the current n8n
+# credential holds a different value; this one is stale. Dead.
+8660c3323fa5f1bad9460e6f2a4b65266499dd96:.planning/phases/01-intake-api-and-lead-tracking/01-03-SUMMARY.md:generic-api-key:81
