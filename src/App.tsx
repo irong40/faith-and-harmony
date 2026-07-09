@@ -53,6 +53,7 @@ const Accessories = lazy(() => import("./pages/admin/Accessories"));
 const Governance = lazy(() => import("./pages/admin/Governance"));
 const Reports = lazy(() => import("./pages/admin/Reports"));
 const ReportBuilder = lazy(() => import("./pages/admin/ReportBuilder"));
+const BdIntelligence = lazy(() => import("./pages/admin/BdIntelligence"));
 
 // Lazy — pilot pages
 const PilotDashboard = lazy(() => import("./pages/pilot/PilotDashboard"));
@@ -165,6 +166,7 @@ const App = () => (
               <Route path="/admin/leads" element={<AdminRoute><AdminLeads /></AdminRoute>} />
               <Route path="/admin/accessories" element={<AdminRoute><Accessories /></AdminRoute>} />
               <Route path="/admin/governance" element={<AdminRoute><Governance /></AdminRoute>} />
+              <Route path="/admin/contracts" element={<AdminRoute><BdIntelligence /></AdminRoute>} />
               <Route path="/admin/reports" element={<AdminRoute><Reports /></AdminRoute>} />
               <Route path="/admin/reports/new" element={<AdminRoute><ReportBuilder /></AdminRoute>} />
               <Route path="/admin/reports/:id/edit" element={<AdminRoute><ReportBuilder /></AdminRoute>} />
