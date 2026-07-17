@@ -46,6 +46,8 @@ interface Quote {
   sent_at: string | null;
   updated_at: string;
   request_id: string;
+  line_items: { description: string; quantity: number; unit_price: number }[];
+  notes: string | null;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -184,7 +186,7 @@ export default function QuoteRequests() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("quotes")
-        .select("id, status, total, deposit_amount, sent_at, updated_at, request_id")
+        .select("id, status, total, deposit_amount, sent_at, updated_at, request_id, line_items, notes")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as Quote[];
@@ -401,6 +403,7 @@ export default function QuoteRequests() {
           </DialogHeader>
           <QuoteBuilder
             request={selectedRequest}
+            existingQuote={selectedRequest ? quoteByRequestId[selectedRequest.id] ?? null : null}
             onClose={() => setSelectedRequest(null)}
             onCreated={() => {
               handleRefresh();

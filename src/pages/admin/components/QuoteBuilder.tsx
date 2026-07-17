@@ -29,22 +29,40 @@ interface QuoteRequest {
   job_type: string | null;
 }
 
+interface ExistingQuote {
+  id: string;
+  status: string;
+  line_items: LineItem[];
+  deposit_amount: number;
+  notes: string | null;
+}
+
 interface QuoteBuilderProps {
   request: QuoteRequest | null;
+  existingQuote?: ExistingQuote | null;
   onClose: () => void;
   onCreated: () => void;
 }
 
 const DEFAULT_LINE_ITEM: LineItem = { description: "", quantity: 1, unit_price: 0 };
 
-export default function QuoteBuilder({ request, onClose, onCreated }: QuoteBuilderProps) {
+export default function QuoteBuilder({ request, existingQuote, onClose, onCreated }: QuoteBuilderProps) {
   const { toast } = useToast();
-  const [lineItems, setLineItems] = useState<LineItem[]>([{ ...DEFAULT_LINE_ITEM }]);
-  const [depositAmount, setDepositAmount] = useState<number>(0);
-  const [notes, setNotes] = useState<string>("");
+  // Editing is only valid for draft/revised quotes; sent/accepted quotes are immutable here
+  const editable =
+    existingQuote && (existingQuote.status === "draft" || existingQuote.status === "revised")
+      ? existingQuote
+      : null;
+  const [lineItems, setLineItems] = useState<LineItem[]>(
+    editable?.line_items?.length ? editable.line_items : [{ ...DEFAULT_LINE_ITEM }]
+  );
+  const [depositAmount, setDepositAmount] = useState<number>(Number(editable?.deposit_amount ?? 0));
+  const [notes, setNotes] = useState<string>(editable?.notes ?? "");
 
-  // Pre-populate from Mission Costing calculator if available
+  // Pre-populate from Mission Costing calculator if available (new quotes only —
+  // never clobber an existing draft being edited)
   useEffect(() => {
+    if (editable) return;
     const stored = sessionStorage.getItem("costing-to-quote");
     if (!stored) return;
     try {
@@ -66,7 +84,7 @@ export default function QuoteBuilder({ request, onClose, onCreated }: QuoteBuild
     } catch {
       // Invalid JSON, ignore
     }
-  }, [toast]);
+  }, [toast, editable]);
 
   const total = lineItems.reduce(
     (sum, item) => sum + item.quantity * item.unit_price,
@@ -95,16 +113,28 @@ export default function QuoteBuilder({ request, onClose, onCreated }: QuoteBuild
     mutationFn: async () => {
       if (!request) throw new Error("No request selected");
 
+      const payload = {
+        line_items: lineItems as unknown as import("@/integrations/supabase/types").Json,
+        total,
+        deposit_amount: depositAmount,
+        notes: notes.trim() || null,
+      };
+
+      if (editable) {
+        const { data, error } = await supabase
+          .from("quotes")
+          .update({ ...payload, updated_at: new Date().toISOString() })
+          .eq("id", editable.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      }
+
       const { data, error } = await supabase
         .from("quotes")
-        .insert({
-          request_id: request.id,
-          status: "draft",
-          line_items: lineItems as unknown as import("@/integrations/supabase/types").Json,
-          total,
-          deposit_amount: depositAmount,
-          notes: notes.trim() || null,
-        })
+        .insert({ request_id: request.id, status: "draft", ...payload })
         .select()
         .single();
 
@@ -118,7 +148,10 @@ export default function QuoteBuilder({ request, onClose, onCreated }: QuoteBuild
       return data;
     },
     onSuccess: () => {
-      toast({ title: "Quote saved", description: "Draft quote created successfully." });
+      toast({
+        title: "Quote saved",
+        description: editable ? "Draft quote updated." : "Draft quote created successfully.",
+      });
       onCreated();
       onClose();
     },
