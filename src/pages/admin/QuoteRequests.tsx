@@ -280,12 +280,11 @@ export default function QuoteRequests() {
                   <TableHead>Created</TableHead>
                   <TableHead>Source</TableHead>
                   <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
                   <TableHead>Service</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Quote</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="sticky right-0 bg-background border-l">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -311,22 +310,26 @@ export default function QuoteRequests() {
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="font-medium">{request.name}</TableCell>
-                      <TableCell className="text-sm">{request.email}</TableCell>
-                      <TableCell className="text-sm">
-                        {request.job_type ?? "N/A"}
+                      <TableCell>
+                        <div className="font-medium">{request.name}</div>
+                        {request.email && (
+                          <div className="text-xs text-muted-foreground truncate max-w-[12rem]">
+                            {request.email}
+                          </div>
+                        )}
                       </TableCell>
-                      <TableCell className="text-sm max-w-xs">
+                      <TableCell className="text-sm max-w-[10rem]">
+                        <span className="block truncate">{request.job_type ?? "N/A"}</span>
+                      </TableCell>
+                      <TableCell className="text-sm max-w-[12rem]">
                         {request.description ? (
                           <button
                             type="button"
                             onClick={() => setDescRequest(request)}
                             title="Click to read the full description"
-                            className="block max-w-xs truncate text-left text-muted-foreground hover:text-foreground hover:underline cursor-pointer"
+                            className="block max-w-[12rem] truncate text-left text-muted-foreground hover:text-foreground hover:underline cursor-pointer"
                           >
-                            {request.description.length > 60
-                              ? `${request.description.slice(0, 60)}...`
-                              : request.description}
+                            {request.description}
                           </button>
                         ) : (
                           <span className="text-muted-foreground">—</span>
@@ -359,7 +362,7 @@ export default function QuoteRequests() {
                           <span className="text-xs text-muted-foreground">No quote yet</span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="sticky right-0 bg-background border-l">
                         <QuoteActionRow
                           request={request}
                           quote={quote}
