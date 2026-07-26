@@ -94,13 +94,69 @@
 
 ## Condition Rating Scale (for reports)
 
-| Rating | Description |
-|--------|-------------|
-| **Excellent** | No visible issues, all components intact, 10+ years remaining |
-| **Good** | Minor cosmetic wear, no functional concerns, 5-10 years remaining |
-| **Fair** | Some wear visible, minor repairs recommended, 3-5 years remaining |
-| **Poor** | Significant wear/damage, repairs needed soon, 1-3 years remaining |
-| **Critical** | Active damage/leaks likely, replacement recommended immediately |
+> **REPLACED 2026-07-25.** The previous scale (Excellent / Good / Fair / Poor /
+> Critical) predicted **remaining roof life in years** from aerial photographs
+> and prescribed replacement. Neither is supportable from imagery, and remaining
+> life is an engineering opinion this business does not offer. Do not use the old
+> scale on any report.
+
+Two vocabularies. **Pick one at job creation from the deliverable type, never
+per finding, and never change it mid-report.**
+
+| Deliverable | Vocabulary |
+|---|---|
+| Residential property, any client | Observation set |
+| Contractor white-label edition | Observation set |
+| Commercial, institutional, church, steeple, municipal | Severity set |
+
+The test is the deliverable, not who commissioned it. A homeowner who hires SAI
+directly still receives the observation set.
+
+### Severity set (commercial and institutional)
+
+| Rating | Definition | Action language |
+|---|---|---|
+| **Low (L)** | Present and documentable, does not currently affect function, safety, or watertightness | Monitor. Re-inspect at the next scheduled interval. |
+| **Medium (M)** | Affects function, or will progress to a functional problem within a normal maintenance cycle. No immediate hazard | Schedule repair within the current maintenance cycle. |
+| **High (H)** | Presently impairs function, threatens safety, admits water, or will force premature replacement | Repair promptly. Obtain a qualified contractor assessment. |
+
+### Observation set (residential and white-label)
+
+| Tier | Meaning |
+|---|---|
+| **Priority** | Active water path visible |
+| **Monitor** | Condition documented, no active water path |
+| **Informational** | Recorded for the file |
+
+Language rules that travel with the observation set:
+
+- Factual observation phrasing only. The words **defect**, **failure**, and **requires repair** do not appear
+- The words **inspection** and **inspector** do not appear in the residential deliverable
+- No **claim support**, **supplement**, or **insurance-grade** phrasing anywhere
+- No recommended-action column. This fixed line replaces it: *"Observations are a factual record of conditions visible from the air at capture time, documented for evaluation by a licensed contractor."*
+
+### Never, in either vocabulary
+
+- Remaining service life in years
+- A replacement recommendation
+- Any opinion on cause, coverage, or claim value
+- Anything about structural capacity. Refer to a licensed structural engineer
+
+## Steeples and Spires
+
+A steeple job is this SOP plus one added zone set and one added deliverable, and
+it always uses the **severity set**.
+
+Added zones: spire surface, finial and cross mounting, louvers and vents, masonry
+or wood joints at each transition, lightning protection cable and attachment
+points, and the flashing at the steeple-to-roof junction.
+
+Added deliverable: an interactive 3D model the client can view in a browser.
+Capture per the 3D SOP, 85% front and 80% side overlap, plus orbit passes at two
+or more altitudes.
+
+Lightning protection continuity is referred to an LPI-certified inspector. Report
+what was seen, never what the structure can bear.
 
 ## Post-Shoot
 

@@ -184,6 +184,31 @@ The mapping software handles individual photo capture. Your job:
 
 **Always clarify accuracy needs upfront.** Don't promise survey-grade without proper equipment.
 
+### Required accuracy statement (added 2026-07-25)
+
+Every mapping product SAI delivers carries an accuracy statement in **ASPRS
+Positional Accuracy Standards for Digital Geospatial Data, Edition 2, Version 2
+(2024)** wording, alongside the datum, epoch, and GSD.
+
+Which statement applies is decided by one question: **were there independent
+checkpoints?** RTK alone is not a checkpoint.
+
+- **No independent checkpoints** (the normal SAI job) uses *"produced to meet"*:
+  > "This data set was produced to meet ASPRS Positional Accuracy Standards for Digital Geospatial Data, Edition 2, Version 2 (2024) for a __(cm) RMSE_H Horizontal Positional Accuracy Class."
+- **With 30 or more independent checkpoints** uses *"tested to meet"*, adding the tested figure.
+- **With fewer than 30 checkpoints** uses a different statement entirely, which opens *"tested as required by"* and downgrades the claim back to *"produced to meet"*. It must disclose the checkpoint count.
+
+Rules that bind the pilot:
+
+- Checkpoints must be independent of any control used in processing, and surveyed to at least twice the accuracy claimed
+- Never write "tested to meet" on an RTK job with no checkpoints
+- NVA (non-vegetated) and VVA (vegetated) vertical accuracy each get their own statement
+- Stamp datum, geoid, and epoch on every product. ITRF2014 against NAD83(2011) is a 1 to 2 metre absolute offset, so a relabel is not a reprojection
+
+Full wording for all four statement families is in the vault at
+`projects/sentinel-aerial/report-system-spec-v1.md` §5.3. The standard itself is
+a free PDF, filed at `projects/sentinel-aerial/standards/`.
+
 ## Safety Notes
 
 - Large sites may require flying near property boundaries — get permission from adjacent owners
