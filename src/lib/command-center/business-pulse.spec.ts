@@ -18,10 +18,11 @@ const data = {
     { status: "delivered", delivery_status: "sent", is_test: false },
     { status: "scheduled", delivery_status: null, is_test: true },
   ],
-  invoices: [
-    { status: "sent", balance_due: 1200 },
-    { status: "overdue", balance_due: 800 },
-    { status: "paid", balance_due: 0 },
+  payments: [
+    { status: "pending", amount: 1200 },
+    { status: "overdue", amount: 800 },
+    { status: "paid", amount: 700 },
+    { status: "waived", amount: 100 },
   ],
   obligations: [
     { status: "pending", due_date: "2026-07-26" },
@@ -47,7 +48,7 @@ describe("business pulse", () => {
       leads: async () => data.leads,
       quotes: async () => { throw new Error("Quotes unavailable"); },
       jobs: async () => data.jobs,
-      invoices: async () => data.invoices,
+      payments: async () => data.payments,
       obligations: async () => data.obligations,
     }, new Date("2026-07-27T16:00:00.000Z"));
 

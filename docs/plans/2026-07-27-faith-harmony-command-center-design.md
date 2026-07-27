@@ -359,3 +359,29 @@ The current bulk delete branch remains outside this worktree and outside the red
 9. Existing mission, quote, report, document, and contract flows continue to work.
 
 10. Tests, lint, typecheck, build, browser verification, and production verification pass.
+
+## Local verification evidence — 2026-07-27
+
+The implemented command center was rendered locally against the configured Supabase project in a temporary, localhost-only visual review session. The review bypass was removed immediately afterward and is not part of the branch.
+
+- Desktop, 1440 × 900: [command-center-desktop.png](command-center-desktop.png)
+- Tablet, 1024 × 768: [command-center-tablet.png](command-center-tablet.png)
+- Mobile, 390 × 844: [command-center-mobile.png](command-center-mobile.png)
+- Mobile navigation open: [command-center-mobile-navigation.png](command-center-mobile-navigation.png)
+
+All three viewport widths matched their document widths, with no page-level horizontal overflow. The mobile rail opened as an accessible drawer. The header section menu opened by keyboard and returned focus to its trigger on Escape. Reduced-motion rules were active during the mobile check. The review found and corrected an unnamed notification trigger; a regression test now protects its accessible name.
+
+Fresh local gates after the review:
+
+- Vitest: 45 files and 273 tests passed.
+- ESLint: 0 errors and the unchanged 131-warning repository baseline.
+- TypeScript: `tsc --noEmit` passed.
+- Production bundle: Vite build passed; existing dynamic-import and large-chunk advisories remain.
+- Sync runner: 4 Node contract tests passed.
+- Edge contract: 3 Deno tests passed and `deno check` passed for the function entry point.
+
+The live REST schema returned HTTP 200 for `public.payments`, so outstanding revenue now uses pending and overdue payment records rather than the unavailable `public.invoices` relation. `public.work_items`, `public.department_updates`, and `public.sync_runs` correctly remain unavailable until the new migration is applied.
+
+### Production rollout hold
+
+The redesign is not deployed and the migration has not been pushed. The live migration list contains remote-only migrations through `20260727193251` that are absent from this checkout. The new `20260727200000` timestamp is later and does not collide, but those missing migration files must be reconciled into the repository before any database push. After that reconciliation, production verification still requires authenticated query checks, RLS checks, a controlled work-item lifecycle, sync dry-run/apply validation, and responsive inspection of the deployed route.

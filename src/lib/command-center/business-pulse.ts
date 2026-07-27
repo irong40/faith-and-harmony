@@ -3,14 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 export interface LeadSignal { qualification_status: string }
 export interface QuoteSignal { status: string }
 export interface JobSignal { status: string; delivery_status: string | null; is_test: boolean }
-export interface InvoiceSignal { status: string; balance_due: number | null }
+export interface PaymentSignal { status: string; amount: number }
 export interface ObligationSignal { status: string; due_date: string }
 
 export interface BusinessPulseSourceData {
   leads: readonly LeadSignal[];
   quotes: readonly QuoteSignal[];
   jobs: readonly JobSignal[];
-  invoices: readonly InvoiceSignal[];
+  payments: readonly PaymentSignal[];
   obligations: readonly ObligationSignal[];
 }
 
@@ -37,7 +37,7 @@ export interface BusinessPulseLoaders {
   leads: () => Promise<readonly LeadSignal[]>;
   quotes: () => Promise<readonly QuoteSignal[]>;
   jobs: () => Promise<readonly JobSignal[]>;
-  invoices: () => Promise<readonly InvoiceSignal[]>;
+  payments: () => Promise<readonly PaymentSignal[]>;
   obligations: () => Promise<readonly ObligationSignal[]>;
 }
 
@@ -66,7 +66,7 @@ const defaultLoaders: BusinessPulseLoaders = {
   leads: () => selectRows<LeadSignal>("leads", "qualification_status"),
   quotes: () => selectRows<QuoteSignal>("quotes", "status"),
   jobs: () => selectRows<JobSignal>("drone_jobs", "status, delivery_status, is_test"),
-  invoices: () => selectRows<InvoiceSignal>("invoices", "status, balance_due"),
+  payments: () => selectRows<PaymentSignal>("payments", "status, amount"),
   obligations: () => selectRows<ObligationSignal>("compliance_obligations", "status, due_date"),
 };
 
@@ -78,7 +78,7 @@ export function aggregateBusinessPulse(
   const leadTerminal = new Set(["converted", "disqualified", "closed"]);
   const quoteTerminal = new Set(["accepted", "declined", "expired", "cancelled"]);
   const jobTerminal = new Set(["delivered", "cancelled"]);
-  const invoiceTerminal = new Set(["paid", "cancelled"]);
+  const paymentTerminal = new Set(["paid", "waived"]);
   const obligationTerminal = new Set(["complete", "waived"]);
 
   return {
@@ -86,9 +86,9 @@ export function aggregateBusinessPulse(
     openQuotes: data.quotes.filter((quote) => !quoteTerminal.has(quote.status)).length,
     activeJobs: data.jobs.filter((job) => !job.is_test && !jobTerminal.has(job.status)).length,
     pendingDeliveries: data.jobs.filter((job) => !job.is_test && job.delivery_status === "ready").length,
-    outstandingRevenue: data.invoices
-      .filter((invoice) => !invoiceTerminal.has(invoice.status))
-      .reduce((sum, invoice) => sum + (invoice.balance_due ?? 0), 0),
+    outstandingRevenue: data.payments
+      .filter((payment) => !paymentTerminal.has(payment.status))
+      .reduce((sum, payment) => sum + payment.amount, 0),
     overdueCompliance: data.obligations.filter((obligation) => (
       obligation.status === "overdue"
       || (!obligationTerminal.has(obligation.status) && obligation.due_date < today)
@@ -106,11 +106,11 @@ export async function loadBusinessPulse(
   loaders: BusinessPulseLoaders = defaultLoaders,
   now = new Date(),
 ): Promise<BusinessPulseSnapshot> {
-  const [leads, quotes, jobs, invoices, obligations] = await Promise.allSettled([
+  const [leads, quotes, jobs, payments, obligations] = await Promise.allSettled([
     loaders.leads(),
     loaders.quotes(),
     loaders.jobs(),
-    loaders.invoices(),
+    loaders.payments(),
     loaders.obligations(),
   ]);
 
@@ -118,7 +118,7 @@ export async function loadBusinessPulse(
     leads: leads.status === "fulfilled" ? leads.value : [],
     quotes: quotes.status === "fulfilled" ? quotes.value : [],
     jobs: jobs.status === "fulfilled" ? jobs.value : [],
-    invoices: invoices.status === "fulfilled" ? invoices.value : [],
+    payments: payments.status === "fulfilled" ? payments.value : [],
     obligations: obligations.status === "fulfilled" ? obligations.value : [],
   }, now);
 
@@ -134,7 +134,7 @@ export async function loadBusinessPulse(
       openQuotes: metric(values.openQuotes, quotes),
       activeJobs: metric(values.activeJobs, jobs),
       pendingDeliveries: metric(values.pendingDeliveries, jobs),
-      outstandingRevenue: metric(values.outstandingRevenue, invoices),
+      outstandingRevenue: metric(values.outstandingRevenue, payments),
       overdueCompliance: metric(values.overdueCompliance, obligations),
     },
     capturedAt: now.toISOString(),

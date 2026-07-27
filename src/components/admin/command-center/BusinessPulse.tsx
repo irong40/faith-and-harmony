@@ -36,7 +36,7 @@ const metrics: readonly MetricDefinition[] = [
   { key: "openQuotes", label: "Open quotes", detail: "Not yet decided", href: "/admin/quote-requests", icon: FileCheck2 },
   { key: "activeJobs", label: "Active jobs", detail: "Real missions only", href: "/admin/drone-jobs", icon: BriefcaseBusiness },
   { key: "pendingDeliveries", label: "Ready to deliver", detail: "Client handoff pending", href: "/admin/drone-jobs?delivery=ready", icon: Send },
-  { key: "outstandingRevenue", label: "Outstanding revenue", detail: "Open invoice balance", href: "/admin/invoices", icon: CircleDollarSign, currency: true },
+  { key: "outstandingRevenue", label: "Outstanding revenue", detail: "Pending and overdue payments", href: "/admin/invoices", icon: CircleDollarSign, currency: true },
   { key: "overdueCompliance", label: "Compliance overdue", detail: "Past due obligations", href: "/admin/governance", icon: ShieldAlert },
 ] as const;
 
