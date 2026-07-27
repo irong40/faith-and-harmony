@@ -28,6 +28,9 @@ const Terms = lazy(() => import("./pages/Terms"));
 
 // Lazy — admin pages
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const CommandCenter = lazy(() => import("./pages/admin/CommandCenter"));
+const Work = lazy(() => import("./pages/admin/Work"));
+const AdminShell = lazy(() => import("./components/admin/shell/AdminShell"));
 const ServiceRequests = lazy(() => import("./pages/admin/ServiceRequests"));
 const Proposals = lazy(() => import("./pages/admin/Proposals"));
 const Projects = lazy(() => import("./pages/admin/Projects"));
@@ -85,7 +88,7 @@ function RootRedirect() {
     if (isTrestleDomain()) return <Navigate to="/auth" replace />;
     return <LandingPage />;
   }
-  if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
+  if (isAdmin) return <Navigate to="/admin/command-center" replace />;
   if (isPilot) return <Navigate to="/pilot" replace />;
   // User is authenticated but has no admin/pilot role — show landing page on F&H domain,
   // or redirect to auth on Trestle domain (auth page will show "no role" state)
@@ -142,34 +145,40 @@ const App = () => (
               <Route path="/quote/:token" element={<ErrorBoundary><QuoteAcceptancePage /></ErrorBoundary>} />
 
               {/* Admin routes */}
-              <Route path="/admin/dashboard" element={<AdminRoute><Dashboard /></AdminRoute>} />
-              <Route path="/admin/service-requests" element={<AdminRoute><ServiceRequests /></AdminRoute>} />
-              <Route path="/admin/proposals" element={<AdminRoute><Proposals /></AdminRoute>} />
-              <Route path="/admin/projects" element={<AdminRoute><Projects /></AdminRoute>} />
-              <Route path="/admin/drone-jobs" element={<AdminRoute><DroneJobs /></AdminRoute>} />
-              <Route path="/admin/drone-jobs/:id" element={<AdminRoute><DroneJobDetail /></AdminRoute>} />
-              <Route path="/admin/drone-jobs/:id/delivery" element={<AdminRoute><DeliveryReview /></AdminRoute>} />
-              <Route path="/admin/pilots" element={<AdminRoute><PilotManagement /></AdminRoute>} />
-              <Route path="/admin/people" element={<AdminRoute><People /></AdminRoute>} />
-              <Route path="/admin/invoices" element={<AdminRoute><Invoices /></AdminRoute>} />
-              <Route path="/admin/messages" element={<AdminRoute><Messages /></AdminRoute>} />
-              <Route path="/admin/documents" element={<AdminRoute><Documents /></AdminRoute>} />
-              <Route path="/admin/pricing" element={<AdminRoute><SentinelPricing /></AdminRoute>} />
-              <Route path="/admin/settings" element={<AdminRoute><Settings /></AdminRoute>} />
-              <Route path="/admin/clients" element={<AdminRoute><Clients /></AdminRoute>} />
-              <Route path="/admin/jobs/new" element={<AdminRoute><JobIntake /></AdminRoute>} />
-              <Route path="/admin/processing-templates" element={<AdminRoute><ProcessingTemplates /></AdminRoute>} />
-              <Route path="/admin/quote-requests" element={<AdminRoute><QuoteRequests /></AdminRoute>} />
-              <Route path="/admin/scheduling" element={<AdminRoute><Scheduling /></AdminRoute>} />
-              <Route path="/admin/weather" element={<AdminRoute><WeatherOperations /></AdminRoute>} />
-              <Route path="/admin/call-logs" element={<AdminRoute><CallLogs /></AdminRoute>} />
-              <Route path="/admin/leads" element={<AdminRoute><AdminLeads /></AdminRoute>} />
-              <Route path="/admin/accessories" element={<AdminRoute><Accessories /></AdminRoute>} />
-              <Route path="/admin/governance" element={<AdminRoute><Governance /></AdminRoute>} />
-              <Route path="/admin/contracts" element={<AdminRoute><BdIntelligence /></AdminRoute>} />
-              <Route path="/admin/reports" element={<AdminRoute><Reports /></AdminRoute>} />
-              <Route path="/admin/reports/new" element={<AdminRoute><ReportBuilder /></AdminRoute>} />
-              <Route path="/admin/reports/:id/edit" element={<AdminRoute><ReportBuilder /></AdminRoute>} />
+              <Route path="/admin" element={<AdminRoute><AdminShell /></AdminRoute>}>
+                <Route index element={<Navigate to="command-center" replace />} />
+                <Route path="dashboard" element={<Navigate to="../command-center" replace />} />
+                <Route path="command-center" element={<CommandCenter />} />
+                <Route path="work" element={<Work />} />
+                <Route path="mission-control" element={<Dashboard />} />
+                <Route path="service-requests" element={<ServiceRequests />} />
+                <Route path="proposals" element={<Proposals />} />
+                <Route path="projects" element={<Projects />} />
+                <Route path="drone-jobs" element={<DroneJobs />} />
+                <Route path="drone-jobs/:id" element={<DroneJobDetail />} />
+                <Route path="drone-jobs/:id/delivery" element={<DeliveryReview />} />
+                <Route path="pilots" element={<PilotManagement />} />
+                <Route path="people" element={<People />} />
+                <Route path="invoices" element={<Invoices />} />
+                <Route path="messages" element={<Messages />} />
+                <Route path="documents" element={<Documents />} />
+                <Route path="pricing" element={<SentinelPricing />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="clients" element={<Clients />} />
+                <Route path="jobs/new" element={<JobIntake />} />
+                <Route path="processing-templates" element={<ProcessingTemplates />} />
+                <Route path="quote-requests" element={<QuoteRequests />} />
+                <Route path="scheduling" element={<Scheduling />} />
+                <Route path="weather" element={<WeatherOperations />} />
+                <Route path="call-logs" element={<CallLogs />} />
+                <Route path="leads" element={<AdminLeads />} />
+                <Route path="accessories" element={<Accessories />} />
+                <Route path="governance" element={<Governance />} />
+                <Route path="contracts" element={<BdIntelligence />} />
+                <Route path="reports" element={<Reports />} />
+                <Route path="reports/new" element={<ReportBuilder />} />
+                <Route path="reports/:id/edit" element={<ReportBuilder />} />
+              </Route>
 
               {/* Pilot portal routes */}
               <Route path="/pilot" element={<PilotRoute><PilotDashboard /></PilotRoute>} />
