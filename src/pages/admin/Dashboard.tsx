@@ -5,11 +5,13 @@ import ComplianceAlertsCard from "@/components/admin/ComplianceAlertsCard";
 import ActivityFeed from "@/components/admin/ActivityFeed";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import { format, isToday } from "date-fns";
 import {
   Activity,
+  ArrowLeft,
   CalendarClock,
   Send,
   Users,
@@ -152,11 +154,19 @@ export default function Dashboard() {
       <AdminNav />
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Mission Control</h1>
-          <p className="text-muted-foreground mt-1">
-            Real-time overview of all missions and team activity
-          </p>
+        <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">Mission Control</h1>
+            <p className="text-muted-foreground mt-1">
+              Real-time overview of all missions and team activity
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/admin/command-center" aria-label="Return to command center">
+              <ArrowLeft className="size-4" />
+              Command center
+            </Link>
+          </Button>
         </div>
 
         {/* Row 1 — Key Metrics */}

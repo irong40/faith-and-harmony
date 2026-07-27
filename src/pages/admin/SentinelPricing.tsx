@@ -310,7 +310,7 @@ export default function SentinelPricing() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
         <div className="container mx-auto px-4 py-3 flex items-center gap-3">
-          <Link to="/admin/dashboard">
+          <Link to="/admin/command-center" aria-label="Return to command center">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-5 w-5" />
             </Button>

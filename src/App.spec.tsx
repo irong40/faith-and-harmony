@@ -60,4 +60,14 @@ describe("admin routing", () => {
       .toBeInTheDocument();
     expect(window.location.pathname).toBe("/admin/documents");
   });
+
+  it.each(["/admin/mission-control", "/admin/pricing"])(
+    "gives the legacy view at %s a direct return to command center",
+    async (path) => {
+      await renderAt(path);
+
+      expect(await screen.findByRole("link", { name: "Return to command center" }, { timeout: 5_000 }))
+        .toHaveAttribute("href", "/admin/command-center");
+    },
+  );
 });
