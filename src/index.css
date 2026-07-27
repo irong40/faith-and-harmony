@@ -102,7 +102,7 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display;
+    @apply font-sans font-semibold tracking-tight;
   }
 }
 
@@ -113,5 +113,25 @@
 
   .bg-brand-gradient {
     @apply bg-gradient-to-br from-primary to-purple-900;
+  }
+
+  .command-center-canvas {
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(circle at 88% 8%, hsl(var(--brand-gold) / 0.10), transparent 24rem),
+      linear-gradient(hsl(var(--foreground) / 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--foreground) / 0.025) 1px, transparent 1px);
+    background-size: auto, 32px 32px, 32px 32px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }

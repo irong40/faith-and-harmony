@@ -17,10 +17,10 @@ export default {
 				'2xl': '1400px'
 			}
 		},
-		extend: {
+			extend: {
 			fontFamily: {
-				sans: ['Inter', 'system-ui', 'sans-serif'],
-				display: ['JetBrains Mono', 'monospace'],
+				sans: ['Hanken Grotesk', 'system-ui', 'sans-serif'],
+				display: ['Hanken Grotesk', 'system-ui', 'sans-serif'],
 				mono: ['JetBrains Mono', 'monospace'],
 			},
 			colors: {

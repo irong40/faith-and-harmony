@@ -32,6 +32,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
+import { useAdminShell } from "@/components/admin/shell/AdminShellState";
 
 interface NavCategory {
   label: string;
@@ -110,6 +111,9 @@ const settingsLink = { href: "/admin/settings", label: "Settings", icon: Setting
 
 export default function AdminNav() {
   const location = useLocation();
+  const insideAdminShell = useAdminShell();
+
+  if (insideAdminShell) return null;
 
   const isCategoryActive = (category: NavCategory) => {
     return category.items.some(item => {
