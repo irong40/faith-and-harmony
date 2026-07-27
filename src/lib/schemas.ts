@@ -24,6 +24,12 @@ export const jobIntakeSchema = z.object({
   scheduled_time: z.string().optional(),
   pilot_id: z.string().uuid().optional().or(z.literal("")),
   aircraft_id: z.string().uuid().optional().or(z.literal("")),
+  // Required so revenue-per-job is queryable (2026-07-27 pipeline program).
+  // Enter 0 for spec/portfolio work — 0 is honest, NULL is invisible.
+  job_price: z
+    .string()
+    .min(1, "Price is required (enter 0 for spec/portfolio work)")
+    .refine((v) => !Number.isNaN(Number(v)) && Number(v) >= 0, "Must be a number of 0 or more"),
   notes: z.string().optional(),
 });
 

@@ -88,6 +88,7 @@ export default function JobIntake() {
       scheduled_time: "",
       pilot_id: "",
       aircraft_id: "",
+      job_price: "",
       notes: "",
     },
   });
@@ -191,6 +192,7 @@ export default function JobIntake() {
       scheduled_time: values.scheduled_time || null,
       pilot_id: values.pilot_id || null,
       aircraft_id: values.aircraft_id || null,
+      job_price: Number(values.job_price),
       admin_notes: values.notes || null,
       status: "intake" as const,
       job_number: "",
@@ -361,6 +363,29 @@ export default function JobIntake() {
                 />
 
                 <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="job_price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-1">
+                          <FileText className="h-3 w-3" />
+                          Job Price (USD) *
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="0 for spec/portfolio work"
+                            className="min-h-[44px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={form.control}
                     name="scheduled_date"

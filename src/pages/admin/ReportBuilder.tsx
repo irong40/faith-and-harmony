@@ -123,18 +123,48 @@ export default function ReportBuilder() {
   const pdfMutation = useGenerateReportPDF();
   const printRef = useRef<HTMLDivElement>(null);
 
-  const handleDownloadPDF = useCallback(async () => {
-    if (!reportId) return;
-    // Log generation to edge function (tracking)
-    pdfMutation.mutate(reportId);
-    // Trigger browser print dialog for actual PDF
-    setTimeout(() => window.print(), 300);
-  }, [reportId, pdfMutation]);
-
   const manifest: SectionManifestEntry[] = useMemo(
     () => template?.sections_manifest ?? [],
     [template]
   );
+
+  // Active sections with no content silently vanish from the printed PDF
+  // (ReportPrintView returns null for them) — surface that before it ships
+  const emptyActiveSections = useMemo(() => {
+    const isEmpty = (d: unknown) =>
+      !d ||
+      Object.values(d as Record<string, unknown>).every(
+        (v) => v == null || v === "" || (Array.isArray(v) && v.length === 0)
+      );
+    return activeSections.filter((key) => isEmpty(sectionData[key]));
+  }, [activeSections, sectionData]);
+
+  const emptySectionWarning = useCallback(() => {
+    if (emptyActiveSections.length === 0) return true;
+    const labels = emptyActiveSections
+      .map((key) => manifest.find((m) => m.key === key)?.label ?? key)
+      .join("\n  - ");
+    return window.confirm(
+      `${emptyActiveSections.length} active section(s) are EMPTY and will be ` +
+        `omitted from the printed report:\n  - ${labels}\n\nContinue anyway?`
+    );
+  }, [emptyActiveSections, manifest]);
+
+  const handleDownloadPDF = useCallback(async () => {
+    if (!reportId) return;
+    if (!emptySectionWarning()) return;
+    // Log generation to edge function (tracking); printing IS the client
+    // deliverable, so a printed report is a final report
+    pdfMutation.mutate(reportId, {
+      onSuccess: () => {
+        if (existingReport?.status !== "final") {
+          updateMutation.mutate({ id: reportId, status: "final" });
+        }
+      },
+    });
+    // Trigger browser print dialog for actual PDF
+    setTimeout(() => window.print(), 300);
+  }, [reportId, pdfMutation, emptySectionWarning, existingReport?.status, updateMutation]);
 
   // Load existing report
   useEffect(() => {
@@ -275,6 +305,7 @@ export default function ReportBuilder() {
 
   const handleFinalize = () => {
     if (!reportId) return;
+    if (!emptySectionWarning()) return;
     updateMutation.mutate(
       { id: reportId, status: "final" },
       { onSuccess: () => toast.success("Report finalized") }
