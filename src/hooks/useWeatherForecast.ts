@@ -28,7 +28,7 @@ export function useWeatherForecast() {
       const future = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
 
       const { data, error } = await supabase
-        .from('weather_forecast_cache' as never)
+        .from('weather_forecast_cache')
         .select('*')
         .gte('forecast_hour', now)
         .lte('forecast_hour', future)

@@ -39,11 +39,14 @@ type LeadDetail = {
   } | null;
 };
 
+// Mirrors the lead_activity VIEW, whose columns are all nullable. The previous
+// non-null shape was wishful: a null event_at reached `new Date(null)` and
+// rendered as 1 Jan 1970.
 type ActivityEvent = {
-  lead_id: string;
-  event_type: string;
-  event_at: string;
-  summary: string;
+  lead_id: string | null;
+  event_type: string | null;
+  event_at: string | null;
+  summary: string | null;
   source_id: string | null;
 };
 
@@ -95,9 +98,10 @@ export function LeadDetailDrawer({ leadId, onClose }: LeadDetailDrawerProps) {
 
   const saveNoteMutation = useMutation({
     mutationFn: async () => {
+      if (!leadId) throw new Error("No lead selected");
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
-      const { error } = await (supabase as never)
+      const { error } = await supabase
         .from("lead_notes")
         .insert({
           lead_id: leadId,
@@ -105,7 +109,7 @@ export function LeadDetailDrawer({ leadId, onClose }: LeadDetailDrawerProps) {
           reason_tag: reasonTag || null,
           follow_up_at: followUpDate ? followUpDate.toISOString() : null,
           created_by: session.user.id,
-        } as never);
+        });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -124,14 +128,15 @@ export function LeadDetailDrawer({ leadId, onClose }: LeadDetailDrawerProps) {
 
   const { data: timeline = [], isLoading: timelineLoading } = useQuery({
     queryKey: ["lead-activity", leadId],
-    queryFn: async () => {
-      const { data, error } = await (supabase as never)
+    queryFn: async (): Promise<ActivityEvent[]> => {
+      if (!leadId) return [];
+      const { data, error } = await supabase
         .from("lead_activity")
         .select("lead_id, event_type, event_at, summary, source_id")
         .eq("lead_id", leadId)
         .order("event_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as ActivityEvent[];
+      return data ?? [];
     },
     enabled: !!leadId,
     staleTime: 30_000,
@@ -140,21 +145,23 @@ export function LeadDetailDrawer({ leadId, onClose }: LeadDetailDrawerProps) {
   const { data, isLoading, error } = useQuery({
     queryKey: ["lead-detail", leadId],
     queryFn: async (): Promise<LeadDetail> => {
+      if (!leadId) throw new Error("No lead selected");
+
       const { data: lead, error: leadError } = await supabase
-        .from("leads" as never)
+        .from("leads")
         .select("id, caller_name, caller_phone, caller_email, source_channel, qualification_status, created_at")
-        .eq("id", leadId as string)
-        .single() as { data: LeadDetail["lead"] | null; error: unknown };
+        .eq("id", leadId)
+        .single();
 
       if (leadError || !lead) throw leadError ?? new Error("Lead not found");
 
       const { data: callLog, error: callLogError } = await supabase
-        .from("vapi_call_logs" as never)
+        .from("vapi_call_logs")
         .select("id, transcript, summary, recording_url, duration_seconds, outcome, started_at")
-        .eq("lead_id", leadId as string)
+        .eq("lead_id", leadId)
         .order("created_at", { ascending: false })
         .limit(1)
-        .maybeSingle() as { data: LeadDetail["callLog"]; error: unknown };
+        .maybeSingle();
 
       if (callLogError) throw callLogError;
 
@@ -324,14 +331,16 @@ export function LeadDetailDrawer({ leadId, onClose }: LeadDetailDrawerProps) {
                 ) : (
                   <div className="space-y-2">
                     {timeline.map((event, idx) => (
-                      <div key={`${event.event_at}-${idx}`} className="flex items-start gap-3 text-sm">
-                        <Badge className={`shrink-0 text-xs ${EVENT_TYPE_COLORS[event.event_type] ?? "bg-gray-100 text-gray-700"}`}>
-                          {EVENT_TYPE_LABELS[event.event_type] ?? event.event_type}
+                      <div key={`${event.event_at ?? "unknown"}-${idx}`} className="flex items-start gap-3 text-sm">
+                        <Badge className={`shrink-0 text-xs ${(event.event_type && EVENT_TYPE_COLORS[event.event_type]) ?? "bg-gray-100 text-gray-700"}`}>
+                          {(event.event_type && EVENT_TYPE_LABELS[event.event_type]) ?? event.event_type ?? "Event"}
                         </Badge>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-foreground leading-snug">{event.summary}</p>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            {format(new Date(event.event_at), "MMM d, yyyy h:mm a")}
+                            {event.event_at
+                              ? format(new Date(event.event_at), "MMM d, yyyy h:mm a")
+                              : "Date unknown"}
                           </p>
                         </div>
                       </div>

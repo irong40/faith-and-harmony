@@ -65,7 +65,7 @@ const Auth = () => {
       if (roles.includes('pilot')) {
         navigate('/pilot');
       } else if (roles.includes('admin')) {
-        navigate('/admin/dashboard');
+        navigate('/admin');
       }
       // If no recognized role, stay on auth page (don't redirect to / to avoid loop)
     } catch {

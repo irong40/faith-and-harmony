@@ -36,11 +36,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Search, RefreshCw, Eye, Edit, Plus, Trash2, FileText, Archive, ArchiveRestore } from "lucide-react";
+import { Search, RefreshCw, Eye, Edit, Plus, Trash2, FileText, Archive, ArchiveRestore, ClipboardList } from "lucide-react";
+import PageShell from "@/components/admin/PageShell";
 import { format } from "date-fns";
 import ProposalForm from "./components/ProposalForm";
 import type { Tables, Enums } from "@/integrations/supabase/types";
-import AdminNav from "./components/AdminNav";
 import ServiceRequestForm from "./components/ServiceRequestForm";
 
 type ServiceRequest = Tables<"service_requests"> & {
@@ -192,18 +192,13 @@ export default function ServiceRequests() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Service Requests</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage and track all service requests
-          </p>
-        </div>
-        <div className="flex gap-2">
+    <PageShell
+      title="Service Requests"
+      description="Manage and track all service requests"
+      icon={ClipboardList}
+      width="full"
+      actions={
+        <>
           <Button onClick={() => setIsCreateOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Add Request
@@ -216,13 +211,15 @@ export default function ServiceRequests() {
             variant={showArchived ? "default" : "outline"}
             size="sm"
             onClick={() => setShowArchived(!showArchived)}
+            aria-pressed={showArchived}
             className="gap-2"
           >
             <Archive className="h-4 w-4" />
             {showArchived ? "Viewing Archived" : "Show Archived"}
           </Button>
-        </div>
-        </div>
+        </>
+      }
+    >
         {/* Filters */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="relative flex-1">
@@ -352,7 +349,6 @@ export default function ServiceRequests() {
             </TableBody>
           </Table>
         </div>
-      </main>
 
       {/* Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
@@ -522,6 +518,6 @@ export default function ServiceRequests() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </PageShell>
   );
 }

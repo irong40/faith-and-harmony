@@ -79,7 +79,7 @@ export default function CallTranscriptDialog({
           </Badge>
           {callLog.leads?.quote_request_id && (
             <Link
-              to="/admin/quote-requests"
+              to="/admin/pipeline"
               className="text-primary underline text-sm"
             >
               View Quote Request

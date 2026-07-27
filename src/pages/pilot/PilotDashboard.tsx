@@ -147,7 +147,7 @@ export default function PilotDashboard() {
                             onSync={handleSync}
                         />
                         {isAdmin && (
-                            <Link to="/admin/dashboard">
+                            <Link to="/admin">
                                 <Button variant="ghost" size="icon" title="Admin Dashboard">
                                     <LayoutDashboard className="h-5 w-5" />
                                 </Button>

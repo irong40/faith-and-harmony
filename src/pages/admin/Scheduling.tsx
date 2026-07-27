@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import AdminNav from "./components/AdminNav";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarDays, Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
+import { LoadingState } from "@/components/admin/PageState";
 import {
   useAvailabilitySlots,
   useBlackoutDates,
@@ -57,7 +57,11 @@ function fromIso(dateStr: string): Date {
   return new Date(dateStr + "T12:00:00");
 }
 
-export default function Scheduling() {
+/**
+ * Availability calendar + weekly slots. Mounted as the "schedule" tab of
+ * CalendarOps (/admin/calendar); the page frame lives there, not here.
+ */
+export function SchedulingPanel() {
   const today = new Date();
   const rangeStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const rangeEnd = new Date(today.getFullYear(), today.getMonth() + 2, 0);
@@ -162,18 +166,9 @@ export default function Scheduling() {
   const isLoading = slotsLoading || blackoutsLoading;
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
-        <div className="flex items-center gap-3 mb-6">
-          <CalendarDays className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold">Scheduling</h1>
-        </div>
-
+    <div className="max-w-4xl">
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
+          <LoadingState variant="detail" rows={4} label="Loading availability" />
         ) : (
           <Tabs defaultValue="calendar">
             <TabsList className="mb-4">
@@ -274,7 +269,6 @@ export default function Scheduling() {
             </TabsContent>
           </Tabs>
         )}
-      </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
@@ -358,3 +352,5 @@ export default function Scheduling() {
     </div>
   );
 }
+
+export default SchedulingPanel;

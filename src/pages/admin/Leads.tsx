@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import AdminNav from "./components/AdminNav";
+import type { Database } from "@/integrations/supabase/types";
 import { LeadDetailDrawer } from "@/components/admin/LeadDetailDrawer";
+import PageShell from "@/components/admin/PageShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +35,7 @@ import {
   Search,
   Building2,
   Phone,
+  PhoneCall,
   Zap,
   Mail,
   MailOpen,
@@ -44,7 +47,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
-import { OUTCOME_COLORS } from "./CallLogs";
+import { OUTCOME_COLORS, CallLogsPanel } from "./CallLogs";
 import {
   Select,
   SelectContent,
@@ -151,8 +154,32 @@ type LeadGenJob = {
   duplicates_filtered: number;
 };
 
+// leads.source_channel is a Postgres enum, not free text — typing the picker
+// state to it means an invalid option fails at compile time instead of as a
+// 22P02 at insert time.
+type LeadSourceChannel = Database["public"]["Enums"]["lead_source_channel"];
+type LeadStatus = Database["public"]["Enums"]["lead_status"];
+
+type SourceChannelFilter = "All" | LeadSourceChannel;
+type DroneStatusFilter = "All" | LeadStatus;
+
 const VOICE_STATUS_FILTERS = ["All", "qualified", "declined", "transferred", "pending"];
-const DRONE_STATUS_FILTERS = ["All", "new", "contacted", "responded", "qualified", "client"];
+const SOURCE_CHANNEL_FILTERS: readonly SourceChannelFilter[] = [
+  "All",
+  "voice_bot",
+  "web_form",
+  "manual",
+  "email_outreach",
+  "social",
+];
+const DRONE_STATUS_FILTERS: readonly DroneStatusFilter[] = [
+  "All",
+  "new",
+  "contacted",
+  "responded",
+  "qualified",
+  "client",
+];
 const PAGE_SIZE = 20;
 
 // -------------------------------------------------------
@@ -164,7 +191,7 @@ type VoiceLeadsTabProps = {
 
 function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
   const [statusFilter, setStatusFilter] = useState("All");
-  const [sourceChannelFilter, setSourceChannelFilter] = useState("All");
+  const [sourceChannelFilter, setSourceChannelFilter] = useState<SourceChannelFilter>("All");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const queryClient = useQueryClient();
@@ -186,14 +213,14 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newEmail, setNewEmail] = useState("");
-  const [newSource, setNewSource] = useState<string>("manual");
+  const [newSource, setNewSource] = useState<LeadSourceChannel>("manual");
   const [newNote, setNewNote] = useState("");
 
   const createLeadMutation = useMutation({
     mutationFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
-      const { data: lead, error } = await (supabase as never)
+      const { data: lead, error } = await supabase
         .from("leads")
         .insert({
           caller_name: newName.trim(),
@@ -201,18 +228,18 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
           caller_email: newEmail.trim() || null,
           source_channel: newSource,
           qualification_status: "pending",
-        } as never)
+        })
         .select("id")
         .single();
       if (error) throw error;
       if (newNote.trim() && lead) {
-        await (supabase as never)
+        await supabase
           .from("lead_notes")
           .insert({
-            lead_id: (lead as { id: string }).id,
+            lead_id: lead.id,
             content: newNote.trim(),
             created_by: session.user.id,
-          } as never);
+          });
       }
     },
     onSuccess: () => {
@@ -233,8 +260,8 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase
-        .from("leads" as never)
-        .update({ qualification_status: status } as never)
+        .from("leads")
+        .update({ qualification_status: status })
         .eq("id", id);
       if (error) throw error;
     },
@@ -250,15 +277,23 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
   const { data: sourceCounts } = useQuery({
     queryKey: ["admin-leads-source-counts", statusFilter, search],
     queryFn: async () => {
-      const channels = ["voice_bot", "web_form", "manual", "email_outreach", "social"];
+      const channels: LeadSourceChannel[] = [
+        "voice_bot",
+        "web_form",
+        "manual",
+        "email_outreach",
+        "social",
+      ];
       const results = await Promise.all(
         channels.map(async (ch) => {
           let cq = supabase
-            .from("leads" as never)
-            .select("id", { count: "exact", head: true }) as never;
-          cq = (cq as never).eq("source_channel", ch);
-          if (statusFilter !== "All") cq = (cq as never).eq("qualification_status", statusFilter);
-          if (search.trim()) cq = (cq as never).or(`caller_name.ilike.%${search}%,caller_phone.ilike.%${search}%`);
+            .from("leads")
+            .select("id", { count: "exact", head: true })
+            .eq("source_channel", ch);
+          if (statusFilter !== "All") cq = cq.eq("qualification_status", statusFilter);
+          if (search.trim()) {
+            cq = cq.or(`caller_name.ilike.%${search}%,caller_phone.ilike.%${search}%`);
+          }
           const { count } = await cq;
           return [ch, count ?? 0] as [string, number];
         })
@@ -272,7 +307,7 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
     queryKey: ["admin-leads", statusFilter, sourceChannelFilter, search, page],
     queryFn: async () => {
       let query = supabase
-        .from("leads" as never)
+        .from("leads")
         .select(
           "id, created_at, caller_name, caller_phone, caller_email, source_channel, qualification_status, call_id, client_id, quote_request_id, quote_requests ( id, status ), lead_notes ( follow_up_at )",
           { count: "exact" },
@@ -316,20 +351,20 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
     const results = await Promise.allSettled(
       leadsToConvert.map(async (lead) => {
         const { data: client, error: cErr } = await supabase
-          .from("clients" as never)
-          .insert({ name: lead.caller_name, phone: lead.caller_phone, email: lead.caller_email, created_by: session.user.id } as never)
-          .select("id").single() as { data: { id: string } | null; error: unknown };
+          .from("clients")
+          .insert({ name: lead.caller_name, phone: lead.caller_phone, email: lead.caller_email, created_by: session.user.id })
+          .select("id").single();
         if (cErr || !client) throw cErr ?? new Error("Client insert failed");
 
-        const { data: qr, error: qErr } = await (supabase as never)
+        const { data: qr, error: qErr } = await supabase
           .from("quote_requests")
-          .insert({ name: lead.caller_name, email: lead.caller_email, phone: lead.caller_phone, description: "Lead converted from Sentinel lead record", status: "new", source: lead.source_channel === "voice_bot" ? "voice_bot" : "manual", brand_slug: "sai" } as never)
+          .insert({ name: lead.caller_name, email: lead.caller_email, phone: lead.caller_phone, description: "Lead converted from Sentinel lead record", status: "new", source: lead.source_channel === "voice_bot" ? "voice_bot" : "manual", brand_slug: "sai" })
           .select("id").single();
         if (qErr || !qr) throw qErr ?? new Error("Quote request insert failed");
 
-        const { error: lErr } = await (supabase as never)
+        const { error: lErr } = await supabase
           .from("leads")
-          .update({ client_id: (client as { id: string }).id, quote_request_id: (qr as { id: string }).id, qualification_status: "converted" } as never)
+          .update({ client_id: client.id, quote_request_id: qr.id, qualification_status: "converted" })
           .eq("id", lead.id);
         if (lErr) throw lErr;
       })
@@ -399,7 +434,10 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
               </div>
               <div>
                 <Label htmlFor="new-lead-source">Source (required)</Label>
-                <Select value={newSource} onValueChange={setNewSource}>
+                <Select
+                  value={newSource}
+                  onValueChange={(value) => setNewSource(value as LeadSourceChannel)}
+                >
                   <SelectTrigger id="new-lead-source">
                     <SelectValue placeholder="Select source" />
                   </SelectTrigger>
@@ -456,7 +494,7 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
 
       {/* Source channel filter row */}
       <div className="flex gap-2 mb-4 flex-wrap">
-        {(["All", "voice_bot", "web_form", "manual", "email_outreach", "social"] as const).map((ch) => (
+        {SOURCE_CHANNEL_FILTERS.map((ch) => (
           <Button
             key={ch}
             variant={sourceChannelFilter === ch ? "default" : "outline"}
@@ -648,7 +686,7 @@ function VoiceLeadsTab({ onSelectLead }: VoiceLeadsTabProps) {
 function DroneLeadsTab() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState<DroneStatusFilter>("All");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [enrichQuery, setEnrichQuery] = useState("");
@@ -757,12 +795,16 @@ function DroneLeadsTab() {
     queryKey: ["drone-leads-enrolled"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("scheduled_emails" as never)
+        .from("scheduled_emails")
         .select("lead_id")
         .eq("sequence_type", "outreach_drip")
         .eq("status", "pending");
       if (error) throw error;
-      return new Set((data ?? []).map((r) => (r as { lead_id: string }).lead_id));
+      return new Set(
+        (data ?? [])
+          .map((r) => r.lead_id)
+          .filter((id): id is string => id !== null),
+      );
     },
     staleTime: 30_000,
   });
@@ -1168,63 +1210,93 @@ function DroneLeadsTab() {
 // -------------------------------------------------------
 // Main Leads Page
 // -------------------------------------------------------
+
+/** Tab ids are part of the URL contract — /admin/call-logs redirects to ?tab=calls. */
+export const LEAD_TABS = ["drone", "voice", "calls"] as const;
+export type LeadTab = (typeof LEAD_TABS)[number];
+
+export function resolveLeadTab(raw: string | null): LeadTab {
+  return (LEAD_TABS as readonly string[]).includes(raw ?? "")
+    ? (raw as LeadTab)
+    : "drone";
+}
+
 export default function Leads() {
   const queryClient = useQueryClient();
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // The tab lives in the URL, not in state: /admin/call-logs is a permanent
+  // redirect to ?tab=calls, and a stored link has to open the right panel.
+  const tab = resolveLeadTab(searchParams.get("tab"));
+
+  const handleTabChange = (next: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (next === "drone") params.delete("tab");
+    else params.set("tab", next);
+    setSearchParams(params, { replace: true });
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Target className="h-6 w-6 text-primary" />
-            <div>
-              <h1 className="text-2xl font-bold">Leads</h1>
-              <p className="text-sm text-muted-foreground">
-                Voice bot leads and B2B drone services prospecting
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ["admin-leads"] });
-              queryClient.invalidateQueries({ queryKey: ["drone-leads"] });
-            }}
-            className="gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
-        </div>
+    <PageShell
+      title="Leads"
+      description="Voice bot leads, B2B prospecting and the raw call log"
+      icon={Target}
+      breadcrumbs={[
+        { label: "Pipeline", href: "/admin/pipeline" },
+        { label: "Leads" },
+      ]}
+      width="full"
+      actions={
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            queryClient.invalidateQueries({ queryKey: ["admin-leads"] });
+            queryClient.invalidateQueries({ queryKey: ["drone-leads"] });
+            queryClient.invalidateQueries({ queryKey: ["call-logs"] });
+          }}
+          className="gap-2"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh
+        </Button>
+      }
+    >
+      <LeadStatsHeader />
 
-        <LeadStatsHeader />
+      <Tabs value={tab} onValueChange={handleTabChange} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="drone" className="gap-2">
+            <Building2 className="h-4 w-4" />
+            B2B Leads
+          </TabsTrigger>
+          <TabsTrigger value="voice" className="gap-2">
+            <Phone className="h-4 w-4" />
+            Voice Leads
+          </TabsTrigger>
+          <TabsTrigger value="calls" className="gap-2">
+            <PhoneCall className="h-4 w-4" />
+            Call Logs
+          </TabsTrigger>
+        </TabsList>
 
-        <Tabs defaultValue="drone" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="drone" className="gap-2">
-              <Building2 className="h-4 w-4" />
-              B2B Leads
-            </TabsTrigger>
-            <TabsTrigger value="voice" className="gap-2">
-              <Phone className="h-4 w-4" />
-              Voice Leads
-            </TabsTrigger>
-          </TabsList>
+        <TabsContent value="drone">
+          <DroneLeadsTab />
+        </TabsContent>
 
-          <TabsContent value="drone">
-            <DroneLeadsTab />
-          </TabsContent>
+        <TabsContent value="voice">
+          <VoiceLeadsTab onSelectLead={setSelectedLeadId} />
+        </TabsContent>
 
-          <TabsContent value="voice">
-            <VoiceLeadsTab onSelectLead={setSelectedLeadId} />
-          </TabsContent>
-        </Tabs>
+        {/* Absorbed, not deleted: most calls never become a lead, and this is
+            the only place those are visible. */}
+        <TabsContent value="calls">
+          <CallLogsPanel />
+        </TabsContent>
+      </Tabs>
 
-        <LeadDetailDrawer leadId={selectedLeadId} onClose={() => setSelectedLeadId(null)} />
-      </div>
-    </div>
+      <LeadDetailDrawer leadId={selectedLeadId} onClose={() => setSelectedLeadId(null)} />
+    </PageShell>
   );
 }

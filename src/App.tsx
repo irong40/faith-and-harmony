@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
+import { adminRedirectRoutes } from "@/routes/adminRedirects";
 
 // Eager — auth + landing
 import Auth from "./pages/Auth";
@@ -26,34 +27,26 @@ const RequestQuote = lazy(() => import("./pages/RequestQuote"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 
-// Lazy — admin pages
+// Lazy — admin shell + pages
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
 const ServiceRequests = lazy(() => import("./pages/admin/ServiceRequests"));
-const Proposals = lazy(() => import("./pages/admin/Proposals"));
-const Projects = lazy(() => import("./pages/admin/Projects"));
 const DroneJobs = lazy(() => import("./pages/admin/DroneJobs"));
 const DroneJobDetail = lazy(() => import("./pages/admin/DroneJobDetail"));
-const People = lazy(() => import("./pages/admin/People"));
-const Messages = lazy(() => import("./pages/admin/Messages"));
 const Documents = lazy(() => import("./pages/admin/Documents"));
-const Settings = lazy(() => import("./pages/admin/Settings"));
-const Invoices = lazy(() => import("./pages/admin/Invoices"));
+const IntegrationsSettings = lazy(() => import("./pages/admin/IntegrationsSettings"));
 const PilotManagement = lazy(() => import("./pages/admin/PilotManagement"));
 const SentinelPricing = lazy(() => import("./pages/admin/SentinelPricing"));
 const Clients = lazy(() => import("./pages/admin/Clients"));
 const JobIntake = lazy(() => import("./pages/admin/JobIntake"));
 const ProcessingTemplates = lazy(() => import("./pages/admin/ProcessingTemplates"));
 const DeliveryReview = lazy(() => import("./pages/admin/DeliveryReview"));
-const QuoteRequests = lazy(() => import("./pages/admin/QuoteRequests"));
-const Scheduling = lazy(() => import("./pages/admin/Scheduling"));
-const WeatherOperations = lazy(() => import("./pages/admin/WeatherOperations"));
-const CallLogs = lazy(() => import("./pages/admin/CallLogs"));
+const Pipeline = lazy(() => import("./pages/admin/Pipeline"));
+const CalendarOps = lazy(() => import("./pages/admin/CalendarOps"));
 const AdminLeads = lazy(() => import("./pages/admin/Leads"));
 const Accessories = lazy(() => import("./pages/admin/Accessories"));
-const Governance = lazy(() => import("./pages/admin/Governance"));
 const Reports = lazy(() => import("./pages/admin/Reports"));
 const ReportBuilder = lazy(() => import("./pages/admin/ReportBuilder"));
-const BdIntelligence = lazy(() => import("./pages/admin/BdIntelligence"));
 
 // Lazy — pilot pages
 const PilotDashboard = lazy(() => import("./pages/pilot/PilotDashboard"));
@@ -85,21 +78,12 @@ function RootRedirect() {
     if (isTrestleDomain()) return <Navigate to="/auth" replace />;
     return <LandingPage />;
   }
-  if (isAdmin) return <Navigate to="/admin/dashboard" replace />;
+  if (isAdmin) return <Navigate to="/admin" replace />;
   if (isPilot) return <Navigate to="/pilot" replace />;
   // User is authenticated but has no admin/pilot role — show landing page on F&H domain,
   // or redirect to auth on Trestle domain (auth page will show "no role" state)
   if (isTrestleDomain()) return <Navigate to="/auth" replace />;
   return <LandingPage />;
-}
-
-// Helper: wrap admin route in ErrorBoundary + ProtectedRoute
-function AdminRoute({ children }: { children: React.ReactNode }) {
-  return (
-    <ErrorBoundary>
-      <ProtectedRoute requireAdmin>{children}</ProtectedRoute>
-    </ErrorBoundary>
-  );
 }
 
 // Helper: wrap pilot route in ErrorBoundary + ProtectedRoute
@@ -111,7 +95,17 @@ function PilotRoute({ children }: { children: React.ReactNode }) {
   );
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Was bare: staleTime 0 + refetch-on-focus meant every tab return and
+      // every remount refired every query, which is most of the perceived
+      // flicker across the admin portal.
+      staleTime: 30_000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -141,35 +135,63 @@ const App = () => (
               <Route path="/my-jobs/:token" element={<ErrorBoundary><ClientJobPortal /></ErrorBoundary>} />
               <Route path="/quote/:token" element={<ErrorBoundary><QuoteAcceptancePage /></ErrorBoundary>} />
 
-              {/* Admin routes */}
-              <Route path="/admin/dashboard" element={<AdminRoute><Dashboard /></AdminRoute>} />
-              <Route path="/admin/service-requests" element={<AdminRoute><ServiceRequests /></AdminRoute>} />
-              <Route path="/admin/proposals" element={<AdminRoute><Proposals /></AdminRoute>} />
-              <Route path="/admin/projects" element={<AdminRoute><Projects /></AdminRoute>} />
-              <Route path="/admin/drone-jobs" element={<AdminRoute><DroneJobs /></AdminRoute>} />
-              <Route path="/admin/drone-jobs/:id" element={<AdminRoute><DroneJobDetail /></AdminRoute>} />
-              <Route path="/admin/drone-jobs/:id/delivery" element={<AdminRoute><DeliveryReview /></AdminRoute>} />
-              <Route path="/admin/pilots" element={<AdminRoute><PilotManagement /></AdminRoute>} />
-              <Route path="/admin/people" element={<AdminRoute><People /></AdminRoute>} />
-              <Route path="/admin/invoices" element={<AdminRoute><Invoices /></AdminRoute>} />
-              <Route path="/admin/messages" element={<AdminRoute><Messages /></AdminRoute>} />
-              <Route path="/admin/documents" element={<AdminRoute><Documents /></AdminRoute>} />
-              <Route path="/admin/pricing" element={<AdminRoute><SentinelPricing /></AdminRoute>} />
-              <Route path="/admin/settings" element={<AdminRoute><Settings /></AdminRoute>} />
-              <Route path="/admin/clients" element={<AdminRoute><Clients /></AdminRoute>} />
-              <Route path="/admin/jobs/new" element={<AdminRoute><JobIntake /></AdminRoute>} />
-              <Route path="/admin/processing-templates" element={<AdminRoute><ProcessingTemplates /></AdminRoute>} />
-              <Route path="/admin/quote-requests" element={<AdminRoute><QuoteRequests /></AdminRoute>} />
-              <Route path="/admin/scheduling" element={<AdminRoute><Scheduling /></AdminRoute>} />
-              <Route path="/admin/weather" element={<AdminRoute><WeatherOperations /></AdminRoute>} />
-              <Route path="/admin/call-logs" element={<AdminRoute><CallLogs /></AdminRoute>} />
-              <Route path="/admin/leads" element={<AdminRoute><AdminLeads /></AdminRoute>} />
-              <Route path="/admin/accessories" element={<AdminRoute><Accessories /></AdminRoute>} />
-              <Route path="/admin/governance" element={<AdminRoute><Governance /></AdminRoute>} />
-              <Route path="/admin/contracts" element={<AdminRoute><BdIntelligence /></AdminRoute>} />
-              <Route path="/admin/reports" element={<AdminRoute><Reports /></AdminRoute>} />
-              <Route path="/admin/reports/new" element={<AdminRoute><ReportBuilder /></AdminRoute>} />
-              <Route path="/admin/reports/:id/edit" element={<AdminRoute><ReportBuilder /></AdminRoute>} />
+              {/* Admin routes — nested under the persistent AdminLayout shell.
+                  Every path below is byte-identical to the previous flat routes. */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }
+              >
+                {/* Dashboard IS /admin. The old /admin/dashboard is a stored
+                    URL, so it redirects here rather than the other way round. */}
+                <Route index element={<Dashboard />} />
+
+                {/* Pipeline — inbound demand */}
+                <Route path="pipeline" element={<Pipeline />} />
+                <Route path="pipeline/leads" element={<AdminLeads />} />
+                <Route path="service-requests" element={<ServiceRequests />} />
+
+                {/* Missions — was drone-jobs */}
+                <Route path="missions" element={<DroneJobs />} />
+                <Route path="missions/new" element={<JobIntake />} />
+                <Route path="missions/:id" element={<DroneJobDetail />} />
+                <Route path="missions/:id/delivery" element={<DeliveryReview />} />
+                <Route path="calendar" element={<CalendarOps />} />
+                <Route path="pilots" element={<PilotManagement />} />
+
+                {/* Clients */}
+                <Route path="clients" element={<Clients />} />
+
+                {/* Reports */}
+                <Route path="documents" element={<Documents />} />
+                <Route path="reports" element={<Reports />} />
+                <Route path="reports/new" element={<ReportBuilder />} />
+                <Route path="reports/:id/edit" element={<ReportBuilder />} />
+
+                {/* Settings — REAL nested routes, not a drawer.
+                    Google's OAuth consent screen redirects the whole browser
+                    to /admin/settings?code=..., so the index has to render
+                    IntegrationsSettings directly: an index <Navigate> would
+                    strip ?code= before the exchange handler ever runs. */}
+                <Route path="settings">
+                  <Route index element={<IntegrationsSettings />} />
+                  <Route path="templates" element={<ProcessingTemplates />} />
+                  <Route path="pricing" element={<SentinelPricing />} />
+                  <Route path="accessories" element={<Accessories />} />
+                  <Route path="fleet" element={<FleetOverview />} />
+                </Route>
+              </Route>
+
+              {/* Retired admin paths. These are permanent: notifications.link
+                  holds stored rows pointing at old URLs, so these must keep
+                  resolving (with search + hash intact) indefinitely. */}
+              {/* Embedded as a bare array, NOT wrapped in a fragment:
+                  createRoutesFromChildren walks React.Children, which flattens
+                  arrays into individual <Route> elements. */}
+              {adminRedirectRoutes()}
 
               {/* Pilot portal routes */}
               <Route path="/pilot" element={<PilotRoute><PilotDashboard /></PilotRoute>} />

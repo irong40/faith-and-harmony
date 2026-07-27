@@ -1,5 +1,38 @@
 import { describe, it, expect } from "vitest";
-import { isOverdue, isSourceFilterActive, getQualifiedUnconvertedLeads, toggleLeadSelection } from "./Leads";
+import {
+  isOverdue,
+  isSourceFilterActive,
+  getQualifiedUnconvertedLeads,
+  toggleLeadSelection,
+  resolveLeadTab,
+} from "./Leads";
+
+// ---------------------------------------------------------------------------
+// resolveLeadTab is a URL contract, not a UI detail: /admin/call-logs is a
+// permanent redirect to /admin/pipeline/leads?tab=calls, and stored
+// notification links have to open the panel they were written for.
+// ---------------------------------------------------------------------------
+describe("resolveLeadTab", () => {
+  it("defaults to the B2B tab when no tab param is present", () => {
+    expect(resolveLeadTab(null)).toBe("drone");
+  });
+
+  it("opens the call log when the retired /admin/call-logs redirect lands", () => {
+    expect(resolveLeadTab("calls")).toBe("calls");
+  });
+
+  it("opens voice leads on ?tab=voice", () => {
+    expect(resolveLeadTab("voice")).toBe("voice");
+  });
+
+  it("falls back to the default tab for an unknown value rather than blanking", () => {
+    expect(resolveLeadTab("nonsense")).toBe("drone");
+  });
+
+  it("falls back to the default tab for an empty value", () => {
+    expect(resolveLeadTab("")).toBe("drone");
+  });
+});
 
 describe("isOverdue", () => {
   it("returns true when any lead_notes entry has a past follow_up_at", () => {

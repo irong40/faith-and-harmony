@@ -58,13 +58,12 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const resend = new Resend(RESEND_API_KEY);
 
-    // Fetch job with client and legacy customer fallback
+    // Fetch job with its client
     const { data: job, error: jobError } = await supabase
       .from("drone_jobs")
       .select(`
         *,
         clients(id, name, email, company, phone),
-        customers(id, name, email, phone),
         drone_packages(name),
         processing_templates(path_code, display_name)
       `)
@@ -78,8 +77,8 @@ serve(async (req) => {
       );
     }
 
-    // Prefer clients table (Phase 2+), fall back to legacy customers
-    const recipient = job.clients ?? job.customers;
+    // clients is the only party table; drone_jobs.customer_id is deprecated
+    const recipient = job.clients;
     const recipientEmail = recipient?.email;
 
     if (!recipientEmail) {

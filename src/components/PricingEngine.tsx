@@ -250,7 +250,7 @@ export default function PricingEngine() {
       title: "Quote prepared",
       description: "Navigating to Quote Requests — open any request and create a quote.",
     });
-    navigate("/admin/quote-requests");
+    navigate("/admin/pipeline");
   };
 
   return (

@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import AdminNav from "./components/AdminNav";
 import ComplianceAlertsCard from "@/components/admin/ComplianceAlertsCard";
 import ActivityFeed from "@/components/admin/ActivityFeed";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,9 +10,11 @@ import { format, isToday } from "date-fns";
 import {
   Activity,
   CalendarClock,
+  LayoutDashboard,
   Send,
   Users,
 } from "lucide-react";
+import PageShell from "@/components/admin/PageShell";
 
 // -------------------------------------------------------
 // Types
@@ -29,7 +30,6 @@ interface MissionRow {
   delivery_status: string | null;
   pilot_id: string | null;
   clients: { name: string } | null;
-  customers: { name: string } | null;
   profiles: { full_name: string | null } | null;
 }
 
@@ -103,7 +103,7 @@ export default function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("drone_jobs")
-        .select("id, job_number, site_address, property_address, scheduled_date, scheduled_time, status, delivery_status, pilot_id, clients(name), customers(name), profiles(full_name)")
+        .select("id, job_number, site_address, property_address, scheduled_date, scheduled_time, status, delivery_status, pilot_id, clients(name), profiles(full_name)")
         .not("status", "in", '("delivered","cancelled")')
         .order("scheduled_date", { ascending: true });
       if (error) throw error;
@@ -148,31 +148,26 @@ export default function Dashboard() {
   const pendingDeliveryCount = pendingDeliveries?.length ?? 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Mission Control</h1>
-          <p className="text-muted-foreground mt-1">
-            Real-time overview of all missions and team activity
-          </p>
-        </div>
-
+    <PageShell
+      title="Mission Control"
+      description="Real-time overview of all missions and team activity"
+      icon={LayoutDashboard}
+      width="wide"
+    >
         {/* Row 1 — Key Metrics */}
         <div className="grid gap-4 grid-cols-2 md:grid-cols-3 mb-8">
           <MetricCard
             label="Active Missions"
             value={activeMissionCount}
             icon={Activity}
-            to="/admin/drone-jobs"
+            to="/admin/missions"
             loading={activeMissionsLoading}
           />
           <MetricCard
             label="Pending Deliveries"
             value={pendingDeliveryCount}
             icon={Send}
-            to="/admin/drone-jobs?delivery=ready"
+            to="/admin/missions?delivery=ready"
             loading={deliveriesLoading}
             accent="text-blue-500"
           />
@@ -204,12 +199,12 @@ export default function Dashboard() {
                 {todaysMissions.map((m) => (
                   <div key={m.id} className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
                     <div className="min-w-0">
-                      <Link to={`/admin/drone-jobs/${m.id}`} className="font-mono text-sm font-semibold hover:underline text-primary">
+                      <Link to={`/admin/missions/${m.id}`} className="font-mono text-sm font-semibold hover:underline text-primary">
                         {m.job_number}
                       </Link>
                       <p className="text-xs text-muted-foreground truncate">
                         {m.site_address || m.property_address}
-                        {m.clients?.name || m.customers?.name ? ` · ${m.clients?.name || m.customers?.name}` : ""}
+                        {m.clients?.name ? ` · ${m.clients.name}` : ""}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -253,7 +248,7 @@ export default function Dashboard() {
                     <div key={key}>
                       <div className="flex items-center justify-between mb-2">
                         <Link
-                          to={key === "__unassigned__" ? "/admin/drone-jobs" : `/admin/drone-jobs?pilot=${key}`}
+                          to={key === "__unassigned__" ? "/admin/missions" : `/admin/missions?pilot=${key}`}
                           className="text-sm font-semibold hover:underline"
                         >
                           {name}
@@ -263,7 +258,7 @@ export default function Dashboard() {
                       <div className="space-y-1 pl-3 border-l-2 border-muted">
                         {missions.slice(0, 3).map((m) => (
                           <div key={m.id} className="flex items-center justify-between gap-2 text-xs">
-                            <Link to={`/admin/drone-jobs/${m.id}`} className="font-mono hover:underline text-primary truncate max-w-[120px]">
+                            <Link to={`/admin/missions/${m.id}`} className="font-mono hover:underline text-primary truncate max-w-[120px]">
                               {m.job_number}
                             </Link>
                             <span className="text-muted-foreground truncate">{m.site_address || m.property_address}</span>
@@ -272,7 +267,7 @@ export default function Dashboard() {
                         ))}
                         {missions.length > 3 && (
                           <Link
-                            to={`/admin/drone-jobs?pilot=${key}`}
+                            to={`/admin/missions?pilot=${key}`}
                             className="text-xs text-muted-foreground hover:underline"
                           >
                             +{missions.length - 3} more
@@ -292,7 +287,6 @@ export default function Dashboard() {
           <ActivityFeed />
           <ComplianceAlertsCard />
         </div>
-      </main>
-    </div>
+    </PageShell>
   );
 }

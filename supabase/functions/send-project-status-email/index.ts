@@ -105,7 +105,6 @@ const handler = async (req: Request): Promise<Response> => {
       .from("projects")
       .select(`
         *,
-        customer:customers(name, email, company_name),
         service:services(name, code),
         proposal:proposals(proposal_number, total)
       `)

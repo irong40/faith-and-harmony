@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
-  ArrowLeft, Plane, Battery, Gamepad2, Package, RefreshCw,
+  ArrowLeft, Plane, Battery, Gamepad2, Package,
   Shield, Clock, Wrench, Plus, Pencil, Trash2,
 } from 'lucide-react';
 import {
@@ -20,13 +20,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAllAircraft, useAllBatteries, useAllControllers, useAllAccessories } from '@/hooks/useFleet';
-import { useDeleteAircraft, useDeleteBattery, useDeleteController, useDeleteAccessory } from '@/hooks/useFleetMutations';
+import { useDeleteAircraft, useDeleteBattery, useDeleteController } from '@/hooks/useFleetMutations';
 import AircraftFormDialog from './AircraftFormDialog';
 import BatteryFormDialog from './BatteryFormDialog';
 import ControllerFormDialog from './ControllerFormDialog';
-import AccessoryFormDialog from './AccessoryFormDialog';
 import MaintenanceLogDialog from './MaintenanceLogDialog';
-import type { Aircraft, Battery as BatteryType, Controller, Accessory, EquipmentType } from '@/types/fleet';
+import AccessoriesManager from '@/components/admin/AccessoriesManager';
+import PageShell from '@/components/admin/PageShell';
+import { LoadingState } from '@/components/admin/PageState';
+import type { Aircraft, Battery as BatteryType, Controller, EquipmentType } from '@/types/fleet';
 
 const STATUS_BADGE: Record<string, string> = {
   active: 'bg-green-500 text-white',
@@ -38,6 +40,7 @@ const STATUS_BADGE: Record<string, string> = {
 
 export default function FleetOverview() {
   const { toast } = useToast();
+  const inAdmin = useLocation().pathname.startsWith('/admin');
   const { data: aircraft, isLoading: loadingAircraft } = useAllAircraft();
   const { data: batteries, isLoading: loadingBatteries } = useAllBatteries();
   const { data: controllers, isLoading: loadingControllers } = useAllControllers();
@@ -46,7 +49,6 @@ export default function FleetOverview() {
   const deleteAircraft = useDeleteAircraft();
   const deleteBattery = useDeleteBattery();
   const deleteController = useDeleteController();
-  const deleteAccessory = useDeleteAccessory();
 
   // Dialog states
   const [aircraftDialog, setAircraftDialog] = useState(false);
@@ -55,11 +57,13 @@ export default function FleetOverview() {
   const [editingBattery, setEditingBattery] = useState<BatteryType | null>(null);
   const [controllerDialog, setControllerDialog] = useState(false);
   const [editingController, setEditingController] = useState<Controller | null>(null);
-  const [accessoryDialog, setAccessoryDialog] = useState(false);
-  const [editingAccessory, setEditingAccessory] = useState<Accessory | null>(null);
+  // Accessories are owned by AccessoriesManager; this only nudges it to open
+  // its create form from the section header.
+  const [accessoryAddSignal, setAccessoryAddSignal] = useState(0);
 
-  // Delete confirmation
-  const [deleteTarget, setDeleteTarget] = useState<{ type: 'aircraft' | 'battery' | 'controller' | 'accessory'; id: string; name: string } | null>(null);
+  // Delete confirmation — accessories handle their own, because deletion there
+  // has to surface the "referenced by N missions" guard from the RPC.
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'aircraft' | 'battery' | 'controller'; id: string; name: string } | null>(null);
 
   // Maintenance log
   const [maintenanceTarget, setMaintenanceTarget] = useState<{ id: string; type: EquipmentType; name: string } | null>(null);
@@ -71,41 +75,19 @@ export default function FleetOverview() {
     try {
       if (deleteTarget.type === 'aircraft') await deleteAircraft.mutateAsync(deleteTarget.id);
       else if (deleteTarget.type === 'battery') await deleteBattery.mutateAsync(deleteTarget.id);
-      else if (deleteTarget.type === 'controller') await deleteController.mutateAsync(deleteTarget.id);
-      else await deleteAccessory.mutateAsync(deleteTarget.id);
+      else await deleteController.mutateAsync(deleteTarget.id);
       toast({ title: `${deleteTarget.type} deleted` });
-    } catch (error: any) {
-      toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast({ title: 'Delete failed', description: message, variant: 'destructive' });
     }
     setDeleteTarget(null);
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
-        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
-          <Link to="/pilot">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div className="flex-1">
-            <h1 className="font-semibold text-foreground">Fleet Inventory</h1>
-            <p className="text-xs text-muted-foreground">Aircraft, batteries, controllers & accessories</p>
-          </div>
-          <Link to="/pilot/fleet/maintenance">
-            <Button variant="outline" size="sm">
-              <Wrench className="h-4 w-4 mr-1" /> History
-            </Button>
-          </Link>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-6 max-w-2xl space-y-6">
+  const body = (
+    <>
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
+          <LoadingState variant="cards" rows={3} label="Loading fleet inventory" />
         ) : (
           <>
             {/* Aircraft */}
@@ -289,7 +271,9 @@ export default function FleetOverview() {
 
             <Separator />
 
-            {/* Accessories */}
+            {/* Accessories — rendered by the SAME component as
+                /admin/settings/accessories. There is no second implementation
+                and no second form dialog to drift out of sync. */}
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -297,56 +281,19 @@ export default function FleetOverview() {
                   <h2 className="text-lg font-semibold">Accessories</h2>
                   <Badge variant="secondary">{accessories?.length || 0}</Badge>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => { setEditingAccessory(null); setAccessoryDialog(true); }}>
+                <Button size="sm" variant="outline" onClick={() => setAccessoryAddSignal(n => n + 1)}>
                   <Plus className="h-4 w-4 mr-1" /> Add
                 </Button>
               </div>
-              <div className="space-y-2">
-                {accessories?.map(acc => (
-                  <Card key={acc.id}>
-                    <CardContent className="pt-3 pb-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <span className="font-medium text-sm">{acc.name}</span>
-                          <span className="text-xs text-muted-foreground ml-2 capitalize">{acc.type}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Badge className={STATUS_BADGE[acc.status] || 'bg-gray-400 text-white'}>
-                            {acc.status}
-                          </Badge>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingAccessory(acc); setAccessoryDialog(true); }}>
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget({ type: 'accessory', id: acc.id, name: acc.name })}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex gap-4 text-xs text-muted-foreground mt-1">
-                        {acc.serial_number && <span>S/N: {acc.serial_number}</span>}
-                        {acc.compatible_aircraft && acc.compatible_aircraft.length > 0 && (
-                          <span>{acc.compatible_aircraft.join(', ')}</span>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full mt-1 text-xs"
-                        onClick={() => setMaintenanceTarget({ id: acc.id, type: 'accessory', name: acc.name })}
-                      >
-                        <Wrench className="h-3 w-3 mr-1" /> Log Maintenance
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-                {!accessories?.length && (
-                  <p className="text-sm text-muted-foreground text-center py-4">No accessories in fleet</p>
-                )}
-              </div>
+              <AccessoriesManager
+                openFormSignal={accessoryAddSignal}
+                onLogMaintenance={acc =>
+                  setMaintenanceTarget({ id: acc.id, type: 'accessory', name: acc.name })
+                }
+              />
             </div>
           </>
         )}
-      </main>
 
       {/* Form Dialogs */}
       <AircraftFormDialog
@@ -363,11 +310,6 @@ export default function FleetOverview() {
         open={controllerDialog}
         onOpenChange={setControllerDialog}
         controller={editingController}
-      />
-      <AccessoryFormDialog
-        open={accessoryDialog}
-        onOpenChange={setAccessoryDialog}
-        accessory={editingAccessory}
       />
 
       {/* Maintenance Log Dialog */}
@@ -398,6 +340,56 @@ export default function FleetOverview() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </>
+  );
+
+  // One component, two homes: /pilot/fleet keeps the mobile-first back-arrow
+  // header, /admin/settings/fleet gets the shared admin page frame. Deciding
+  // from the pathname avoids a duplicate component whose only difference is
+  // chrome — which is exactly how Accessories and Fleet drifted apart before.
+  if (inAdmin) {
+    return (
+      <PageShell
+        title="Fleet Inventory"
+        description="Aircraft, batteries, controllers and accessories"
+        icon={Plane}
+        breadcrumbs={[{ label: "Settings", href: "/admin/settings" }, { label: "Fleet" }]}
+        width="wide"
+        actions={
+          <Link to="/pilot/fleet/maintenance">
+            <Button variant="outline" size="sm">
+              <Wrench className="h-4 w-4 mr-1" /> History
+            </Button>
+          </Link>
+        }
+      >
+        <div className="space-y-6">{body}</div>
+      </PageShell>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
+        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+          <Link to="/pilot">
+            <Button variant="ghost" size="icon" aria-label="Back to pilot portal">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <div className="flex-1">
+            <h1 className="font-semibold text-foreground">Fleet Inventory</h1>
+            <p className="text-xs text-muted-foreground">Aircraft, batteries, controllers &amp; accessories</p>
+          </div>
+          <Link to="/pilot/fleet/maintenance">
+            <Button variant="outline" size="sm">
+              <Wrench className="h-4 w-4 mr-1" /> History
+            </Button>
+          </Link>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-6 max-w-4xl space-y-6">{body}</main>
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import AdminNav from "./components/AdminNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import PageShell from "@/components/admin/PageShell";
 import { 
   FileOutput, 
   FileText, 
@@ -198,16 +198,12 @@ export default function Documents() {
   const categories = [...new Set(templates?.map(t => t.category) || [])];
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-      <main className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <FileOutput className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-3xl font-bold">Document Generator</h1>
-            <p className="text-muted-foreground">Generate invoices, reports, exports, and more</p>
-          </div>
-        </div>
+    <PageShell
+      title="Document Generator"
+      description="Generate invoices, reports, exports, and more"
+      icon={FileOutput}
+      width="wide"
+    >
 
         <Tabs defaultValue="templates" className="space-y-6">
           <TabsList>
@@ -329,7 +325,6 @@ export default function Documents() {
           open={!!generateTemplate}
           onOpenChange={(open) => !open && setGenerateTemplate(null)}
         />
-      </main>
-    </div>
+    </PageShell>
   );
 }

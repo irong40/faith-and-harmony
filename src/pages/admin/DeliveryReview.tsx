@@ -18,7 +18,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  ArrowLeft,
   ExternalLink,
   FolderOpen,
   RefreshCw,
@@ -33,7 +32,8 @@ import {
   Package,
 } from "lucide-react";
 import { format } from "date-fns";
-import AdminNav from "./components/AdminNav";
+import PageShell from "@/components/admin/PageShell";
+import { LoadingState, EmptyState } from "@/components/admin/PageState";
 
 interface DroneDeliverable {
   id: string;
@@ -42,7 +42,6 @@ interface DroneDeliverable {
   file_count: number | null;
   total_size_bytes: number | null;
   download_url: string | null;
-  file_type: string | null;
 }
 
 interface DroneJob {
@@ -60,7 +59,6 @@ interface DroneJob {
   delivery_drive_url: string | null;
   download_url: string | null;
   clients?: { id: string; name: string; company: string | null; email: string | null } | null;
-  customers?: { id: string; name: string; email: string | null } | null;
   processing_templates?: { path_code: string | null; display_name: string | null } | null;
   drone_packages?: { name: string } | null;
 }
@@ -71,11 +69,16 @@ function formatBytes(bytes: number | null): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function getDeliverableIcon(fileType: string | null) {
-  if (!fileType) return <Package className="h-4 w-4" />;
-  if (fileType.startsWith("image") || fileType === "photo") return <Camera className="h-4 w-4" />;
-  if (fileType.startsWith("video")) return <Video className="h-4 w-4" />;
-  if (fileType === "report" || fileType === "pdf") return <FileText className="h-4 w-4" />;
+// drone_deliverables has no file_type column, so the icon is derived from the
+// deliverable name. The names are written by sync_drone_deliverables()
+// (migration 20260728094000): Processed Output Folder, Orthophoto, Point Cloud,
+// 3D Model, Client Drive Folder.
+function getDeliverableIcon(name: string | null) {
+  const n = (name ?? "").toLowerCase();
+  if (n.includes("drive") || n.includes("folder")) return <FolderOpen className="h-4 w-4" />;
+  if (n.includes("ortho") || n.includes("photo") || n.includes("image")) return <Camera className="h-4 w-4" />;
+  if (n.includes("video")) return <Video className="h-4 w-4" />;
+  if (n.includes("report") || n.includes("pdf")) return <FileText className="h-4 w-4" />;
   return <Package className="h-4 w-4" />;
 }
 
@@ -101,12 +104,16 @@ export default function DeliveryReview() {
     const [jobRes, delRes] = await Promise.all([
       supabase
         .from("drone_jobs")
-        .select("*, clients(id, name, company, email), customers(id, name, email), processing_templates(path_code, display_name), drone_packages(name)")
+        .select("*, clients(id, name, company, email), processing_templates(path_code, display_name), drone_packages(name)")
         .eq("id", id)
         .single(),
       supabase
         .from("drone_deliverables")
-        .select("id, name, description, file_count, total_size_bytes, download_url, file_type")
+        // NOTE: there is no `file_type` column on drone_deliverables. Selecting
+        // it made PostgREST return 400 for every mission, and the old
+        // `if (delRes.data)` swallowed the error — the list looked "empty"
+        // rather than broken. Keep this select aligned with the real columns.
+        .select("id, name, description, file_count, total_size_bytes, download_url")
         .eq("job_id", id)
         .order("created_at"),
     ]);
@@ -118,7 +125,13 @@ export default function DeliveryReview() {
       setDeliveryNotes(jobRes.data.delivery_notes || "");
     }
 
-    if (delRes.data) {
+    if (delRes.error) {
+      toast({
+        title: "Error loading deliverables",
+        description: delRes.error.message,
+        variant: "destructive",
+      });
+    } else if (delRes.data) {
       setDeliverables(delRes.data);
       // Pre-select all deliverables
       setSelectedDeliverableIds(new Set(delRes.data.map((d) => d.id)));
@@ -144,8 +157,8 @@ export default function DeliveryReview() {
   };
 
   const driveUrl = job?.delivery_drive_url || job?.download_url;
-  const clientEmail = job?.clients?.email || job?.customers?.email;
-  const clientName = job?.clients?.name || job?.customers?.name;
+  const clientEmail = job?.clients?.email;
+  const clientName = job?.clients?.name;
   const siteLabel = job?.site_address || job?.property_address;
   const jobType = job?.processing_templates?.display_name || job?.drone_packages?.name || "—";
 
@@ -246,72 +259,67 @@ export default function DeliveryReview() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <AdminNav />
-        <main className="container mx-auto px-4 py-8">
-          <RefreshCw className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
-        </main>
-      </div>
+      <PageShell title="Delivery Review" icon={Send} width="wide">
+        <LoadingState variant="detail" rows={4} label="Loading delivery review" />
+      </PageShell>
     );
   }
 
   if (!job) {
     return (
-      <div className="min-h-screen bg-background">
-        <AdminNav />
-        <main className="container mx-auto px-4 py-8">
-          <p className="text-center text-muted-foreground">Job not found</p>
-        </main>
-      </div>
+      <PageShell title="Delivery Review" icon={Send} width="wide">
+        <EmptyState
+          icon={Send}
+          title="Mission not found"
+          description="This mission may have been deleted."
+          action={
+            <Link to="/admin/missions">
+              <Button variant="outline">Back to missions</Button>
+            </Link>
+          }
+        />
+      </PageShell>
     );
   }
 
   const isSent = job.delivery_status === "sent" || job.delivery_status === "delivery_confirmed";
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-
-      <main className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <Link to={`/admin/drone-jobs/${job.id}`}>
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold font-mono">{job.job_number}</h1>
-                <Badge
-                  className={
-                    isSent
-                      ? "bg-green-500 text-white"
-                      : job.delivery_status === "ready"
-                        ? "bg-blue-500 text-white"
-                        : "bg-slate-500 text-white"
-                  }
-                >
-                  {isSent
-                    ? "Sent"
-                    : job.delivery_status === "ready"
-                      ? "Ready to Send"
-                      : "Not Ready"}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">Delivery Review</p>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Button onClick={fetchData} variant="outline" size="sm">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-          </div>
-        </div>
-
+    <PageShell
+      title={
+        <span className="flex flex-wrap items-center gap-3">
+          <span className="font-mono">{job.job_number}</span>
+          <Badge
+            className={
+              isSent
+                ? "bg-green-500 text-white"
+                : job.delivery_status === "ready"
+                  ? "bg-blue-500 text-white"
+                  : "bg-slate-500 text-white"
+            }
+          >
+            {isSent
+              ? "Sent"
+              : job.delivery_status === "ready"
+                ? "Ready to Send"
+                : "Not Ready"}
+          </Badge>
+        </span>
+      }
+      description="Delivery review"
+      breadcrumbs={[
+        { label: "Missions", href: "/admin/missions" },
+        { label: job.job_number, href: `/admin/missions/${job.id}` },
+        { label: "Delivery" },
+      ]}
+      width="wide"
+      actions={
+        <Button onClick={fetchData} variant="outline" size="sm">
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Refresh
+        </Button>
+      }
+    >
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Left column — mission summary + deliverables */}
           <div className="space-y-6 lg:col-span-2">
@@ -428,7 +436,7 @@ export default function DeliveryReview() {
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            {getDeliverableIcon(d.file_type)}
+                            {getDeliverableIcon(d.name)}
                             <Label
                               htmlFor={d.id}
                               className="font-medium cursor-pointer truncate"
@@ -561,7 +569,6 @@ export default function DeliveryReview() {
             </div>
           </div>
         </div>
-      </main>
 
       {/* Send Confirmation Dialog */}
       <Dialog open={sendDialogOpen} onOpenChange={setSendDialogOpen}>
@@ -625,6 +632,6 @@ export default function DeliveryReview() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageShell>
   );
 }

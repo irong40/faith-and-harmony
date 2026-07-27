@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import PageShell from '@/components/admin/PageShell';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  ArrowLeft, Camera, Building2, Plus, Clock,
+  Camera, Building2, Plus, Clock,
   DollarSign, Package, Zap, CalendarDays, Users, History,
 } from 'lucide-react';
 import {
@@ -307,22 +307,16 @@ export default function SentinelPricing() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
-        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
-          <Link to="/admin/dashboard">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div className="flex-1">
-            <h1 className="font-semibold text-foreground">Sentinel Pricing & Billing</h1>
-            <p className="text-xs text-muted-foreground">Service packages, retainers, and quote builder</p>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-6 max-w-5xl">
+    /* This page used to render its own sticky <header> with a back button — it
+       was the one admin page without AdminNav. Nav comes from AdminLayout and
+       the frame from PageShell, so only the content remains. */
+    <PageShell
+      title="Pricing &amp; Billing"
+      description="Service packages, retainers, and the quote calculator"
+      icon={DollarSign}
+      breadcrumbs={[{ label: "Settings", href: "/admin/settings" }, { label: "Pricing" }]}
+      width="default"
+    >
         <Tabs defaultValue="packages">
           <TabsList className="mb-6">
             <TabsTrigger value="packages" className="gap-1">
@@ -502,7 +496,6 @@ export default function SentinelPricing() {
             <SavedCostings />
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
+    </PageShell>
   );
 }

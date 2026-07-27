@@ -160,7 +160,7 @@ export async function pullMissions(pilotId: string): Promise<void> {
 
   const { data, error } = await supabase
     .from('drone_jobs')
-    .select('*, customers(name), drone_packages(id, name, code)')
+    .select('*, clients(name), drone_packages(id, name, code)')
     .eq('pilot_id', pilotId)
     .neq('status', 'canceled')
     .order('scheduled_date', { ascending: true });

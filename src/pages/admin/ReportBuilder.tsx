@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import AdminNav from "./components/AdminNav";
 import { ReportSectionNav } from "./components/ReportSectionNav";
 import { ReportJobSelector, type DroneJobOption } from "./components/ReportJobSelector";
 import { ReportSection } from "@/components/reports/ReportSection";
@@ -285,7 +284,6 @@ export default function ReportBuilder() {
   if (!isEditMode && step < 3) {
     return (
       <div className="min-h-screen bg-background">
-        <AdminNav />
         <main className="container mx-auto px-4 py-8 max-w-2xl">
           <Button variant="ghost" onClick={() => navigate("/admin/reports")} className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to Reports
@@ -329,7 +327,6 @@ export default function ReportBuilder() {
   if (isEditMode && reportLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <AdminNav />
         <div className="flex items-center justify-center py-24">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -343,7 +340,6 @@ export default function ReportBuilder() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <AdminNav />
       {/* Top bar */}
       <div className="border-b bg-card px-4 py-2 flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/admin/reports")}>

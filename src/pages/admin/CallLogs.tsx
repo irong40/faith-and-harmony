@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import AdminNav from "./components/AdminNav";
 import CallTranscriptDialog from "@/components/admin/CallTranscriptDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,8 +12,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { LoadingState, EmptyState } from "@/components/admin/PageState";
 import { format } from "date-fns";
-import { Phone, RefreshCw, FileText } from "lucide-react";
+import { Phone, FileText } from "lucide-react";
+
+// ---------------------------------------------------------------------------
+// Call logs — absorbed into Leads as its third tab rather than deleted.
+//
+// LeadDetailDrawer already reads vapi_call_logs for a lead that exists, but a
+// large share of calls never become a lead at all (voicemail, abandoned,
+// declined). Dropping this view would make those calls invisible, so the table
+// survives as a panel and only its page chrome went away.
+// ---------------------------------------------------------------------------
 
 type CallLogRow = {
   id: string;
@@ -54,17 +63,17 @@ const OUTCOME_FILTERS = [
   "abandoned",
 ];
 
-function formatDuration(seconds: number): string {
+export function formatDuration(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}m ${s}s`;
 }
 
-export default function CallLogs() {
+/** The call log table on its own — page frame supplied by whoever mounts it. */
+export function CallLogsPanel() {
   const [outcomeFilter, setOutcomeFilter] = useState("All");
   const [selectedLog, setSelectedLog] = useState<CallLogRow | null>(null);
-  const queryClient = useQueryClient();
 
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["call-logs", outcomeFilter],
@@ -88,138 +97,112 @@ export default function CallLogs() {
     staleTime: 2 * 60 * 1000,
   });
 
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["call-logs"] });
-  };
-
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-      <div className="container mx-auto px-4 py-8">
-        {/* Page header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Phone className="h-6 w-6 text-primary" />
-            <div>
-              <h1 className="text-2xl font-bold">Call Logs</h1>
-              <p className="text-sm text-muted-foreground">
-                Voice bot calls from the 757 line
-              </p>
-            </div>
-          </div>
+    <div className="space-y-4">
+      {/* Outcome filter bar */}
+      <div
+        className="flex flex-wrap gap-2"
+        role="group"
+        aria-label="Filter calls by outcome"
+      >
+        {OUTCOME_FILTERS.map((filter) => (
           <Button
-            variant="outline"
+            key={filter}
+            variant={outcomeFilter === filter ? "default" : "outline"}
             size="sm"
-            onClick={handleRefresh}
-            className="gap-2"
+            onClick={() => setOutcomeFilter(filter)}
+            aria-pressed={outcomeFilter === filter}
+            className="capitalize"
           >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
+            {filter}
           </Button>
-        </div>
-
-        {/* Outcome filter bar */}
-        <div className="flex gap-2 mb-6 flex-wrap">
-          {OUTCOME_FILTERS.map((filter) => (
-            <Button
-              key={filter}
-              variant={outcomeFilter === filter ? "default" : "outline"}
-              size="sm"
-              onClick={() => setOutcomeFilter(filter)}
-            >
-              {filter === "All" ? "All" : filter}
-            </Button>
-          ))}
-        </div>
-
-        {/* Table */}
-        {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">
-            Loading call logs...
-          </div>
-        ) : logs.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            No calls found.
-          </div>
-        ) : (
-          <div className="border rounded-md overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Time</TableHead>
-                  <TableHead>Caller</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Outcome</TableHead>
-                  <TableHead>Request</TableHead>
-                  <TableHead>Transcript</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {logs.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                      {format(
-                        new Date(log.started_at ?? log.created_at),
-                        "MMM d, h:mm a"
-                      )}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {log.leads?.caller_name ??
-                        log.caller_number ??
-                        "Unknown"}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {log.leads?.caller_phone ?? log.caller_number ?? "N/A"}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {formatDuration(log.duration_seconds)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={
-                          OUTCOME_COLORS[log.outcome ?? ""] ??
-                          "bg-gray-400 text-white"
-                        }
-                      >
-                        {log.outcome ?? "Unknown"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {log.leads?.quote_request_id ? (
-                        <Badge className="bg-green-500 text-white">
-                          Linked
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          None
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {log.transcript ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1.5"
-                          onClick={() => setSelectedLog(log)}
-                        >
-                          <FileText className="h-3.5 w-3.5" />
-                          View
-                        </Button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          No transcript
-                        </span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+        ))}
       </div>
+
+      {isLoading ? (
+        <LoadingState variant="table" rows={6} label="Loading call logs" />
+      ) : logs.length === 0 ? (
+        <EmptyState
+          icon={Phone}
+          title="No calls found"
+          description={
+            outcomeFilter === "All"
+              ? "Calls to the 757 line will appear here once the voice bot logs them."
+              : `No calls with the "${outcomeFilter}" outcome.`
+          }
+        />
+      ) : (
+        <div className="overflow-hidden rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Time</TableHead>
+                <TableHead>Caller</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>Duration</TableHead>
+                <TableHead>Outcome</TableHead>
+                <TableHead>Request</TableHead>
+                <TableHead>Transcript</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {logs.map((log) => (
+                <TableRow key={log.id}>
+                  <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                    {format(
+                      new Date(log.started_at ?? log.created_at),
+                      "MMM d, h:mm a"
+                    )}
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    {log.leads?.caller_name ?? log.caller_number ?? "Unknown"}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {log.leads?.caller_phone ?? log.caller_number ?? "N/A"}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {formatDuration(log.duration_seconds)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      className={
+                        OUTCOME_COLORS[log.outcome ?? ""] ??
+                        "bg-gray-400 text-white"
+                      }
+                    >
+                      {log.outcome ?? "Unknown"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {log.leads?.quote_request_id ? (
+                      <Badge className="bg-green-500 text-white">Linked</Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">None</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {log.transcript ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1.5"
+                        onClick={() => setSelectedLog(log)}
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        View
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        No transcript
+                      </span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <CallTranscriptDialog
         callLog={selectedLog}
@@ -228,3 +211,5 @@ export default function CallLogs() {
     </div>
   );
 }
+
+export default CallLogsPanel;

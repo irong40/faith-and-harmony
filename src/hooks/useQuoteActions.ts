@@ -6,15 +6,17 @@ interface QuoteRequest {
   id: string;
   name: string;
   email: string;
-  job_type: string | null;
-  description: string;
+  job_type?: string | null;
+  // Not read by this hook; optional so callers that only carry the identity
+  // fields (QuoteBuilder) can use it without inventing a description.
+  description?: string;
 }
 
 interface Quote {
   id: string;
   status: string;
-  sent_at: string | null;
-  request_id: string;
+  sent_at?: string | null;
+  request_id?: string;
 }
 
 interface UseQuoteActionsOptions {
@@ -104,10 +106,59 @@ export function useQuoteActions({ request, quote, onSuccess }: UseQuoteActionsOp
     },
   });
 
+  // Accept (draft | sent | revised -> accepted)
+  //
+  // This is the missing link in the revenue chain. Until now the ONLY way a
+  // quote could reach 'accepted' was the customer clicking the token link that
+  // respond-to-quote/index.ts handles. An admin who closed the deal on the
+  // phone had no way to record it, which is why 0 of 21 drone_jobs carry a
+  // quote_id — not broken code, a missing button.
+  //
+  // Setting status='accepted' fires trg_quote_accepted -> on_quote_accepted ->
+  // create_drone_job_from_quote(), which now writes client_id, site_address,
+  // property_type, processing_template_id and job_price in DOLLARS.
+  const acceptQuoteMutation = useMutation({
+    mutationFn: async () => {
+      const acceptable = ["draft", "sent", "revised"];
+      if (!acceptable.includes(quote.status)) {
+        throw new Error(`Cannot accept a quote with status '${quote.status}'.`);
+      }
+
+      const { error } = await supabase
+        .from("quotes")
+        .update({ status: "accepted", accepted_at: new Date().toISOString() })
+        .eq("id", quote.id);
+
+      if (error) throw new Error(`Failed to accept quote: ${error.message}`);
+
+      // Mirror the request into a closed state so it leaves the open pipeline
+      if (request.id) {
+        await supabase
+          .from("quote_requests")
+          .update({ status: "closed" })
+          .eq("id", request.id);
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Quote accepted",
+        description: "Mission created from the accepted quote.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["drone-jobs"] });
+      invalidate();
+      onSuccess?.();
+    },
+    onError: (err: Error) => {
+      toast({ title: "Accept failed", description: err.message, variant: "destructive" });
+    },
+  });
+
   return {
     sendQuote: sendQuoteMutation.mutate,
     isSending: sendQuoteMutation.isPending,
     reviseQuote: reviseQuoteMutation.mutate,
     isRevising: reviseQuoteMutation.isPending,
+    acceptQuote: acceptQuoteMutation.mutate,
+    isAccepting: acceptQuoteMutation.isPending,
   };
 }
