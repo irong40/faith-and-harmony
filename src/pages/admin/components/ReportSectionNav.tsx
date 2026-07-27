@@ -21,7 +21,11 @@ export function ReportSectionNav({
   onSelect,
 }: SectionNavProps) {
   return (
-    <ScrollArea className="h-[calc(100vh-12rem)]">
+    // `flex-1 min-h-0`, not a hardcoded `calc(100vh - 12rem)`. The magic
+    // number was wrong the moment the admin nav grew a second row, and it
+    // measured the VIEWPORT rather than the pane this nav actually lives in.
+    // The pane now has a real height, so ask it for the leftover instead.
+    <ScrollArea className="min-h-0 flex-1">
       <div className="space-y-1 pr-2">
         {manifest.map((entry) => {
           const active = activeSections.includes(entry.key);

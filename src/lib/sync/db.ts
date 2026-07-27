@@ -1,3 +1,5 @@
+import type { Database } from '@/integrations/supabase/types';
+
 const DB_NAME = 'trestle_offline';
 const DB_VERSION = 2;
 
@@ -18,10 +20,39 @@ export type SyncAction =
   | 'update_record'
   | 'delete_record';
 
+/**
+ * The tables an offline mutation may replay against.
+ *
+ * This was `string`, which is what made `supabase.from(table)` in the sync
+ * engine match neither PostgREST overload (TS2769 x9) and exhaust the type
+ * instantiation budget on the way there (TS2589 x3). A closed union both fixes
+ * that and catches a typo'd table name at the enqueue site, instead of letting
+ * the item fail five times and land in the dead-letter store.
+ *
+ * `_SchemaGuard` below fails the build if one of these names stops existing in
+ * the generated schema. Runtime shape is unchanged — still a plain string in
+ * IndexedDB.
+ */
+export type SyncTable =
+  | 'accessories'
+  | 'aircraft'
+  | 'batteries'
+  | 'controllers'
+  | 'drone_jobs'
+  | 'flight_logs'
+  | 'maintenance_log'
+  | 'mission_authorizations'
+  | 'mission_equipment'
+  | 'mission_weather_logs';
+
+type _SchemaGuard = SyncTable extends keyof Database['public']['Tables'] ? true : never;
+const _syncTablesExistInSchema: _SchemaGuard = true;
+void _syncTablesExistInSchema;
+
 export interface SyncQueueItem {
   id?: number;
   action: SyncAction;
-  table: string;
+  table: SyncTable;
   payload: Record<string, unknown>;
   created_at: string;
   retries: number;
@@ -31,7 +62,7 @@ export interface SyncQueueItem {
 export interface DeadLetterItem {
   id?: number;
   action: SyncAction;
-  table: string;
+  table: SyncTable;
   payload: Record<string, unknown>;
   original_created_at: string;
   moved_at: string;

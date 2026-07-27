@@ -1117,7 +1117,11 @@ export default function DroneJobDetail() {
                       <p className="text-sm">Use the upload panel to add files</p>
                     </div>
                   ) : (
-                    <QAAssetGrid assets={assets} onRefresh={fetchJob} />
+                    <QAAssetGrid
+                      assets={assets}
+                      onRefresh={fetchJob}
+                      qaThreshold={job.processing_templates?.qa_threshold}
+                    />
                   )}
                 </CardContent>
               </Card>
@@ -1168,7 +1172,12 @@ export default function DroneJobDetail() {
                     <CardTitle>Asset Quality Overview</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <QAAssetGrid assets={assets} onRefresh={fetchJob} showQADetails />
+                    <QAAssetGrid
+                      assets={assets}
+                      onRefresh={fetchJob}
+                      showQADetails
+                      qaThreshold={job.processing_templates?.qa_threshold}
+                    />
                   </CardContent>
                 </Card>
               )}

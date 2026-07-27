@@ -30,7 +30,10 @@ export function ReportPreview({
     .map((entry) => entry.key);
 
   return (
-    <ScrollArea className="h-[calc(100vh-8rem)]">
+    // Fills its pane rather than guessing at the viewport — see the same note
+    // on ReportSectionNav. `calc(100vh - 8rem)` was taller than the pane it
+    // sits in, which put a second scrollbar inside the preview column.
+    <ScrollArea className="min-h-0 flex-1">
       <div className="bg-white text-gray-900 shadow-lg rounded-sm mx-auto max-w-[640px] p-8 my-4 text-sm leading-relaxed">
         {/* SAI Letterhead Header */}
         <div className="text-center mb-6">

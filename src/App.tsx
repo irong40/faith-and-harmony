@@ -181,7 +181,12 @@ const App = () => (
                   <Route path="templates" element={<ProcessingTemplates />} />
                   <Route path="pricing" element={<SentinelPricing />} />
                   <Route path="accessories" element={<Accessories />} />
+                  {/* Fleet + its maintenance log both live inside the admin
+                      shell. Before this, Fleet's History button jumped to
+                      /pilot/fleet/maintenance, whose only Back link goes to
+                      /pilot/fleet — a one-way exit out of the admin portal. */}
                   <Route path="fleet" element={<FleetOverview />} />
+                  <Route path="fleet/maintenance" element={<MaintenanceHistory />} />
                 </Route>
               </Route>
 

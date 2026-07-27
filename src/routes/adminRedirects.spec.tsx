@@ -1,12 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
-import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom";
+import { render, within } from "@testing-library/react";
+import { MemoryRouter, Routes, Route, matchRoutes, useLocation } from "react-router-dom";
 import {
   ADMIN_REDIRECTS,
   adminRedirectRoutes,
   mergeSearch,
   splitTarget,
 } from "./adminRedirects";
+import { assertExtractorSane, mountedRoutePatterns } from "./appRoutes.testkit";
 
 // ---------------------------------------------------------------------------
 // These redirects are load-bearing for `notifications.link`: five edge
@@ -15,7 +16,21 @@ import {
 // row from months ago must still land somewhere useful, WITH its query string
 // intact — dropping `?conversation=<uuid>` silently strands the user on a list
 // view with no error to explain it.
+//
+// The landing spot is asserted against the routes App.tsx really mounts, not
+// against a `*` catch-all. A catch-all swallows the failure mode that matters:
+// a redirect whose TARGET does not exist still "redirects", it just redirects
+// to NotFound. See appRoutes.testkit.ts.
 // ---------------------------------------------------------------------------
+
+/** Full route patterns App.tsx mounts, catch-all excluded. */
+const MOUNTED = mountedRoutePatterns();
+const MOUNTED_ROUTES = MOUNTED.map((path) => ({ path }));
+
+/** True when `pathname` resolves to a real route (not the catch-all). */
+function isMounted(pathname: string): boolean {
+  return (matchRoutes(MOUNTED_ROUTES, pathname) ?? []).length > 0;
+}
 
 /** Renders the resolved location so assertions can read pathname/search/hash. */
 function LocationProbe() {
@@ -29,8 +44,10 @@ function LocationProbe() {
   );
 }
 
+// Scoped to its own container rather than `screen`, so a test may render more
+// than one redirect without tripping over "found multiple elements".
 function renderAt(initialEntry: string) {
-  render(
+  const { container } = render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
         {adminRedirectRoutes()}
@@ -38,10 +55,11 @@ function renderAt(initialEntry: string) {
       </Routes>
     </MemoryRouter>
   );
+  const q = within(container);
   return {
-    pathname: () => screen.getByTestId("pathname").textContent,
-    search: () => screen.getByTestId("search").textContent,
-    hash: () => screen.getByTestId("hash").textContent,
+    pathname: () => q.getByTestId("pathname").textContent ?? "",
+    search: () => q.getByTestId("search").textContent ?? "",
+    hash: () => q.getByTestId("hash").textContent ?? "",
   };
 }
 
@@ -96,6 +114,60 @@ describe("adminRedirectRoutes", () => {
       const at = renderAt(from);
       expect(at.pathname()).toBe(pathname);
       expect(at.search()).toBe(search);
+    }
+  );
+
+  // --- the target has to exist ---------------------------------------------
+
+  it("extracts App.tsx's mounted routes (guards the guard)", () => {
+    expect(() => assertExtractorSane(MOUNTED)).not.toThrow();
+    // Sanity in the other direction: a plausible-looking typo must NOT match.
+    expect(isMounted("/admin/klients")).toBe(false);
+    expect(isMounted("/admin/messages")).toBe(false);
+  });
+
+  it.each(CASES.map((c) => [c.from, c.pathname]))(
+    "%s lands on %s, which App.tsx actually mounts",
+    (from, pathname) => {
+      expect(isMounted(pathname), `${from} -> ${pathname} is not a mounted route`).toBe(true);
+    }
+  );
+
+  it("every rendered redirect lands somewhere App.tsx mounts", () => {
+    // Renders each redirect for real, then checks the resolved pathname —
+    // so a target that only exists in the CASES table cannot pass.
+    for (const { from } of CASES) {
+      const at = renderAt(from);
+      const landed = at.pathname();
+      expect(isMounted(landed), `${from} redirected to unmounted ${landed}`).toBe(true);
+    }
+  });
+
+  it("carries ids to a mounted route, not just a plausible string", () => {
+    const at = renderAt("/admin/drone-jobs/abc-123/delivery");
+    expect(at.pathname()).toBe("/admin/missions/abc-123/delivery");
+    expect(isMounted(at.pathname())).toBe(true);
+  });
+
+  // --- search AND hash survive, for every redirect --------------------------
+
+  it.each(CASES.map((c) => [c.from, c.pathname, c.search ?? ""]))(
+    "%s preserves search and hash on the way to %s%s",
+    (from, pathname, targetSearch) => {
+      // `#anchor` and the two params stand in for a stored notification link.
+      const at = renderAt(`${from}?conversation=abc-123&keep=two%20words#row-9`);
+
+      expect(at.pathname()).toBe(pathname);
+      expect(at.hash()).toBe("#row-9");
+
+      const landed = new URLSearchParams(at.search());
+      expect(landed.get("conversation")).toBe("abc-123");
+      expect(landed.get("keep")).toBe("two words");
+
+      // The target's own params still win where it declares any.
+      for (const [key, value] of new URLSearchParams(targetSearch)) {
+        expect(landed.get(key)).toBe(value);
+      }
     }
   );
 
@@ -159,6 +231,17 @@ describe("adminRedirectRoutes", () => {
       expect(retired.has(pathname), `${from} -> ${pathname} chains into another redirect`).toBe(
         false
       );
+    }
+  });
+
+  it("does not retire a path App.tsx still mounts", () => {
+    // A redirect that shadows a live route would make that route unreachable.
+    for (const { from } of ADMIN_REDIRECTS) {
+      const literal = from.replace(/\/\*$/, "");
+      expect(
+        MOUNTED.includes(literal),
+        `${from} is retired but App.tsx still mounts ${literal}`
+      ).toBe(false);
     }
   });
 });

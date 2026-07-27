@@ -23,6 +23,7 @@ import { Search, RefreshCw, Plus, Eye, Camera, Calendar, CheckCircle, AlertTrian
 import { format } from "date-fns";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import PageShell from "@/components/admin/PageShell";
+import { qaVerdict } from "@/lib/qa-threshold";
 import type { Database } from "@/integrations/supabase/types";
 
 type DroneJobStatus = Database["public"]["Enums"]["drone_job_status"];
@@ -61,7 +62,7 @@ interface DroneJob {
   drone_packages?: { name: string; code: string; price: number } | null;
   drone_assets?: { id: string }[];
   clients?: { name: string; company: string | null } | null;
-  processing_templates?: { path_code: string | null; display_name: string | null; preset_name: string } | null;
+  processing_templates?: { path_code: string | null; display_name: string | null; preset_name: string; qa_threshold: number | null } | null;
   profiles?: { full_name: string | null } | null;
 }
 
@@ -114,7 +115,9 @@ export default function DroneJobs() {
     const [jobsRes, templatesRes, pilotsRes] = await Promise.all([
       supabase
         .from("drone_jobs")
-        .select("*, drone_packages(name, code, price), drone_assets(id), clients(name, company), processing_templates(path_code, display_name, preset_name), delivery_status, delivery_sent_at, pilot_id, profiles(full_name)")
+        // `qa_threshold` is not decoration: the QA column colours each row
+        // against its own template's pass mark, not a hardcoded 75.
+        .select("*, drone_packages(name, code, price), drone_assets(id), clients(name, company), processing_templates(path_code, display_name, preset_name, qa_threshold), delivery_status, delivery_sent_at, pilot_id, profiles(full_name)")
         .order("created_at", { ascending: false }),
       supabase
         .from("processing_templates")
@@ -184,11 +187,19 @@ export default function DroneJobs() {
     );
   };
 
-  const getQAIndicator = (score: number | null) => {
-    if (score === null) return null;
-    if (score >= 75) return <CheckCircle className="h-4 w-4 text-green-500" />;
-    if (score >= 50) return <AlertTriangle className="h-4 w-4 text-amber-500" />;
-    return <XCircle className="h-4 w-4 text-red-500" />;
+  // Scored against the mission's own template threshold rather than a
+  // hardcoded 75/50 — see src/lib/qa-threshold.ts.
+  const getQAIndicator = (score: number | null, threshold?: number | null) => {
+    switch (qaVerdict(score, threshold)) {
+      case "pass":
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case "warn":
+        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      case "fail":
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return null;
+    }
   };
 
   // Summary counts
@@ -467,7 +478,7 @@ export default function DroneJobs() {
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <div className="flex items-center gap-2">
-                        {getQAIndicator(job.qa_score)}
+                        {getQAIndicator(job.qa_score, job.processing_templates?.qa_threshold)}
                         {job.qa_score !== null && (
                           <span className="text-sm font-medium">{job.qa_score}</span>
                         )}

@@ -85,7 +85,10 @@ describe('Dead letter store', () => {
   describe('getDeadLetterItems', () => {
     it('returns all dead letter items', async () => {
       const item1: SyncQueueItem = { id: 1, ...makeSyncItem({ table: 'flight_logs' }) };
-      const item2: SyncQueueItem = { id: 2, ...makeSyncItem({ table: 'equipment', action: 'upsert_equipment' }) };
+      // 'mission_equipment' — the table `upsert_equipment` actually writes to
+      // (see useMissionEquipment). The old fixture said 'equipment', which is
+      // not a table in this schema at all.
+      const item2: SyncQueueItem = { id: 2, ...makeSyncItem({ table: 'mission_equipment', action: 'upsert_equipment' }) };
 
       await moveToDeadLetter(item1, 'Error A');
       await moveToDeadLetter(item2, 'Error B');
@@ -93,7 +96,7 @@ describe('Dead letter store', () => {
       const items = await getDeadLetterItems();
       expect(items).toHaveLength(2);
       expect(items.map((i) => i.table)).toContain('flight_logs');
-      expect(items.map((i) => i.table)).toContain('equipment');
+      expect(items.map((i) => i.table)).toContain('mission_equipment');
     });
   });
 

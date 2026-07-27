@@ -212,7 +212,7 @@ export default function AdminNav() {
     );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75">
+    <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 print:hidden">
       <div className="container mx-auto px-4">
         {/* ---------------------------------------------------------------- */}
         {/* Row 1 — brand, areas, settings launcher, notifications           */}

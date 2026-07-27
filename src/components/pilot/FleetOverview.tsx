@@ -356,7 +356,11 @@ export default function FleetOverview() {
         breadcrumbs={[{ label: "Settings", href: "/admin/settings" }, { label: "Fleet" }]}
         width="wide"
         actions={
-          <Link to="/pilot/fleet/maintenance">
+          // Stays inside the admin shell. This used to point at
+          // /pilot/fleet/maintenance, which dropped the admin out of their own
+          // portal with no route back — the pilot page's only Back link goes to
+          // /pilot/fleet.
+          <Link to="/admin/settings/fleet/maintenance">
             <Button variant="outline" size="sm">
               <Wrench className="h-4 w-4 mr-1" /> History
             </Button>
