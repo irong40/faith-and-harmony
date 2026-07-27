@@ -19,7 +19,17 @@ interface Props {
  * inventory (observation_log) with severity and quantity is deliverable
  * without a license, but the free public-domain PAVER manuals contain zero
  * deduct value curves, so the 0-100 PCI score is only defensible once
- * ASTM D6433 is licensed. The caveat below is fixed and always renders.
+ * ASTM D6433 is licensed.
+ *
+ * Honest-boundary gating on d6433_licensed:
+ * - Unlicensed (false/absent): the caveat renders in edit AND print, and
+ *   every PCI number (overall score, band, per-unit PCI/band) is withheld
+ *   from print. Entered values are kept in the data, just not printed.
+ * - Licensed (true): scores and bands print normally and the caveat is
+ *   omitted from print (a small edit-mode reminder remains). Printing the
+ *   "until licensed" caveat alongside a licensed score would contradict
+ *   itself; printing a score while unlicensed violates the spec's
+ *   honest-boundary rule.
  */
 
 const PCI_CAVEAT =
@@ -42,6 +52,7 @@ const emptyUnit = (): PciSampleUnitEntry => ({ unit_id: '' });
 
 export function PciRating({ data, onChange, mode }: Props) {
   const units = data.sample_units ?? [];
+  const licensed = data.d6433_licensed === true;
 
   const updateUnit = (i: number, patch: Partial<PciSampleUnitEntry>) => {
     const n = [...units];
@@ -58,7 +69,14 @@ export function PciRating({ data, onChange, mode }: Props) {
   if (mode === 'edit') {
     return (
       <div className="space-y-3">
-        {caveat}
+        {licensed ? (
+          <p className="text-xs text-muted-foreground">ASTM D6433 license on file: the PCI score and rating band will appear in the printed report.</p>
+        ) : (
+          <>
+            {caveat}
+            <p className="text-xs text-muted-foreground">Score and band entries below are kept, but withheld from the printed report until the license is on file.</p>
+          </>
+        )}
         <div className="flex items-center gap-2">
           <input
             id="d6433-licensed"
@@ -102,10 +120,13 @@ export function PciRating({ data, onChange, mode }: Props) {
     );
   }
 
+  // Print/preview: PCI numbers only render once the license is on file.
+  const unitHeaders = licensed ? ['Sample Unit', 'PCI', 'Band', 'Notes'] : ['Sample Unit', 'Notes'];
+
   return (
     <div className="space-y-3">
       <h2 className="text-xl font-bold" style={{ fontFamily: 'Georgia, serif', color: REPORT_COLORS.primary }}>PCI Score & Rating Band (ASTM D6433)</h2>
-      {(data.overall_pci || data.rating_band) && (
+      {licensed && (data.overall_pci || data.rating_band) && (
         <div className="flex gap-3">
           {data.overall_pci && (
             <div className="rounded p-3 text-center" style={{ background: REPORT_COLORS.bgCard, border: `1px solid ${REPORT_COLORS.border}` }}>
@@ -125,7 +146,7 @@ export function PciRating({ data, onChange, mode }: Props) {
         <Table>
           <TableHeader>
             <TableRow style={{ background: REPORT_COLORS.tableHeader }}>
-              {['Sample Unit', 'PCI', 'Band', 'Notes'].map((h) => (
+              {unitHeaders.map((h) => (
                 <TableHead key={h} style={{ color: REPORT_COLORS.tableHeaderText }}>{h}</TableHead>
               ))}
             </TableRow>
@@ -134,15 +155,15 @@ export function PciRating({ data, onChange, mode }: Props) {
             {units.map((u, i) => (
               <TableRow key={i} style={{ background: i % 2 === 0 ? REPORT_COLORS.bgTable : REPORT_COLORS.bg }}>
                 <TableCell className="font-medium">{u.unit_id}</TableCell>
-                <TableCell>{u.pci ?? ''}</TableCell>
-                <TableCell>{u.band ?? ''}</TableCell>
+                {licensed && <TableCell>{u.pci ?? ''}</TableCell>}
+                {licensed && <TableCell>{u.band ?? ''}</TableCell>}
                 <TableCell>{u.notes ?? ''}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       )}
-      {caveat}
+      {!licensed && caveat}
       {data.notes && <p className="text-xs italic" style={{ color: REPORT_COLORS.textMuted }}>{data.notes}</p>}
     </div>
   );

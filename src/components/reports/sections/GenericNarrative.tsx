@@ -27,7 +27,11 @@ export interface NarrativeSectionConfig {
   fields?: SectionFieldDef[];
   /** Fixed caveat/disclosure rendered verbatim in BOTH modes. */
   callout?: string;
-  /** Dashed placeholder text when no images are attached (omit to render nothing). */
+  /**
+   * Dashed placeholder text when no images are attached. EDIT-MODE HINT
+   * ONLY: never rendered in preview/print, so a client PDF can never
+   * contain a placeholder box (QA gate on template reactivation).
+   */
   emptyImageLabel?: string;
   /** Set false for text-only sections (limitations, disclosures). */
   showImages?: boolean;
@@ -68,7 +72,14 @@ export function GenericNarrative({ data, onChange, mode, images, config }: Props
           </div>
         )}
         <div><Label>Notes</Label><Textarea rows={2} value={data.notes ?? ''} onChange={(e) => onChange({ ...data, notes: e.target.value })} /></div>
-        {config.showImages !== false && <p className="text-xs text-muted-foreground">Upload images in the Report Builder (Phase 3).</p>}
+        {config.showImages !== false && (
+          <>
+            {config.emptyImageLabel && (images ?? []).length === 0 && (
+              <div className="rounded border border-dashed p-4 text-center text-xs text-muted-foreground">{config.emptyImageLabel}</div>
+            )}
+            <p className="text-xs text-muted-foreground">Upload images in the Report Builder (Phase 3).</p>
+          </>
+        )}
       </div>
     );
   }
@@ -90,7 +101,9 @@ export function GenericNarrative({ data, onChange, mode, images, config }: Props
           ))}
         </div>
       )}
-      {config.showImages !== false && (imgs.length > 0 ? (
+      {/* No empty-state placeholder here: preview/print renders nothing when
+          no images are attached, so a client PDF never carries a dashed box. */}
+      {config.showImages !== false && imgs.length > 0 && (
         <div className="grid grid-cols-2 gap-3">
           {imgs.map((img) => (
             <div key={img.id} className="rounded overflow-hidden" style={{ border: `1px solid ${REPORT_COLORS.border}` }}>
@@ -99,9 +112,7 @@ export function GenericNarrative({ data, onChange, mode, images, config }: Props
             </div>
           ))}
         </div>
-      ) : config.emptyImageLabel ? (
-        <div className="rounded border border-dashed p-8 text-center text-sm" style={{ borderColor: REPORT_COLORS.border, color: REPORT_COLORS.textMuted }}>{config.emptyImageLabel}</div>
-      ) : null)}
+      )}
       {config.callout && (
         <p className="rounded border-l-4 p-3 text-xs" style={{ borderColor: REPORT_COLORS.primary, background: REPORT_COLORS.bgCard, color: REPORT_COLORS.textSecondary }}>{config.callout}</p>
       )}

@@ -33,6 +33,11 @@ export interface TableSectionConfig {
   fields?: SectionFieldDef[];
   /** Fixed caveat/disclosure rendered verbatim in BOTH modes. */
   callout?: string;
+  /**
+   * Dashed placeholder text when no images are attached. EDIT-MODE HINT
+   * ONLY: never rendered in preview/print, so a client PDF can never
+   * contain a placeholder box (QA gate on template reactivation).
+   */
   emptyImageLabel?: string;
   showImages?: boolean;
 }
@@ -101,9 +106,19 @@ export function GenericTable({ data, onChange, mode, images, config }: Props) {
             <Button variant="destructive" size="sm" onClick={() => onChange({ ...data, rows: rows.filter((_, j) => j !== i) })}>Remove</Button>
           </div>
         ))}
+        {rows.length === 0 && (
+          <div className="rounded border border-dashed p-4 text-center text-xs text-muted-foreground">No {config.rowNoun} recorded yet</div>
+        )}
         <Button variant="outline" size="sm" onClick={() => onChange({ ...data, rows: [...rows, emptyRow(config.columns)] })}>{config.addLabel}</Button>
         <div><Label>Notes</Label><Textarea rows={2} value={data.notes ?? ''} onChange={(e) => onChange({ ...data, notes: e.target.value })} /></div>
-        {config.showImages === true && <p className="text-xs text-muted-foreground">Upload images in the Report Builder (Phase 3).</p>}
+        {config.showImages === true && (
+          <>
+            {config.emptyImageLabel && (images ?? []).length === 0 && (
+              <div className="rounded border border-dashed p-4 text-center text-xs text-muted-foreground">{config.emptyImageLabel}</div>
+            )}
+            <p className="text-xs text-muted-foreground">Upload images in the Report Builder (Phase 3).</p>
+          </>
+        )}
       </div>
     );
   }
@@ -115,7 +130,9 @@ export function GenericTable({ data, onChange, mode, images, config }: Props) {
     <div className="space-y-3">
       <h2 className="text-xl font-bold" style={{ fontFamily: 'Georgia, serif', color: REPORT_COLORS.primary }}>{config.title}</h2>
       {data.description && <p className="whitespace-pre-wrap text-sm leading-relaxed" style={{ color: REPORT_COLORS.text }}>{data.description}</p>}
-      {rows.length > 0 ? (
+      {/* No empty-state placeholder here: preview/print renders nothing when
+          no rows exist, so a client PDF never carries a dashed box. */}
+      {rows.length > 0 && (
         <Table>
           <TableHeader>
             <TableRow style={{ background: REPORT_COLORS.tableHeader }}>
@@ -140,8 +157,6 @@ export function GenericTable({ data, onChange, mode, images, config }: Props) {
             ))}
           </TableBody>
         </Table>
-      ) : (
-        <div className="rounded border border-dashed p-8 text-center text-sm" style={{ borderColor: REPORT_COLORS.border, color: REPORT_COLORS.textMuted }}>No {config.rowNoun} recorded</div>
       )}
       {filled.length > 0 && (
         <p className="text-xs" style={{ color: REPORT_COLORS.textMuted }}>

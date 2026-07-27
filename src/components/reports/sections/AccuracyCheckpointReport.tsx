@@ -302,13 +302,9 @@ export function AccuracyCheckpointReport({ data, onChange, mode }: Props) {
           ? 'No independent checkpoints were used; accuracy is stated as produced to meet.'
           : `Independent checkpoints used: ${v(data.checkpoint_count)}`}
       </p>
-      {statements.length > 0 ? (
-        <div className="space-y-2">{statements}</div>
-      ) : (
-        <div className="rounded border border-dashed p-8 text-center text-sm" style={{ borderColor: REPORT_COLORS.border, color: REPORT_COLORS.textMuted }}>
-          No accuracy statements included
-        </div>
-      )}
+      {/* No empty-state placeholder in preview/print: a client PDF never
+          carries a dashed box (fully empty sections are omitted upstream). */}
+      {statements.length > 0 && <div className="space-y-2">{statements}</div>}
       {(data.gsd || data.datum_note) && (
         <p className="text-xs" style={{ color: REPORT_COLORS.textMuted }}>
           {[data.gsd ? `GSD: ${data.gsd}` : null, data.datum_note ? `Datum/Epoch: ${data.datum_note}` : null]

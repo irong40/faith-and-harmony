@@ -51,7 +51,9 @@ export function DatumMetadata({ data, onChange, mode }: Props) {
   return (
     <div className="space-y-3">
       <h2 className="text-xl font-bold" style={{ fontFamily: 'Georgia, serif', color: REPORT_COLORS.primary }}>Datum, Geoid & Epoch</h2>
-      {filled.length > 0 ? (
+      {/* No empty-state placeholder in preview/print: a client PDF never
+          carries a dashed box (fully empty sections are omitted upstream). */}
+      {filled.length > 0 && (
         <div className="rounded overflow-hidden" style={{ border: `1px solid ${REPORT_COLORS.border}` }}>
           {filled.map((f, i) => (
             <div key={f.id} className="flex text-sm" style={{ background: i % 2 === 0 ? REPORT_COLORS.bgTable : REPORT_COLORS.bg }}>
@@ -60,8 +62,6 @@ export function DatumMetadata({ data, onChange, mode }: Props) {
             </div>
           ))}
         </div>
-      ) : (
-        <div className="rounded border border-dashed p-8 text-center text-sm" style={{ borderColor: REPORT_COLORS.border, color: REPORT_COLORS.textMuted }}>No datum metadata recorded</div>
       )}
       {data.notes && <p className="text-xs italic" style={{ color: REPORT_COLORS.textMuted }}>{data.notes}</p>}
     </div>
