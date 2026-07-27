@@ -5,6 +5,13 @@ import {
   ConfidenceInterval, DetectionHeatmap, TransectMap, AnnotatedImagery,
   ChangeDetection, AnomalyLog, Volumetrics, DeliverablesManifest,
   AppendixFlightLogs, AppendixRawData,
+  // Deliverables render layer (2026-07-27)
+  AccuracyCheckpointReport, AppendixFieldForms, CadHandoff, CanopyHeightModel,
+  ContoursTopo, CoverageQa, CrossSections, CutFill, DatumMetadata,
+  HydrologyDrainage, MeasurementsAppendix, Model3dLink, ObservationLog,
+  PciRating, PlanimetricLinework, PointCloudClassification, PropertyOverview,
+  RoofPlanAnnotated, ScopeLimitations, SensorLimitations, StockpileInventory,
+  StormHistory, ViewshedLos,
 } from './sections';
 
 interface Props<K extends ReportSectionKey> {
@@ -36,6 +43,30 @@ const sectionMap: Record<ReportSectionKey, React.ComponentType<any>> = {
   deliverables_manifest: DeliverablesManifest,
   appendix_flight_logs: AppendixFlightLogs,
   appendix_raw_data: AppendixRawData,
+  // Deliverables render layer (2026-07-27)
+  accuracy_checkpoint_report: AccuracyCheckpointReport,
+  appendix_field_forms: AppendixFieldForms,
+  cad_handoff: CadHandoff,
+  canopy_height_model: CanopyHeightModel,
+  contours_topo: ContoursTopo,
+  coverage_qa: CoverageQa,
+  cross_sections: CrossSections,
+  cut_fill: CutFill,
+  datum_metadata: DatumMetadata,
+  hydrology_drainage: HydrologyDrainage,
+  measurements_appendix: MeasurementsAppendix,
+  model_3d_link: Model3dLink,
+  observation_log: ObservationLog,
+  pci_rating: PciRating,
+  planimetric_linework: PlanimetricLinework,
+  point_cloud_classification: PointCloudClassification,
+  property_overview: PropertyOverview,
+  roof_plan_annotated: RoofPlanAnnotated,
+  scope_limitations: ScopeLimitations,
+  sensor_limitations: SensorLimitations,
+  stockpile_inventory: StockpileInventory,
+  storm_history: StormHistory,
+  viewshed_los: ViewshedLos,
 };
 
 export function ReportSection<K extends ReportSectionKey>({
