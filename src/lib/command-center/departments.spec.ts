@@ -16,6 +16,7 @@ function update(overrides: Partial<DepartmentUpdate>): DepartmentUpdate {
     blockers: [],
     report_path: null,
     source_system: "agent",
+    source_ref: "department/executive/2026-07-27",
     reported_at: "2026-07-27T12:00:00.000Z",
     created_by: null,
     created_at: "2026-07-27T12:00:00.000Z",

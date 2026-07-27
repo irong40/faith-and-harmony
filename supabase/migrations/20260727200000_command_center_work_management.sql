@@ -30,8 +30,7 @@ CREATE TABLE public.work_items (
 );
 
 CREATE UNIQUE INDEX work_items_source_ref_unique
-  ON public.work_items (source_system, source_ref)
-  WHERE source_ref IS NOT NULL;
+  ON public.work_items (source_system, source_ref);
 CREATE INDEX work_items_status_idx ON public.work_items (status, priority, due_at);
 CREATE INDEX work_items_department_idx ON public.work_items (department, status);
 CREATE INDEX work_items_owner_idx ON public.work_items (owner_id, status);
@@ -85,6 +84,7 @@ CREATE TABLE public.department_updates (
   report_path text,
   source_system text NOT NULL DEFAULT 'manual'
     CHECK (source_system IN ('crm', 'obsidian', 'agent', 'manual')),
+  source_ref text,
   reported_at timestamptz NOT NULL DEFAULT now(),
   created_by uuid REFERENCES auth.users(id) ON DELETE SET NULL DEFAULT auth.uid(),
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -93,6 +93,8 @@ CREATE TABLE public.department_updates (
 
 CREATE INDEX department_updates_latest_idx
   ON public.department_updates (department, reported_at DESC);
+CREATE UNIQUE INDEX department_updates_source_ref_unique
+  ON public.department_updates (source_system, source_ref);
 
 CREATE TABLE public.sync_runs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

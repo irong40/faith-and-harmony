@@ -13,6 +13,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "crm:snapshot": "node scripts/crm-state-snapshot.mjs",
+    "command-center:sync": "node scripts/command-center-sync.mjs",
+    "test:command-center-sync": "node --test scripts/command-center-sync.test.mjs",
     "enrich-listings": "npx tsx scripts/enrich-land-listings.ts",
     "enrich-listings:dry": "npx tsx scripts/enrich-land-listings.ts --dry-run",
     "enrich-listings:test": "npx tsx scripts/enrich-land-listings.ts --dry-run --limit 5"

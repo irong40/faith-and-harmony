@@ -108,6 +108,7 @@ export interface DepartmentUpdate {
   blockers: string[];
   report_path: string | null;
   source_system: SourceSystem;
+  source_ref: string | null;
   reported_at: string;
   created_by: string | null;
   created_at: string;

@@ -102,3 +102,8 @@ verify_jwt = false
 
 [functions.weather-forecast-fetch]
 verify_jwt = false
+
+# Server-to-server vault bridge. Supabase JWT validation is defense in depth.
+# The function also requires a fresh HMAC signature over the exact request body.
+[functions.command-center-sync]
+verify_jwt = true
