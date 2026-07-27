@@ -6,5 +6,6 @@ Disallow: /proposal/
 Disallow: /invoice/
 Disallow: /drone-upload/
 Disallow: /my-jobs/
+Disallow: /quote/
 
-Sitemap: https://faithandharmonyllc.com/sitemap.xml
+Sitemap: https://www.faithandharmonyllc.com/sitemap.xml
