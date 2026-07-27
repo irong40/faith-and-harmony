@@ -128,10 +128,10 @@ export interface SyncRun {
 }
 
 export interface WorkItemFilters {
-  departments?: Department[];
-  types?: WorkItemType[];
-  statuses?: WorkItemStatus[];
-  priorities?: WorkItemPriority[];
+  departments?: readonly Department[];
+  types?: readonly WorkItemType[];
+  statuses?: readonly WorkItemStatus[];
+  priorities?: readonly WorkItemPriority[];
   ownerId?: string | null;
   sourceSystem?: SourceSystem;
   dueBefore?: string;
