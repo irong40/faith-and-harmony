@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Clock3 } from "lucide-react";
 import ActionQueue from "@/components/admin/command-center/ActionQueue";
+import DepartmentHealth from "@/components/admin/command-center/DepartmentHealth";
 import WorkItemDrawer from "@/components/admin/command-center/WorkItemDrawer";
+import { useDepartmentUpdates } from "@/hooks/useDepartmentUpdates";
 import { useWorkItems } from "@/hooks/useWorkItems";
 import type { WorkItem } from "@/types/command-center";
 
@@ -16,6 +18,7 @@ const ACTIVE_WORK_STATUSES = [
 
 export default function CommandCenter() {
   const workItems = useWorkItems({ statuses: ACTIVE_WORK_STATUSES });
+  const departmentUpdates = useDepartmentUpdates();
   const [selectedItem, setSelectedItem] = useState<WorkItem | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -66,6 +69,15 @@ export default function CommandCenter() {
             The decision queue filters this operating backlog to the exceptions that need you now.
           </p>
         </section>
+      </div>
+
+      <div className="mt-6">
+        <DepartmentHealth
+          updates={departmentUpdates.data ?? []}
+          isLoading={departmentUpdates.isLoading}
+          error={departmentUpdates.error instanceof Error ? departmentUpdates.error : null}
+          onRetry={() => departmentUpdates.refetch()}
+        />
       </div>
 
       <WorkItemDrawer
