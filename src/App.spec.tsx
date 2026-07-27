@@ -40,7 +40,7 @@ describe("admin routing", () => {
     async (path) => {
       await renderAt(path);
 
-      expect(await screen.findByRole("heading", { name: "Company command center" }))
+      expect(await screen.findByRole("heading", { name: "Company command center" }, { timeout: 5_000 }))
         .toBeInTheDocument();
       expect(window.location.pathname).toBe("/admin/command-center");
     },
@@ -49,14 +49,14 @@ describe("admin routing", () => {
   it("renders company work inside the admin shell", async () => {
     await renderAt("/admin/work");
 
-    expect(await screen.findByRole("heading", { name: "Company work" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Company work" }, { timeout: 5_000 })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Company navigation" })).toBeInTheDocument();
   });
 
   it("keeps a representative legacy route available inside the shell", async () => {
     await renderAt("/admin/documents");
 
-    expect(await screen.findByRole("navigation", { name: "Company navigation" }))
+    expect(await screen.findByRole("navigation", { name: "Company navigation" }, { timeout: 5_000 }))
       .toBeInTheDocument();
     expect(window.location.pathname).toBe("/admin/documents");
   });

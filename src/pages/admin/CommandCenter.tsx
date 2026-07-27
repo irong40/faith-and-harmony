@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { Clock3 } from "lucide-react";
 import ActionQueue from "@/components/admin/command-center/ActionQueue";
+import BusinessPulse from "@/components/admin/command-center/BusinessPulse";
 import DepartmentHealth from "@/components/admin/command-center/DepartmentHealth";
+import RecentActivity from "@/components/admin/command-center/RecentActivity";
 import WorkItemDrawer from "@/components/admin/command-center/WorkItemDrawer";
+import { useBusinessPulse } from "@/hooks/useBusinessPulse";
 import { useDepartmentUpdates } from "@/hooks/useDepartmentUpdates";
+import { useRecentActivity } from "@/hooks/useRecentActivity";
 import { useWorkItems } from "@/hooks/useWorkItems";
 import type { WorkItem } from "@/types/command-center";
 
@@ -19,6 +23,8 @@ const ACTIVE_WORK_STATUSES = [
 export default function CommandCenter() {
   const workItems = useWorkItems({ statuses: ACTIVE_WORK_STATUSES });
   const departmentUpdates = useDepartmentUpdates();
+  const businessPulse = useBusinessPulse();
+  const recentActivity = useRecentActivity();
   const [selectedItem, setSelectedItem] = useState<WorkItem | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -77,6 +83,19 @@ export default function CommandCenter() {
           isLoading={departmentUpdates.isLoading}
           error={departmentUpdates.error instanceof Error ? departmentUpdates.error : null}
           onRetry={() => departmentUpdates.refetch()}
+        />
+      </div>
+
+      <div className="mt-6 grid gap-6 2xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,0.75fr)]">
+        <BusinessPulse
+          snapshot={businessPulse.data}
+          isLoading={businessPulse.isLoading}
+          error={businessPulse.error instanceof Error ? businessPulse.error : null}
+        />
+        <RecentActivity
+          snapshot={recentActivity.data}
+          isLoading={recentActivity.isLoading}
+          error={recentActivity.error instanceof Error ? recentActivity.error : null}
         />
       </div>
 
