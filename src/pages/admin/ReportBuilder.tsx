@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import AdminNav from "./components/AdminNav";
 import { ReportSectionNav } from "./components/ReportSectionNav";
 import { ReportJobSelector, type DroneJobOption } from "./components/ReportJobSelector";
-import { ReportSection } from "@/components/reports/ReportSection";
+import { ReportSection, isSectionDataEmpty } from "@/components/reports/ReportSection";
 import { ReportPreview } from "@/components/reports/ReportPreview";
 import ReportPrintView from "@/components/reports/ReportPrintView";
 import { Button } from "@/components/ui/button";
@@ -129,15 +129,13 @@ export default function ReportBuilder() {
   );
 
   // Active sections with no content silently vanish from the printed PDF
-  // (ReportPrintView returns null for them) — surface that before it ships
-  const emptyActiveSections = useMemo(() => {
-    const isEmpty = (d: unknown) =>
-      !d ||
-      Object.values(d as Record<string, unknown>).every(
-        (v) => v == null || v === "" || (Array.isArray(v) && v.length === 0)
-      );
-    return activeSections.filter((key) => isEmpty(sectionData[key]));
-  }, [activeSections, sectionData]);
+  // (ReportPrintView returns null for them) — surface that before it ships.
+  // Shares isSectionDataEmpty with ReportPrintView so the warning and the
+  // print output can never disagree about what "empty" means.
+  const emptyActiveSections = useMemo(
+    () => activeSections.filter((key) => isSectionDataEmpty(sectionData[key])),
+    [activeSections, sectionData]
+  );
 
   const emptySectionWarning = useCallback(() => {
     if (emptyActiveSections.length === 0) return true;
