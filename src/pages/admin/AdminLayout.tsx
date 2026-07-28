@@ -70,15 +70,37 @@ export default function AdminLayout() {
   const { pathname, search } = useLocation();
 
   return (
-    // Flex column, not plain block: the shell owns the viewport height so a
-    // full-height page (ReportBuilder's 3-pane editor) can claim exactly the
-    // space left under the nav with `flex-1`. Pages that just flow keep their
-    // intrinsic height — flex items do not grow unless they ask to.
-    <div className="flex min-h-screen flex-col bg-background">
+    // `h-screen`, NOT `min-h-screen`. This is the whole trick and it is easy to
+    // undo by accident.
+    //
+    // `min-h-screen` sets a FLOOR, not a bound: children are free to grow past
+    // the viewport, so a `flex-1` child resolves against an unbounded parent,
+    // grows to fit its content, and any `overflow-y-auto` inside it never
+    // engages — the pane gets taller instead of scrolling. That is what shipped:
+    // ReportBuilder's 3-pane chain was correct all the way down
+    // (min-h-0 / flex-1 / overflow-y-auto) and still produced a 6567px document
+    // in a 911px viewport, with zero internally-scrolling panes and the Save
+    // button 2888px above the fold. Verified in a browser 2026-07-28; jsdom
+    // cannot catch this, because jsdom performs no layout and every class in
+    // the chain was already right.
+    //
+    // With `h-screen overflow-hidden` the shell is bounded, so the scroll
+    // container below is bounded too, and `flex-1` finally means "exactly the
+    // space under the nav".
+    <div className="flex h-screen flex-col overflow-hidden bg-background">
       <AdminNav />
       <ErrorBoundary key={boundaryKey(pathname, search)}>
         <Suspense fallback={<RouteFallback />}>
-          <Outlet />
+          {/* The app's scroll container. The BODY no longer scrolls — verified
+              safe: nothing in src/ calls window.scrollTo or reads
+              document.body.scrollTop, and the only in-page `sticky` is a
+              horizontal table column (Pipeline's Actions), which is unaffected.
+              Ordinary flowing pages scroll in here exactly as before. A page
+              that wants the full height asks with `flex-1` and gets a real
+              bound — ReportBuilder is currently the only one. */}
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            <Outlet />
+          </div>
         </Suspense>
       </ErrorBoundary>
     </div>

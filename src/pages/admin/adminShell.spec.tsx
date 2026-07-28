@@ -225,25 +225,56 @@ function renderShell() {
 }
 
 describe("admin shell", () => {
-  it("renders a min-h-screen flex column, not a plain block", () => {
+  it("renders an h-screen flex column that BOUNDS its children, not min-h-screen", () => {
     const { container } = renderShell();
 
     const root = container.firstElementChild as HTMLElement;
     expect(root).toBeTruthy();
-    for (const cls of ["flex", "flex-col", "min-h-screen"]) {
-      expect(root.className.split(/\s+/), `shell root is missing ${cls}`).toContain(cls);
+    const classes = root.className.split(/\s+/);
+
+    for (const cls of ["flex", "flex-col", "h-screen", "overflow-hidden"]) {
+      expect(classes, `shell root is missing ${cls}`).toContain(cls);
     }
+
+    // The regression this guard exists for, verified in a browser 2026-07-28.
+    // `min-h-screen` is a FLOOR, not a bound: children may grow past the
+    // viewport, so a `flex-1` child resolves against an unbounded parent and any
+    // `overflow-y-auto` beneath it never engages. With min-h-screen the report
+    // editor produced a 6567px document in a 911px viewport, zero
+    // internally-scrolling panes, and the Save button 2888px above the fold —
+    // while every class in its own chain was already correct.
+    expect(
+      classes,
+      "shell root must NOT use min-h-screen: it bounds nothing, so flex-1 children " +
+        "grow instead of scrolling and every inner overflow-y-auto dies",
+    ).not.toContain("min-h-screen");
   });
 
-  it("puts the nav and the routed page in the same flex column", () => {
+  it("puts the nav and the scroll container in the same flex column, and the page inside the scroller", () => {
     const { container } = renderShell();
 
     const root = container.firstElementChild as HTMLElement;
     const children = Array.from(root.children);
-    // ErrorBoundary and Suspense render no DOM, so the page element must be a
-    // direct child of the column — that is what lets it use `flex-1`.
+
+    // ErrorBoundary and Suspense render no DOM, so the shell's own children are
+    // the nav and the scroll container.
     expect(children[0].tagName).toBe("HEADER");
-    expect(children.some((c) => c.getAttribute("data-testid") === "page")).toBe(true);
+
+    // The app's scroll container. The body no longer scrolls, so this element
+    // must exist, must be able to shrink (min-h-0), must claim the space under
+    // the nav (flex-1), and must be the thing that scrolls (overflow-y-auto).
+    const scroller = children.find((c) => c.className.includes("overflow-y-auto")) as HTMLElement;
+    expect(scroller, "shell has no scroll container under the nav").toBeTruthy();
+    for (const cls of ["flex", "min-h-0", "flex-1", "overflow-y-auto"]) {
+      expect(scroller.className.split(/\s+/), `scroll container is missing ${cls}`).toContain(cls);
+    }
+
+    // The routed page is a direct child of the scroller — that adjacency is what
+    // lets a full-height page (ReportBuilder) use flex-1 against a real bound.
+    const pages = Array.from(scroller.children).filter(
+      (c) => c.getAttribute("data-testid") === "page",
+    );
+    expect(pages.length, "routed page is not a direct child of the scroll container").toBe(1);
   });
 
   it("the scan actually reaches nested dirs and shell-mounted components", () => {

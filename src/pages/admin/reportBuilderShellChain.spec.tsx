@@ -164,17 +164,31 @@ function scrollPaneOf(container: HTMLElement): HTMLElement {
 }
 
 describe("ReportBuilder inside AdminLayout — STRUCTURE of the scroll chain (jsdom does no layout, so no pixel is asserted here)", () => {
-  it("STRUCTURE: exactly one min-h-screen exists in the whole rendered shell+editor tree", () => {
+  it("STRUCTURE: no min-h-screen anywhere — the shell bounds with h-screen instead", () => {
     const { container } = renderEditorInShell();
 
+    // Two separate defects, one assertion each.
+    //
+    // (1) A min-h-screen NESTED inside the shell was the original double-viewport
+    //     defect: the document became taller than the window by the height of
+    //     the nav.
+    // (2) min-h-screen on the SHELL ROOT was the second, subtler one, and it is
+    //     the reason (1) alone did not fix the symptom. A floor bounds nothing,
+    //     so flex-1 children grow to fit their content and every
+    //     overflow-y-auto beneath them stays dormant. Browser-verified
+    //     2026-07-28: 6567px document in a 911px viewport, zero
+    //     internally-scrolling panes, Save button 2888px above the fold.
     const viewports = Array.from(container.querySelectorAll('[class~="min-h-screen"]'));
     expect(
       viewports.map(describeEl),
-      "a second min-h-screen nested inside the shell is the original dead-scroll defect"
-    ).toHaveLength(1);
+      "min-h-screen must not appear in the admin shell or the editor: it sets a floor, " +
+        "not a bound, and dead scroll comes straight back"
+    ).toHaveLength(0);
 
-    // ...and it is the shell root, not something deeper.
-    expect(viewports[0]).toBe(container.firstElementChild);
+    const root = container.firstElementChild as HTMLElement;
+    expect(classesOf(root), `shell root ${describeEl(root)} must bound with h-screen`).toContain(
+      "h-screen"
+    );
   });
 
   it("STRUCTURE: the shell root is the flex column that owns the viewport", () => {
@@ -182,7 +196,10 @@ describe("ReportBuilder inside AdminLayout — STRUCTURE of the scroll chain (js
 
     const root = container.firstElementChild as HTMLElement;
     const cls = classesOf(root);
-    for (const required of ["flex", "flex-col", "min-h-screen"]) {
+    // overflow-hidden is load-bearing, not cosmetic: without it the bounded
+    // shell still lets an oversized child paint a page-level scrollbar, which
+    // reproduces the symptom even though the height is correct.
+    for (const required of ["flex", "flex-col", "h-screen", "overflow-hidden"]) {
       expect(cls, `shell root ${describeEl(root)} is missing ${required}`).toContain(required);
     }
   });
@@ -219,10 +236,24 @@ describe("ReportBuilder inside AdminLayout — STRUCTURE of the scroll chain (js
     // overflow-y-auto never engages — the content pushes the page taller
     // instead. Any link that is not itself `flex` breaks its child's flex-1.
     const intermediates = chain.slice(1, -1);
+
+    // Deliberately a FLOOR, not an exact count. Pinning the exact number made
+    // this guard fail on a correct fix (inserting the shell's scroll container
+    // added a legitimate third link), which is a brittle test, not a strict one.
+    // The per-link check below is the real invariant and is strictly stronger:
+    // any wrapper inserted WITHOUT flex/flex-1/min-h-0 fails it, and a wrapper
+    // inserted WITH them is genuinely harmless.
     expect(
       intermediates.length,
-      `expected the shell -> editor-root -> pane-row -> pane chain, got: ${chain.map(describeEl).join(" > ")}`
-    ).toBe(2);
+      `expected shell -> scroller -> editor-root -> pane-row -> pane, got: ${chain.map(describeEl).join(" > ")}`
+    ).toBeGreaterThanOrEqual(2);
+
+    // The first link under the shell must be the app's scroll container: the
+    // body no longer scrolls, so if this is missing nothing scrolls at all.
+    expect(
+      classesOf(intermediates[0]),
+      `${describeEl(intermediates[0])} should be the shell scroll container (overflow-y-auto)`
+    ).toContain("overflow-y-auto");
 
     for (const el of intermediates) {
       const cls = classesOf(el);
