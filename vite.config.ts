@@ -131,5 +131,11 @@ export default defineConfig(({ mode }) => ({
     globals: true,
     environment: "jsdom",
     include: ["src/**/*.spec.{ts,tsx}"],
+    // Several specs lazily `await import()` a component inside the test body, so
+    // the first one to run pays the cold transform cost for that whole module
+    // graph. On a loaded machine that alone can exceed the 5s default and fail a
+    // test whose assertions are fine (ConvertLeadDialog.spec.tsx is the usual
+    // casualty). This raises the ceiling only — no assertion behaviour changes.
+    testTimeout: 20_000,
   },
 }));

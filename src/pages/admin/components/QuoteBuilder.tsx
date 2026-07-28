@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQuoteActions } from "@/hooks/useQuoteActions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Check } from "lucide-react";
 
 interface LineItem {
   description: string;
@@ -58,6 +59,21 @@ export default function QuoteBuilder({ request, existingQuote, onClose, onCreate
   );
   const [depositAmount, setDepositAmount] = useState<number>(Number(editable?.deposit_amount ?? 0));
   const [notes, setNotes] = useState<string>(editable?.notes ?? "");
+
+  // Manual acceptance: closing a deal by phone has to be recordable somewhere,
+  // otherwise the only route to status='accepted' is the customer's token link
+  // and create_drone_job_from_quote never runs. Hooks must be unconditional, so
+  // this is always constructed and only rendered when a quote actually exists.
+  const acceptableStatuses = ["draft", "sent", "revised"];
+  const canAccept = !!existingQuote && acceptableStatuses.includes(existingQuote.status);
+  const { acceptQuote, isAccepting } = useQuoteActions({
+    request: request ?? { id: "", name: "", email: "" },
+    quote: existingQuote ?? { id: "", status: "" },
+    onSuccess: () => {
+      onCreated();
+      onClose();
+    },
+  });
 
   // Pre-populate from Mission Costing calculator if available (new quotes only —
   // never clobber an existing draft being edited)
@@ -306,7 +322,19 @@ export default function QuoteBuilder({ request, existingQuote, onClose, onCreate
       </div>
 
       {/* Footer actions */}
-      <div className="flex justify-end gap-3 border-t pt-4">
+      <div className="flex flex-wrap justify-end gap-3 border-t pt-4">
+        {canAccept && (
+          <Button
+            variant="secondary"
+            className="mr-auto gap-1.5"
+            onClick={() => acceptQuote()}
+            disabled={isAccepting || createQuoteMutation.isPending}
+            title="Record that the client accepted this quote (creates the mission)"
+          >
+            <Check className="h-4 w-4" />
+            {isAccepting ? "Accepting..." : "Mark Accepted"}
+          </Button>
+        )}
         <Button variant="outline" onClick={onClose} disabled={createQuoteMutation.isPending}>
           Cancel
         </Button>

@@ -9,7 +9,7 @@ import {
 } from '@/lib/sync/sync-engine';
 import { addToSyncQueue, getSyncQueue } from '@/lib/sync/db';
 import { isNetworkAvailable } from '@/lib/sync/network-probe';
-import type { SyncAction, SyncQueueItem } from '@/lib/sync/db';
+import type { SyncAction, SyncQueueItem, SyncTable } from '@/lib/sync/db';
 import type { SyncStatus } from '@/lib/sync/sync-engine';
 
 export function useOfflineSync(pilotId?: string) {
@@ -58,7 +58,7 @@ export function useOfflineSync(pilotId?: string) {
 
   const enqueue = useCallback(async (
     action: SyncAction,
-    table: string,
+    table: SyncTable,
     payload: Record<string, unknown>,
   ) => {
     const item: Omit<SyncQueueItem, 'id'> = {

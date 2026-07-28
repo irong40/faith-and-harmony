@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import PageShell from "@/components/admin/PageShell";
+import { LoadingState } from "@/components/admin/PageState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,7 +24,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { RefreshCw, Edit, Route } from "lucide-react";
-import AdminNav from "./components/AdminNav";
 
 interface ProcessingTemplate {
   id: string;
@@ -120,31 +121,21 @@ export default function ProcessingTemplates() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-primary/10 p-2">
-              <Route className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Processing Templates</h1>
-              <p className="text-sm text-muted-foreground">
-                Configure pipeline paths for each job type
-              </p>
-            </div>
-          </div>
-          <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-        </div>
-
+    <PageShell
+      title="Processing Templates"
+      description="Pipeline paths for each job type. The `code` values are read by the desktop rig — rename with care."
+      icon={Route}
+      breadcrumbs={[{ label: "Settings", href: "/admin/settings" }, { label: "Processing Templates" }]}
+      width="wide"
+      actions={
+        <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+      }
+    >
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
+          <LoadingState variant="cards" rows={6} label="Loading processing templates" />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {templates.map((template) => (
@@ -214,7 +205,6 @@ export default function ProcessingTemplates() {
             ))}
           </div>
         )}
-      </main>
 
       {/* Edit Dialog */}
       <Dialog open={!!editingTemplate} onOpenChange={(open) => !open && setEditingTemplate(null)}>
@@ -287,6 +277,6 @@ export default function ProcessingTemplates() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageShell>
   );
 }

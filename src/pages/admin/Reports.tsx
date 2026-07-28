@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import AdminNav from "./components/AdminNav";
+import PageShell from "@/components/admin/PageShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -70,24 +70,18 @@ export default function Reports() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-      <main className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <FileText className="h-8 w-8 text-primary" />
-            <div>
-              <h1 className="text-3xl font-bold">Reports</h1>
-              <p className="text-muted-foreground">
-                Drone inspection and census reports
-              </p>
-            </div>
-          </div>
-          <Button onClick={() => navigate("/admin/reports/new")}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Report
-          </Button>
-        </div>
+    <PageShell
+      title="Reports"
+      description="Drone inspection and census reports"
+      icon={FileText}
+      width="wide"
+      actions={
+        <Button onClick={() => navigate("/admin/reports/new")}>
+          <Plus className="h-4 w-4 mr-2" />
+          New Report
+        </Button>
+      }
+    >
 
         <Tabs value={tab} onValueChange={setTab} className="space-y-6">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -219,7 +213,6 @@ export default function Reports() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </main>
-    </div>
+    </PageShell>
   );
 }

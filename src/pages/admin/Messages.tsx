@@ -1,16 +1,26 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import AdminNav from "./components/AdminNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, MessageSquare, Send, X, User, Clock } from "lucide-react";
+import { LoadingState, EmptyState } from "@/components/admin/PageState";
+import { Search, MessageSquare, Send, User, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+
+// ---------------------------------------------------------------------------
+// Messages — absorbed into Clients as its second tab (/admin/clients?tab=messages).
+//
+// The edge functions `message-api` and `send-message-notification` keep writing
+// notifications.link = '/admin/messages?conversation=<uuid>'. That redirect
+// merges into ?tab=messages&conversation=<uuid>, and the ?conversation= handler
+// below is what actually opens the thread the notification was about.
+// ---------------------------------------------------------------------------
 
 interface Message {
   id: string;
@@ -33,11 +43,12 @@ interface Conversation {
   messages: Message[];
 }
 
-export default function Messages() {
+export function MessagesPanel() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [replyContent, setReplyContent] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
   const { data: conversations = [], isLoading } = useQuery({
@@ -157,35 +168,46 @@ export default function Messages() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-      <main className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Messages</h1>
-            <p className="text-muted-foreground">Manage customer conversations</p>
-          </div>
-        </div>
+  // A stored notification link carries ?conversation=<uuid>. Open that thread
+  // as soon as the list lands — otherwise the click drops the user on a generic
+  // list with no indication of which message they were called to.
+  const deepLinkedId = searchParams.get("conversation");
+  const openedDeepLink = useRef<string | null>(null);
 
+  useEffect(() => {
+    if (!deepLinkedId || openedDeepLink.current === deepLinkedId) return;
+    const match = conversations.find((c) => c.id === deepLinkedId);
+    if (!match) return;
+    openedDeepLink.current = deepLinkedId;
+    setSelectedConversation(match);
+    markMessagesAsRead(match.id);
+    // markMessagesAsRead is stable enough for this one-shot open; re-running on
+    // every render would re-open a thread the user just closed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepLinkedId, conversations]);
+
+  return (
+    <div className="space-y-6">
         {/* Filters */}
-        <div className="flex gap-4 mb-6">
-          <div className="relative flex-1 max-w-md">
+        <div className="flex flex-col gap-4 sm:flex-row">
+          <div className="relative w-full max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search conversations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
+              aria-label="Search conversations"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2" role="group" aria-label="Filter by status">
             {["all", "open", "closed"].map((status) => (
               <Button
                 key={status}
                 variant={statusFilter === status ? "default" : "outline"}
                 size="sm"
                 onClick={() => setStatusFilter(status)}
+                aria-pressed={statusFilter === status}
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
               </Button>
@@ -195,17 +217,13 @@ export default function Messages() {
 
         {/* Conversations List */}
         {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">Loading...</div>
+          <LoadingState variant="list" rows={4} label="Loading conversations" />
         ) : filteredConversations.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium mb-2">No conversations yet</h3>
-              <p className="text-muted-foreground">
-                Messages from customers will appear here.
-              </p>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={MessageSquare}
+            title="No conversations yet"
+            description="Messages from customers will appear here."
+          />
         ) : (
           <div className="space-y-3">
             {filteredConversations.map((conv) => {
@@ -345,7 +363,8 @@ export default function Messages() {
             )}
           </DialogContent>
         </Dialog>
-      </main>
     </div>
   );
 }
+
+export default MessagesPanel;

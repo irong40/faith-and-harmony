@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { emitActivityEvent } from "@/components/admin/ActivityFeed";
@@ -11,9 +11,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -37,11 +39,24 @@ import {
   Building2,
   Mail,
   Phone,
+  DollarSign,
+  Navigation,
+  AlertTriangle,
 } from "lucide-react";
-import AdminNav from "./components/AdminNav";
+import PageShell from "@/components/admin/PageShell";
 import ClientAutocomplete from "@/components/admin/ClientAutocomplete";
 import ClientFormDialog from "@/components/admin/ClientFormDialog";
-import { jobIntakeSchema, type JobIntakeFormValues } from "@/lib/schemas";
+import PlacesAutocompleteInput from "@/components/map/PlacesAutocompleteInput";
+import { jobIntakeSchema, parseJobPrice, type JobIntakeFormValues } from "@/lib/schemas";
+import { describePlaceSelection, type PlaceSelection } from "@/lib/places";
+import {
+  DEFAULT_PROPERTY_TYPE,
+  PROPERTY_TYPES,
+  PROPERTY_TYPE_DESCRIPTIONS,
+  PROPERTY_TYPE_LABELS,
+  hasPropertyTypeMapping,
+  propertyTypeForPreset,
+} from "@/lib/property-type";
 
 interface ProcessingTemplate {
   id: string;
@@ -77,6 +92,9 @@ export default function JobIntake() {
   const { toast } = useToast();
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [selectedClientData, setSelectedClientData] = useState<Client | null>(null);
+  // Once an admin picks a property_type by hand we stop re-deriving it from the
+  // job type, otherwise changing the template would silently undo their choice.
+  const propertyTypeOverridden = useRef(false);
 
   const form = useForm<JobIntakeFormValues>({
     resolver: zodResolver(jobIntakeSchema),
@@ -84,6 +102,16 @@ export default function JobIntake() {
       client_id: "",
       processing_template_id: "",
       site_address: "",
+      latitude: null,
+      longitude: null,
+      property_city: null,
+      property_state: null,
+      property_zip: null,
+      property_type: DEFAULT_PROPERTY_TYPE,
+      job_price: "",
+      is_rush: false,
+      video_addon: false,
+      vegetation_analysis: false,
       scheduled_date: "",
       scheduled_time: "",
       pilot_id: "",
@@ -146,8 +174,54 @@ export default function JobIntake() {
 
   const watchedClientId = form.watch("client_id");
   const watchedTemplateId = form.watch("processing_template_id");
+  const watchedLatitude = form.watch("latitude");
+  const watchedLongitude = form.watch("longitude");
+  const watchedCity = form.watch("property_city");
+  const watchedState = form.watch("property_state");
+  const watchedZip = form.watch("property_zip");
 
   const selectedTemplate = templates.find((t) => t.id === watchedTemplateId);
+  const derivedPropertyType = propertyTypeForPreset(selectedTemplate?.preset_name);
+  const presetIsMapped = hasPropertyTypeMapping(selectedTemplate?.preset_name);
+
+  // property_type is NOT NULL DEFAULT 'residential' at the DB level, which is
+  // why every mining/corridor/public-safety job used to land as residential.
+  // Deriving it from the template's preset makes the common case correct
+  // without taking the choice away from the admin.
+  useEffect(() => {
+    if (!selectedTemplate || propertyTypeOverridden.current) return;
+    form.setValue("property_type", propertyTypeForPreset(selectedTemplate.preset_name), {
+      shouldValidate: true,
+    });
+  }, [selectedTemplate, form]);
+
+  const geocoded = watchedLatitude !== null && watchedLongitude !== null;
+  const geocodeSummary = describePlaceSelection({
+    address: "",
+    latitude: watchedLatitude ?? null,
+    longitude: watchedLongitude ?? null,
+    city: watchedCity ?? null,
+    state: watchedState ?? null,
+    zip: watchedZip ?? null,
+  });
+
+  /** A hand-typed address can no longer be trusted to match stored coordinates. */
+  const clearGeocodedFields = () => {
+    form.setValue("latitude", null);
+    form.setValue("longitude", null);
+    form.setValue("property_city", null);
+    form.setValue("property_state", null);
+    form.setValue("property_zip", null);
+  };
+
+  const applyPlaceSelection = (selection: PlaceSelection) => {
+    form.setValue("site_address", selection.address, { shouldValidate: true });
+    form.setValue("latitude", selection.latitude);
+    form.setValue("longitude", selection.longitude);
+    form.setValue("property_city", selection.city);
+    form.setValue("property_state", selection.state);
+    form.setValue("property_zip", selection.zip);
+  };
 
   // Fetch client data when client_id changes
   const fetchClientData = async (clientId: string) => {
@@ -187,6 +261,18 @@ export default function JobIntake() {
       processing_template_id: values.processing_template_id,
       site_address: values.site_address,
       property_address: values.site_address,
+      // Geocoded fields — null unless a Places suggestion was picked.
+      latitude: values.latitude,
+      longitude: values.longitude,
+      property_city: values.property_city,
+      property_state: values.property_state,
+      property_zip: values.property_zip,
+      property_type: values.property_type,
+      // Plain dollars. Null means the M2 billing trigger skips this job.
+      job_price: parseJobPrice(values.job_price),
+      is_rush: values.is_rush,
+      video_addon: values.video_addon,
+      vegetation_analysis: values.vegetation_analysis,
       scheduled_date: values.scheduled_date,
       scheduled_time: values.scheduled_time || null,
       pilot_id: values.pilot_id || null,
@@ -221,20 +307,17 @@ export default function JobIntake() {
     });
 
     toast({ title: "Job created successfully" });
-    navigate(`/admin/drone-jobs/${data.id}`);
+    navigate(`/admin/missions/${data.id}`);
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground">New Job</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Fill in job details to create a new mission record.
-          </p>
-        </div>
-
+    <PageShell
+      title="New Mission"
+      description="Fill in the details to create a mission record."
+      icon={Plane}
+      breadcrumbs={[{ label: "Missions", href: "/admin/missions" }, { label: "New" }]}
+      width="narrow"
+    >
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
@@ -350,11 +433,84 @@ export default function JobIntake() {
                         Site Address *
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="1234 Main St, Norfolk, VA 23510"
-                          {...field}
+                        <PlacesAutocompleteInput
+                          name={field.name}
+                          value={field.value}
+                          placeholder="Start typing an address, then pick a suggestion"
+                          onBlur={field.onBlur}
+                          onChange={(next) => {
+                            field.onChange(next);
+                            // Typed by hand: any coordinates we hold belong to a
+                            // different address, so drop them.
+                            clearGeocodedFields();
+                          }}
+                          onPlaceSelect={applyPlaceSelection}
                         />
                       </FormControl>
+                      <FormDescription className="text-xs">
+                        {geocoded ? (
+                          <span className="flex items-center gap-1 text-foreground">
+                            <Navigation className="h-3 w-3 shrink-0" aria-hidden="true" />
+                            <span>Located: {geocodeSummary}</span>
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
+                            <span>
+                              No coordinates yet. Pick a suggestion to enable weather holds,
+                              the nearest station lookup and airspace checks.
+                            </span>
+                          </span>
+                        )}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="property_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        Property Type *
+                        {!propertyTypeOverridden.current && presetIsMapped && (
+                          <Badge variant="secondary" className="text-[10px] font-normal">
+                            from job type
+                          </Badge>
+                        )}
+                      </FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={(next) => {
+                          propertyTypeOverridden.current = true;
+                          field.onChange(next);
+                        }}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="min-h-[44px]">
+                            <SelectValue placeholder="Select property type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {PROPERTY_TYPES.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              <span className="flex flex-col text-left">
+                                <span>{PROPERTY_TYPE_LABELS[type]}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {PROPERTY_TYPE_DESCRIPTIONS[type]}
+                                </span>
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription className="text-xs">
+                        {selectedTemplate
+                          ? `Suggested for ${selectedTemplate.display_name || selectedTemplate.preset_name}: ${PROPERTY_TYPE_LABELS[derivedPropertyType]}. Change it if the site says otherwise.`
+                          : "Drives the shot list and reporting. Pick a job type to get a suggestion."}
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -420,7 +576,106 @@ export default function JobIntake() {
               </CardContent>
             </Card>
 
-            {/* Section 3: Assignment */}
+            {/* Section 3: Pricing & add-ons */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <DollarSign className="h-4 w-4" />
+                  Pricing &amp; Add-ons
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Price is what billing keys off. Leave it blank only if the job is genuinely
+                  unpriced.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="job_price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Job Price</FormLabel>
+                      {/* FormControl must wrap the input itself, not a layout
+                          div, or the generated id lands on the div and the
+                          label stops pointing at anything. */}
+                      <div className="relative">
+                        <span
+                          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                          aria-hidden="true"
+                        >
+                          $
+                        </span>
+                        <FormControl>
+                          <Input
+                            inputMode="numeric"
+                            autoComplete="off"
+                            placeholder="450"
+                            className="min-h-[44px] pl-7"
+                            {...field}
+                            value={field.value ?? ""}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormDescription className="text-xs">
+                        Whole dollars, no cents. Blank leaves the job unbilled.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <fieldset className="space-y-2">
+                  <legend className="mb-2 text-sm font-medium">Options</legend>
+
+                  {(
+                    [
+                      {
+                        name: "is_rush" as const,
+                        label: "Rush job",
+                        description: "Priority scheduling and turnaround.",
+                      },
+                      {
+                        name: "video_addon" as const,
+                        label: "Video add-on",
+                        description: "Cinematic video deliverable in addition to stills.",
+                      },
+                      {
+                        name: "vegetation_analysis" as const,
+                        label: "Vegetation analysis",
+                        description: "Runs the VARI / vegetation index pass on the ortho.",
+                      },
+                    ]
+                  ).map((option) => (
+                    <FormField
+                      key={option.name}
+                      control={form.control}
+                      name={option.name}
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start gap-3 rounded-md border border-border p-3">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={(checked) => field.onChange(checked === true)}
+                              className="mt-0.5"
+                            />
+                          </FormControl>
+                          <div className="space-y-0.5 leading-tight">
+                            <FormLabel className="cursor-pointer text-sm font-medium">
+                              {option.label}
+                            </FormLabel>
+                            <FormDescription className="text-xs">
+                              {option.description}
+                            </FormDescription>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  ))}
+                </fieldset>
+              </CardContent>
+            </Card>
+
+            {/* Section 4: Assignment */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -491,7 +746,7 @@ export default function JobIntake() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("/admin/drone-jobs")}
+                onClick={() => navigate("/admin/missions")}
                 className="min-h-[44px]"
               >
                 Cancel
@@ -511,7 +766,6 @@ export default function JobIntake() {
             </div>
           </form>
         </Form>
-      </main>
 
       {/* Quick Add Client Dialog */}
       <ClientFormDialog
@@ -521,6 +775,6 @@ export default function JobIntake() {
         onSuccess={handleQuickAddSuccess}
         minimal
       />
-    </div>
+    </PageShell>
   );
 }

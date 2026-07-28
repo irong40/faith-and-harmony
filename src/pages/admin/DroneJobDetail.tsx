@@ -21,10 +21,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle, ScanSearch, Settings2, Image as ImageIcon, AlertTriangle, ExternalLink, Link2, Calendar, DollarSign, FileText, ArrowRight, ListChecks, Trash2, Mail, Phone, MapPin, User } from "lucide-react";
+import { RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle, ScanSearch, Settings2, Image as ImageIcon, AlertTriangle, ExternalLink, Link2, Calendar, DollarSign, FileText, ArrowRight, ListChecks, Trash2, Mail, Phone, MapPin, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
-import AdminNav from "./components/AdminNav";
+import PageShell from "@/components/admin/PageShell";
+import { LoadingState, EmptyState } from "@/components/admin/PageState";
 import PaymentsPanel from "./components/PaymentsPanel";
 import { Input } from "@/components/ui/input";
 import ClientAutocomplete from "@/components/admin/ClientAutocomplete";
@@ -67,7 +68,6 @@ interface DroneJob {
   google_event_id: string | null;
   created_at: string;
   updated_at: string;
-  customers?: { id: string; name: string; email: string; phone: string | null } | null;
   drone_packages?: { id: string; name: string; code: string; price: number; edit_budget_minutes: number; processing_profile: Json | null } | null;
   service_requests?: { id: string; project_title: string | null } | null;
   clients?: { id: string; name: string; company: string | null; email: string | null; phone: string | null } | null;
@@ -371,7 +371,7 @@ export default function DroneJobDetail() {
     const [jobRes, assetsRes] = await Promise.all([
       supabase
         .from("drone_jobs")
-        .select("*, customers(id, name, email, phone), drone_packages(id, name, code, price, edit_budget_minutes, processing_profile), service_requests(id, project_title), clients(id, name, company, email, phone), processing_templates(id, display_name, path_code, description, preset_name, lightroom_preset, output_format, qa_threshold)")
+        .select("*, drone_packages(id, name, code, price, edit_budget_minutes, processing_profile), service_requests(id, project_title), clients(id, name, company, email, phone), processing_templates(id, display_name, path_code, description, preset_name, lightroom_preset, output_format, qa_threshold)")
         .eq("id", id)
         .single(),
       supabase
@@ -531,7 +531,7 @@ export default function DroneJobDetail() {
   };
 
   const sendDelivery = async () => {
-    const recipientEmail = job?.clients?.email || job?.customers?.email;
+    const recipientEmail = job?.clients?.email;
     if (!job || !recipientEmail) return;
     setSending(true);
 
@@ -584,28 +584,31 @@ export default function DroneJobDetail() {
 
     toast({ title: "Job deleted", description: `${job.job_number} and its files were removed.` });
     setDeleteOpen(false);
-    navigate("/admin/drone-jobs");
+    navigate("/admin/missions");
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <AdminNav />
-        <main className="container mx-auto px-4 py-8">
-          <RefreshCw className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
-        </main>
-      </div>
+      <PageShell title="Mission" icon={Camera} width="full">
+        <LoadingState variant="detail" rows={6} label="Loading mission" />
+      </PageShell>
     );
   }
 
   if (!job) {
     return (
-      <div className="min-h-screen bg-background">
-        <AdminNav />
-        <main className="container mx-auto px-4 py-8">
-          <p className="text-center text-muted-foreground">Job not found</p>
-        </main>
-      </div>
+      <PageShell title="Mission" icon={Camera} width="full">
+        <EmptyState
+          icon={Camera}
+          title="Mission not found"
+          description="This mission may have been deleted."
+          action={
+            <Link to="/admin/missions">
+              <Button variant="outline">Back to missions</Button>
+            </Link>
+          }
+        />
+      </PageShell>
     );
   }
 
@@ -615,54 +618,41 @@ export default function DroneJobDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-
-      <main className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/admin/drone-jobs">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div className="flex items-center gap-3">
-              <img
-                src="/assets/drone/drone-logo-original.jpg"
-                alt="Drone Services"
-                className="h-10 w-10 object-contain"
-              />
-              <div>
-                <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-bold text-foreground font-mono">{job.job_number}</h1>
-                  {getStatusBadge(job.status)}
-                </div>
-                <p className="text-sm text-muted-foreground">{job.property_address}</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={fetchJob} variant="outline" size="sm">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-            <Button onClick={() => setIsEditOpen(true)} variant="outline" size="sm">
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
-            </Button>
-            <Button
-              onClick={() => { setDeleteConfirm(""); setDeleteOpen(true); }}
-              variant="outline"
-              size="sm"
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </Button>
-          </div>
-        </div>
-
+    <PageShell
+      title={
+        <span className="flex flex-wrap items-center gap-3">
+          <span className="font-mono">{job.job_number}</span>
+          {getStatusBadge(job.status)}
+        </span>
+      }
+      description={job.property_address}
+      breadcrumbs={[
+        { label: "Missions", href: "/admin/missions" },
+        { label: job.job_number },
+      ]}
+      width="full"
+      actions={
+        <>
+          <Button onClick={fetchJob} variant="outline" size="sm">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+          <Button onClick={() => setIsEditOpen(true)} variant="outline" size="sm">
+            <Edit className="mr-2 h-4 w-4" />
+            Edit
+          </Button>
+          <Button
+            onClick={() => { setDeleteConfirm(""); setDeleteOpen(true); }}
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+          </Button>
+        </>
+      }
+    >
         {/* Status Progress */}
         <Card className="mb-6">
           <CardContent className="py-4">
@@ -931,24 +921,6 @@ export default function DroneJobDetail() {
                         </a>
                       )}
                     </div>
-                  ) : job.customers ? (
-                    <div className="space-y-1">
-                      <p className="font-medium">
-                        {job.customers.name} <span className="text-xs text-muted-foreground">(legacy)</span>
-                      </p>
-                      {job.customers.email && (
-                        <a href={`mailto:${job.customers.email}`} className="flex items-center gap-2 text-muted-foreground hover:text-foreground hover:underline">
-                          <Mail className="h-3.5 w-3.5" />
-                          {job.customers.email}
-                        </a>
-                      )}
-                      {job.customers.phone && (
-                        <a href={`tel:${job.customers.phone}`} className="flex items-center gap-2 text-muted-foreground hover:text-foreground hover:underline">
-                          <Phone className="h-3.5 w-3.5" />
-                          {job.customers.phone}
-                        </a>
-                      )}
-                    </div>
                   ) : (
                     <p className="text-muted-foreground">No client assigned</p>
                   )}
@@ -1145,7 +1117,11 @@ export default function DroneJobDetail() {
                       <p className="text-sm">Use the upload panel to add files</p>
                     </div>
                   ) : (
-                    <QAAssetGrid assets={assets} onRefresh={fetchJob} />
+                    <QAAssetGrid
+                      assets={assets}
+                      onRefresh={fetchJob}
+                      qaThreshold={job.processing_templates?.qa_threshold}
+                    />
                   )}
                 </CardContent>
               </Card>
@@ -1196,7 +1172,12 @@ export default function DroneJobDetail() {
                     <CardTitle>Asset Quality Overview</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <QAAssetGrid assets={assets} onRefresh={fetchJob} showQADetails />
+                    <QAAssetGrid
+                      assets={assets}
+                      onRefresh={fetchJob}
+                      showQADetails
+                      qaThreshold={job.processing_templates?.qa_threshold}
+                    />
                   </CardContent>
                 </Card>
               )}
@@ -1576,7 +1557,7 @@ export default function DroneJobDetail() {
                   Create Report
                 </Button>
               </Link>
-              <Link to={`/admin/drone-jobs/${job.id}/delivery`}>
+              <Link to={`/admin/missions/${job.id}/delivery`}>
                 <Button variant="outline" size="sm">
                   <ExternalLink className="mr-2 h-4 w-4" />
                   Open Delivery Review
@@ -1639,7 +1620,7 @@ export default function DroneJobDetail() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {!(job.clients?.email || job.customers?.email) ? (
+                {!job.clients?.email ? (
                   <p className="text-muted-foreground">No client email on file</p>
                 ) : (
                   <>
@@ -1655,7 +1636,7 @@ export default function DroneJobDetail() {
 
                     <div className="flex items-center justify-between pt-4">
                       <p className="text-sm text-muted-foreground">
-                        Sending to: {job.clients?.email || job.customers?.email}
+                        Sending to: {job.clients?.email}
                       </p>
                       <Button onClick={sendDelivery} disabled={sending || assets.length === 0}>
                         {sending ? (
@@ -1682,7 +1663,6 @@ export default function DroneJobDetail() {
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
@@ -1754,6 +1734,6 @@ export default function DroneJobDetail() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageShell>
   );
 }

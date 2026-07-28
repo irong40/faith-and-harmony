@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import AdminNav from "./components/AdminNav";
 import { ReportSectionNav } from "./components/ReportSectionNav";
 import { ReportJobSelector, type DroneJobOption } from "./components/ReportJobSelector";
 import { ReportSection } from "@/components/reports/ReportSection";
@@ -23,11 +22,14 @@ import {
   ArrowLeft,
   Save,
   CheckCircle,
+  FileText,
   Loader2,
   PanelRightClose,
   PanelRightOpen,
   FileDown,
 } from "lucide-react";
+import PageShell from "@/components/admin/PageShell";
+import { LoadingState } from "@/components/admin/PageState";
 import {
   useReportTemplates,
   useReportTemplate,
@@ -284,56 +286,63 @@ export default function ReportBuilder() {
   // ---- Wizard (new report) ----
   if (!isEditMode && step < 3) {
     return (
-      <div className="min-h-screen bg-background">
-        <AdminNav />
-        <main className="container mx-auto px-4 py-8 max-w-2xl">
-          <Button variant="ghost" onClick={() => navigate("/admin/reports")} className="mb-4">
+      <PageShell
+        title="New Report"
+        description={step === 1 ? "Step 1 of 2 — select a job" : "Step 2 of 2 — select a template"}
+        icon={FileText}
+        breadcrumbs={[{ label: "Reports", href: "/admin/reports" }, { label: "New" }]}
+        width="narrow"
+        actions={
+          <Button variant="ghost" onClick={() => navigate("/admin/reports")}>
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to Reports
           </Button>
-          <Card>
-            <CardHeader>
-              <CardTitle>{step === 1 ? "Step 1: Select Job" : "Step 2: Select Template"}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {step === 1 && <ReportJobSelector onSelect={(job) => { setSelectedJob(job); setStep(2); }} />}
-              {step === 2 && (
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Selected job: <strong>{selectedJob?.job_number}</strong> &mdash; {selectedJob?.property_address}
-                  </p>
-                  <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-                    <SelectTrigger><SelectValue placeholder="Choose a report template..." /></SelectTrigger>
-                    <SelectContent>
-                      {(templates ?? []).map((t) => (
-                        <SelectItem key={t.id} value={t.id}>{t.name} ({t.service_type})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
-                    <Button disabled={!selectedTemplateId || createMutation.isPending} onClick={handleCreate}>
-                      {createMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Create Report
-                    </Button>
-                  </div>
+        }
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>{step === 1 ? "Step 1: Select Job" : "Step 2: Select Template"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {step === 1 && <ReportJobSelector onSelect={(job) => { setSelectedJob(job); setStep(2); }} />}
+            {step === 2 && (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Selected job: <strong>{selectedJob?.job_number}</strong> &mdash; {selectedJob?.property_address}
+                </p>
+                <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                  <SelectTrigger><SelectValue placeholder="Choose a report template..." /></SelectTrigger>
+                  <SelectContent>
+                    {(templates ?? []).map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.name} ({t.service_type})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
+                  <Button disabled={!selectedTemplateId || createMutation.isPending} onClick={handleCreate}>
+                    {createMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Create Report
+                  </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </main>
-      </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </PageShell>
     );
   }
 
   // ---- Loading ----
   if (isEditMode && reportLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <AdminNav />
-        <div className="flex items-center justify-center py-24">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      </div>
+      <PageShell
+        title="Report"
+        icon={FileText}
+        breadcrumbs={[{ label: "Reports", href: "/admin/reports" }, { label: "Editing" }]}
+        width="narrow"
+      >
+        <LoadingState variant="form" label="Loading report" />
+      </PageShell>
     );
   }
 
@@ -342,10 +351,20 @@ export default function ReportBuilder() {
   const currentImages = selectedSection ? images.filter((i) => i.section_key === selectedSection) : [];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <AdminNav />
+    // `flex-1 min-h-0`, NOT `min-h-screen`. AdminLayout is already a
+    // `min-h-screen` flex column with the nav above this, so a second full
+    // viewport here stacked BELOW the nav: the document grew past 100vh by the
+    // nav's height (dead scroll) and the 3-pane row's bottom edge sat under the
+    // fold. Claiming the remaining column space instead makes the editor end
+    // exactly at the viewport bottom, so the only scrolling is inside the panes.
+    // The `print:` overrides matter: a printed page has no viewport to fill and
+    // no scrolling, so the flex/overflow constraints that make the editor work
+    // on screen would squeeze the hidden print view below into the leftover
+    // height. `print:flex-none print:block print:overflow-visible` releases
+    // them and lets the report paginate normally.
+    <div className="flex min-h-0 flex-1 flex-col print:block print:flex-none print:overflow-visible">
       {/* Top bar */}
-      <div className="border-b bg-card px-4 py-2 flex items-center gap-3">
+      <div className="shrink-0 border-b bg-card px-4 py-2 flex items-center gap-3 print:hidden">
         <Button variant="ghost" size="icon" onClick={() => navigate("/admin/reports")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -376,10 +395,11 @@ export default function ReportBuilder() {
         </Button>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* LEFT sidebar */}
-        <aside className="w-64 shrink-0 border-r bg-card p-3 hidden lg:block">
-          <h3 className="font-semibold text-sm mb-3">Sections</h3>
+      <div className="flex min-h-0 flex-1 overflow-hidden print:hidden">
+        {/* LEFT sidebar — flex column so the heading stays put and only the
+            section list scrolls. */}
+        <aside className="hidden w-64 shrink-0 flex-col overflow-hidden border-r bg-card p-3 lg:flex">
+          <h3 className="mb-3 shrink-0 text-sm font-semibold">Sections</h3>
           <ReportSectionNav
             manifest={manifest}
             activeSections={activeSections}
@@ -390,8 +410,9 @@ export default function ReportBuilder() {
           />
         </aside>
 
-        {/* CENTER editor */}
-        <main className="flex-1 overflow-y-auto p-6">
+        {/* CENTER editor — `min-w-0` so a wide field cannot push the sidebars
+            off screen instead of scrolling inside this pane. */}
+        <main className="min-w-0 flex-1 overflow-y-auto p-6">
           <div className="lg:hidden mb-4">
             <Select value={selectedSection ?? ""} onValueChange={(v) => setSelectedSection(v as ReportSectionKey)}>
               <SelectTrigger><SelectValue placeholder="Select a section..." /></SelectTrigger>
@@ -420,8 +441,8 @@ export default function ReportBuilder() {
 
         {/* RIGHT preview */}
         {showPreview && (
-          <aside className="w-96 shrink-0 border-l bg-muted/30 hidden xl:block">
-            <div className="p-3 border-b flex items-center justify-between">
+          <aside className="hidden w-96 shrink-0 flex-col overflow-hidden border-l bg-muted/30 xl:flex">
+            <div className="shrink-0 border-b p-3 flex items-center justify-between">
               <h3 className="font-semibold text-sm">Preview</h3>
               <Button variant="outline" size="sm" disabled={pdfMutation.isPending} onClick={handleDownloadPDF}>
                 {pdfMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileDown className="h-4 w-4 mr-1" />}

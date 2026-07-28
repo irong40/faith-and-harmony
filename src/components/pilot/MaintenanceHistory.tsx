@@ -1,10 +1,12 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, RefreshCw, Wrench, Calendar, DollarSign } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import PageShell from '@/components/admin/PageShell';
+import { LoadingState } from '@/components/admin/PageState';
 import type { MaintenanceLogEntry } from '@/types/fleet';
 
 const TYPE_BADGE: Record<string, string> = {
@@ -17,6 +19,13 @@ const TYPE_BADGE: Record<string, string> = {
 };
 
 export default function MaintenanceHistory() {
+  // Same dual-home pattern as FleetOverview: /pilot/fleet/maintenance keeps the
+  // mobile-first back-arrow header, /admin/settings/fleet/maintenance gets the
+  // shared admin frame. Without the admin branch this page would render its own
+  // `min-h-screen` + sticky header INSIDE AdminLayout's shell — a second
+  // viewport and a second sticky bar stacked under the admin nav.
+  const inAdmin = useLocation().pathname.startsWith('/admin');
+
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ['maintenance-log-all'],
     queryFn: async () => {
@@ -31,28 +40,17 @@ export default function MaintenanceHistory() {
     staleTime: 5 * 60 * 1000,
   });
 
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
-        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
-          <Link to="/pilot/fleet">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div className="flex-1">
-            <h1 className="font-semibold text-foreground">Maintenance Log</h1>
-            <p className="text-xs text-muted-foreground">All fleet maintenance records</p>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-6 max-w-2xl space-y-3">
-        {isLoading ? (
+  const body = (
+    <>
+      {isLoading ? (
+        inAdmin ? (
+          <LoadingState variant="list" rows={5} label="Loading maintenance log" />
+        ) : (
           <div className="flex items-center justify-center py-12">
             <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
-        ) : entries.length === 0 ? (
+        )
+      ) : entries.length === 0 ? (
           <div className="text-center py-12">
             <Wrench className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
             <p className="text-muted-foreground">No maintenance records yet</p>
@@ -105,7 +103,51 @@ export default function MaintenanceHistory() {
             </Card>
           ))
         )}
-      </main>
+    </>
+  );
+
+  if (inAdmin) {
+    return (
+      <PageShell
+        title="Maintenance Log"
+        description="All fleet maintenance records"
+        icon={Wrench}
+        breadcrumbs={[
+          { label: "Settings", href: "/admin/settings" },
+          { label: "Fleet", href: "/admin/settings/fleet" },
+          { label: "Maintenance" },
+        ]}
+        width="default"
+        actions={
+          <Link to="/admin/settings/fleet">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-1" /> Back to Fleet
+            </Button>
+          </Link>
+        }
+      >
+        <div className="space-y-3">{body}</div>
+      </PageShell>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
+        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+          <Link to="/pilot/fleet">
+            <Button variant="ghost" size="icon" aria-label="Back to fleet inventory">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <div className="flex-1">
+            <h1 className="font-semibold text-foreground">Maintenance Log</h1>
+            <p className="text-xs text-muted-foreground">All fleet maintenance records</p>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-6 max-w-2xl space-y-3">{body}</main>
     </div>
   );
 }

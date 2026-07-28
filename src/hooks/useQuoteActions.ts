@@ -6,15 +6,17 @@ interface QuoteRequest {
   id: string;
   name: string;
   email: string;
-  job_type: string | null;
-  description: string;
+  job_type?: string | null;
+  // Not read by this hook; optional so callers that only carry the identity
+  // fields (QuoteBuilder) can use it without inventing a description.
+  description?: string;
 }
 
 interface Quote {
   id: string;
   status: string;
-  sent_at: string | null;
-  request_id: string;
+  sent_at?: string | null;
+  request_id?: string;
 }
 
 interface UseQuoteActionsOptions {
@@ -103,6 +105,23 @@ export function useQuoteActions({ request, quote, onSuccess }: UseQuoteActionsOp
       toast({ title: "Revision failed", description: err.message, variant: "destructive" });
     },
   });
+
+  // NOTE: an admin "accept quote" action deliberately does NOT live here yet.
+  //
+  // It was built and then held back with the rest of the revenue chain (branch
+  // `redesign/revenue-chain`). Setting status='accepted' fires trg_quote_accepted
+  // -> on_quote_accepted -> create_drone_job_from_quote(), and the CURRENTLY
+  // DEPLOYED version of that function has four defects:
+  //   * writes (total * 100)::INTEGER into job_price, which is DOLLARS elsewhere
+  //     (live rows are 70 / 80 / 150) — a $225 quote would land as 22500
+  //   * writes customer_id, never client_id, so the job is invisible to sortie's
+  //     `clients` embed
+  //   * never sets site_address / property_type / processing_template_id
+  //   * `IF v_quote IS NULL` on a RECORD is true only when every field is NULL
+  //
+  // Shipping the button before migration 20260728091000 therefore creates
+  // corrupt, sortie-invisible jobs. The button and the migration land together
+  // or not at all. Do not re-add this in isolation.
 
   return {
     sendQuote: sendQuoteMutation.mutate,

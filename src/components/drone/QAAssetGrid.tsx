@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, AlertTriangle, XCircle, Clock, Eye, Video, Play } from "lucide-react";
 import QADetailModal from "./QADetailModal";
+import { qaScoreColor } from "@/lib/qa-threshold";
 import type { Database, Json } from "@/integrations/supabase/types";
 
 type QAStatus = Database["public"]["Enums"]["qa_status"];
@@ -33,6 +34,11 @@ interface QAAssetGridProps {
   assets: DroneAsset[];
   onRefresh: () => void;
   showQADetails?: boolean;
+  /**
+   * `processing_templates.qa_threshold` for the mission these assets belong to.
+   * Omit or pass null to fall back to the column default — see qa-threshold.ts.
+   */
+  qaThreshold?: number | null;
 }
 
 const QA_STATUS_CONFIG: Record<string, { icon: typeof CheckCircle; color: string; bg: string }> = {
@@ -51,19 +57,20 @@ function formatDuration(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-export default function QAAssetGrid({ assets, onRefresh, showQADetails = false }: QAAssetGridProps) {
+export default function QAAssetGrid({
+  assets,
+  onRefresh,
+  showQADetails = false,
+  qaThreshold,
+}: QAAssetGridProps) {
   const [selectedAsset, setSelectedAsset] = useState<DroneAsset | null>(null);
 
   const getStatusConfig = (status: QAStatus | null) => {
     return QA_STATUS_CONFIG[status || "pending"] || QA_STATUS_CONFIG.pending;
   };
 
-  const getScoreColor = (score: number | null) => {
-    if (score === null) return "text-muted-foreground";
-    if (score >= 75) return "text-green-600";
-    if (score >= 50) return "text-amber-600";
-    return "text-red-600";
-  };
+  // Was hardcoded 75/50, which ignored the mission's configured QA threshold.
+  const getScoreColor = (score: number | null) => qaScoreColor(score, qaThreshold);
 
   const isVideo = (asset: DroneAsset) => asset.file_type === "video";
 
@@ -182,6 +189,7 @@ export default function QAAssetGrid({ assets, onRefresh, showQADetails = false }
         asset={selectedAsset}
         onClose={() => setSelectedAsset(null)}
         onRefresh={onRefresh}
+        qaThreshold={qaThreshold}
       />
     </>
   );

@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import AdminNav from './components/AdminNav';
 import WeatherForecastGrid from './components/WeatherForecastGrid';
 import { useWeatherForecast, useWeatherHeldJobs } from '@/hooks/useWeatherForecast';
 import type { ForecastRow } from '@/hooks/useWeatherForecast';
@@ -41,7 +40,11 @@ const WORST_COLOR: Record<WeatherDetermination, string> = {
   NO_GO: 'text-red-600',
 };
 
-export default function WeatherOperations() {
+/**
+ * Forecast + weather-hold board. Mounted as the "weather" tab of CalendarOps
+ * (/admin/calendar?tab=weather); the page frame lives there, not here.
+ */
+export function WeatherOperationsPanel() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: forecast, isLoading: forecastLoading } = useWeatherForecast();
@@ -82,22 +85,13 @@ export default function WeatherOperations() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Cloud className="h-8 w-8" />
-              Weather Operations
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {lastFetched
-                ? `Last fetched ${lastFetched}`
-                : 'No forecast data'}
-            </p>
-          </div>
+    <div className="space-y-8">
+        {/* Freshness + manual fetch. The forecast is a cron-fed cache, so the
+            timestamp matters as much as the numbers under it. */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            {lastFetched ? `Last fetched ${lastFetched}` : 'No forecast data'}
+          </p>
           <Button onClick={handleRefresh} disabled={refreshing}>
             {refreshing ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -109,7 +103,7 @@ export default function WeatherOperations() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 mb-8">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">Next 12 Hours</CardTitle>
@@ -166,7 +160,7 @@ export default function WeatherOperations() {
 
         {/* Flagged Jobs Section */}
         {heldJobCount > 0 && (
-          <Card className="mb-8">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-amber-500" />
@@ -182,7 +176,7 @@ export default function WeatherOperations() {
                   >
                     <div className="min-w-0">
                       <Link
-                        to={`/admin/drone-jobs/${job.id}`}
+                        to={`/admin/missions/${job.id}`}
                         className="font-mono text-sm font-semibold hover:underline text-primary"
                       >
                         {job.job_number}
@@ -233,7 +227,8 @@ export default function WeatherOperations() {
             )}
           </CardContent>
         </Card>
-      </main>
     </div>
   );
 }
+
+export default WeatherOperationsPanel;

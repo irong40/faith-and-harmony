@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { addToSyncQueue } from '@/lib/sync/db';
+import type { SyncTable } from '@/lib/sync/db';
 import type { Aircraft, Battery, Controller, Accessory, MaintenanceLogEntry } from '@/types/fleet';
 
 async function enqueueOffline(
   action: 'insert_record' | 'update_record' | 'delete_record',
-  table: string,
+  table: SyncTable,
   payload: Record<string, unknown>,
 ) {
   await addToSyncQueue({

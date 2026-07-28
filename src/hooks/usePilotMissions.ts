@@ -37,10 +37,10 @@ export function usePilotMissions() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('drone_jobs')
-        .select('id, job_number, customers(name), property_address, property_city, property_state, latitude, longitude, scheduled_date, status, is_test, drone_packages(id, name, code, shot_manifest, requires_thermal, requires_raw)')
+        .select('id, job_number, clients(name), property_address, property_city, property_state, latitude, longitude, scheduled_date, status, is_test, drone_packages(id, name, code, shot_manifest, requires_thermal, requires_raw)')
         .eq('pilot_id', user!.id)
         .eq('is_test', false)
-        .neq('status', 'canceled')
+        .neq('status', 'cancelled')
         .order('scheduled_date', { ascending: true });
 
       if (error) throw error;
@@ -48,7 +48,7 @@ export function usePilotMissions() {
       return (data || []).map((job: any) => ({
         id: job.id,
         job_number: job.job_number,
-        client_name: job.customers?.name || 'Unknown Client',
+        client_name: job.clients?.name || 'Unknown Client',
         property_address: job.property_address,
         property_city: job.property_city || null,
         property_state: job.property_state || null,
@@ -79,7 +79,7 @@ export function usePilotMission(missionId: string | undefined) {
     queryFn: async (): Promise<PilotMission> => {
       const { data, error } = await supabase
         .from('drone_jobs')
-        .select('*, customers(name), drone_packages(id, name, code, shot_manifest, requires_thermal, requires_raw)')
+        .select('*, clients(name), drone_packages(id, name, code, shot_manifest, requires_thermal, requires_raw)')
         .eq('id', missionId!)
         .single();
 
@@ -88,7 +88,7 @@ export function usePilotMission(missionId: string | undefined) {
       return {
         id: data.id,
         job_number: data.job_number,
-        client_name: data.is_test ? 'Portfolio Flight' : (data.customers?.name || 'Unknown Client'),
+        client_name: data.is_test ? 'Portfolio Flight' : (data.clients?.name || 'Unknown Client'),
         property_address: data.property_address,
         property_city: data.property_city,
         property_state: data.property_state,

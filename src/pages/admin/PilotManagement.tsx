@@ -26,11 +26,11 @@ import {
 } from "@/components/ui/select";
 import {
     UserPlus, Shield, Calendar, Edit, Trash2,
-    Search, Loader2, User as UserIcon, AlertTriangle
+    Search, Loader2, User as UserIcon, AlertTriangle, Users
 } from "lucide-react";
+import PageShell from "@/components/admin/PageShell";
 import { format } from "date-fns";
 import { PilotProfile, getCertificationStatus, CertificationStatus } from "@/types/pilot";
-import AdminNav from "./components/AdminNav";
 
 interface PilotWithRole extends PilotProfile {
     email?: string;
@@ -248,16 +248,12 @@ export default function PilotManagement() {
     };
 
     return (
-        <div className="min-h-screen bg-background">
-            <AdminNav />
-            <main className="container mx-auto px-4 py-8">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Pilot Management</h1>
-                        <p className="text-muted-foreground mt-1">
-                            Manage drone pilots and Part 107 certifications
-                        </p>
-                    </div>
+        <PageShell
+            title="Pilot Management"
+            description="Manage drone pilots and Part 107 certifications"
+            icon={Users}
+            width="wide"
+            actions={
                     <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                         <DialogTrigger asChild>
                             <Button className="gap-2">
@@ -319,8 +315,8 @@ export default function PilotManagement() {
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
-                </div>
-
+            }
+        >
                 {/* Edit Dialog */}
                 <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                     <DialogContent>
@@ -442,7 +438,6 @@ export default function PilotManagement() {
                         )}
                     </div>
                 )}
-            </main>
-        </div>
+        </PageShell>
     );
 }

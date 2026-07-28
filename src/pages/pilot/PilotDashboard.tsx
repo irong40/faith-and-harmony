@@ -112,7 +112,7 @@ export default function PilotDashboard() {
                 client_name: mission.client_name,
                 address: mission.property_address,
                 scheduled_date: mission.scheduled_date,
-                status: mission.status as "scheduled" | "captured" | "complete" | "canceled",
+                status: mission.status as "scheduled" | "captured" | "complete" | "cancelled",
                 package_type: mission.package_name || undefined,
             }}
             syncStatus={
@@ -147,7 +147,7 @@ export default function PilotDashboard() {
                             onSync={handleSync}
                         />
                         {isAdmin && (
-                            <Link to="/admin/dashboard">
+                            <Link to="/admin">
                                 <Button variant="ghost" size="icon" title="Admin Dashboard">
                                     <LayoutDashboard className="h-5 w-5" />
                                 </Button>

@@ -9,7 +9,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   scheduled: { label: 'Scheduled', color: 'bg-blue-500' },
   captured: { label: 'In Progress', color: 'bg-orange-500' },
   complete: { label: 'Complete', color: 'bg-green-500' },
-  canceled: { label: 'Canceled', color: 'bg-gray-500' },
+  cancelled: { label: 'Cancelled', color: 'bg-gray-500' },
 };
 
 interface JobInfoCardProps {

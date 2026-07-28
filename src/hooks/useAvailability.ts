@@ -36,7 +36,7 @@ export function useAvailabilitySlots() {
     queryKey: ["availability_slots"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("availability_slots" as never)
+        .from("availability_slots")
         .select("*")
         .order("day_of_week");
       if (error) throw error;
@@ -50,7 +50,7 @@ export function useBlackoutDates(startDate: string, endDate: string) {
     queryKey: ["blackout_dates", startDate, endDate],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("blackout_dates" as never)
+        .from("blackout_dates")
         .select("*")
         .gte("blackout_date", startDate)
         .lte("blackout_date", endDate)
@@ -66,7 +66,7 @@ export function useAvailabilityOverrides(startDate: string, endDate: string) {
     queryKey: ["availability_overrides", startDate, endDate],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("availability_overrides" as never)
+        .from("availability_overrides")
         .select("*")
         .gte("override_date", startDate)
         .lte("override_date", endDate)
@@ -82,8 +82,8 @@ export function useAddBlackoutDate() {
   return useMutation({
     mutationFn: async (payload: { blackout_date: string; reason: string }) => {
       const { error } = await supabase
-        .from("blackout_dates" as never)
-        .insert(payload as never);
+        .from("blackout_dates")
+        .insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -104,7 +104,7 @@ export function useRemoveBlackoutDate() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from("blackout_dates" as never)
+        .from("blackout_dates")
         .delete()
         .eq("id", id);
       if (error) throw error;
@@ -124,8 +124,8 @@ export function useToggleSlot() {
   return useMutation({
     mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
       const { error } = await supabase
-        .from("availability_slots" as never)
-        .update({ is_active, updated_at: new Date().toISOString() } as never)
+        .from("availability_slots")
+        .update({ is_active, updated_at: new Date().toISOString() })
         .eq("id", id);
       if (error) throw error;
     },

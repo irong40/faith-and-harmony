@@ -54,27 +54,27 @@ export function ConvertLeadDialog({ lead, open, onClose, onConverted }: ConvertL
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      const { data: client, error: clientErr } = await (supabase as never)
+      const { data: client, error: clientErr } = await supabase
         .from("clients")
-        .insert({ ...buildClientInsert(lead), created_by: session.user.id } as never)
+        .insert({ ...buildClientInsert(lead), created_by: session.user.id })
         .select("id")
-        .single() as { data: { id: string } | null; error: unknown };
-      if (clientErr || !client) throw (clientErr as Error) ?? new Error("Client insert failed");
+        .single();
+      if (clientErr || !client) throw clientErr ?? new Error("Client insert failed");
 
-      const { data: qr, error: qrErr } = await (supabase as never)
+      const { data: qr, error: qrErr } = await supabase
         .from("quote_requests")
-        .insert({ ...buildQuoteRequestInsert(lead), brand_slug: "sai" } as never)
+        .insert({ ...buildQuoteRequestInsert(lead), brand_slug: "sai" })
         .select("id")
-        .single() as { data: { id: string } | null; error: unknown };
-      if (qrErr || !qr) throw (qrErr as Error) ?? new Error("Quote request insert failed");
+        .single();
+      if (qrErr || !qr) throw qrErr ?? new Error("Quote request insert failed");
 
-      const { error: leadErr } = await (supabase as never)
+      const { error: leadErr } = await supabase
         .from("leads")
         .update({
-          client_id: (client as { id: string }).id,
-          quote_request_id: (qr as { id: string }).id,
+          client_id: client.id,
+          quote_request_id: qr.id,
           qualification_status: "converted",
-        } as never)
+        })
         .eq("id", lead.id);
       if (leadErr) throw leadErr;
     },
@@ -89,9 +89,9 @@ export function ConvertLeadDialog({ lead, open, onClose, onConverted }: ConvertL
   const linkMutation = useMutation({
     mutationFn: async () => {
       if (!selectedClientId) throw new Error("No client selected");
-      const { error } = await (supabase as never)
+      const { error } = await supabase
         .from("leads")
-        .update({ client_id: selectedClientId, qualification_status: "converted" } as never)
+        .update({ client_id: selectedClientId, qualification_status: "converted" })
         .eq("id", lead.id);
       if (error) throw error;
     },
@@ -107,15 +107,12 @@ export function ConvertLeadDialog({ lead, open, onClose, onConverted }: ConvertL
     queryKey: ["clients-search", clientSearch],
     queryFn: async () => {
       if (!clientSearch.trim()) return [];
-      const { data, error } = await (supabase as never)
+      const { data, error } = await supabase
         .from("clients")
         .select("id, name, email, phone")
-        .or(`name.ilike.%${clientSearch}%,email.ilike.%${clientSearch}%`) as {
-          data: Array<{ id: string; name: string; email: string | null; phone: string | null }> | null;
-          error: unknown;
-        };
+        .or(`name.ilike.%${clientSearch}%,email.ilike.%${clientSearch}%`);
       if (error) throw error;
-      return (data ?? []) as Array<{ id: string; name: string; email: string | null; phone: string | null }>;
+      return data ?? [];
     },
     enabled: clientSearch.trim().length > 1,
     staleTime: 10_000,

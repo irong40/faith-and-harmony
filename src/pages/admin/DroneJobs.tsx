@@ -22,7 +22,8 @@ import {
 import { Search, RefreshCw, Plus, Eye, Camera, Calendar, CheckCircle, AlertTriangle, XCircle, Send, User } from "lucide-react";
 import { format } from "date-fns";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import AdminNav from "./components/AdminNav";
+import PageShell from "@/components/admin/PageShell";
+import { qaVerdict } from "@/lib/qa-threshold";
 import type { Database } from "@/integrations/supabase/types";
 
 type DroneJobStatus = Database["public"]["Enums"]["drone_job_status"];
@@ -58,11 +59,10 @@ interface DroneJob {
   processing_template_id: string | null;
   delivery_status: string | null;
   delivery_sent_at: string | null;
-  customers?: { name: string; email: string } | null;
   drone_packages?: { name: string; code: string; price: number } | null;
   drone_assets?: { id: string }[];
   clients?: { name: string; company: string | null } | null;
-  processing_templates?: { path_code: string | null; display_name: string | null; preset_name: string } | null;
+  processing_templates?: { path_code: string | null; display_name: string | null; preset_name: string; qa_threshold: number | null } | null;
   profiles?: { full_name: string | null } | null;
 }
 
@@ -115,7 +115,9 @@ export default function DroneJobs() {
     const [jobsRes, templatesRes, pilotsRes] = await Promise.all([
       supabase
         .from("drone_jobs")
-        .select("*, customers(name, email), drone_packages(name, code, price), drone_assets(id), clients(name, company), processing_templates(path_code, display_name, preset_name), delivery_status, delivery_sent_at, pilot_id, profiles(full_name)")
+        // `qa_threshold` is not decoration: the QA column colours each row
+        // against its own template's pass mark, not a hardcoded 75.
+        .select("*, drone_packages(name, code, price), drone_assets(id), clients(name, company), processing_templates(path_code, display_name, preset_name, qa_threshold), delivery_status, delivery_sent_at, pilot_id, profiles(full_name)")
         .order("created_at", { ascending: false }),
       supabase
         .from("processing_templates")
@@ -151,7 +153,7 @@ export default function DroneJobs() {
 
   const filteredJobs = jobs.filter((job) => {
     const searchLower = searchTerm.toLowerCase();
-    const clientName = job.clients?.name || job.customers?.name || "";
+    const clientName = job.clients?.name || "";
     const pilotName = job.profiles?.full_name || "";
     const matchesSearch =
       searchTerm === "" ||
@@ -185,11 +187,19 @@ export default function DroneJobs() {
     );
   };
 
-  const getQAIndicator = (score: number | null) => {
-    if (score === null) return null;
-    if (score >= 75) return <CheckCircle className="h-4 w-4 text-green-500" />;
-    if (score >= 50) return <AlertTriangle className="h-4 w-4 text-amber-500" />;
-    return <XCircle className="h-4 w-4 text-red-500" />;
+  // Scored against the mission's own template threshold rather than a
+  // hardcoded 75/50 — see src/lib/qa-threshold.ts.
+  const getQAIndicator = (score: number | null, threshold?: number | null) => {
+    switch (qaVerdict(score, threshold)) {
+      case "pass":
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case "warn":
+        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      case "fail":
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return null;
+    }
   };
 
   // Summary counts
@@ -205,34 +215,24 @@ export default function DroneJobs() {
   const deliveredCount = jobs.filter(j => j.status === "delivered").length;
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNav />
-
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <img
-              src="/assets/drone/drone-logo-original.jpg"
-              alt="Drone Services"
-              className="h-10 w-10 object-contain"
-            />
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Drone Jobs</h1>
-              <p className="text-sm text-muted-foreground">Manage aerial photography jobs</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={fetchJobs} variant="outline" disabled={loading}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
-            <Button onClick={() => navigate("/admin/jobs/new")}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Job
-            </Button>
-          </div>
-        </div>
-
+    <PageShell
+      title="Missions"
+      description="Every aerial capture, from intake to delivery"
+      icon={Camera}
+      width="full"
+      actions={
+        <>
+          <Button onClick={fetchJobs} variant="outline" disabled={loading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+          <Button onClick={() => navigate("/admin/missions/new")}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Mission
+          </Button>
+        </>
+      }
+    >
         {/* Summary Cards */}
         <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div className="rounded-lg border border-border bg-card p-4">
@@ -413,7 +413,7 @@ export default function DroneJobs() {
                       )}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {job.clients?.name || job.customers?.name || "—"}
+                      {job.clients?.name || "—"}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
                       {job.profiles?.full_name ? (
@@ -456,7 +456,7 @@ export default function DroneJobs() {
                         const cfg = DELIVERY_STATUS_CONFIG[ds] ?? DELIVERY_STATUS_CONFIG.not_ready;
                         if (ds === "ready") {
                           return (
-                            <Link to={`/admin/drone-jobs/${job.id}/delivery`}>
+                            <Link to={`/admin/missions/${job.id}/delivery`}>
                               <Badge className={`${cfg.color} cursor-pointer hover:opacity-80`}>
                                 <Send className="mr-1 h-3 w-3" />
                                 {cfg.label}
@@ -478,7 +478,7 @@ export default function DroneJobs() {
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <div className="flex items-center gap-2">
-                        {getQAIndicator(job.qa_score)}
+                        {getQAIndicator(job.qa_score, job.processing_templates?.qa_threshold)}
                         {job.qa_score !== null && (
                           <span className="text-sm font-medium">{job.qa_score}</span>
                         )}
@@ -490,7 +490,7 @@ export default function DroneJobs() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Link to={`/admin/drone-jobs/${job.id}`}>
+                      <Link to={`/admin/missions/${job.id}`}>
                         <Button variant="ghost" size="icon">
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -502,8 +502,6 @@ export default function DroneJobs() {
             </TableBody>
           </Table>
         </div>
-      </main>
-
-    </div>
+    </PageShell>
   );
 }

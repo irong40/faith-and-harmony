@@ -21,7 +21,7 @@ interface DroneJob {
   scheduled_time: string | null;
   pilot_notes: string | null;
   google_event_id: string | null;
-  customers?: { name: string; email: string; phone: string | null } | null;
+  clients?: { name: string; email: string | null; phone: string | null } | null;
   drone_packages?: { name: string; code: string } | null;
 }
 
@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
       // Fetch job details
       const { data: job, error: jobError } = await supabase
         .from("drone_jobs")
-        .select("*, customers(name, email, phone), drone_packages(name, code)")
+        .select("*, clients(name, email, phone), drone_packages(name, code)")
         .eq("id", job_id)
         .single() as { data: DroneJob | null, error: any };
 
@@ -151,9 +151,9 @@ Deno.serve(async (req) => {
       const description = [
         `Job #: ${job.job_number}`,
         `Property Type: ${job.property_type}`,
-        job.customers ? `Customer: ${job.customers.name}` : null,
-        job.customers?.email ? `Email: ${job.customers.email}` : null,
-        job.customers?.phone ? `Phone: ${job.customers.phone}` : null,
+        job.clients ? `Client: ${job.clients.name}` : null,
+        job.clients?.email ? `Email: ${job.clients.email}` : null,
+        job.clients?.phone ? `Phone: ${job.clients.phone}` : null,
         job.drone_packages ? `Package: ${job.drone_packages.name}` : null,
         job.pilot_notes ? `\nPilot Notes:\n${job.pilot_notes}` : null,
       ].filter(Boolean).join("\n");

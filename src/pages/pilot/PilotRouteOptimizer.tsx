@@ -84,7 +84,7 @@ export default function PilotRouteOptimizer() {
         m.longitude != null &&
         m.scheduled_date &&
         isToday(new Date(m.scheduled_date)) &&
-        m.status !== 'canceled'
+        m.status !== 'cancelled'
     );
   }, [allMissions]);
 

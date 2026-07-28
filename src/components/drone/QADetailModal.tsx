@@ -13,12 +13,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { CheckCircle, AlertTriangle, XCircle, Clock, ThumbsUp, ThumbsDown, MapPin, Camera, Calendar, Trash2 } from "lucide-react";
+import { qaScoreColor } from "@/lib/qa-threshold";
 import type { DroneAsset, QAResults } from "@/types/drone";
 
 interface QADetailModalProps {
   asset: DroneAsset | null;
   onClose: () => void;
   onRefresh: () => void;
+  /** `processing_templates.qa_threshold` for the owning mission. */
+  qaThreshold?: number | null;
 }
 
 const SEVERITY_CONFIG: Record<string, { color: string; label: string }> = {
@@ -54,7 +57,7 @@ function extractStoragePath(filePath: string): string | null {
   return null;
 }
 
-export default function QADetailModal({ asset, onClose, onRefresh }: QADetailModalProps) {
+export default function QADetailModal({ asset, onClose, onRefresh, qaThreshold }: QADetailModalProps) {
   const { toast } = useToast();
   const [overrideReason, setOverrideReason] = useState("");
   const [saving, setSaving] = useState(false);
@@ -154,11 +157,8 @@ export default function QADetailModal({ asset, onClose, onRefresh }: QADetailMod
     setSaving(false);
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 75) return "text-green-600";
-    if (score >= 50) return "text-amber-600";
-    return "text-red-600";
-  };
+  // Was hardcoded 75/50 — now the mission's own template threshold.
+  const getScoreColor = (score: number) => qaScoreColor(score, qaThreshold);
 
   const formatVideoDuration = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);

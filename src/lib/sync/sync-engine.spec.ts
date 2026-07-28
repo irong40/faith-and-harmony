@@ -8,11 +8,13 @@ vi.mock('./network-probe', () => ({
 }));
 
 // Mock db module
+// Signatures must match how the mock is invoked below — declaring these as
+// `() => ...` while calling them with arguments is a TS2554 per call site.
 const mockGetSyncQueue = vi.fn<() => Promise<any[]>>();
-const mockRemoveSyncItem = vi.fn<() => Promise<void>>();
-const mockUpdateSyncItem = vi.fn<() => Promise<void>>();
-const mockMoveToDeadLetter = vi.fn<() => Promise<void>>();
-const mockPutAll = vi.fn<() => Promise<void>>();
+const mockRemoveSyncItem = vi.fn<(id: number) => Promise<void>>();
+const mockUpdateSyncItem = vi.fn<(item: any) => Promise<void>>();
+const mockMoveToDeadLetter = vi.fn<(item: any, msg: string) => Promise<void>>();
+const mockPutAll = vi.fn<(store: string, items: any[]) => Promise<void>>();
 const mockGetDeadLetterCount = vi.fn<() => Promise<number>>();
 
 vi.mock('./db', () => ({

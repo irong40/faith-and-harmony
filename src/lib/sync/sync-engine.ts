@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import {
   getSyncQueue,
@@ -12,6 +13,26 @@ import type { SyncQueueItem } from './db';
 import { isNetworkAvailable } from './network-probe';
 
 const MAX_RETRIES = 5;
+
+/**
+ * The replay path deliberately talks to the *untyped* PostgREST surface.
+ *
+ * `executeAction` is a generic replay buffer: the table comes off an IndexedDB
+ * row at runtime and the payload is whatever JSON was queued days ago. There is
+ * no compile-time table literal to key the generated `Database` types off, so
+ * asking PostgREST's per-table `Insert`/`Update` generics to validate it is not
+ * a check that can succeed — it just resolves the whole table union at every
+ * call site and either fails (TS2769) or runs out of instantiation budget
+ * (TS2589).
+ *
+ * Type safety for these writes lives at the *enqueue* sites instead, where the
+ * table and payload are literals: `SyncTable` is a closed union, and each
+ * `addToSyncQueue` caller is checked against it.
+ *
+ * Note this is a narrowing to a real, supported client type — `error` and
+ * `data` stay typed — not an `as never` / `@ts-ignore` erasure.
+ */
+const genericTables = supabase as unknown as SupabaseClient;
 
 let processingQueue = false;
 
@@ -33,31 +54,44 @@ function notify(status: SyncStatus, pending: number) {
 async function executeAction(item: SyncQueueItem): Promise<boolean> {
   const { action, table, payload } = item;
 
+  // One factory, called per operation.
+  //
+  // Two things are load-bearing. (1) TypeScript resolves the shape of
+  // `from(table)` exactly once — for this arrow's inferred return type —
+  // instead of re-resolving it at all eight call sites below, which is what
+  // pushed this function past the type instantiation budget (TS2589).
+  // (2) It is a factory, not a hoisted variable: PostgrestQueryBuilder mutates
+  // its own `url.searchParams` and `headers` and hands those same objects to
+  // the filter builder it returns, so sharing one builder across a
+  // delete-then-insert pair would leak query state between the two requests.
+  // Each call gets a fresh builder.
+  const from = () => genericTables.from(table);
+
   switch (action) {
     case 'insert_flight_log': {
-      const { error } = await supabase.from(table).insert(payload);
+      const { error } = await from().insert(payload);
       if (error) throw error;
       return true;
     }
 
     case 'upsert_equipment': {
       const missionId = payload.mission_id as string;
-      await supabase.from(table).delete().eq('mission_id', missionId);
-      const { error } = await supabase.from(table).insert(payload).select().single();
+      await from().delete().eq('mission_id', missionId);
+      const { error } = await from().insert(payload).select().single();
       if (error) throw error;
       return true;
     }
 
     case 'insert_weather_briefing': {
-      const { error } = await supabase.from(table).insert(payload).select().single();
+      const { error } = await from().insert(payload).select().single();
       if (error) throw error;
       return true;
     }
 
     case 'save_authorization': {
       const authMissionId = payload.mission_id as string;
-      await supabase.from(table).delete().eq('mission_id', authMissionId);
-      const { error } = await supabase.from(table).insert(payload).select().single();
+      await from().delete().eq('mission_id', authMissionId);
+      const { error } = await from().insert(payload).select().single();
       if (error) throw error;
       return true;
     }
@@ -65,28 +99,28 @@ async function executeAction(item: SyncQueueItem): Promise<boolean> {
     case 'update_mission_status': {
       const id = payload.id as string;
       const status = payload.status as string;
-      const { error } = await supabase.from(table).update({ status }).eq('id', id);
+      const { error } = await from().update({ status }).eq('id', id);
       if (error) throw error;
       return true;
     }
 
     case 'insert_record': {
       const { _offline_id, ...insertPayload } = payload;
-      const { error } = await supabase.from(table).insert(insertPayload);
+      const { error } = await from().insert(insertPayload);
       if (error) throw error;
       return true;
     }
 
     case 'update_record': {
       const { _record_id, ...updatePayload } = payload;
-      const { error } = await supabase.from(table).update(updatePayload).eq('id', _record_id as string);
+      const { error } = await from().update(updatePayload).eq('id', _record_id as string);
       if (error) throw error;
       return true;
     }
 
     case 'delete_record': {
       const deleteId = payload._record_id as string;
-      const { error } = await supabase.from(table).delete().eq('id', deleteId);
+      const { error } = await from().delete().eq('id', deleteId);
       if (error) throw error;
       return true;
     }
@@ -160,9 +194,9 @@ export async function pullMissions(pilotId: string): Promise<void> {
 
   const { data, error } = await supabase
     .from('drone_jobs')
-    .select('*, customers(name), drone_packages(id, name, code)')
+    .select('*, clients(name), drone_packages(id, name, code)')
     .eq('pilot_id', pilotId)
-    .neq('status', 'canceled')
+    .neq('status', 'cancelled')
     .order('scheduled_date', { ascending: true });
 
   if (error) throw error;

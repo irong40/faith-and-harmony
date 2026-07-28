@@ -203,7 +203,7 @@ export default function NotificationBell() {
 
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/admin/messages" className="w-full text-center text-sm py-2">
+          <Link to="/admin/clients?tab=messages" className="w-full text-center text-sm py-2">
             View all messages
           </Link>
         </DropdownMenuItem>
