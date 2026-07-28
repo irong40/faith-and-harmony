@@ -93,7 +93,7 @@ serve(async (req) => {
     // Look up the drone job
     const { data: job, error: jobError } = await supabase
       .from("drone_jobs")
-      .select("id, quote_id, preview_urls, status, job_price, job_number, client_id, clients(name, email)")
+      .select("id, quote_id, preview_urls, status")
       .eq("id", job_id)
       .single();
 
@@ -104,35 +104,28 @@ serve(async (req) => {
       );
     }
 
-    // Guard: the job must have reached a billable state. 'delivered' is included
-    // because DeliveryReview's "Send Balance Invoice" button lives on a job that
-    // has just been delivered — the old 'complete'-only check 400'd exactly the
-    // caller it was written for.
-    const BILLABLE_STATUSES = ["complete", "delivered", "photos_delivered", "paid"];
-    if (!BILLABLE_STATUSES.includes(job.status)) {
+    // Guard: job must be in 'complete' status (processing finished, ready for billing)
+    if (job.status !== "complete") {
       return new Response(
-        JSON.stringify({
-          error: "Job is not billable yet. Status must be one of " +
-            BILLABLE_STATUSES.join(", ") + ". Current: " + job.status,
-        }),
+        JSON.stringify({ error: "Job status must be 'complete'. Current: " + job.status }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Idempotency guard: an existing balance payment for EITHER key.
-    // .limit(1) rather than .maybeSingle() — on_drone_job_delivered may already
-    // have written a row, and maybeSingle() throws on more than one.
-    let existingQuery = supabase
+    if (!job.quote_id) {
+      return new Response(
+        JSON.stringify({ error: "Job has no associated quote" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Idempotency guard: check for existing balance payment for this quote
+    const { data: existing, error: existingError } = await supabase
       .from("payments")
-      .select("id, square_invoice_id, status, amount, customer_email")
+      .select("id, square_invoice_id, status")
+      .eq("quote_id", job.quote_id)
       .eq("payment_type", "balance")
-      .limit(1);
-
-    existingQuery = job.quote_id
-      ? existingQuery.eq("quote_id", job.quote_id)
-      : existingQuery.eq("job_id", job_id);
-
-    const { data: existingRows, error: existingError } = await existingQuery;
+      .maybeSingle();
 
     if (existingError) {
       console.error("Error checking existing payment:", existingError);
@@ -142,14 +135,10 @@ serve(async (req) => {
       );
     }
 
-    const existing = existingRows?.[0] ?? null;
-
-    // A row WITHOUT square_invoice_id is the trigger's handiwork: the payment
-    // exists but no Square invoice was ever cut. Adopt it instead of 409-ing.
-    if (existing?.square_invoice_id) {
+    if (existing) {
       return new Response(
         JSON.stringify({
-          error: "Balance invoice already exists",
+          error: "Balance invoice already exists for this quote",
           existing_payment_id: existing.id,
           existing_square_invoice_id: existing.square_invoice_id,
           status: existing.status,
@@ -158,115 +147,59 @@ serve(async (req) => {
       );
     }
 
-    let balanceAmount = 0;
-    let recipientEmail: string | null = null;
-    let jobTypeName: string | null = null;
+    // Fetch quote with customer info
+    const { data: quote, error: quoteError } = await supabase
+      .from("quotes")
+      .select("id, total, deposit_amount, quote_requests(name, email, job_type)")
+      .eq("id", job.quote_id)
+      .maybeSingle();
 
-    if (job.quote_id) {
-      // ---- quote path ----
-      const { data: quote, error: quoteError } = await supabase
-        .from("quotes")
-        .select("id, total, deposit_amount, quote_requests(name, email, job_type)")
-        .eq("id", job.quote_id)
-        .maybeSingle();
-
-      if (quoteError || !quote) {
-        return new Response(
-          JSON.stringify({ error: "Quote not found" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      const info = Array.isArray(quote.quote_requests)
-        ? quote.quote_requests[0]
-        : quote.quote_requests;
-
-      recipientEmail = info?.email ?? null;
-      jobTypeName = info?.job_type ?? null;
-      balanceAmount = Number(quote.total) - Number(quote.deposit_amount);
-    } else {
-      // ---- direct path ----
-      // No quote was ever raised. job_price is DOLLARS (migration 20260728091000).
-      // Net off any deposit already collected against this job.
-      const client = Array.isArray(job.clients) ? job.clients[0] : job.clients;
-      recipientEmail = client?.email ?? null;
-      jobTypeName = job.job_number ?? null;
-
-      const { data: deposits } = await supabase
-        .from("payments")
-        .select("amount, status")
-        .eq("job_id", job_id)
-        .eq("payment_type", "deposit");
-
-      const depositTotal = (deposits ?? [])
-        .filter((d) => d.status !== "waived")
-        .reduce((sum, d) => sum + Number(d.amount ?? 0), 0);
-
-      balanceAmount = Number(job.job_price ?? 0) - depositTotal;
-    }
-
-    // An adopted row's amount wins — it is what the trigger already computed.
-    if (existing?.amount != null) {
-      balanceAmount = Number(existing.amount);
-      recipientEmail = recipientEmail ?? existing.customer_email ?? null;
-    }
-
-    if (!recipientEmail) {
+    if (quoteError || !quote) {
       return new Response(
-        JSON.stringify({
-          error: job.quote_id
-            ? "Customer email not found on quote request"
-            : "Client has no email on file — assign a client with an email to invoice",
-        }),
+        JSON.stringify({ error: "Quote not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const requestInfo = Array.isArray(quote.quote_requests)
+      ? quote.quote_requests[0]
+      : quote.quote_requests;
+
+    if (!requestInfo?.email) {
+      return new Response(
+        JSON.stringify({ error: "Customer email not found on quote request" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (!(balanceAmount > 0)) {
-      return new Response(
-        JSON.stringify({
-          error: "Nothing left to bill (balance resolves to " + balanceAmount + ")",
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const requestInfo = { email: recipientEmail, job_type: jobTypeName };
+    const balanceAmount = Number(quote.total) - Number(quote.deposit_amount);
     const balanceAmountCents = Math.round(balanceAmount * 100);
     const shortId = job_id.slice(0, 8).toUpperCase();
 
-    // ORPHAN PREVENTION: have a payments row BEFORE calling Square. If Square
-    // fails we roll it back — but only if WE created it. A row the trigger
-    // wrote is never deleted here; it stays for a later retry.
-    let paymentId = existing?.id ?? null;
-    const adopted = paymentId !== null;
+    // ORPHAN PREVENTION: Insert payments row BEFORE calling Square API.
+    // If Square fails, we delete this row. This prevents orphaned Square invoices
+    // without a matching Supabase record.
+    const { data: payment, error: insertError } = await supabase
+      .from("payments")
+      .insert({
+        quote_id: job.quote_id,
+        job_id: job_id,
+        payment_type: "balance",
+        status: "pending",
+        amount: balanceAmount,
+        customer_email: requestInfo.email,
+        due_date: futureDateStr(15),
+      })
+      .select("id")
+      .single();
 
-    if (!adopted) {
-      const { data: payment, error: insertError } = await supabase
-        .from("payments")
-        .insert({
-          quote_id: job.quote_id,
-          job_id: job_id,
-          payment_type: "balance",
-          status: "pending",
-          amount: balanceAmount,
-          customer_email: requestInfo.email,
-          due_date: futureDateStr(15),
-        })
-        .select("id")
-        .single();
-
-      if (insertError) {
-        console.error("Supabase insert failed:", insertError);
-        return new Response(
-          JSON.stringify({ error: "Failed to create payment record" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      paymentId = payment.id;
+    if (insertError) {
+      console.error("Supabase insert failed:", insertError);
+      return new Response(
+        JSON.stringify({ error: "Failed to create payment record" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
-
-    const payment = { id: paymentId! };
 
     // Create Square invoice (DRAFT state) with SHARE_MANUALLY to prevent Square emails
     const jobType = requestInfo.job_type ?? "aerial services";
@@ -316,11 +249,8 @@ serve(async (req) => {
     if (!createResp.ok) {
       const errBody = await createResp.json();
       console.error("Square create invoice failed:", errBody);
-      // Rollback: only delete a row THIS call created. An adopted row was
-      // written by on_drone_job_delivered and must survive for a retry.
-      if (!adopted) {
-        await supabase.from("payments").delete().eq("id", payment.id);
-      }
+      // Rollback: delete the pending payment row
+      await supabase.from("payments").delete().eq("id", payment.id);
       return new Response(
         JSON.stringify({ error: "Square invoice creation failed", details: errBody }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -350,11 +280,8 @@ serve(async (req) => {
     if (!publishResp.ok) {
       const errBody = await publishResp.json();
       console.error("Square publish invoice failed:", errBody);
-      // Rollback: only delete a row THIS call created. An adopted row was
-      // written by on_drone_job_delivered and must survive for a retry.
-      if (!adopted) {
-        await supabase.from("payments").delete().eq("id", payment.id);
-      }
+      // Rollback: delete the pending payment row
+      await supabase.from("payments").delete().eq("id", payment.id);
       return new Response(
         JSON.stringify({ error: "Square invoice publish failed", square_invoice_id: squareInvoice.id, details: errBody }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }

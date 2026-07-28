@@ -106,59 +106,27 @@ export function useQuoteActions({ request, quote, onSuccess }: UseQuoteActionsOp
     },
   });
 
-  // Accept (draft | sent | revised -> accepted)
+  // NOTE: an admin "accept quote" action deliberately does NOT live here yet.
   //
-  // This is the missing link in the revenue chain. Until now the ONLY way a
-  // quote could reach 'accepted' was the customer clicking the token link that
-  // respond-to-quote/index.ts handles. An admin who closed the deal on the
-  // phone had no way to record it, which is why 0 of 21 drone_jobs carry a
-  // quote_id — not broken code, a missing button.
+  // It was built and then held back with the rest of the revenue chain (branch
+  // `redesign/revenue-chain`). Setting status='accepted' fires trg_quote_accepted
+  // -> on_quote_accepted -> create_drone_job_from_quote(), and the CURRENTLY
+  // DEPLOYED version of that function has four defects:
+  //   * writes (total * 100)::INTEGER into job_price, which is DOLLARS elsewhere
+  //     (live rows are 70 / 80 / 150) — a $225 quote would land as 22500
+  //   * writes customer_id, never client_id, so the job is invisible to sortie's
+  //     `clients` embed
+  //   * never sets site_address / property_type / processing_template_id
+  //   * `IF v_quote IS NULL` on a RECORD is true only when every field is NULL
   //
-  // Setting status='accepted' fires trg_quote_accepted -> on_quote_accepted ->
-  // create_drone_job_from_quote(), which now writes client_id, site_address,
-  // property_type, processing_template_id and job_price in DOLLARS.
-  const acceptQuoteMutation = useMutation({
-    mutationFn: async () => {
-      const acceptable = ["draft", "sent", "revised"];
-      if (!acceptable.includes(quote.status)) {
-        throw new Error(`Cannot accept a quote with status '${quote.status}'.`);
-      }
-
-      const { error } = await supabase
-        .from("quotes")
-        .update({ status: "accepted", accepted_at: new Date().toISOString() })
-        .eq("id", quote.id);
-
-      if (error) throw new Error(`Failed to accept quote: ${error.message}`);
-
-      // Mirror the request into a closed state so it leaves the open pipeline
-      if (request.id) {
-        await supabase
-          .from("quote_requests")
-          .update({ status: "closed" })
-          .eq("id", request.id);
-      }
-    },
-    onSuccess: () => {
-      toast({
-        title: "Quote accepted",
-        description: "Mission created from the accepted quote.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["drone-jobs"] });
-      invalidate();
-      onSuccess?.();
-    },
-    onError: (err: Error) => {
-      toast({ title: "Accept failed", description: err.message, variant: "destructive" });
-    },
-  });
+  // Shipping the button before migration 20260728091000 therefore creates
+  // corrupt, sortie-invisible jobs. The button and the migration land together
+  // or not at all. Do not re-add this in isolation.
 
   return {
     sendQuote: sendQuoteMutation.mutate,
     isSending: sendQuoteMutation.isPending,
     reviseQuote: reviseQuoteMutation.mutate,
     isRevising: reviseQuoteMutation.isPending,
-    acceptQuote: acceptQuoteMutation.mutate,
-    isAccepting: acceptQuoteMutation.isPending,
   };
 }

@@ -22,7 +22,7 @@ import {
 import PageShell from "@/components/admin/PageShell";
 import { LoadingState, EmptyState } from "@/components/admin/PageState";
 import { format } from "date-fns";
-import { RefreshCw, FileText, Inbox, Send, RotateCcw, Phone, Globe, PenLine, Archive, ArchiveRestore, Check } from "lucide-react";
+import { RefreshCw, FileText, Inbox, Send, RotateCcw, Phone, Globe, PenLine, Archive, ArchiveRestore } from "lucide-react";
 
 interface QuoteRequest {
   id: string;
@@ -85,7 +85,7 @@ function QuoteActionRow({
   isArchived: boolean;
   onArchive: () => void;
 }) {
-  const { sendQuote, isSending, reviseQuote, isRevising, acceptQuote, isAccepting } = useQuoteActions({
+  const { sendQuote, isSending, reviseQuote, isRevising } = useQuoteActions({
     request,
     quote: quote ?? { id: "", status: "", sent_at: null, request_id: request.id },
     onSuccess: onRefresh,
@@ -122,24 +122,11 @@ function QuoteActionRow({
         </Button>
       )}
 
-      {/* Mark Accepted: the phone-close path.
-          QuoteBuilder also carries this button, but the builder dialog is only
-          reachable for draft/revised quotes — a SENT quote (the usual state
-          when a client says yes on the phone) can only be accepted from here.
-          Accepting fires trg_quote_accepted -> create_drone_job_from_quote. */}
-      {(quoteStatus === "sent" || quoteStatus === "draft" || quoteStatus === "revised") && (
-        <Button
-          size="sm"
-          variant="secondary"
-          className="gap-1.5"
-          disabled={isAccepting}
-          onClick={() => acceptQuote()}
-          title="Client accepted — create the mission"
-        >
-          <Check className="h-3.5 w-3.5" />
-          {isAccepting ? "Accepting..." : "Mark Accepted"}
-        </Button>
-      )}
+      {/* "Mark Accepted" (the phone-close path) is deliberately absent.
+          It ships with the revenue chain on `redesign/revenue-chain`, because
+          accepting fires trg_quote_accepted -> create_drone_job_from_quote and
+          the deployed version of that function writes job_price × 100 and
+          customer_id instead of client_id. See useQuoteActions.ts. */}
 
       {/* Revise button: shown when declined */}
       {quoteStatus === "declined" && (

@@ -81,73 +81,22 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { quote_id: rawQuoteId, job_id: rawJobId } = body as {
-      quote_id?: string;
-      job_id?: string;
-    };
+    const { quote_id } = body as { quote_id: string };
 
-    if (!rawQuoteId && !rawJobId) {
+    if (!quote_id) {
       return new Response(
-        JSON.stringify({ error: "quote_id or job_id is required" }),
+        JSON.stringify({ error: "quote_id is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // ------------------------------------------------------------------
-    // Resolve the billing source.
-    //
-    // Quote path  : quote_id (or a job_id whose job carries a quote_id).
-    // Direct path : job_id only — a mission booked without ever going through
-    //               the quote flow. 17 of 21 live drone_jobs are in this state,
-    //               and until payments.quote_id was made nullable there was no
-    //               legal payments row to write for any of them.
-    // ------------------------------------------------------------------
-    let quote_id: string | null = rawQuoteId ?? null;
-    let job_id: string | null = rawJobId ?? null;
-    let recipientEmail: string | null = null;
-    let jobTypeLabel: string | null = null;
-    let depositAmount = 0;
-
-    if (job_id) {
-      const { data: job, error: jobError } = await supabase
-        .from("drone_jobs")
-        .select("id, quote_id, job_price, client_id, job_number, clients(name, email)")
-        .eq("id", job_id)
-        .maybeSingle();
-
-      if (jobError || !job) {
-        return new Response(
-          JSON.stringify({ error: "Job not found" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      quote_id = quote_id ?? job.quote_id ?? null;
-
-      if (!quote_id) {
-        const client = Array.isArray(job.clients) ? job.clients[0] : job.clients;
-        recipientEmail = client?.email ?? null;
-        jobTypeLabel = job.job_number ?? "aerial services";
-        // job_price is DOLLARS (see migration 20260728091000). Direct-booked
-        // deposits mirror the 50% the invoice copy already advertises.
-        depositAmount = Math.round(Number(job.job_price ?? 0) * 0.5 * 100) / 100;
-      }
-    }
-
-    // Idempotency guard: an existing deposit payment for EITHER key.
-    // .limit(1) rather than .maybeSingle() — the trigger and this function can
-    // both have written, and maybeSingle() throws on more than one row.
-    let existingQuery = supabase
+    // Idempotency guard: check for existing deposit payment
+    const { data: existing, error: existingError } = await supabase
       .from("payments")
-      .select("id, square_invoice_id, status, amount, customer_email")
+      .select("id, square_invoice_id, status")
+      .eq("quote_id", quote_id)
       .eq("payment_type", "deposit")
-      .limit(1);
-
-    existingQuery = quote_id
-      ? existingQuery.eq("quote_id", quote_id)
-      : existingQuery.eq("job_id", job_id!);
-
-    const { data: existingRows, error: existingError } = await existingQuery;
+      .maybeSingle();
 
     if (existingError) {
       console.error("Error checking existing payment:", existingError);
@@ -157,16 +106,10 @@ serve(async (req) => {
       );
     }
 
-    const existing = existingRows?.[0] ?? null;
-
-    // Only a payment that already carries a Square invoice is a true duplicate.
-    // A row WITHOUT square_invoice_id is what on_drone_job_delivered leaves
-    // behind — that is the "payment rows exist but no Square invoice is ever
-    // cut" case, and the right answer is to adopt the row, not to 409 on it.
-    if (existing?.square_invoice_id) {
+    if (existing) {
       return new Response(
         JSON.stringify({
-          error: "Deposit invoice already exists",
+          error: "Deposit invoice already exists for this quote",
           existing_payment_id: existing.id,
           existing_square_invoice_id: existing.square_invoice_id,
           status: existing.status,
@@ -175,80 +118,55 @@ serve(async (req) => {
       );
     }
 
-    if (quote_id) {
-      // Fetch quote with customer email from quote_requests
-      const { data: quote, error: quoteError } = await supabase
-        .from("quotes")
-        .select(`
-          id,
-          status,
-          total,
-          deposit_amount,
-          quote_requests (
-            name,
-            email,
-            job_type
-          )
-        `)
-        .eq("id", quote_id)
-        .maybeSingle();
+    // Fetch quote with customer email from quote_requests
+    const { data: quote, error: quoteError } = await supabase
+      .from("quotes")
+      .select(`
+        id,
+        status,
+        total,
+        deposit_amount,
+        quote_requests (
+          name,
+          email,
+          job_type
+        )
+      `)
+      .eq("id", quote_id)
+      .maybeSingle();
 
-      if (quoteError || !quote) {
-        return new Response(
-          JSON.stringify({ error: "Quote not found" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      // Guard: only accepted quotes trigger deposit
-      if (quote.status !== "accepted") {
-        return new Response(
-          JSON.stringify({ error: `Quote status must be 'accepted'. Current: ${quote.status}` }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      const requestInfo = Array.isArray(quote.quote_requests)
-        ? quote.quote_requests[0]
-        : quote.quote_requests;
-
-      recipientEmail = requestInfo?.email ?? null;
-      jobTypeLabel = requestInfo?.job_type ?? null;
-      depositAmount = Number(quote.deposit_amount);
-    }
-
-    // An adopted row's amount wins — it is what the trigger already computed.
-    if (existing?.amount != null) {
-      depositAmount = Number(existing.amount);
-      recipientEmail = recipientEmail ?? existing.customer_email ?? null;
-    }
-
-    if (!recipientEmail) {
+    if (quoteError || !quote) {
       return new Response(
-        JSON.stringify({
-          error: quote_id
-            ? "Customer email not found on quote request"
-            : "Client has no email on file — assign a client with an email to invoice",
-        }),
+        JSON.stringify({ error: "Quote not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Guard: only accepted quotes trigger deposit
+    if (quote.status !== "accepted") {
+      return new Response(
+        JSON.stringify({ error: `Quote status must be 'accepted'. Current: ${quote.status}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (!(depositAmount > 0)) {
+    const requestInfo = Array.isArray(quote.quote_requests)
+      ? quote.quote_requests[0]
+      : quote.quote_requests;
+
+    if (!requestInfo?.email) {
       return new Response(
-        JSON.stringify({ error: "Deposit amount must be greater than zero" }),
+        JSON.stringify({ error: "Customer email not found on quote request" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const requestInfo = { email: recipientEmail, job_type: jobTypeLabel };
-    const idempotencyRoot = quote_id ? `dep-${quote_id}` : `dep-job-${job_id}`;
-    const depositAmountCents = Math.round(depositAmount * 100);
-    const shortId = (quote_id ?? job_id!).slice(0, 8).toUpperCase();
+    const depositAmountCents = Math.round(Number(quote.deposit_amount) * 100);
+    const shortId = quote_id.slice(0, 8).toUpperCase();
 
     // Step 1: Create invoice in Square (DRAFT state)
     const createBody = {
-      idempotency_key: idempotencyRoot,
+      idempotency_key: `dep-${quote_id}`,
       invoice: {
         location_id: SQUARE_LOCATION_ID,
         primary_recipient: {
@@ -312,7 +230,7 @@ serve(async (req) => {
           "Square-Version": SQUARE_API_VERSION,
         },
         body: JSON.stringify({
-          idempotency_key: `pub-${idempotencyRoot}`,
+          idempotency_key: `pub-dep-${quote_id}`,
           version: squareInvoice.version,
         }),
       }
@@ -332,51 +250,29 @@ serve(async (req) => {
     const publishData = await publishResp.json();
     const publishedInvoice = publishData.invoice;
 
-    // Step 3: record the Square invoice against a payments row.
-    // Adopt the trigger-created row when there is one, otherwise insert.
-    let paymentId: string | null = existing?.id ?? null;
-    let insertError: { message: string } | null = null;
-
-    if (paymentId) {
-      const { error } = await supabase
-        .from("payments")
-        .update({
-          square_invoice_id: publishedInvoice.id,
-          square_invoice_url: publishedInvoice.public_url ?? null,
-          job_id: job_id ?? undefined,
-        })
-        .eq("id", paymentId);
-      insertError = error;
-    } else {
-      const { data: payment, error } = await supabase
-        .from("payments")
-        .insert({
-          quote_id: quote_id,
-          job_id: job_id,
-          payment_type: "deposit",
-          status: "pending",
-          amount: depositAmount,
-          square_invoice_id: publishedInvoice.id,
-          square_invoice_url: publishedInvoice.public_url ?? null,
-          customer_email: requestInfo.email,
-        })
-        .select("id")
-        .single();
-      insertError = error;
-      paymentId = payment?.id ?? null;
-    }
+    // Step 3: Insert payments row in Supabase
+    const { data: payment, error: insertError } = await supabase
+      .from("payments")
+      .insert({
+        quote_id: quote_id,
+        payment_type: "deposit",
+        status: "pending",
+        amount: Number(quote.deposit_amount),
+        square_invoice_id: publishedInvoice.id,
+        square_invoice_url: publishedInvoice.public_url ?? null,
+        customer_email: requestInfo.email,
+      })
+      .select("id")
+      .single();
 
     if (insertError) {
-      console.error("Supabase write failed after Square invoice published:", insertError);
+      console.error("Supabase insert failed after Square invoice published:", insertError);
       // Critical: Square invoice is live but Supabase record failed
       // Log the Square invoice ID for manual reconciliation
-      console.error(
-        "RECONCILIATION NEEDED: Square invoice", publishedInvoice.id,
-        "for quote", quote_id, "job", job_id
-      );
+      console.error("RECONCILIATION NEEDED: Square invoice", publishedInvoice.id, "for quote", quote_id);
       return new Response(
         JSON.stringify({
-          error: "Payment record write failed",
+          error: "Payment record insert failed",
           square_invoice_id: publishedInvoice.id,
           square_invoice_url: publishedInvoice.public_url,
         }),
@@ -384,9 +280,7 @@ serve(async (req) => {
       );
     }
 
-    const payment = { id: paymentId! };
-
-    console.log(`Deposit invoice created: payment=${payment.id}, square=${publishedInvoice.id}, quote=${quote_id}, job=${job_id}`);
+    console.log(`Deposit invoice created: payment=${payment.id}, square=${publishedInvoice.id}, quote=${quote_id}`);
 
     return new Response(
       JSON.stringify({
