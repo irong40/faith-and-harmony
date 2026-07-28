@@ -13,21 +13,48 @@
 // override was fetched, printed on the mission page, and then ignored by the
 // thing it was supposed to control. These helpers are the one place that band
 // is computed, so the grid, the mission list and the detail page agree.
+//
+// Two different numbers live here and must not be conflated:
+//
+//   * the per-template pass mark, used whenever a threshold is actually
+//     available, and
+//   * the FALLBACK band, used when there is none — a mission with no
+//     `processing_template_id`, a query that did not embed the template, or a
+//     template whose nullable `qa_threshold` was cleared in Settings ->
+//     Processing Templates.
+//
+// The fallback is the legacy hardcoded band those call sites replaced: pass
+// >= 75, warn >= 50. It is deliberately NOT the column's DB default (70): that
+// default only decides what a template ROW gets when inserted without a value,
+// which says nothing about how to colour a mission that has no template at all.
+// Falling back to 70 turned scores in [70,75) from amber to green and [47,50)
+// from red to amber, which on a vertical whose missions carry no template read
+// as a permanently green band.
 // ---------------------------------------------------------------------------
 
-/** DB default for `processing_templates.qa_threshold`. */
-export const DEFAULT_QA_THRESHOLD = 70;
+/**
+ * Pass mark used when no template threshold is available. This is the value the
+ * call sites hardcoded before this module existed (`score >= 75` -> green), not
+ * the DB default for `processing_templates.qa_threshold`, which is 70.
+ */
+export const DEFAULT_QA_THRESHOLD = 75;
 
 /**
- * The old hardcoded band was pass >= 75, warn >= 50. Keeping warn at two thirds
- * of the pass mark reproduces that spacing for any threshold instead of pinning
- * the warn line to a number that only made sense when pass was 75.
+ * Warn line used for scores below the pass mark (`score >= 50` -> amber). Like
+ * the pass mark this is a literal carried over from the original call sites,
+ * not a ratio of the threshold: the old code wrote two independent constants,
+ * so a stricter template raises the green line without dragging the red line up
+ * with it. Any scaling rule invented here would silently change the amber/red
+ * boundary for every template that is not set to exactly 75.
+ *
+ * A template with a pass mark at or below this floor simply has no amber band —
+ * `qaVerdict` tests the pass mark first, so the warn branch is unreachable.
  */
-const WARN_RATIO = 50 / 75;
+export const QA_WARN_FLOOR = 50;
 
 export type QaVerdict = "pass" | "warn" | "fail";
 
-/** Resolves the effective pass mark, falling back to the column default. */
+/** Resolves the effective pass mark, falling back to the legacy 75 pass mark. */
 export function effectiveQaThreshold(threshold?: number | null): number {
   return typeof threshold === "number" && Number.isFinite(threshold)
     ? threshold
@@ -42,7 +69,7 @@ export function qaVerdict(
   if (score == null || !Number.isFinite(score)) return null;
   const pass = effectiveQaThreshold(threshold);
   if (score >= pass) return "pass";
-  if (score >= Math.round(pass * WARN_RATIO)) return "warn";
+  if (score >= QA_WARN_FLOOR) return "warn";
   return "fail";
 }
 

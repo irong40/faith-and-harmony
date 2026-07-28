@@ -40,7 +40,7 @@ export function usePilotMissions() {
         .select('id, job_number, clients(name), property_address, property_city, property_state, latitude, longitude, scheduled_date, status, is_test, drone_packages(id, name, code, shot_manifest, requires_thermal, requires_raw)')
         .eq('pilot_id', user!.id)
         .eq('is_test', false)
-        .neq('status', 'canceled')
+        .neq('status', 'cancelled')
         .order('scheduled_date', { ascending: true });
 
       if (error) throw error;

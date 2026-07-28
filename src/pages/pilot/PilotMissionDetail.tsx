@@ -35,7 +35,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
     scheduled: { label: "SCHEDULED", color: "bg-blue-500" },
     captured: { label: "IN PROGRESS", color: "bg-orange-500" },
     complete: { label: "COMPLETE", color: "bg-green-500" },
-    canceled: { label: "CANCELED", color: "bg-gray-500" },
+    cancelled: { label: "CANCELLED", color: "bg-gray-500" },
 };
 
 export default function PilotMissionDetail() {

@@ -5,7 +5,7 @@ const STATUS_COLORS: Record<string, string> = {
   captured: '#f97316',    // orange (in_progress)
   in_progress: '#f97316',
   complete: '#22c55e',    // green
-  canceled: '#6b7280',    // gray
+  cancelled: '#6b7280',   // gray
 };
 
 interface JobMarkerProps {

@@ -45,7 +45,7 @@ export default function PortfolioFlights() {
         .select("id, job_number, property_address, property_city, scheduled_date, status, drone_packages(name, code)")
         .eq("pilot_id", user!.id)
         .eq("is_test", true)
-        .neq("status", "canceled")
+        .neq("status", "cancelled")
         .order("scheduled_date", { ascending: false });
 
       if (error) throw error;
@@ -295,7 +295,7 @@ export default function PortfolioFlights() {
                   client_name: "Portfolio Flight",
                   address: flight.property_address,
                   scheduled_date: flight.scheduled_date,
-                  status: flight.status as "scheduled" | "captured" | "complete" | "canceled",
+                  status: flight.status as "scheduled" | "captured" | "complete" | "cancelled",
                   package_type: flight.package_name || undefined,
                 }}
               />

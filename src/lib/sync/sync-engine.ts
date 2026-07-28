@@ -196,7 +196,7 @@ export async function pullMissions(pilotId: string): Promise<void> {
     .from('drone_jobs')
     .select('*, clients(name), drone_packages(id, name, code)')
     .eq('pilot_id', pilotId)
-    .neq('status', 'canceled')
+    .neq('status', 'cancelled')
     .order('scheduled_date', { ascending: true });
 
   if (error) throw error;
