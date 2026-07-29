@@ -1,7 +1,9 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { SignedImage } from '@/components/reports/SignedImage';
 import { REPORT_COLORS } from '@/lib/brand';
+import { useRenderableReportImages } from '@/lib/reportImages';
 import type { GenericNarrativeSectionData, ReportImage } from '@/types/report';
 
 /**
@@ -50,6 +52,10 @@ export function GenericNarrative({ data, onChange, mode, images, config }: Props
   const values = data.values ?? {};
   const fields = config.fields ?? [];
   const setValue = (id: string, v: string) => onChange({ ...data, values: { ...values, [id]: v } });
+  // Signed-URL resolution: failed images drop out so they behave as missing —
+  // the edit-mode emptyImageLabel hint and the preview/print "render nothing"
+  // rule below both key off this filtered list.
+  const imgs = useRenderableReportImages(images);
 
   if (mode === 'edit') {
     return (
@@ -74,7 +80,7 @@ export function GenericNarrative({ data, onChange, mode, images, config }: Props
         <div><Label>Notes</Label><Textarea rows={2} value={data.notes ?? ''} onChange={(e) => onChange({ ...data, notes: e.target.value })} /></div>
         {config.showImages !== false && (
           <>
-            {config.emptyImageLabel && (images ?? []).length === 0 && (
+            {config.emptyImageLabel && imgs.length === 0 && (
               <div className="rounded border border-dashed p-4 text-center text-xs text-muted-foreground">{config.emptyImageLabel}</div>
             )}
             <p className="text-xs text-muted-foreground">Upload images in the Report Builder (Phase 3).</p>
@@ -84,7 +90,6 @@ export function GenericNarrative({ data, onChange, mode, images, config }: Props
     );
   }
 
-  const imgs = images ?? [];
   const filled = fields.filter((f) => (values[f.id] ?? '') !== '');
 
   return (
@@ -107,7 +112,7 @@ export function GenericNarrative({ data, onChange, mode, images, config }: Props
         <div className="grid grid-cols-2 gap-3">
           {imgs.map((img) => (
             <div key={img.id} className="rounded overflow-hidden" style={{ border: `1px solid ${REPORT_COLORS.border}` }}>
-              <img src={img.image_url} alt={img.caption ?? config.title} className="w-full object-cover" />
+              <SignedImage value={img.image_url} alt={img.caption ?? config.title} className="w-full object-cover" />
               {img.caption && <p className="text-xs p-2 text-center" style={{ background: REPORT_COLORS.bgCard, color: REPORT_COLORS.textMuted }}>{img.caption}</p>}
             </div>
           ))}

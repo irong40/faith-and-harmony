@@ -1,7 +1,9 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { SignedImage } from '@/components/reports/SignedImage';
 import { REPORT_COLORS } from '@/lib/brand';
+import { useRenderableReportImages } from '@/lib/reportImages';
 import type { ChangeDetectionData, ReportImage } from '@/types/report';
 
 interface Props {
@@ -13,6 +15,9 @@ interface Props {
 }
 
 export function ChangeDetection({ data, onChange, mode, images }: Props) {
+  // Signed-URL resolution: failed images drop out so they behave as missing.
+  const imgs = useRenderableReportImages(images);
+
   if (mode === 'edit') {
     return (
       <div className="space-y-3">
@@ -26,7 +31,6 @@ export function ChangeDetection({ data, onChange, mode, images }: Props) {
     );
   }
 
-  const imgs = images ?? [];
   const before = imgs.filter((_, i) => i % 2 === 0);
   const after = imgs.filter((_, i) => i % 2 === 1);
 
@@ -41,12 +45,12 @@ export function ChangeDetection({ data, onChange, mode, images }: Props) {
             <div key={b.id} className="grid grid-cols-2 gap-2">
               <div>
                 <p className="text-xs font-semibold mb-1" style={{ color: REPORT_COLORS.textMuted }}>Before</p>
-                <img src={b.image_url} alt={b.caption ?? 'Before'} className="w-full rounded" />
+                <SignedImage value={b.image_url} alt={b.caption ?? 'Before'} className="w-full rounded" />
               </div>
               {after[i] && (
                 <div>
                   <p className="text-xs font-semibold mb-1" style={{ color: REPORT_COLORS.primary }}>After</p>
-                  <img src={after[i].image_url} alt={after[i].caption ?? 'After'} className="w-full rounded" />
+                  <SignedImage value={after[i].image_url} alt={after[i].caption ?? 'After'} className="w-full rounded" />
                 </div>
               )}
             </div>

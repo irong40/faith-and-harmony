@@ -1,6 +1,8 @@
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { SignedImage } from '@/components/reports/SignedImage';
 import { REPORT_COLORS } from '@/lib/brand';
+import { useRenderableReportImages } from '@/lib/reportImages';
 import type { DetectionHeatmapData, ReportImage } from '@/types/report';
 
 interface Props {
@@ -12,6 +14,9 @@ interface Props {
 }
 
 export function DetectionHeatmap({ data, onChange, mode, images }: Props) {
+  // Signed-URL resolution: failed images drop out so they behave as missing.
+  const imgs = useRenderableReportImages(images);
+
   if (mode === 'edit') {
     return (
       <div className="space-y-3">
@@ -22,8 +27,6 @@ export function DetectionHeatmap({ data, onChange, mode, images }: Props) {
     );
   }
 
-  const imgs = images ?? [];
-
   return (
     <div className="space-y-3">
       <h2 className="text-xl font-bold" style={{ fontFamily: 'Georgia, serif', color: REPORT_COLORS.primary }}>Detection Heatmap</h2>
@@ -32,7 +35,7 @@ export function DetectionHeatmap({ data, onChange, mode, images }: Props) {
         <div className="space-y-2">
           {imgs.map((img) => (
             <div key={img.id}>
-              <img src={img.image_url} alt={img.caption ?? 'Heatmap'} className="w-full rounded" />
+              <SignedImage value={img.image_url} alt={img.caption ?? 'Heatmap'} className="w-full rounded" />
               {img.caption && <p className="text-xs text-center mt-1" style={{ color: REPORT_COLORS.textMuted }}>{img.caption}</p>}
             </div>
           ))}

@@ -1,6 +1,8 @@
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { SignedImage } from '@/components/reports/SignedImage';
 import { REPORT_COLORS } from '@/lib/brand';
+import { useRenderableReportImages } from '@/lib/reportImages';
 import type { AnnotatedImageryData, ReportImage } from '@/types/report';
 
 interface Props {
@@ -12,6 +14,9 @@ interface Props {
 }
 
 export function AnnotatedImagery({ data, onChange, mode, images }: Props) {
+  // Signed-URL resolution: failed images drop out so they behave as missing.
+  const imgs = useRenderableReportImages(images);
+
   if (mode === 'edit') {
     return (
       <div className="space-y-3">
@@ -21,8 +26,6 @@ export function AnnotatedImagery({ data, onChange, mode, images }: Props) {
     );
   }
 
-  const imgs = images ?? [];
-
   return (
     <div className="space-y-3">
       <h2 className="text-xl font-bold" style={{ fontFamily: 'Georgia, serif', color: REPORT_COLORS.primary }}>Annotated Imagery</h2>
@@ -31,7 +34,7 @@ export function AnnotatedImagery({ data, onChange, mode, images }: Props) {
         <div className="grid grid-cols-2 gap-3">
           {imgs.map((img) => (
             <div key={img.id} className="rounded overflow-hidden" style={{ border: `1px solid ${REPORT_COLORS.border}` }}>
-              <img src={img.image_url} alt={img.caption ?? 'Annotated image'} className="w-full object-cover" />
+              <SignedImage value={img.image_url} alt={img.caption ?? 'Annotated image'} className="w-full object-cover" />
               {img.caption && <p className="text-xs p-2 text-center" style={{ background: REPORT_COLORS.bgCard, color: REPORT_COLORS.textMuted }}>{img.caption}</p>}
             </div>
           ))}

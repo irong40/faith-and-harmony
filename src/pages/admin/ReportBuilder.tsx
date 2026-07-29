@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import PageShell from "@/components/admin/PageShell";
 import { LoadingState } from "@/components/admin/PageState";
+import { prewarmReportImageUrls } from "@/lib/reportImages";
 import {
   useReportTemplates,
   useReportTemplate,
@@ -162,9 +163,14 @@ export default function ReportBuilder() {
         }
       },
     });
+    // window.print() cannot await anything, so every bucket-relative image
+    // value must already hold a signed URL BEFORE the dialog snapshots the
+    // hidden print view — otherwise an unresolved image simply vanishes from
+    // the client PDF. Report load prewarms too; this is the backstop.
+    await prewarmReportImageUrls(images.map((img) => img.image_url));
     // Trigger browser print dialog for actual PDF
     setTimeout(() => window.print(), 300);
-  }, [reportId, pdfMutation, emptySectionWarning, existingReport?.status, updateMutation]);
+  }, [reportId, pdfMutation, emptySectionWarning, existingReport?.status, updateMutation, images]);
 
   // Load existing report
   useEffect(() => {
@@ -174,6 +180,11 @@ export default function ReportBuilder() {
     setSectionData(existingReport.section_data);
     setActiveSections(existingReport.active_sections);
     setImages(existingReport.report_images ?? []);
+    // Resolve signed URLs for every attached image up front so preview and
+    // the always-mounted hidden print view render from a warm cache.
+    void prewarmReportImageUrls(
+      (existingReport.report_images ?? []).map((img) => img.image_url)
+    );
     setSelectedTemplateId(existingReport.template_id);
     if (existingReport.active_sections.length > 0) {
       setSelectedSection(existingReport.active_sections[0]);

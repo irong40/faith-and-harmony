@@ -1,7 +1,9 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { SignedImage } from '@/components/reports/SignedImage';
 import { REPORT_COLORS } from '@/lib/brand';
+import { useRenderableReportImages } from '@/lib/reportImages';
 import type { TransectMapData, ReportImage } from '@/types/report';
 
 interface Props {
@@ -13,6 +15,9 @@ interface Props {
 }
 
 export function TransectMap({ data, onChange, mode, images }: Props) {
+  // Signed-URL resolution: failed images drop out so they behave as missing.
+  const imgs = useRenderableReportImages(images);
+
   if (mode === 'edit') {
     return (
       <div className="space-y-3">
@@ -26,15 +31,13 @@ export function TransectMap({ data, onChange, mode, images }: Props) {
     );
   }
 
-  const imgs = images ?? [];
-
   return (
     <div className="space-y-3">
       <h2 className="text-xl font-bold" style={{ fontFamily: 'Georgia, serif', color: REPORT_COLORS.primary }}>Transect Map</h2>
       {data.description && <p className="text-sm" style={{ color: REPORT_COLORS.textSecondary }}>{data.description}</p>}
       {imgs.length > 0 ? (
         <div className="relative">
-          <img src={imgs[0].image_url} alt={imgs[0].caption ?? 'Transect map'} className="w-full rounded" />
+          <SignedImage value={imgs[0].image_url} alt={imgs[0].caption ?? 'Transect map'} className="w-full rounded" />
           {imgs[0].caption && <p className="text-xs text-center mt-1" style={{ color: REPORT_COLORS.textMuted }}>{imgs[0].caption}</p>}
         </div>
       ) : (
