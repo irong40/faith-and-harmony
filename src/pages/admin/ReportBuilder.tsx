@@ -380,12 +380,21 @@ export default function ReportBuilder() {
   const currentImages = selectedSection ? images.filter((i) => i.section_key === selectedSection) : [];
 
   return (
-    // `flex-1 min-h-0`, NOT `min-h-screen`. AdminLayout is already a
-    // `min-h-screen` flex column with the nav above this, so a second full
-    // viewport here stacked BELOW the nav: the document grew past 100vh by the
-    // nav's height (dead scroll) and the 3-pane row's bottom edge sat under the
-    // fold. Claiming the remaining column space instead makes the editor end
+    // `flex-1 min-h-0`, NOT `min-h-screen`. AdminLayout is an `h-screen
+    // overflow-hidden` flex column with the nav above this, so a second full
+    // viewport here would stack BELOW the nav: the document grows past 100vh by
+    // the nav's height (dead scroll) and the 3-pane row's bottom edge sits under
+    // the fold. Claiming the remaining column space instead makes the editor end
     // exactly at the viewport bottom, so the only scrolling is inside the panes.
+    //
+    // The shell being `h-screen` and not `min-h-screen` is what makes this work
+    // AT ALL, and it is the easiest thing in this file to undo by accident.
+    // `min-h-screen` is a FLOOR: a `flex-1` child of an unbounded parent grows
+    // to fit its content rather than scrolling, so every `overflow-y-auto` below
+    // stays dormant. That shipped once — 6567px of document in a 911px viewport,
+    // zero scrolling panes, Save 2888px above the fold — with this chain already
+    // exactly as it reads now. If scrolling dies here again, check AdminLayout's
+    // root FIRST. jsdom cannot catch it; measure in a browser.
     // The `print:` overrides matter: a printed page has no viewport to fill and
     // no scrolling, so the flex/overflow constraints that make the editor work
     // on screen would squeeze the hidden print view below into the leftover
