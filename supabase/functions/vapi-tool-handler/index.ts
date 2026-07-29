@@ -7,6 +7,7 @@
  *     return their active jobs, quotes, and status.
  *   - get_package_pricing: Return natural language pricing and deliverables
  *     for a given service_type so the bot can speak the answer aloud.
+ *     Sourced LIVE from drone_packages — see the note on that handler.
  *   - check_availability: Check available dates for scheduling via the
  *     availability-check edge function.
  *
@@ -20,41 +21,55 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Package pricing data — canonical values from CLAUDE.md.
-// Duplicated here rather than imported from pricing-lookup to avoid that module's
-// top-level serve() call conflicting with this function's handler.
-const PACKAGES: Record<string, { name: string; price: number; unit?: string; deliverables: string[] }> = {
-  re_basic: {
-    name: 'Listing Lite',
-    price: 225,
-    deliverables: ['10 photos', 'Sky replacement', 'Next day delivery'],
-  },
-  re_standard: {
-    name: 'Listing Pro',
-    price: 450,
-    deliverables: ['25 photos', '60 second reel', '2D boundary overlay', '48 hour turnaround'],
-  },
-  re_premium: {
-    name: 'Luxury Listing',
-    price: 750,
-    deliverables: ['40+ photos', '2 minute cinematic video', 'Twilight shoot', '24 hour priority'],
-  },
-  construction: {
-    name: 'Construction Progress',
-    price: 450,
-    unit: '/visit',
-    deliverables: ['Orthomosaic', 'Site overview', 'Date stamped archive'],
-  },
-  commercial: {
-    name: 'Commercial Marketing',
-    price: 850,
-    deliverables: ['4K video', '3D model', 'Raw footage', 'Perpetual license'],
-  },
-  inspection: {
-    name: 'Inspection Data',
-    price: 1200,
-    deliverables: ['Inspection grid photography', 'Annotated report', 'Exportable data'],
-  },
+/**
+ * Legacy service_type keys the assistant may still send.
+ *
+ * These were the keys of a hardcoded PACKAGES map that lived here until
+ * 2026-07-28. They are NOT columns in drone_packages, so an assistant still
+ * sending them has to be translated to a real `code` or it gets "no pricing".
+ * Keep this map until the Vapi tool definition is confirmed to send codes.
+ *
+ * `inspection` is deliberately absent: the old map priced it at $1,200, and no
+ * such package exists in the live catalogue. Inspection work is quote-based
+ * (ROOF_INSPECTION, SOLAR_INSPECTION, INSURANCE_DOC all carry price 0), so the
+ * lookup below resolves it by service_type and quotes no number at all.
+ */
+const LEGACY_KEY_TO_CODE: Record<string, string> = {
+  re_basic: 'LISTING_LITE_225',
+  re_standard: 'LISTING_PRO_450',
+  re_premium: 'LUXURY_750',
+  construction: 'CONSTRUCTION_450',
+  commercial: 'COMMERCIAL_850',
+};
+
+type PackageRow = {
+  code: string;
+  name: string;
+  price: number;
+  service_type: string | null;
+  features: string[] | null;
+};
+
+/**
+ * Just the slice of the client this file's pricing lookup needs.
+ *
+ * Deliberately NOT `ReturnType<typeof createClient>`: calling createClient with
+ * no schema generic infers the schema as `never`, which is why every row access
+ * in handleLookupCustomer below is a type error today. Declaring the shape we
+ * actually use keeps this handler honest and lets the tests pass a plain object
+ * instead of casting a fake client to `never`.
+ */
+type PackageReader = {
+  from(table: string): {
+    select(columns: string): {
+      eq(column: string, value: unknown): {
+        order(
+          column: string,
+          opts: { ascending: boolean },
+        ): PromiseLike<{ data: unknown; error: unknown }>;
+      };
+    };
+  };
 };
 
 const corsHeaders = {
@@ -109,7 +124,14 @@ serve(async (req) => {
         const result = await handleLookupCustomer(supabase, args);
         results.push({ toolCallId: id, result });
       } else if (name === "get_package_pricing") {
-        const result = await handleGetPackagePricing(args);
+        // Narrowed at the boundary: structurally matching the real client
+        // against PackageReader sends the checker into an unbounded generic
+        // instantiation (TS2589). The cast is confined to this one line so the
+        // handler itself keeps a type the tests can satisfy with a plain object.
+        const result = await handleGetPackagePricing(
+          supabase as unknown as PackageReader,
+          args,
+        );
         results.push({ toolCallId: id, result });
       } else if (name === "check_availability") {
         const result = await handleCheckAvailability(args);
@@ -204,21 +226,52 @@ async function handleLookupCustomer(
   return lines.join("\n");
 }
 
-// Price words mapping for spoken responses. Known prices only.
-// If price is not in the map, fall back to numeric string.
-const PRICE_WORDS: Record<number, string> = {
-  225: "two hundred twenty five",
-  450: "four hundred fifty",
-  750: "seven hundred fifty",
-  850: "eight hundred fifty",
-  1200: "twelve hundred",
-};
+const ONES = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+  "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen",
+  "eighteen", "nineteen"];
+const TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
 
+function under100(n: number): string {
+  if (n < 20) return ONES[n];
+  const t = TENS[Math.floor(n / 10)];
+  const o = ONES[n % 10];
+  return o ? `${t} ${o}` : t;
+}
+
+function under1000(n: number): string {
+  if (n < 100) return under100(n);
+  const h = `${ONES[Math.floor(n / 100)]} hundred`;
+  const rest = n % 100;
+  return rest ? `${h} ${under100(rest)}` : h;
+}
+
+/**
+ * Spell a whole-dollar price for speech.
+ *
+ * There is no lookup table here on purpose. The previous version mapped five
+ * literal prices to words and fell back to the BARE NUMERAL for anything else,
+ * so the moment a price changed in the catalogue Paula would read "1350" as a
+ * digit string down the phone. Prices now come from the database, so this has
+ * to spell any of them.
+ *
+ * Four-figure prices that land on a round hundred are spoken the way people
+ * actually say them — 1200 is "twelve hundred", not "one thousand two hundred".
+ */
 export function formatPriceAsWords(price: number, unit?: string): string {
-  const words = PRICE_WORDS[price] ?? String(price);
+  const n = Math.round(price);
+  let words: string;
+  if (n === 0) {
+    words = "zero";
+  } else if (n >= 1100 && n <= 9999 && n % 100 === 0) {
+    words = `${under100(n / 100)} hundred`;
+  } else if (n >= 1000) {
+    const rest = n % 1000;
+    words = `${under1000(Math.floor(n / 1000))} thousand${rest ? ` ${under1000(rest)}` : ""}`;
+  } else {
+    words = under1000(n);
+  }
   const base = `${words} dollars`;
   if (!unit) return base;
-  // unit arrives as "/visit" from the PACKAGES data; convert to spoken form
   const spoken = unit.replace(/^\//, "per ");
   return `${base} ${spoken}`;
 }
@@ -257,34 +310,76 @@ async function handleCheckAvailability(
   return `We have ${data.count} dates available: ${data.readable_dates}. Which date works best for you?`;
 }
 
+/** Join for speech with an Oxford-style "and" before the last item. */
+function speakList(items: string[]): string {
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
+}
+
+/** One package, spoken. Price 0 means quote-based — never say "zero dollars". */
+function speakPackage(pkg: PackageRow): string {
+  const features = pkg.features ?? [];
+  const includes = features.length ? ` Includes ${speakList(features)}.` : "";
+  if (!pkg.price || pkg.price <= 0) {
+    return `${pkg.name} is priced per property rather than as a flat package, so Adam puts together a custom quote once he knows the site.${includes}`;
+  }
+  return `${pkg.name}: ${formatPriceAsWords(pkg.price)}.${includes}`;
+}
+
+/**
+ * get_package_pricing — reads the LIVE catalogue.
+ *
+ * This used to answer from a hardcoded table written in March. By 2026-07-28 it
+ * had drifted from drone_packages in a way that put wrong numbers in a caller's
+ * ear: it quoted "Inspection Data, twelve hundred dollars" for work the live
+ * catalogue prices at 0, i.e. quote-based. Every co-located test passed the
+ * whole time, because the tests asserted the hardcoded table against itself.
+ *
+ * Rules this encodes:
+ *   - active = false rows are never quoted (the retired 495/795/800/1250 tier).
+ *   - price 0 is quote-based and must not be spoken as a number.
+ *   - a service_type matching several packages lists them all, cheapest first.
+ *   - if the query fails, say so and hand off. NEVER fall back to a literal.
+ */
 export async function handleGetPackagePricing(
+  supabase: PackageReader,
   args: { service_type?: string }
 ): Promise<string> {
-  const { service_type } = args;
+  const asked = args.service_type?.trim();
 
-  if (!service_type) {
+  if (!asked) {
     return "I need to know which service you are asking about. Could you tell me the package name?";
   }
 
-  const pkg = PACKAGES[service_type];
+  const { data, error } = await supabase
+    .from("drone_packages")
+    .select("code, name, price, service_type, features")
+    .eq("active", true)
+    .order("price", { ascending: true });
 
-  if (!pkg) {
-    return "I do not have pricing for that specific service. Our packages include Listing Lite, Listing Pro, Luxury Listing, Construction Progress, Commercial Marketing, and Inspection Data. Which one would you like to know about?";
+  if (error || !data) {
+    console.error("get_package_pricing: drone_packages query failed", error);
+    return "I can't pull up the current pricing this second. Let me take your details and have Adam call you back with exact numbers.";
   }
 
-  const priceSpoken = formatPriceAsWords(pkg.price, pkg.unit);
+  const rows = (data as unknown as PackageRow[]).map((r) => ({ ...r, price: Number(r.price) }));
+  const key = asked.toLowerCase();
+  const wanted = LEGACY_KEY_TO_CODE[key]?.toLowerCase() ?? key;
 
-  // Build deliverables list with Oxford-style "and" before last item
-  const deliverables = pkg.deliverables;
-  let deliverablesList: string;
-  if (deliverables.length === 1) {
-    deliverablesList = deliverables[0];
-  } else if (deliverables.length === 2) {
-    deliverablesList = `${deliverables[0]} and ${deliverables[1]}`;
-  } else {
-    const allButLast = deliverables.slice(0, -1).join(", ");
-    deliverablesList = `${allButLast}, and ${deliverables[deliverables.length - 1]}`;
+  const byCode = rows.filter((r) => r.code?.toLowerCase() === wanted);
+  const byService = rows.filter((r) => r.service_type?.toLowerCase() === wanted);
+  const byName = rows.filter((r) => r.name?.toLowerCase() === wanted);
+  const matches = byCode.length ? byCode : byService.length ? byService : byName;
+
+  if (!matches.length) {
+    const names = rows.map((r) => r.name);
+    return names.length
+      ? `I do not have pricing for that specific service. Our packages include ${speakList(names)}. Which one would you like to know about?`
+      : "I do not have pricing for that specific service. Let me take your details and have Adam call you back.";
   }
 
-  return `${pkg.name}: ${priceSpoken}. Includes ${deliverablesList}.`;
+  if (matches.length === 1) return speakPackage(matches[0]);
+
+  return `We have a few options there. ${matches.map(speakPackage).join(" ")}`;
 }
