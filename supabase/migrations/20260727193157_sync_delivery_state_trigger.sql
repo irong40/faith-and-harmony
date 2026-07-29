@@ -1,8 +1,7 @@
--- M3: delivery_status is the source of truth for delivered-ness; keep
--- status/delivered_at in lockstep. No-op unless delivery_status actually
--- changes (drone_jobs carries 7+ triggers; same-event firing is
--- alphabetical — 'zz_' prefix runs this last). portfolio_complete is a
--- terminal state for speculative work and must NOT stamp delivered_at.
+-- Applied live 2026-07-27 (MCP: sync_delivery_state_trigger).
+-- delivery_status is the source of truth; status/delivered_at follow.
+-- 'zz_' prefix fires last among BEFORE UPDATE triggers (alphabetical).
+-- portfolio_complete must NOT stamp delivered_at.
 CREATE OR REPLACE FUNCTION sync_delivery_state() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN

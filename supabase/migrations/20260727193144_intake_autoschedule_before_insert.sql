@@ -1,5 +1,6 @@
--- M2: intake->scheduled could never fire for jobs created WITH a date
--- (auto_advance is BEFORE UPDATE and requires OLD.scheduled_date IS NULL,
+-- Applied live 2026-07-27 (MCP: intake_autoschedule_before_insert).
+-- intake->scheduled could never fire for jobs created WITH a date
+-- (auto_advance is BEFORE UPDATE + requires OLD.scheduled_date IS NULL,
 -- but both creation paths insert status='intake' with a date set).
 CREATE OR REPLACE FUNCTION drone_job_intake_autoschedule() RETURNS trigger
 LANGUAGE plpgsql AS $$

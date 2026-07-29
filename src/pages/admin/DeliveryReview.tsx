@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -58,6 +59,7 @@ interface DroneJob {
   delivery_notes: string | null;
   delivery_drive_url: string | null;
   download_url: string | null;
+  job_price: number | null;
   clients?: { id: string; name: string; company: string | null; email: string | null } | null;
   processing_templates?: { path_code: string | null; display_name: string | null } | null;
   drone_packages?: { name: string } | null;
@@ -96,12 +98,15 @@ export default function DeliveryReview() {
   const [sending, setSending] = useState(false);
   const [markingDelivered, setMarkingDelivered] = useState(false);
   const [sendingInvoice, setSendingInvoice] = useState(false);
+  const [report, setReport] = useState<{ id: string; title: string; status: string } | null>(null);
+  const [priceInput, setPriceInput] = useState<string>("");
+  const [savingPrice, setSavingPrice] = useState(false);
 
   const fetchData = async () => {
     if (!id) return;
     setLoading(true);
 
-    const [jobRes, delRes] = await Promise.all([
+    const [jobRes, delRes, repRes] = await Promise.all([
       supabase
         .from("drone_jobs")
         .select("*, clients(id, name, company, email), processing_templates(path_code, display_name), drone_packages(name)")
@@ -116,6 +121,13 @@ export default function DeliveryReview() {
         .select("id, name, description, file_count, total_size_bytes, download_url")
         .eq("job_id", id)
         .order("created_at"),
+      supabase
+        .from("job_reports")
+        .select("id, title, status")
+        .eq("job_id", id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
     if (jobRes.error) {
@@ -123,7 +135,10 @@ export default function DeliveryReview() {
     } else {
       setJob(jobRes.data as DroneJob);
       setDeliveryNotes(jobRes.data.delivery_notes || "");
+      setPriceInput(jobRes.data.job_price != null ? String(jobRes.data.job_price) : "");
     }
+
+    setReport(repRes.data ?? null);
 
     if (delRes.error) {
       toast({
@@ -162,8 +177,40 @@ export default function DeliveryReview() {
   const siteLabel = job?.site_address || job?.property_address;
   const jobType = job?.processing_templates?.display_name || job?.drone_packages?.name || "—";
 
+  const handleSavePrice = async () => {
+    if (!job || priceInput === "") return;
+    setSavingPrice(true);
+    const { error } = await supabase
+      .from("drone_jobs")
+      .update({ job_price: Number(priceInput) })
+      .eq("id", job.id);
+    if (error) {
+      toast({ title: "Price save failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Price saved" });
+      fetchData();
+    }
+    setSavingPrice(false);
+  };
+
   const handleSendToClient = async () => {
     if (!job || !clientEmail) return;
+    // Drive-package rule: the finalized report PDF belongs in the folder
+    // BEFORE the client gets the link. Soft gate, not a hard block.
+    if (!report || report.status !== "final") {
+      const ok = window.confirm(
+        report
+          ? `The report "${report.title}" is still a DRAFT. Finalize it, print the PDF, and drop it in the Drive folder before sending.\n\nSend without a finalized report?`
+          : "No report exists for this job. If this delivery should include one, create and finalize it first.\n\nSend without a report?"
+      );
+      if (!ok) return;
+    }
+    if (job.job_price == null) {
+      const ok = window.confirm(
+        "No job price is recorded — this delivery's revenue will be invisible in every report until it is set (0 is valid for spec work).\n\nSend anyway?"
+      );
+      if (!ok) return;
+    }
     setSending(true);
 
     const { error } = await supabase.functions.invoke("drone-delivery-email", {
@@ -509,6 +556,61 @@ export default function DeliveryReview() {
                   placeholder="Add a personal note for your client..."
                   rows={4}
                 />
+              </CardContent>
+            </Card>
+
+            {/* Report & close-out (2026-07-27 pipeline program: Drive-package
+                report channel + price capture at close-out) */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Report &amp; Close-Out</CardTitle>
+                <CardDescription>
+                  Finalize the report, print the PDF, and drop it in the Drive folder before sending
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span>Client report</span>
+                  {report ? (
+                    <Badge
+                      variant="outline"
+                      className={report.status === "final" ? "bg-green-600 text-white border-green-600" : "border-yellow-500 text-yellow-700"}
+                    >
+                      {report.status}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="border-red-500 text-red-600">none</Badge>
+                  )}
+                </div>
+                {report ? (
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => navigate(`/admin/reports/${report.id}/edit`)}>
+                    Open Report
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => navigate(`/admin/reports/new?job_id=${job.id}`)}>
+                    Create Report
+                  </Button>
+                )}
+                <div className="flex items-center gap-2 pt-2">
+                  <Label htmlFor="job-price" className="whitespace-nowrap">Job price (USD)</Label>
+                  <Input
+                    id="job-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={priceInput}
+                    onChange={(e) => setPriceInput(e.target.value)}
+                    className="h-9"
+                  />
+                  <Button size="sm" variant="outline" disabled={savingPrice || priceInput === ""} onClick={handleSavePrice}>
+                    Save
+                  </Button>
+                </div>
+                {job.job_price == null && (
+                  <p className="text-xs text-muted-foreground">
+                    No price recorded — this job's revenue is invisible until it is set (0 is valid for spec work).
+                  </p>
+                )}
               </CardContent>
             </Card>
 
