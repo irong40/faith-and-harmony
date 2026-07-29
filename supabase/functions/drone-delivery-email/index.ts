@@ -286,14 +286,27 @@ serve(async (req) => {
 </html>
     `.trim();
 
-    const emailResponse = await resend.emails.send({
+    // resend@2 returns { data, error } and never throws — the error field
+    // MUST be checked, or a failed send still marks the job delivered
+    const { data: sendData, error: sendError } = await resend.emails.send({
       from: `Sentinel Aerial Inspections <${BRAND.email}>`,
       to: [recipientEmail],
       subject: emailSubject,
       html: emailHtml,
     });
 
-    console.log("Sentinel delivery email sent:", emailResponse);
+    if (sendError) {
+      console.error("Resend send failed — job NOT marked delivered:", sendError);
+      return new Response(
+        JSON.stringify({
+          error: "email send failed",
+          details: sendError.message ?? sendError.name ?? String(sendError),
+        }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Sentinel delivery email sent:", sendData);
 
     // Generate delivery token for client portal access
     const deliveryToken = crypto.randomUUID().replace(/-/g, "");
@@ -321,7 +334,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        email_id: emailResponse.id,
+        email_id: sendData?.id,
         sent_to: recipientEmail,
         stats: { photo_count: photoCount, video_count: videoCount, total_size_mb: totalSizeMB },
       }),

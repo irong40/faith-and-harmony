@@ -157,7 +157,8 @@ Deno.test('post_delivery step 1 mentions deliverables ready', () => {
 Deno.test('post_delivery step 2 asks for feedback', () => {
   const result = getTemplate('post_delivery', 2, testCtx, testBrand);
   assertNotEquals(result, null);
-  assertStringIncludes(result!.html, 'image quality');
+  assertStringIncludes(result!.html, 'Just hit reply and tell me honestly');
+  assertStringIncludes(result!.html, 'Sentinel Aerial Inspections');
 });
 
 Deno.test('post_delivery step 3 requests a Google review', () => {
@@ -167,11 +168,36 @@ Deno.test('post_delivery step 3 requests a Google review', () => {
   assertStringIncludes(result!.html, 'review');
 });
 
-Deno.test('post_delivery step 4 mentions retainer option', () => {
+Deno.test('post_delivery step 4 asks to schedule the next mission', () => {
   const result = getTemplate('post_delivery', 4, testCtx, testBrand);
   assertNotEquals(result, null);
-  assertStringIncludes(result!.html, '$1,500');
-  assertStringIncludes(result!.html, 'retainer');
+  assertStringIncludes(result!.html, 'Want me to pencil in a date?');
+  assertStringIncludes(result!.html, 'already on file');
+});
+
+Deno.test('post_delivery step 4 renders job-type suggestion when context is complete', () => {
+  const ctx: TemplateContext = {
+    ...testCtx,
+    context: {
+      job_preset: 'adiat_roof',
+      property_address: '123 Main St, Chesapeake, VA',
+      delivery_date: '2026-07-28',
+    },
+  };
+  const result = getTemplate('post_delivery', 4, ctx, testBrand)!;
+  assertStringIncludes(result.subject, '123 Main St, Chesapeake, VA');
+  assertStringIncludes(result.html, 'storm season');
+  assertStringIncludes(result.html, 'July 28, 2026');
+});
+
+Deno.test('post_delivery step 4 omits suggestion for unmapped presets', () => {
+  const ctx: TemplateContext = {
+    ...testCtx,
+    context: { job_preset: 'video', property_address: '123 Main St' },
+  };
+  const result = getTemplate('post_delivery', 4, ctx, testBrand)!;
+  assert(!result.html.includes('storm season'));
+  assert(!result.html.includes('baseline'));
 });
 
 Deno.test('post_delivery step 5 does not exist', () => {

@@ -5180,6 +5180,29 @@ export type Database = {
         | "deliverables_manifest"
         | "appendix_flight_logs"
         | "appendix_raw_data"
+        | "accuracy_checkpoint_report"
+        | "appendix_field_forms"
+        | "cad_handoff"
+        | "canopy_height_model"
+        | "contours_topo"
+        | "coverage_qa"
+        | "cross_sections"
+        | "cut_fill"
+        | "datum_metadata"
+        | "hydrology_drainage"
+        | "measurements_appendix"
+        | "model_3d_link"
+        | "observation_log"
+        | "pci_rating"
+        | "planimetric_linework"
+        | "point_cloud_classification"
+        | "property_overview"
+        | "roof_plan_annotated"
+        | "scope_limitations"
+        | "sensor_limitations"
+        | "stockpile_inventory"
+        | "storm_history"
+        | "viewshed_los"
       report_status: "draft" | "final" | "archived"
       request_status:
         | "new"
@@ -5484,6 +5507,29 @@ export const Constants = {
         "deliverables_manifest",
         "appendix_flight_logs",
         "appendix_raw_data",
+        "accuracy_checkpoint_report",
+        "appendix_field_forms",
+        "cad_handoff",
+        "canopy_height_model",
+        "contours_topo",
+        "coverage_qa",
+        "cross_sections",
+        "cut_fill",
+        "datum_metadata",
+        "hydrology_drainage",
+        "measurements_appendix",
+        "model_3d_link",
+        "observation_log",
+        "pci_rating",
+        "planimetric_linework",
+        "point_cloud_classification",
+        "property_overview",
+        "roof_plan_annotated",
+        "scope_limitations",
+        "sensor_limitations",
+        "stockpile_inventory",
+        "storm_history",
+        "viewshed_los",
       ],
       report_status: ["draft", "final", "archived"],
       request_status: [

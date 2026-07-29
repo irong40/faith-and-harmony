@@ -17,3 +17,30 @@ export { Volumetrics } from './Volumetrics';
 export { DeliverablesManifest } from './DeliverablesManifest';
 export { AppendixFlightLogs } from './AppendixFlightLogs';
 export { AppendixRawData } from './AppendixRawData';
+// Deliverables render layer (2026-07-27) — bespoke sections
+export { AccuracyCheckpointReport } from './AccuracyCheckpointReport';
+export { DatumMetadata } from './DatumMetadata';
+export { PciRating } from './PciRating';
+// Deliverables render layer — config-driven generic sections
+export {
+  AppendixFieldForms,
+  CadHandoff,
+  CanopyHeightModel,
+  ContoursTopo,
+  CoverageQa,
+  CrossSections,
+  CutFill,
+  HydrologyDrainage,
+  MeasurementsAppendix,
+  Model3dLink,
+  ObservationLog,
+  PlanimetricLinework,
+  PointCloudClassification,
+  PropertyOverview,
+  RoofPlanAnnotated,
+  ScopeLimitations,
+  SensorLimitations,
+  StockpileInventory,
+  StormHistory,
+  ViewshedLos,
+} from './renderLayerSections';

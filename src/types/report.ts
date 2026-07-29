@@ -22,7 +22,33 @@ export type ReportSectionKey =
   | 'volumetrics'
   | 'deliverables_manifest'
   | 'appendix_flight_logs'
-  | 'appendix_raw_data';
+  | 'appendix_raw_data'
+  // Deliverables render layer (2026-07-27) — keys used by the 2026-07-25
+  // deliverables templates migration. Enum values staged in
+  // supabase/migrations/20260727210000_report_section_keys_render_layer.sql
+  | 'accuracy_checkpoint_report'
+  | 'appendix_field_forms'
+  | 'cad_handoff'
+  | 'canopy_height_model'
+  | 'contours_topo'
+  | 'coverage_qa'
+  | 'cross_sections'
+  | 'cut_fill'
+  | 'datum_metadata'
+  | 'hydrology_drainage'
+  | 'measurements_appendix'
+  | 'model_3d_link'
+  | 'observation_log'
+  | 'pci_rating'
+  | 'planimetric_linework'
+  | 'point_cloud_classification'
+  | 'property_overview'
+  | 'roof_plan_annotated'
+  | 'scope_limitations'
+  | 'sensor_limitations'
+  | 'stockpile_inventory'
+  | 'storm_history'
+  | 'viewshed_los';
 
 export type ReportStatus = 'draft' | 'final' | 'archived';
 
@@ -261,6 +287,82 @@ export interface AppendixRawDataData {
   notes?: string;
 }
 
+// ---- Deliverables render layer (2026-07-27) ----
+// Two generic data shapes back most of the new sections; the components are
+// parameterized per key via config (see sections/renderLayerSections.ts).
+// Values are stored as strings: they are jsonb-backed free-form report inputs.
+
+/** Narrative + optional scalar fields (config-driven). */
+export interface GenericNarrativeSectionData {
+  description?: string;
+  values?: Record<string, string>;
+  notes?: string;
+}
+
+/** Row table + optional narrative and scalar fields (config-driven). */
+export interface GenericTableSectionData {
+  description?: string;
+  values?: Record<string, string>;
+  rows?: Record<string, string>[];
+  notes?: string;
+}
+
+// ---- ASPRS accuracy & checkpoint report (bespoke) ----
+// Statement wording is VERBATIM per ASPRS Positional Accuracy Standards,
+// Edition 2, Version 2 (2024) §7.16 — never paraphrased. The operator picks
+// the case; the fixed wording renders with their numbers inserted.
+
+export type AccuracyStatementCase = 'tested_30plus' | 'produced' | 'tested_reduced';
+
+export type AccuracyProductType = 'horizontal' | 'nva' | 'vva' | 'threed';
+
+export interface AccuracyProductEntry {
+  included?: boolean;
+  class_cm?: string; // accuracy class (cm)
+  tested_cm?: string; // tested RMSE (cm); for 3D this is the NVA-tested-area figure
+  tested_cm_vva?: string; // 3D only: RMSE_3D within the VVA tested area (omittable by mutual agreement)
+}
+
+export interface AccuracyCheckpointReportData {
+  statement_case?: AccuracyStatementCase;
+  checkpoint_count?: string;
+  products?: Partial<Record<AccuracyProductType, AccuracyProductEntry>>;
+  gsd?: string; // stated alongside the accuracy statement per the standard
+  datum_note?: string; // datum / epoch reference (full detail lives in datum_metadata)
+  notes?: string;
+}
+
+// ---- Datum, geoid & epoch (bespoke) ----
+// Exists because ITRF2014 vs NAD83(2011) is a 1-2 m absolute offset trap.
+
+export interface DatumMetadataData {
+  horizontal_datum?: string; // e.g. NAD83(2011)
+  vertical_datum?: string; // e.g. NAVD88
+  geoid_model?: string; // e.g. GEOID18
+  epoch?: string; // e.g. 2010.00
+  crs_epsg?: string; // e.g. EPSG:6346
+  notes?: string;
+}
+
+// ---- PCI score & rating band (bespoke, ASTM D6433) ----
+// The distress inventory (observation_log) is deliverable without a license;
+// a defensible PCI score is not, until ASTM D6433 deduct curves are licensed.
+
+export interface PciSampleUnitEntry {
+  unit_id: string;
+  pci?: string;
+  band?: string;
+  notes?: string;
+}
+
+export interface PciRatingData {
+  d6433_licensed?: boolean;
+  overall_pci?: string;
+  rating_band?: string;
+  sample_units?: PciSampleUnitEntry[];
+  notes?: string;
+}
+
 // ---- Union type for section data ----
 
 export type SectionDataMap = {
@@ -283,6 +385,30 @@ export type SectionDataMap = {
   deliverables_manifest: DeliverablesManifestData;
   appendix_flight_logs: AppendixFlightLogsData;
   appendix_raw_data: AppendixRawDataData;
+  // Deliverables render layer (2026-07-27)
+  accuracy_checkpoint_report: AccuracyCheckpointReportData;
+  appendix_field_forms: GenericTableSectionData;
+  cad_handoff: GenericTableSectionData;
+  canopy_height_model: GenericNarrativeSectionData;
+  contours_topo: GenericNarrativeSectionData;
+  coverage_qa: GenericNarrativeSectionData;
+  cross_sections: GenericTableSectionData;
+  cut_fill: GenericTableSectionData;
+  datum_metadata: DatumMetadataData;
+  hydrology_drainage: GenericNarrativeSectionData;
+  measurements_appendix: GenericTableSectionData;
+  model_3d_link: GenericTableSectionData;
+  observation_log: GenericTableSectionData;
+  pci_rating: PciRatingData;
+  planimetric_linework: GenericTableSectionData;
+  point_cloud_classification: GenericTableSectionData;
+  property_overview: GenericNarrativeSectionData;
+  roof_plan_annotated: GenericNarrativeSectionData;
+  scope_limitations: GenericNarrativeSectionData;
+  sensor_limitations: GenericNarrativeSectionData;
+  stockpile_inventory: GenericTableSectionData;
+  storm_history: GenericTableSectionData;
+  viewshed_los: GenericNarrativeSectionData;
 };
 
 // ---- Report Image (from report_images table) ----

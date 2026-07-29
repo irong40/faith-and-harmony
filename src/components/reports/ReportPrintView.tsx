@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import { SAI_BRAND, REPORT_COLORS } from "@/lib/brand";
-import { ReportSection } from "./ReportSection";
+import { ReportSection, isSectionDataEmpty } from "./ReportSection";
 import type { JobReport, ReportTemplate, ReportImage, SectionManifestEntry, ReportSectionKey, SectionDataMap } from "@/types/report";
 
 interface ReportPrintViewProps {
@@ -95,7 +95,10 @@ const ReportPrintView = forwardRef<HTMLDivElement, ReportPrintViewProps>(
         {/* Sections */}
         {activeSections.map((manifest: SectionManifestEntry, index: number) => {
           const sectionData = report.section_data[manifest.key];
-          if (!sectionData) return null;
+          // Same predicate as the builder's pre-print warning: a section the
+          // warning calls EMPTY must actually be omitted here, not printed as
+          // a title plus dashed empty-state placeholders.
+          if (isSectionDataEmpty(sectionData)) return null;
 
           return (
             <div key={manifest.key} className="report-section" style={{ marginBottom: "24px" }}>
