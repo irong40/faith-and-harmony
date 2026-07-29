@@ -1,12 +1,14 @@
 {
   "lastSession": "2026-07-28",
   "branch": "main",
-  "phase": "Admin portal redesign UI half merged and live (main 02a7a78). Revenue chain parked on redesign/revenue-chain — billing does not work until it lands.",
+  "head": "08edc02",
+  "phase": "Admin portal redesign merged AND dev reconciled into it (main 08edc02, deployed). Revenue chain still parked on redesign/revenue-chain — billing does not work until it lands.",
+  "note": "Two sessions worked this repo on 2026-07-28: this one (redesign merge, QA gate, ReportBuilder scroll, Paula pricing) and a parallel COO session (dev reconciliation c6e1f06/c0f8d42). Both are in main. Verify with git log, not with either session's notes.",
   "workItems": [
-    "Land the revenue chain (redesign/revenue-chain @ 9d1fa75) — payments still has 0 rows",
-    "Reconcile dev into main — 6 commits ahead, 5 overlapping files, needs a deliberate merge",
-    "Dependabot: 5 vulns (3 high), 8 open branches incl. major-version bumps",
-    "Single source of truth for pricing — 6 figures still live in 4 places; only the Vapi handler reads live",
+    "Land the revenue chain (redesign/revenue-chain @ 9d1fa75) — payments still has 0 rows; largest open item",
+    "Dependabot: 5 vulns (3 high), open branches incl. major-version bumps",
+    "Single source of truth for pricing — 6 figures in 4 places; only the Vapi handler reads live",
+    "Browser-verify merged DeliveryReview and JobIntake — the merge conflict and the job_price duplicate-key landmine respectively",
     "Fix supabase db reset — aborts at profiles idx 33 and vegetation_detections idx 84",
     "intake-lead writes customer_id with no client_id — blocks retiring customers",
     "Resume hybrid-pricing PORT into website TS engine (mission-costing.ts + PricingEngine.tsx still legacy cost-plus)",
@@ -16,8 +18,14 @@
   "blockers": [
     "[ADAM] Confirm which tools are attached to Vapi assistant 703d9226-e5ef-439f-a60e-c05b995ad6da. No Vapi credential in n8n/.env or apikeys.txt, so it cannot be checked from a session. The 2026-07-28 handler fix is safe either way."
   ],
+  "gates": {
+    "verifiedOn": "08edc02",
+    "tests": "393 passed / 33 files",
+    "typecheck": "38 errors (unchanged from pre-merge; npm run typecheck was vacuous before this session)",
+    "build": "OK"
+  },
   "staleItemsFromApril": {
-    "note": "Carried from 2026-04-09 session; verify status separately, not addressed 2026-06-09 or 2026-07-28.",
+    "note": "Carried from 2026-04-09; verify status separately, not addressed 2026-06-09 or 2026-07-28.",
     "items": [
       "Square production cutover (secrets, webhook, migration 20260409100000, type gen, revenue path test)"
     ]
