@@ -1,29 +1,70 @@
 # Session Handoff
-**Date:** 2026-06-09
-**Project:** faith-and-harmony (CRM/web app + `trestle-tools/`)
-**Branch:** `dev` (= origin/dev `4995861`); `main` = production `fc67f86`
+**Date:** 2026-07-28
+**Project:** faith-and-harmony (CRM/web app)
+**Branch:** `main` = production `02a7a78`, clean and pushed
 
 ## Accomplished
-- **Public `/quote` lead-intake form — LIVE in production** (PR #28 → dev, PR #29 → main).
-  - `RequestQuoteForm` mounted at `/quote` and embedded in landing `#contact` (one component, two surfaces). Free-text-first; deliverable chips + tooltips; honeypot; UTM capture; composes `raw_intake`. No "inspection" language. Styled with landing `fh-*`.
-  - Edge fn `quote-request` **deployed to prod v17, `verify_jwt:false`** (via Supabase MCP, explicit). Maps new payload to live `quote_requests` cols (`full_name→name`, `location→address`, `target_date→preferred_date`, `raw_intake→description`); backward-compatible. **Verified live: HTTP 200 no-auth, correct mapping.**
-- **Lead→OPORD = PULL poller** (`trestle-tools/opord_intake.py watch`): polls `web_form` leads missing a draft, links `opord_proposals.quote_request_id` (idempotent, self-healing). No tunnel / no exposed port (cloudflared is manual + was down). Edge fn push-forward removed.
-- Earlier this session: `trestle-tools/` (hybrid pricing engine + OPORD generator, local-Ollama intake) built, merged (PR #26), promoted to main (PR #27).
+
+- **Admin portal redesign, option A** — split into `redesign/admin-portal-ui` (merged,
+  `b254013`) and `redesign/revenue-chain` (parked, `9d1fa75`). Deleted `Projects` and
+  `Invoices`, which queried tables that do not exist and threw on mount.
+- **Wildlife Census QA gate** (`8161df9`) — `qa_threshold` was 1, so the gate passed every
+  score. Root cause: the `20260416130000` seed wrote `0.75` (a 0-1 fraction) into an integer
+  percent column and Postgres rounded it. Fixed to 75, template deactivated, CHECK added.
+- **ReportBuilder dead scroll** (`9e9dfae`) — `min-h-screen` is a FLOOR, not a bound. The page
+  produced 6567px in a 911px viewport with **zero** internally-scrolling panes and Save 2888px
+  above the fold, even though its own chain (`min-h-0`/`flex-1`/`overflow-y-auto`) was correct
+  at every level. Fixed with `h-screen overflow-hidden` on the shell root. Re-measured on
+  production after merge: 911px doc, 3 working panes, Save visible.
+- **Paula quoting a nonexistent price** (`02a7a78`) — `get_package_pricing` answered from a
+  March-era hardcoded map and said "Inspection Data, twelve hundred dollars" for work the live
+  catalogue prices at 0 (quote-based). Now reads `drone_packages` live. Edge function deployed
+  and verified by calling it with 6 real payloads.
 
 ## Next Steps
-- **Run the poller on the host** for drafts to generate: `cd trestle-tools && python opord_intake.py watch`. (Optional: register as a Windows scheduled task.)
-- **Resume the parked hybrid-pricing PORT** into the website's TS engine: `src/lib/mission-costing.ts` + `src/components/PricingEngine.tsx` are still the legacy strict cost-plus model. Adam chose to port the new hybrid model (LAANC/CAPS, day rates, tiers, $350 floor) there. `costing_settings` table + `useCostingSettings` hook should be extended (don't hardcode).
-- Delete now-unused `src/components/landing/QuoteForm.tsx` (old form, no longer referenced).
+
+1. **Land the revenue chain** (`redesign/revenue-chain` @ `9d1fa75`) — billing does not work
+   until it does; `payments` still has 0 rows.
+2. **Reconcile `dev` into `main`** — `dev` is 6 commits ahead with 5 overlapping files
+   (`schemas.ts`, `DeliveryReview`, `JobIntake`, `ReportBuilder`, `drone-delivery-email`).
+   Deliberate merge, not a blind one.
+3. **Dependabot** — 5 vulns (3 high), 8 open branches including major-version bumps.
+4. **Single source of truth for pricing** — the six figures still live in four places
+   (`drone_packages`, `SentinelPricing.tsx`, the sentinel-landing site, Paula's prompt
+   ballpark). Only the Vapi handler now reads live.
+5. **[ADAM]** Confirm in the Vapi dashboard which tools are attached to assistant
+   `703d9226-e5ef-439f-a60e-c05b995ad6da`. No Vapi credential exists in `n8n/.env` or
+   `apikeys.txt`, so it cannot be checked from a session.
 
 ## Known Issues
-- This session the **local working tree rolled back** to `aeb32cd` with files missing on disk (cause unknown). Fixed via `git reset --hard origin/dev`. Watch for recurrence; work was safe on origin throughout.
-- PR "Supabase Preview" check fails against the **preview** project (`hybwrkeltpfkxgdypjdu`) — preview-infra drift, not prod; non-blocking.
-- Public packages on the marketing page are still old-model (e.g., Listing Lite $225 < the $350 floor) — a business decision pending the pricing port.
+
+- `supabase db reset` is unreplayable — aborts at `profiles` idx 33 and
+  `vegetation_detections` idx 84. Neither table is created by any migration.
+- `intake-lead` writes `customer_id` with no `client_id`. Blocks retiring `customers`, and is
+  why the `customers`→`clients` edge-function sweep was reverted this session.
+- `adiat_roof` / `adiat_insurance` unmappable by production `crm_sync` — the matching sortie
+  keys sit only on PortfolioMaker `dev`, unmerged.
+- Two migrations in live history with no local file: `20260727230414`, `20260727230943`.
+- `DJ-2026-0003` has `is_test = false` despite being the seed's own test fixture.
+- `handleLookupCustomer` carries 18 type errors — `createClient` called with no schema
+  generic, so the schema infers as `never`. Pre-existing, untouched.
+- Carried forward from 2026-06-09 and still open: public packages are old-model relative to
+  the trestle engine's $350 floor (Listing Lite is $225). Business decision, not a bug.
 
 ## Key Decisions
-- OPORD drafting = **pull, not push** (no Cloudflare tunnel; host is intermittent).
-- Pricing math is **deterministic Python**; AI (local Ollama) only drafts prose.
-- `verify_jwt:false` on `quote-request` is mandatory (2026-06-03 outage cause).
+
+- **Split over a third remediation round.** Certification returned 9 blocking findings, but
+  most were pre-existing production defects the audit surfaced, not redesign defects.
+- **CHECK floor is 30, not 1.** A naive `1..100` range would not have caught the original bug,
+  since 0.75 rounds to 1 and sits inside it.
+- **No literal prices in the Vapi handler, ever.** A failed query hands off to a callback
+  rather than falling back to a hardcoded number.
+- **jsdom cannot verify layout.** The ReportBuilder chain was class-correct at every level and
+  still broken. Layout defects need a real browser.
+- **`npm run typecheck` was vacuous** (tsconfig with `"files": []`, exit 0 having compiled
+  nothing). Every prior green typecheck in this repo meant nothing. Real count on main is 38.
 
 ## Uncommitted Changes
-- None — all changes committed and merged to origin (dev + main).
+
+None tracked. Untracked and deliberately left alone: `supabase/functions/checklist-emails/`
+(off-limits this session), `deno.lock` (generated by running the Deno tests).
