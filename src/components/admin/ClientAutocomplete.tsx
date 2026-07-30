@@ -118,7 +118,11 @@ export default function ClientAutocomplete({
             {loading ? (
               <CommandEmpty>Loading...</CommandEmpty>
             ) : clients.length === 0 ? (
-              <CommandEmpty>No clients found.</CommandEmpty>
+              <CommandEmpty>
+                {search.trim()
+                  ? `No client matches "${search.trim()}".`
+                  : "No clients yet."}
+              </CommandEmpty>
             ) : (
               <CommandGroup>
                 {clients.map((client) => (
@@ -151,21 +155,28 @@ export default function ClientAutocomplete({
                 ))}
               </CommandGroup>
             )}
-            {onAddNew && (
-              <CommandGroup>
-                <CommandItem
-                  onSelect={() => {
-                    setOpen(false);
-                    onAddNew();
-                  }}
-                  className="text-primary min-h-[44px]"
-                >
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Add new client...
-                </CommandItem>
-              </CommandGroup>
-            )}
           </CommandList>
+          {/* Deliberately OUTSIDE CommandList: inside it, this action sat below
+              the list's 300px scroll fold and read as "you can only pick an
+              existing client". As a pinned footer it is always visible. */}
+          {onAddNew && (
+            <div className="border-t border-border p-1">
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full justify-start text-primary min-h-[44px]"
+                onClick={() => {
+                  setOpen(false);
+                  onAddNew();
+                }}
+              >
+                <UserPlus className="mr-2 h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  {search.trim() ? `Add "${search.trim()}" as a new client` : "Add new client"}
+                </span>
+              </Button>
+            </div>
+          )}
         </Command>
       </PopoverContent>
     </Popover>
