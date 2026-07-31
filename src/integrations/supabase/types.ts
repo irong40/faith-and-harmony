@@ -1294,6 +1294,7 @@ export type Database = {
           created_at: string
           customer_id: string | null
           delivered_at: string | null
+          deliver_flight_tracks: boolean
           delivery_drive_url: string | null
           delivery_email_to: string | null
           delivery_notes: string | null
@@ -1367,6 +1368,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           delivered_at?: string | null
+          deliver_flight_tracks?: boolean
           delivery_drive_url?: string | null
           delivery_email_to?: string | null
           delivery_notes?: string | null
@@ -1440,6 +1442,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           delivered_at?: string | null
+          deliver_flight_tracks?: boolean
           delivery_drive_url?: string | null
           delivery_email_to?: string | null
           delivery_notes?: string | null

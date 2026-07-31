@@ -112,6 +112,7 @@ export default function JobIntake() {
       is_rush: false,
       video_addon: false,
       vegetation_analysis: false,
+      deliver_flight_tracks: true,
       scheduled_date: "",
       scheduled_time: "",
       pilot_id: "",
@@ -273,6 +274,7 @@ export default function JobIntake() {
       is_rush: values.is_rush,
       video_addon: values.video_addon,
       vegetation_analysis: values.vegetation_analysis,
+      deliver_flight_tracks: values.deliver_flight_tracks,
       scheduled_date: values.scheduled_date,
       scheduled_time: values.scheduled_time || null,
       pilot_id: values.pilot_id || null,
@@ -643,6 +645,14 @@ export default function JobIntake() {
                         name: "vegetation_analysis" as const,
                         label: "Vegetation analysis",
                         description: "Runs the VARI / vegetation index pass on the ortho.",
+                      },
+                      {
+                        name: "deliver_flight_tracks" as const,
+                        label: "Deliver flight tracks",
+                        description:
+                          "Ships flight_tracks.geojson and mission.kml with the GIS bundle. " +
+                          "Photo points always ship. Uncheck for corrections, classified, or any " +
+                          "site where the approach path and altitudes are sensitive.",
                       },
                     ]
                   ).map((option) => (

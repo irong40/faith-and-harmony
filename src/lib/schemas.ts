@@ -62,6 +62,9 @@ export const jobIntakeSchema = z.object({
   is_rush: z.boolean().default(false),
   video_addon: z.boolean().default(false),
   vegetation_analysis: z.boolean().default(false),
+  // Defaults TRUE, unlike the other options: withholding operational
+  // detail is the exception, and the DB column defaults true to match.
+  deliver_flight_tracks: z.boolean().default(true),
   scheduled_date: z.string().min(1, "Scheduled date is required"),
   scheduled_time: z.string().optional(),
   pilot_id: z.string().uuid().optional().or(z.literal("")),
