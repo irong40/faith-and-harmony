@@ -148,13 +148,21 @@ describe('JobIntake — slice 5 fields', () => {
     toast.mockReset();
   });
 
-  it('renders the price field and all three add-on checkboxes', async () => {
+  it('renders the price field and every add-on checkbox', async () => {
     renderPage();
 
     expect(await screen.findByLabelText(/job price/i)).toBeTruthy();
     expect(screen.getByLabelText(/rush job/i)).toBeTruthy();
     expect(screen.getByLabelText(/video add-on/i)).toBeTruthy();
     expect(screen.getByLabelText(/vegetation analysis/i)).toBeTruthy();
+    expect(screen.getByLabelText(/deliver flight tracks/i)).toBeTruthy();
+  });
+
+  it('checks deliver flight tracks by default — withholding is the exception', async () => {
+    renderPage();
+    const box = (await screen.findByLabelText(/deliver flight tracks/i)) as HTMLElement;
+    // Radix renders a button with aria-checked, not a native input.
+    expect(box.getAttribute('aria-checked')).toBe('true');
   });
 
   it('renders a property type picker defaulting to residential', async () => {
@@ -256,6 +264,31 @@ describe('JobIntake — slice 5 fields', () => {
     expect(payload.latitude).toBeNull();
     expect(payload.longitude).toBeNull();
     expect(payload.site_address).toBe('1234 Main St, Norfolk, VA 23510');
+    // Untouched by this test, so it must carry its default rather than
+    // arriving undefined and letting the DB default paper over a missing
+    // field in the payload.
+    expect(payload.deliver_flight_tracks).toBe(true);
+  });
+
+  it('sends deliver_flight_tracks false once the box is unchecked', async () => {
+    renderPage();
+    await screen.findByRole('combobox', { name: /job type/i });
+
+    fireEvent.click(screen.getByRole('button', { name: /pick client/i }));
+    await chooseJobType('Mining Volumetrics');
+
+    fireEvent.change(screen.getByPlaceholderText(/start typing an address/i), {
+      target: { value: '1234 Main St, Norfolk, VA 23510' },
+    });
+    fireEvent.click(screen.getByLabelText(/deliver flight tracks/i));
+
+    const future = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    fireEvent.change(screen.getByLabelText(/scheduled date/i), { target: { value: future } });
+
+    fireEvent.click(screen.getByRole('button', { name: /create job/i }));
+
+    await waitFor(() => expect(insertedPayloads).toHaveLength(1));
+    expect(insertedPayloads[0].deliver_flight_tracks).toBe(false);
   });
 
   it('never sends source_platform — that column is the aircraft, not provenance', async () => {
