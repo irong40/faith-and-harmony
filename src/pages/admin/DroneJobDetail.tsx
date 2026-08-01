@@ -538,7 +538,11 @@ export default function DroneJobDetail() {
     const { error } = await supabase.functions.invoke("drone-delivery-email", {
       body: {
         job_id: job.id,
-        delivery_notes: deliveryNotes,
+        // The function destructures `custom_message` (drone-delivery-email
+        // index.ts:40). Sending `delivery_notes` meant the admin's note was
+        // silently dropped from the client email AND written back as null,
+        // erasing whatever note was already on the job.
+        custom_message: deliveryNotes || undefined,
       },
     });
 

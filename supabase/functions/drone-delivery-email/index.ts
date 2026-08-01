@@ -317,7 +317,9 @@ serve(async (req) => {
       .update({
         status: "delivered",
         delivered_at: new Date().toISOString(),
-        delivery_notes: custom_message ?? null,
+        // Non-destructive: a send with no note must not erase an existing
+        // one. `?? null` meant every re-send wiped the job's delivery notes.
+        ...(custom_message ? { delivery_notes: custom_message } : {}),
         delivery_token: deliveryToken,
         delivery_token_created_at: new Date().toISOString(),
         delivery_status: "sent",
