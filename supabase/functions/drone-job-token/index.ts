@@ -201,12 +201,53 @@ serve(async (req) => {
       );
 
     } else if (action === "generate") {
-      // Generate a new upload token for a job (admin only)
-      const authHeader = req.headers.get("authorization");
-      if (!authHeader) {
+      // Generate a new upload token for a job. ADMIN ONLY — and this branch
+      // has to prove that entirely by itself.
+      //
+      // config.toml sets verify_jwt = false for this function, because the
+      // public upload page calls `validate` and `upload-complete` with no
+      // session at all. So the platform performs NO auth on any request that
+      // reaches here, and `supabase` above is a SERVICE-ROLE client that
+      // bypasses RLS. Testing `if (!authHeader)` proved only that the caller
+      // sent some bytes: `Authorization: Bearer anything` passed, and the
+      // service-role client then minted a 72-hour upload token for any job id.
+      // Even verify_jwt = true would not have closed it — Supabase accepts the
+      // anon key, which ships in the frontend bundle, as a valid JWT.
+      //
+      // getUser(jwt) hands the token to GoTrue, which verifies its signature
+      // and expiry server-side and 401s otherwise — a forged or expired token
+      // cannot pass. Deliberately NOT using a SUPABASE_ANON_KEY client here:
+      // the legacy anon key was disabled 2026-07-15 and the migration to
+      // sb_publishable_ keys is still open, so depending on it would risk
+      // 401ing every admin the moment that key rotates. The apikey only gates
+      // the endpoint; the Bearer token is what gets verified.
+      const jwt = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
+      if (!jwt || jwt === SUPABASE_SERVICE_ROLE_KEY) {
         return new Response(
           JSON.stringify({ error: "Unauthorized" }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: userData, error: authError } = await supabase.auth.getUser(jwt);
+      const caller = userData?.user;
+      if (authError || !caller) {
+        console.warn("generate: rejected invalid or expired JWT");
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data: isAdmin, error: roleError } = await supabase.rpc("has_role", {
+        _user_id: caller.id,
+        _role: "admin",
+      });
+      if (roleError || isAdmin !== true) {
+        console.warn(`generate: rejected non-admin caller ${caller.id}`);
+        return new Response(
+          JSON.stringify({ error: "Forbidden" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
