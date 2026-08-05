@@ -30,9 +30,6 @@ verify_jwt = false
 [functions.drone-qa-analyze]
 verify_jwt = false
 
-[functions.drone-job-token]
-verify_jwt = false
-
 [functions.drone-batch-qa]
 verify_jwt = false
 

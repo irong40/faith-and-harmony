@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { RefreshCw, Edit, Send, Camera, Clock, Key, Copy, CheckCircle, ScanSearch, Settings2, Image as ImageIcon, AlertTriangle, ExternalLink, Link2, Calendar, DollarSign, FileText, ArrowRight, ListChecks, Trash2, Mail, Phone, MapPin, User } from "lucide-react";
+import { RefreshCw, Edit, Send, Camera, Clock, Copy, CheckCircle, ScanSearch, Settings2, Image as ImageIcon, AlertTriangle, ExternalLink, Link2, Calendar, DollarSign, FileText, ArrowRight, ListChecks, Trash2, Mail, Phone, MapPin, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 import PageShell from "@/components/admin/PageShell";
@@ -58,8 +58,6 @@ interface DroneJob {
   admin_notes: string | null;
   qa_score: number | null;
   qa_summary: Json | null;
-  upload_token: string | null;
-  upload_token_expires_at: string | null;
   delivered_at: string | null;
   delivery_notes: string | null;
   delivery_token: string | null;
@@ -328,9 +326,7 @@ export default function DroneJobDetail() {
   const [newStatus, setNewStatus] = useState<DroneJobStatus>("intake");
   const [deliveryNotes, setDeliveryNotes] = useState("");
   const [sending, setSending] = useState(false);
-  const [generatingToken, setGeneratingToken] = useState(false);
   const [runningQA, setRunningQA] = useState(false);
-  const [tokenCopied, setTokenCopied] = useState(false);
   const [extractingExif, setExtractingExif] = useState(false);
   const [syncingCalendar, setSyncingCalendar] = useState(false);
   const [calendarConnected, setCalendarConnected] = useState(false);
@@ -457,31 +453,6 @@ export default function DroneJobDetail() {
       setJob({ ...job, status });
       toast({ title: "Status updated" });
     }
-  };
-
-  const generateUploadToken = async () => {
-    if (!job) return;
-    setGeneratingToken(true);
-
-    const { data, error } = await supabase.functions.invoke("drone-job-token", {
-      body: { action: "generate", job_id: job.id },
-    });
-
-    if (error) {
-      toast({ title: "Error generating token", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Upload token generated" });
-      fetchJob();
-    }
-    setGeneratingToken(false);
-  };
-
-  const copyUploadLink = () => {
-    if (!job?.upload_token) return;
-    const url = `${window.location.origin}/drone-upload/${job.upload_token}`;
-    navigator.clipboard.writeText(url);
-    setTokenCopied(true);
-    setTimeout(() => setTokenCopied(false), 2000);
   };
 
   const runQAAnalysis = async () => {
@@ -731,10 +702,6 @@ export default function DroneJobDetail() {
                       <Edit className="mr-2 h-4 w-4" />
                       Edit & Schedule
                     </Button>
-                    <Button size="sm" variant="outline" onClick={generateUploadToken} disabled={generatingToken}>
-                      <Key className="mr-2 h-4 w-4" />
-                      {job.upload_token ? "Regenerate Upload Link" : "Generate Upload Link"}
-                    </Button>
                   </>
                 ),
               };
@@ -742,22 +709,13 @@ export default function DroneJobDetail() {
             case "scheduled":
               step = {
                 title: "Get the files from the field",
-                hint: job.upload_token
-                  ? "Share the upload link, or add the shoot to your calendar."
-                  : "Generate an upload link, or add the shoot to your calendar.",
+                hint: "Add the captured files on the Assets tab, or add the shoot to your calendar.",
                 buttons: (
                   <>
-                    {job.upload_token ? (
-                      <Button size="sm" onClick={copyUploadLink}>
-                        <Copy className="mr-2 h-4 w-4" />
-                        {tokenCopied ? "Copied!" : "Copy Upload Link"}
-                      </Button>
-                    ) : (
-                      <Button size="sm" onClick={generateUploadToken} disabled={generatingToken}>
-                        <Key className="mr-2 h-4 w-4" />
-                        Generate Upload Link
-                      </Button>
-                    )}
+                    <Button size="sm" onClick={goto("assets")}>
+                      Go to Assets
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
                     {job.scheduled_date && calendarConnected && (
                       <Button size="sm" variant="outline" onClick={syncToCalendar} disabled={syncingCalendar}>
                         <Calendar className="mr-2 h-4 w-4" />

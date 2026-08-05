@@ -1350,8 +1350,6 @@ export type Database = {
           source_platform: string | null
           status: Database["public"]["Enums"]["drone_job_status"]
           updated_at: string
-          upload_token: string | null
-          upload_token_expires_at: string | null
           vegetation_analysis: boolean | null
           vegetation_status: string | null
           video_addon: boolean | null
@@ -1424,8 +1422,6 @@ export type Database = {
           source_platform?: string | null
           status?: Database["public"]["Enums"]["drone_job_status"]
           updated_at?: string
-          upload_token?: string | null
-          upload_token_expires_at?: string | null
           vegetation_analysis?: boolean | null
           vegetation_status?: string | null
           video_addon?: boolean | null
@@ -1498,8 +1494,6 @@ export type Database = {
           source_platform?: string | null
           status?: Database["public"]["Enums"]["drone_job_status"]
           updated_at?: string
-          upload_token?: string | null
-          upload_token_expires_at?: string | null
           vegetation_analysis?: boolean | null
           vegetation_status?: string | null
           video_addon?: boolean | null
