@@ -1,0 +1,35 @@
+-- Both of these are PERMISSIVE SELECT policies granted to `public` (which
+-- includes anon and authenticated) whose USING clause never compares the token
+-- to anything the caller supplies:
+--
+--   "Customers can view delivered jobs via delivery token"
+--       USING (delivery_token IS NOT NULL AND status = 'delivered')
+--   "Token holders can view their job"
+--       USING (upload_token IS NOT NULL AND upload_token_expires_at > now())
+--
+-- Holding a token is never checked; merely EXISTING is. Because permissive
+-- policies OR together, any authenticated user -- and self-signup is enabled --
+-- could read every delivered job row including delivery_token, which is the
+-- sole customer-portal credential. Reproduced before this change by assuming
+-- the `authenticated` role with a random uid: it returned ZV-2026-0001's full
+-- delivery_token. Reproduced clean after: 0 rows, 0 tokens.
+--
+-- Nothing depends on them. Every consumer of drone_jobs bypasses RLS or is
+-- already covered:
+--   * /my-jobs/:token  -> ClientJobPortal calls the drone-customer-portal edge
+--                         function, which uses SUPABASE_SERVICE_ROLE_KEY
+--   * /drone-upload/:token -> DroneUpload calls the drone-job-token function,
+--                         likewise service-role
+--   * create-balance-invoice reads drone_jobs on its service-role client; its
+--     anon client only identifies the caller
+--   * every direct .from('drone_jobs') in src/ is under admin/ or pilot/,
+--     covered by "Admins can manage drone jobs" and "Pilots see own missions"
+--
+-- So these are dropped rather than rewritten: a corrected token policy would
+-- have no consumer, and speculative RLS is its own hazard.
+--
+-- Verified after: admin still sees all 20 jobs and the 1 token; the customer
+-- portal still validates that token end-to-end and returns the job.
+
+drop policy if exists "Customers can view delivered jobs via delivery token" on public.drone_jobs;
+drop policy if exists "Token holders can view their job" on public.drone_jobs;
