@@ -1,0 +1,49 @@
+-- 20260305600100_drone_jobs_private_bucket set this bucket private and dropped
+-- "drone_jobs_public_read". Someone then hand-created
+-- `drone_jobs_public_read_v2` in the dashboard -- the _v2 suffix is the tell --
+-- with USING (bucket_id = 'drone-jobs') and no other condition, granted to
+-- `public`. That re-opened exactly what the migration closed, and no migration
+-- described it, so source control showed the bucket as closed while production
+-- had it open.
+--
+-- Reproduced before this change: `set local role authenticated` with a random
+-- uid could read objects in the private drone-jobs bucket. After: 0. Admin
+-- still sees them.
+--
+-- "Token holders can view drone files" goes too. It has the same
+-- existence-not-possession defect as the drone_jobs table policies dropped in
+-- 20260805143509: it checks that SOME job has a live upload_token whose id
+-- matches the folder, never that the caller holds that token.
+--
+-- Neither SELECT policy has a consumer:
+--   * DroneUpload (the only public route touching this bucket) calls
+--     .upload() and never reads.
+--   * QADetailModal (createSignedUrl) reaches it via QAAssetGrid from
+--     admin/DroneJobDetail; AdminAssetUpload likewise. Both are admin, covered
+--     by "Admins can manage drone files" (ALL).
+--   * VideoUploadProcessor is unreferenced dead code.
+--   * The customer portal reads via drone-customer-portal, which holds
+--     SUPABASE_SERVICE_ROLE_KEY and bypasses RLS.
+--
+-- "Token holders can upload drone files" (INSERT) is deliberately KEPT: the
+-- browser in DroneUpload uploads straight to storage with the anon key, so
+-- removing it breaks client uploads outright. It carries the same
+-- existence-not-possession weakness, and the correct fix is for the
+-- drone-job-token function to hand out a createSignedUploadUrl instead, which
+-- removes the need for any anon INSERT policy. That is a code change with a
+-- live upload flow to retest, so it is not bundled here.
+--
+-- SEPARATE PRE-EXISTING DEFECT found while verifying this, NOT caused by it and
+-- NOT fixed here: that INSERT policy's EXISTS reads public.drone_jobs, and as
+-- the `anon` role that raises 42501 "permission denied for function has_role",
+-- because "Admins can manage drone jobs" is scoped to `public` and calls
+-- has_role(), which anon cannot execute. Confirmed pre-existing by recreating
+-- the just-dropped token policy in a rolled-back transaction and getting the
+-- identical error. Anonymous browser uploads therefore appear to have been
+-- broken independently of any of today's changes. Scoping the admin policies
+-- on drone_jobs and storage.objects to `authenticated` -- has_role(auth.uid())
+-- can never be true for anon, so nothing is lost -- would both fix that and
+-- turn several accidental denials into designed ones.
+
+drop policy if exists "drone_jobs_public_read_v2" on storage.objects;
+drop policy if exists "Token holders can view drone files" on storage.objects;
