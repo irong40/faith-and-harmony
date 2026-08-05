@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { extractStoragePath } from "@/lib/droneAssetUrl";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -37,25 +38,6 @@ const ACTION_CONFIG: Record<string, { label: string; icon: typeof CheckCircle }>
   accept_as_is: { label: "Accept", icon: CheckCircle },
   flag_for_review: { label: "Review", icon: AlertTriangle },
 };
-
-/**
- * Extract the storage path relative to the drone-jobs bucket root from
- * a file_path that may be a full public URL or a plain storage path.
- */
-function extractStoragePath(filePath: string): string | null {
-  // Match public URL pattern (legacy rows before bucket went private)
-  const publicMatch = filePath.match(/\/storage\/v1\/object\/(?:public|sign)\/drone-jobs\/(.+)/);
-  if (publicMatch) return publicMatch[1];
-
-  // Match authenticated/signed URL pattern
-  const signedMatch = filePath.match(/\/object\/(?:public|sign|authenticated)\/drone-jobs\/(.+)/);
-  if (signedMatch) return signedMatch[1];
-
-  // If the path does not look like a full URL, treat it as a relative storage path
-  if (!filePath.startsWith('http')) return filePath;
-
-  return null;
-}
 
 export default function QADetailModal({ asset, onClose, onRefresh, qaThreshold }: QADetailModalProps) {
   const { toast } = useToast();

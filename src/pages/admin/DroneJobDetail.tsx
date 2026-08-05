@@ -32,6 +32,7 @@ import ClientAutocomplete from "@/components/admin/ClientAutocomplete";
 import QASummaryCard from "@/components/drone/QASummaryCard";
 import QAAssetGrid from "@/components/drone/QAAssetGrid";
 import AdminAssetUpload from "@/components/drone/AdminAssetUpload";
+import DroneAssetImage from "@/components/drone/DroneAssetImage";
 import type { Database, Json } from "@/integrations/supabase/types";
 import type { DroneAsset, QAResults, ProcessingProfile } from "@/types/drone";
 import { useQueryClient } from "@tanstack/react-query";
@@ -1215,13 +1216,10 @@ export default function DroneJobDetail() {
                           </Label>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             {candidates.slice(0, 8).map((asset) => {
-                              const { data } = supabase.storage
-                                .from("drone-uploads")
-                                .getPublicUrl(asset.file_path);
                               return (
                                 <div key={asset.id} className="relative group">
-                                  <img
-                                    src={data.publicUrl}
+                                  <DroneAssetImage
+                                    filePath={asset.file_path}
                                     alt={asset.file_name}
                                     className="w-full h-24 object-cover rounded-lg border"
                                   />
