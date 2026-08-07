@@ -34,6 +34,10 @@ interface SaveCostingParams {
   comparedPackage?: string | null;
   packagePrice?: number | null;
   surchargeWarning?: boolean;
+  pricingRuleCode?: string | null;
+  costFloor?: number | null;
+  marketPrice?: number | null;
+  recommendedQuote?: number | null;
   notes?: string;
 }
 
@@ -43,6 +47,7 @@ export function useSaveMissionCosting() {
 
   return useMutation({
     mutationFn: async (params: SaveCostingParams) => {
+      const totalCharge = params.recommendedQuote ?? params.result.totalCharge;
       const row: TablesInsert<"mission_costings"> = {
         mission_name: params.missionName || null,
         service_type: params.serviceType || null,
@@ -66,12 +71,16 @@ export function useSaveMissionCosting() {
         admin_cost_amount: params.result.adminCostAmount,
         total_expenses: params.result.totalExpenses,
         margin_pct: params.marginPct,
-        profit_amount: params.result.profitAmount,
-        total_charge: params.result.totalCharge,
-        tax_estimate: params.result.taxEstimate,
+        profit_amount: totalCharge - params.result.totalExpenses,
+        total_charge: totalCharge,
+        tax_estimate: totalCharge * ((params.result.taxEstimate / params.result.totalCharge) || 0),
         compared_package: params.comparedPackage ?? null,
         package_price: params.packagePrice ?? null,
         surcharge_warning: params.surchargeWarning ?? false,
+        pricing_rule_code: params.pricingRuleCode ?? null,
+        cost_floor: params.costFloor ?? params.result.totalCharge,
+        market_price: params.marketPrice ?? null,
+        recommended_quote: params.recommendedQuote ?? params.result.totalCharge,
         notes: params.notes ?? null,
         status: "draft",
       };

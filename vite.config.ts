@@ -130,7 +130,7 @@ export default defineConfig(({ mode }) => ({
   test: {
     globals: true,
     environment: "jsdom",
-    include: ["src/**/*.spec.{ts,tsx}"],
+    include: ["src/**/*.spec.{ts,tsx}", "supabase/**/*.spec.ts"],
     // Several specs lazily `await import()` a component inside the test body, so
     // the first one to run pays the cold transform cost for that whole module
     // graph. On a loaded machine that alone can exceed the 5s default and fail a

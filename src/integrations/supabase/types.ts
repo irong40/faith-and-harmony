@@ -2302,10 +2302,14 @@ export type Database = {
       }
       mission_costings: {
         Row: {
+          actual_direct_expenses: number | null
+          actual_labor_cost: number | null
+          actual_total_cost: number | null
           admin_cost_amount: number
           admin_cost_pct: number
           compared_package: string | null
           converted_to_quote_id: string | null
+          cost_floor: number | null
           created_at: string
           created_by: string | null
           depreciation_amount: number
@@ -2325,12 +2329,17 @@ export type Database = {
           pilot_hours: number
           pilot_rate: number
           profit_amount: number
+          pricing_rule_code: string | null
+          quote_id: string | null
+          realized_gross_margin_pct: number | null
+          recommended_quote: number | null
           service_type: string | null
           status: string
           surcharge_warning: boolean
           tax_estimate: number
           total_charge: number
           total_expenses: number
+          market_price: number | null
           travel_gas: number
           travel_hotel: number
           travel_rental: number
@@ -2339,10 +2348,14 @@ export type Database = {
           vo_rate: number
         }
         Insert: {
+          actual_direct_expenses?: number | null
+          actual_labor_cost?: number | null
+          actual_total_cost?: number | null
           admin_cost_amount?: number
           admin_cost_pct?: number
           compared_package?: string | null
           converted_to_quote_id?: string | null
+          cost_floor?: number | null
           created_at?: string
           created_by?: string | null
           depreciation_amount?: number
@@ -2362,12 +2375,17 @@ export type Database = {
           pilot_hours?: number
           pilot_rate?: number
           profit_amount?: number
+          pricing_rule_code?: string | null
+          quote_id?: string | null
+          realized_gross_margin_pct?: number | null
+          recommended_quote?: number | null
           service_type?: string | null
           status?: string
           surcharge_warning?: boolean
           tax_estimate?: number
           total_charge?: number
           total_expenses?: number
+          market_price?: number | null
           travel_gas?: number
           travel_hotel?: number
           travel_rental?: number
@@ -2376,10 +2394,14 @@ export type Database = {
           vo_rate?: number
         }
         Update: {
+          actual_direct_expenses?: number | null
+          actual_labor_cost?: number | null
+          actual_total_cost?: number | null
           admin_cost_amount?: number
           admin_cost_pct?: number
           compared_package?: string | null
           converted_to_quote_id?: string | null
+          cost_floor?: number | null
           created_at?: string
           created_by?: string | null
           depreciation_amount?: number
@@ -2399,12 +2421,17 @@ export type Database = {
           pilot_hours?: number
           pilot_rate?: number
           profit_amount?: number
+          pricing_rule_code?: string | null
+          quote_id?: string | null
+          realized_gross_margin_pct?: number | null
+          recommended_quote?: number | null
           service_type?: string | null
           status?: string
           surcharge_warning?: boolean
           tax_estimate?: number
           total_charge?: number
           total_expenses?: number
+          market_price?: number | null
           travel_gas?: number
           travel_hotel?: number
           travel_rental?: number
@@ -2416,6 +2443,20 @@ export type Database = {
           {
             foreignKeyName: "mission_costings_converted_to_quote_id_fkey"
             columns: ["converted_to_quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mission_costings_pricing_rule_code_fkey"
+            columns: ["pricing_rule_code"]
+            isOneToOne: false
+            referencedRelation: "sai_pricing_catalog"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "mission_costings_quote_id_fkey"
+            columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "quotes"
             referencedColumns: ["id"]
@@ -3777,6 +3818,101 @@ export type Database = {
         }
         Relationships: []
       }
+      sai_pricing_catalog: {
+        Row: {
+          active: boolean
+          available: boolean
+          base_price: number | null
+          benchmark_basis: string | null
+          category: string
+          code: string
+          created_at: string
+          description: string | null
+          drone_package_code: string | null
+          effective_date: string
+          included_quantity: number | null
+          market_high: number | null
+          market_low: number | null
+          maximum_price: number | null
+          minimum_price: number | null
+          modifiers: Json
+          name: string
+          overage_rate: number | null
+          pricing_model: string
+          public: boolean
+          requires_capability: string | null
+          review_due_date: string
+          sort_order: number
+          target_gross_margin_pct: number
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          available?: boolean
+          base_price?: number | null
+          benchmark_basis?: string | null
+          category: string
+          code: string
+          created_at?: string
+          description?: string | null
+          drone_package_code?: string | null
+          effective_date: string
+          included_quantity?: number | null
+          market_high?: number | null
+          market_low?: number | null
+          maximum_price?: number | null
+          minimum_price?: number | null
+          modifiers?: Json
+          name: string
+          overage_rate?: number | null
+          pricing_model: string
+          public?: boolean
+          requires_capability?: string | null
+          review_due_date: string
+          sort_order?: number
+          target_gross_margin_pct?: number
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          available?: boolean
+          base_price?: number | null
+          benchmark_basis?: string | null
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          drone_package_code?: string | null
+          effective_date?: string
+          included_quantity?: number | null
+          market_high?: number | null
+          market_low?: number | null
+          maximum_price?: number | null
+          minimum_price?: number | null
+          modifiers?: Json
+          name?: string
+          overage_rate?: number | null
+          pricing_model?: string
+          public?: boolean
+          requires_capability?: string | null
+          review_due_date?: string
+          sort_order?: number
+          target_gross_margin_pct?: number
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sai_pricing_catalog_drone_package_code_fkey"
+            columns: ["drone_package_code"]
+            isOneToOne: false
+            referencedRelation: "drone_packages"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       safety_audit_log: {
         Row: {
           created_at: string
@@ -4776,6 +4912,27 @@ export type Database = {
       }
     }
     Views: {
+      sai_public_pricing_catalog: {
+        Row: {
+          available: boolean | null
+          base_price: number | null
+          category: string | null
+          code: string | null
+          description: string | null
+          effective_date: string | null
+          included_quantity: number | null
+          maximum_price: number | null
+          minimum_price: number | null
+          name: string | null
+          overage_rate: number | null
+          pricing_model: string | null
+          requires_capability: string | null
+          review_due_date: string | null
+          sort_order: number | null
+          unit: string | null
+        }
+        Relationships: []
+      }
       cost_summary: {
         Row: {
           date: string | null
