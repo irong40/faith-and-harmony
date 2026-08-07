@@ -34,14 +34,22 @@ import { useToast } from "@/hooks/use-toast";
 import { useCostingSettings, useUpdateCostingSettings } from "@/hooks/useCostingSettings";
 import { useSaveMissionCosting } from "@/hooks/useMissionCostings";
 import {
+  PRICING_CATALOG_FALLBACK,
+  usePricingCatalog,
+} from "@/hooks/usePricingCatalog";
+import {
   calculateMissionCost,
-  compareToPackage,
-  findNearestPackage,
-  costingToLineItems,
-  PACKAGES,
   type CostingInputs,
   type CostingSettings,
+  type RushLevel,
 } from "@/lib/mission-costing";
+import {
+  GROSS_MARGIN_LABEL,
+  buildClientQuoteLineItems,
+  buildPricingViewModel,
+  formatPricingRulePrice,
+  isQuantityPriced,
+} from "@/lib/pricing-engine-model";
 
 // ── Currency formatter ───────────────────────────────────────────────
 
@@ -129,6 +137,7 @@ export default function PricingEngine() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: settingsRow } = useCostingSettings();
+  const { data: catalogData } = usePricingCatalog();
   const updateSettings = useUpdateCostingSettings();
   const saveCosting = useSaveMissionCosting();
 
@@ -144,8 +153,12 @@ export default function PricingEngine() {
 
   // Mission details
   const [missionName, setMissionName] = useState("");
-  const [serviceType, setServiceType] = useState("");
+  const [serviceType, setServiceType] = useState("LISTING_LITE");
   const [notes, setNotes] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [travelSurcharge, setTravelSurcharge] = useState(0);
+  const [manualAuthorizationRequired, setManualAuthorizationRequired] = useState(false);
+  const [rush, setRush] = useState<RushLevel>("standard");
 
   // Stage 1: Direct Expenses
   const [inputs, setInputs] = useState<CostingInputs>({
@@ -162,7 +175,7 @@ export default function PricingEngine() {
     insurancePremium: 50,
   });
 
-  // Stage 3: Margin slider
+  // Stage 3: Gross-margin target
   const [marginPct, setMarginPct] = useState(40);
 
   // Derive settings from DB or defaults
@@ -183,13 +196,32 @@ export default function PricingEngine() {
     [inputs, settings, marginPct, taxRatePct]
   );
 
-  // Package comparison
-  const comparison = useMemo(() => {
-    if (serviceType && PACKAGES[serviceType]) {
-      return compareToPackage(result.totalCharge, serviceType);
-    }
-    return findNearestPackage(result.totalCharge);
-  }, [result.totalCharge, serviceType]);
+  const pricingCatalog = catalogData ?? PRICING_CATALOG_FALLBACK;
+  const selectedRule = useMemo(
+    () => pricingCatalog.find((rule) => rule.code === serviceType) ?? null,
+    [pricingCatalog, serviceType],
+  );
+  const recommendation = useMemo(() => {
+    if (!selectedRule) return null;
+    return buildPricingViewModel({
+      trueCost: result.totalExpenses,
+      rule: { ...selectedRule, targetGrossMarginPct: marginPct },
+      scope: {
+        quantity,
+        travelSurcharge,
+        manualAuthorizationRequired,
+        rush,
+      },
+    });
+  }, [selectedRule, result.totalExpenses, marginPct, quantity, travelSurcharge, manualAuthorizationRequired, rush]);
+  const recommendedTotal = recommendation?.recommendedQuote ?? result.totalCharge;
+  const recommendedTax = recommendedTotal * (taxRatePct / 100);
+
+  const handleServiceChange = (code: string) => {
+    setServiceType(code);
+    const nextRule = pricingCatalog.find((rule) => rule.code === code);
+    setQuantity(nextRule?.includedQuantity ?? 1);
+  };
 
   // Update a single input field
   const setField = <K extends keyof CostingInputs>(key: K, value: number) => {
@@ -225,25 +257,38 @@ export default function PricingEngine() {
       settings,
       result,
       marginPct,
-      comparedPackage: comparison?.packageCode,
-      packagePrice: comparison?.packagePrice,
-      surchargeWarning: comparison?.surchargeRequired,
+      comparedPackage: selectedRule?.code,
+      packagePrice: selectedRule?.basePrice,
+      surchargeWarning: recommendation?.selectedBasis === "cost_floor",
+      pricingRuleCode: selectedRule?.code,
+      costFloor: recommendation?.costFloor,
+      marketPrice: recommendation?.marketPrice,
+      recommendedQuote: recommendation?.recommendedQuote,
       notes,
     });
   };
 
   // Convert to quote line items (for QuoteBuilder integration)
   const handleConvertToQuote = () => {
-    const lineItems = costingToLineItems(inputs, result, settings, marginPct);
+    if (!selectedRule || !recommendation || recommendation.recommendedQuote === null) {
+      toast({
+        title: "Scope review required",
+        description: "This service cannot be quoted until its capability and availability requirements are met.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const lineItems = buildClientQuoteLineItems(selectedRule, recommendation);
     // Store in sessionStorage for QuoteBuilder to pick up
     sessionStorage.setItem(
       "costing-to-quote",
       JSON.stringify({
         lineItems,
-        total: result.totalCharge,
-        deposit: Math.round(result.totalCharge * 0.5 * 100) / 100,
+        total: recommendation.recommendedQuote,
+        deposit: Math.round(recommendation.recommendedQuote * 0.5 * 100) / 100,
         missionName,
         serviceType,
+        pricingRuleCode: selectedRule.code,
       })
     );
     toast({
@@ -263,7 +308,7 @@ export default function PricingEngine() {
             Mission Cost Calculator
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Cost-plus pricing engine. Your floor, not your ceiling.
+            Protect the gross-margin floor, then compare it with the reviewed market anchor.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={openSettings} className="gap-1.5">
@@ -287,14 +332,16 @@ export default function PricingEngine() {
             </div>
             <div>
               <Label className="text-xs">Service Type</Label>
-              <Select value={serviceType} onValueChange={setServiceType}>
+              <Select value={serviceType} onValueChange={handleServiceChange}>
                 <SelectTrigger className="mt-1 h-8 text-sm">
                   <SelectValue placeholder="Select package to compare" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(PACKAGES).map(([code, pkg]) => (
-                    <SelectItem key={code} value={code}>
-                      {pkg.name} ({fmt(pkg.price)})
+                  {pricingCatalog
+                    .filter((rule) => rule.category !== "airspace" && rule.code !== "BROKERAGE_RETAINER")
+                    .map((rule) => (
+                    <SelectItem key={rule.code} value={rule.code}>
+                      {rule.name} ({formatPricingRulePrice(rule)})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -303,6 +350,62 @@ export default function PricingEngine() {
           </div>
         </CardContent>
       </Card>
+
+      {selectedRule && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-primary">
+              Market Scope
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {isQuantityPriced(selectedRule) && (
+                <NumField
+                  label="Site Acreage"
+                  value={quantity}
+                  onChange={setQuantity}
+                  step={0.5}
+                  suffix="acres"
+                />
+              )}
+              <NumField
+                label="Customer Travel Surcharge"
+                value={travelSurcharge}
+                onChange={setTravelSurcharge}
+                prefix="$"
+              />
+              <div>
+                <Label className="text-xs text-muted-foreground uppercase tracking-wide">
+                  Rush Turnaround
+                </Label>
+                <Select value={rush} onValueChange={(value) => setRush(value as RushLevel)}>
+                  <SelectTrigger className="mt-1 h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Standard</SelectItem>
+                    <SelectItem value="next_day">Next day (+25%)</SelectItem>
+                    <SelectItem value="same_day">Same day (+50%)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={manualAuthorizationRequired}
+                onChange={(event) => setManualAuthorizationRequired(event.target.checked)}
+                className="h-4 w-4 rounded border-input"
+              />
+              Manual airspace coordination (+$250). Routine LAANC is included.
+            </label>
+            <div className="text-xs text-muted-foreground">
+              Market benchmark effective {selectedRule.effectiveDate}; review due {selectedRule.reviewDueDate}.
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ══════════════════════════════════════════════════════════
           STAGE 1: DIRECT EXPENSES (Manual Inputs)
@@ -510,19 +613,19 @@ export default function PricingEngine() {
       </Card>
 
       {/* ══════════════════════════════════════════════════════════
-          STAGE 3: MARGIN & FINAL QUOTE (Auto-Calculated)
+          STAGE 3: GROSS MARGIN + MARKET RECOMMENDATION (Auto-Calculated)
           ══════════════════════════════════════════════════════════ */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold uppercase tracking-wider text-primary">
-            Stage 3 — Margin & Final Quote
+            Stage 3 — Gross Margin & Market Recommendation
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Margin slider */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <Label className="text-xs">Target Profit Margin</Label>
+              <Label className="text-xs">{GROSS_MARGIN_LABEL}</Label>
               <Badge variant="outline" className="font-mono">
                 {marginPct}%
               </Badge>
@@ -542,27 +645,31 @@ export default function PricingEngine() {
           </div>
 
           {/* Results */}
-          <div className="grid grid-cols-3 gap-4 pt-2">
-            <Stat label="Profit Amount" value={fmt(result.profitAmount)} />
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-2">
+            <Stat label="Cost Floor" value={fmt(recommendation?.costFloor ?? result.totalCharge)} />
+            <Stat label="Market Price" value={fmt(recommendation?.marketPrice ?? 0)} />
             <Stat
-              label="Total Charge to Client"
-              value={fmt(result.totalCharge)}
+              label="Recommended Quote"
+              value={recommendation?.recommendedQuote === null ? "Review" : fmt(recommendedTotal)}
               accent
               large
             />
-            <Stat label={`Tax Est. (${taxRatePct}%)`} value={fmt(result.taxEstimate)} />
+            <Stat
+              label="Gross Margin"
+              value={recommendation?.grossMarginPct === null ? "—" : `${recommendation?.grossMarginPct ?? result.grossMarginPct}%`}
+            />
+            <Stat label={`Tax Est. (${taxRatePct}%)`} value={fmt(recommendedTax)} />
           </div>
 
-          {/* Package Comparison */}
-          {comparison && (
+          {recommendation && (
             <div
               className={`rounded-lg p-4 flex items-start gap-3 ${
-                comparison.surchargeRequired
+                recommendation.selectedBasis === "unavailable"
                   ? "bg-red-500/10 border border-red-500/30"
                   : "bg-green-500/10 border border-green-500/30"
               }`}
             >
-              {comparison.surchargeRequired ? (
+              {recommendation.selectedBasis === "unavailable" ? (
                 <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
               ) : (
                 <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
@@ -570,16 +677,25 @@ export default function PricingEngine() {
               <div>
                 <div
                   className={`text-sm font-semibold ${
-                    comparison.surchargeRequired ? "text-red-500" : "text-green-500"
+                    recommendation.selectedBasis === "unavailable" ? "text-red-500" : "text-green-500"
                   }`}
                 >
-                  {comparison.surchargeRequired
-                    ? "SURCHARGE REQUIRED"
-                    : "WITHIN PACKAGE"}
+                  {recommendation.selectedBasis === "unavailable"
+                    ? "SCOPE REVIEW REQUIRED"
+                    : recommendation.selectedBasis === "cost_floor"
+                    ? "COST FLOOR SETS THE QUOTE"
+                    : "MARKET PRICE SETS THE QUOTE"}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {comparison.message}
+                  {recommendation.selectedBasis === "unavailable"
+                    ? "The selected service is not quotable until its capability or availability requirement is verified."
+                    : `Recommendation uses the higher of ${fmt(recommendation.costFloor)} cost floor and ${fmt(recommendation.marketPrice)} market price.`}
                 </p>
+                {recommendation.warnings.length > 0 && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    {recommendation.warnings.join(" · ")}
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -603,13 +719,17 @@ export default function PricingEngine() {
         <Button
           variant="outline"
           onClick={handleSaveDraft}
-          disabled={saveCosting.isPending}
+          disabled={saveCosting.isPending || recommendation?.recommendedQuote === null}
           className="gap-1.5"
         >
           <Save className="h-4 w-4" />
           {saveCosting.isPending ? "Saving..." : "Save Draft"}
         </Button>
-        <Button onClick={handleConvertToQuote} className="gap-1.5">
+        <Button
+          onClick={handleConvertToQuote}
+          disabled={!recommendation || recommendation.recommendedQuote === null}
+          className="gap-1.5"
+        >
           <FileOutput className="h-4 w-4" />
           Convert to Quote
         </Button>
@@ -650,7 +770,7 @@ export default function PricingEngine() {
               step={0.5}
             />
             <NumField
-              label="Default Profit Margin %"
+              label="Default Gross Margin %"
               value={settingsForm.default_margin_pct}
               onChange={(v) =>
                 setSettingsForm((f) => ({ ...f, default_margin_pct: v }))

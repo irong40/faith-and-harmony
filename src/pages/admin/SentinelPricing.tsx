@@ -24,61 +24,39 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import PricingEngine from '@/components/PricingEngine';
 import { useMissionCostings, type MissionCostingRow } from '@/hooks/useMissionCostings';
+import { PRICING_CATALOG_FALLBACK, usePricingCatalog } from '@/hooks/usePricingCatalog';
+import type { PricingRule } from '@/lib/mission-costing';
+import { DEFAULT_RETAINER_RATE, formatPricingRulePrice } from '@/lib/pricing-engine-model';
 
-const RESIDENTIAL_PACKAGES = [
-  {
-    name: 'Listing Lite',
-    price: 225,
-    code: 're_basic',
-    features: ['10 photos', 'Sky replacement', 'Next day delivery'],
-  },
-  {
-    name: 'Listing Pro',
-    price: 450,
-    code: 're_standard',
-    features: ['25 photos', '60 second reel', '2D boundary overlay', '48 hour turnaround'],
-  },
-  {
-    name: 'Luxury Listing',
-    price: 750,
-    code: 're_premium',
-    features: ['40+ photos', '2 minute cinematic video', 'Twilight shoot', '24 hour priority'],
-  },
-];
+const PACKAGE_FEATURES: Record<string, string[]> = {
+  LISTING_LITE: ['10 photos', 'Sky replacement', 'Next day delivery'],
+  LISTING_PRO: ['25 photos', '60 second reel', '2D boundary overlay', '48 hour turnaround'],
+  LUXURY_LISTING: ['40+ photos', '2 minute cinematic video', 'Twilight shoot', '24 hour priority'],
+  CONSTRUCTION_RECURRING: ['Repeat visual documentation', 'Site overview', 'Date-stamped archive'],
+  CONSTRUCTION_ONE_TIME: ['One-time visual documentation', 'Site overview', 'Date-stamped archive'],
+  CONSTRUCTION_MAPPING: ['Construction orthomosaic', 'Georeferenced visual record'],
+  CONSTRUCTION_ANALYSIS: ['Scope-dependent analysis', 'Client-ready documentation report'],
+  COMMERCIAL_MARKETING: ['4K video', 'Aerial stills', 'Commercial usage license'],
+  ROOF_RESIDENTIAL_VISUAL: ['High-resolution roof imagery', 'Observation documentation', 'No certification claims'],
+  ROOF_COMMERCIAL_VISUAL: ['Commercial roof imagery', 'Observation documentation', 'No certification claims'],
+  ROOF_COMMERCIAL_THERMAL: ['Capability-gated thermal documentation', 'Unavailable until fleet verification'],
+  MAPPING_BASIC: ['Orthomosaic', 'Point cloud', 'Up to 10 acres'],
+  MAPPING_PRO: ['Measurements', 'Annotations', 'CAD exports', 'Up to 25 acres'],
+  MAPPING_ENTERPRISE: ['Change detection', 'Custom reporting', 'Priority handling'],
+};
 
-const COMMERCIAL_PACKAGES = [
-  {
-    name: 'Construction Progress',
-    price: 450,
-    code: 'construction',
-    unit: '/visit',
-    features: ['Orthomosaic', 'Site overview', 'Date stamped archive'],
-  },
-  {
-    name: 'Commercial Marketing',
-    price: 850,
-    code: 'commercial',
-    unit: '',
-    features: ['4K video', '3D model', 'Raw footage', 'Perpetual license'],
-  },
-  {
-    name: 'Inspection Data',
-    price: 1200,
-    code: 'inspection',
-    unit: '',
-    features: ['Inspection grid photography', 'Annotated report', 'Exportable data'],
-  },
-];
+const RESIDENTIAL_CODES = new Set(['LISTING_LITE', 'LISTING_PRO', 'LUXURY_LISTING']);
 
 const ADD_ONS = [
   { name: 'Rush Premium (24hr)', modifier: '+25%' },
   { name: 'Rush Premium (Same Day)', modifier: '+50%' },
-  { name: 'Raw File Buyout', modifier: '+$250' },
+  { name: 'Routine LAANC', modifier: 'Included' },
+  { name: 'Manual Airspace Coordination', modifier: '+$250' },
 ];
 
 const RETAINER_PLAN = {
   name: 'Brokerage Retainer',
-  price: 1500,
+  price: DEFAULT_RETAINER_RATE,
   period: 'month',
   includes: '5 Listing Pro shoots',
   policy: 'Use it or lose it',
@@ -146,19 +124,14 @@ function RetainerCard({ retainer }: { retainer: Retainer }) {
   );
 }
 
-function PackageCard({ name, price, unit, features, code }: {
-  name: string;
-  price: number;
-  unit?: string;
-  features: string[];
-  code: string;
-}) {
+function PackageCard({ rule }: { rule: PricingRule }) {
+  const features = PACKAGE_FEATURES[rule.code] ?? [];
   return (
     <Card className="flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">{name}</CardTitle>
-          <Badge variant="outline" className="font-mono text-xs">{code}</Badge>
+          <CardTitle className="text-base">{rule.name}</CardTitle>
+          <Badge variant="outline" className="font-mono text-xs">{rule.code}</Badge>
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col justify-between">
@@ -171,8 +144,8 @@ function PackageCard({ name, price, unit, features, code }: {
           ))}
         </ul>
         <div className="text-2xl font-bold font-mono">
-          ${price.toLocaleString()}
-          {unit && <span className="text-sm font-normal text-muted-foreground">{unit}</span>}
+          {formatPricingRulePrice(rule)}
+          {rule.unit && <span className="text-sm font-normal text-muted-foreground">/{rule.unit}</span>}
         </div>
       </CardContent>
     </Card>
@@ -228,9 +201,9 @@ function SavedCostings() {
                 )}
               </div>
               <div className="text-right">
-                <div className="text-lg font-bold font-mono">{fmt(c.total_charge)}</div>
+                <div className="text-lg font-bold font-mono">{fmt(c.recommended_quote ?? c.total_charge)}</div>
                 <div className="text-xs text-muted-foreground">
-                  Floor: {fmt(c.total_expenses)} | Margin: {c.margin_pct}%
+                  Cost floor: {fmt(c.cost_floor ?? c.total_charge)} | Market: {c.market_price === null ? '—' : fmt(c.market_price)} | Target GM: {c.margin_pct}%
                 </div>
               </div>
             </div>
@@ -248,10 +221,16 @@ function SavedCostings() {
 export default function SentinelPricing() {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const { data: catalogData } = usePricingCatalog();
+  const pricingCatalog = catalogData ?? PRICING_CATALOG_FALLBACK;
+  const residentialPackages = pricingCatalog.filter((rule) => RESIDENTIAL_CODES.has(rule.code));
+  const commercialPackages = pricingCatalog.filter((rule) =>
+    ['construction', 'commercial', 'inspection', 'mapping'].includes(rule.category),
+  );
   const [addRetainerOpen, setAddRetainerOpen] = useState(false);
   const [retainerForm, setRetainerForm] = useState({
     client_name: '',
-    monthly_rate: '1500',
+    monthly_rate: String(DEFAULT_RETAINER_RATE),
     shoots_included: '5',
     start_date: new Date().toISOString().split('T')[0],
   });
@@ -299,10 +278,11 @@ export default function SentinelPricing() {
       qc.invalidateQueries({ queryKey: ['retainers'] });
       toast({ title: 'Retainer created' });
       setAddRetainerOpen(false);
-      setRetainerForm({ client_name: '', monthly_rate: '1500', shoots_included: '5', start_date: new Date().toISOString().split('T')[0] });
+      setRetainerForm({ client_name: '', monthly_rate: String(DEFAULT_RETAINER_RATE), shoots_included: '5', start_date: new Date().toISOString().split('T')[0] });
     },
-    onError: (error: any) => {
-      toast({ title: 'Failed to create retainer', description: error.message, variant: 'destructive' });
+    onError: (error: unknown) => {
+      const description = error instanceof Error ? error.message : String(error);
+      toast({ title: 'Failed to create retainer', description, variant: 'destructive' });
     },
   });
 
@@ -341,8 +321,8 @@ export default function SentinelPricing() {
                 <h2 className="text-lg font-semibold">Residential Packages</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {RESIDENTIAL_PACKAGES.map(p => (
-                  <PackageCard key={p.code} {...p} />
+                {residentialPackages.map(rule => (
+                  <PackageCard key={rule.code} rule={rule} />
                 ))}
               </div>
             </div>
@@ -356,8 +336,8 @@ export default function SentinelPricing() {
                 <h2 className="text-lg font-semibold">Commercial Packages</h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {COMMERCIAL_PACKAGES.map(p => (
-                  <PackageCard key={p.code} {...p} />
+                {commercialPackages.map(rule => (
+                  <PackageCard key={rule.code} rule={rule} />
                 ))}
               </div>
             </div>
