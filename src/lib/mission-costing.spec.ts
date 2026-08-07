@@ -1,11 +1,15 @@
 import { describe, it, expect } from "vitest";
 import {
   calculateMissionCost,
+  calculateCostFloor,
+  calculateMarketPrice,
+  recommendQuote,
   compareToPackage,
   findNearestPackage,
   costingToLineItems,
   type CostingInputs,
   type CostingSettings,
+  type PricingRule,
 } from "./mission-costing";
 
 const DEFAULT_SETTINGS: CostingSettings = {
@@ -49,18 +53,18 @@ describe("calculateMissionCost", () => {
     expect(result.totalExpenses).toBeCloseTo(783, 2);
   });
 
-  it("computes Stage 3: margin and final charge", () => {
+  it("computes Stage 3 as a true gross-margin floor", () => {
     const result = calculateMissionCost(BASIC_INPUTS, DEFAULT_SETTINGS, 40);
-    // profit: 783 * 0.40 = 313.20
-    expect(result.profitAmount).toBeCloseTo(313.2, 2);
-    // total charge: 783 + 313.20 = 1096.20
-    expect(result.totalCharge).toBeCloseTo(1096.2, 2);
+    // $783 / (1 - 0.40) = $1,305, leaving a true 40% gross margin.
+    expect(result.profitAmount).toBeCloseTo(522, 2);
+    expect(result.totalCharge).toBeCloseTo(1305, 2);
+    expect(result.grossMarginPct).toBeCloseTo(40, 2);
   });
 
   it("computes tax estimate", () => {
     const result = calculateMissionCost(BASIC_INPUTS, DEFAULT_SETTINGS, 40, 6);
-    // tax: 1096.20 * 0.06 = 65.772
-    expect(result.taxEstimate).toBeCloseTo(65.772, 2);
+    // tax: 1305 * 0.06 = 78.30
+    expect(result.taxEstimate).toBeCloseTo(78.3, 2);
   });
 
   it("handles zero inputs", () => {
@@ -78,12 +82,12 @@ describe("calculateMissionCost", () => {
 
   it("handles minimum margin (30%)", () => {
     const result = calculateMissionCost(BASIC_INPUTS, DEFAULT_SETTINGS, 30);
-    expect(result.profitAmount).toBeCloseTo(783 * 0.3, 2);
+    expect(result.totalCharge).toBeCloseTo(783 / 0.7, 2);
   });
 
   it("handles maximum margin (60%)", () => {
     const result = calculateMissionCost(BASIC_INPUTS, DEFAULT_SETTINGS, 60);
-    expect(result.profitAmount).toBeCloseTo(783 * 0.6, 2);
+    expect(result.totalCharge).toBeCloseTo(783 / 0.4, 2);
   });
 
   it("respects custom settings", () => {
@@ -96,6 +100,129 @@ describe("calculateMissionCost", () => {
     // 580 * 0.25 = 145, 580 * 0.15 = 87, 580 * 0.10 = 58
     // total = 580 + 145 + 87 + 58 = 870
     expect(result.totalExpenses).toBeCloseTo(870, 2);
+  });
+});
+
+const MAPPING_BASIC_RULE: PricingRule = {
+  code: "MAPPING_BASIC",
+  name: "Mapping Basic",
+  category: "mapping",
+  pricingModel: "starting_at",
+  basePrice: 800,
+  minimumPrice: 800,
+  maximumPrice: null,
+  unit: "project",
+  includedQuantity: 10,
+  overageRate: 14,
+  targetGrossMarginPct: 40,
+  modifiers: {
+    manual_authorization: 250,
+    next_day: 0.25,
+    same_day: 0.5,
+  },
+  requiresCapability: null,
+  available: true,
+  effectiveDate: "2026-08-07",
+  reviewDueDate: "2026-11-07",
+};
+
+describe("calculateCostFloor", () => {
+  it("converts true cost to a target gross-margin floor", () => {
+    expect(calculateCostFloor(600, 40)).toBe(1000);
+  });
+
+  it("rejects invalid costs and margins", () => {
+    expect(() => calculateCostFloor(-1, 40)).toThrow(/trueCost/);
+    expect(() => calculateCostFloor(100, -1)).toThrow(/targetGrossMarginPct/);
+    expect(() => calculateCostFloor(100, 100)).toThrow(/targetGrossMarginPct/);
+  });
+});
+
+describe("calculateMarketPrice", () => {
+  it("charges acreage only above the included quantity", () => {
+    const result = calculateMarketPrice(MAPPING_BASIC_RULE, { quantity: 15 });
+    expect(result.basePrice).toBe(800);
+    expect(result.quantityOverage).toBe(70);
+    expect(result.marketPrice).toBe(870);
+  });
+
+  it("includes manual coordination and applies rush last", () => {
+    const result = calculateMarketPrice(MAPPING_BASIC_RULE, {
+      quantity: 10,
+      travelSurcharge: 100,
+      manualAuthorizationRequired: true,
+      rush: "next_day",
+    });
+    // ($800 + $100 travel + $250 manual coordination) * 1.25
+    expect(result.manualAuthorizationFee).toBe(250);
+    expect(result.rushAmount).toBe(287.5);
+    expect(result.marketPrice).toBe(1437.5);
+  });
+
+  it("rejects negative scope and unknown modifiers", () => {
+    expect(() => calculateMarketPrice(MAPPING_BASIC_RULE, { quantity: -1 })).toThrow(/quantity/);
+    expect(() => calculateMarketPrice(MAPPING_BASIC_RULE, { modifierCodes: ["unknown"] })).toThrow(/unknown/);
+  });
+
+  it("warns when the market benchmark is stale", () => {
+    const result = calculateMarketPrice(MAPPING_BASIC_RULE, {
+      asOfDate: "2026-11-08",
+    });
+    expect(result.warnings).toContain("market_benchmark_stale");
+  });
+});
+
+describe("recommendQuote", () => {
+  it("uses the cost floor when it is higher than the market price", () => {
+    const result = recommendQuote({
+      trueCost: 600,
+      rule: MAPPING_BASIC_RULE,
+      scope: { quantity: 15 },
+    });
+    expect(result.costFloor).toBe(1000);
+    expect(result.marketPrice).toBe(870);
+    expect(result.recommendedQuote).toBe(1000);
+    expect(result.selectedBasis).toBe("cost_floor");
+    expect(result.grossMarginPct).toBe(40);
+  });
+
+  it("uses the market price when it is higher than the cost floor", () => {
+    const result = recommendQuote({
+      trueCost: 300,
+      rule: MAPPING_BASIC_RULE,
+      scope: { quantity: 15 },
+    });
+    expect(result.costFloor).toBe(500);
+    expect(result.recommendedQuote).toBe(870);
+    expect(result.selectedBasis).toBe("market_price");
+  });
+
+  it("blocks a capability-gated service without verified capability", () => {
+    const thermalRule: PricingRule = {
+      ...MAPPING_BASIC_RULE,
+      code: "ROOF_COMMERCIAL_THERMAL",
+      name: "Commercial Thermal Roof Documentation",
+      basePrice: 1200,
+      minimumPrice: 1200,
+      includedQuantity: null,
+      overageRate: null,
+      requiresCapability: "thermal",
+    };
+
+    const result = recommendQuote({ trueCost: 400, rule: thermalRule, scope: {} });
+    expect(result.recommendedQuote).toBeNull();
+    expect(result.selectedBasis).toBe("unavailable");
+    expect(result.warnings).toContain("required_capability_missing:thermal");
+  });
+
+  it("blocks a catalog row explicitly marked unavailable", () => {
+    const result = recommendQuote({
+      trueCost: 400,
+      rule: { ...MAPPING_BASIC_RULE, available: false },
+      scope: { verifiedCapabilities: ["thermal"] },
+    });
+    expect(result.recommendedQuote).toBeNull();
+    expect(result.warnings).toContain("service_unavailable");
   });
 });
 

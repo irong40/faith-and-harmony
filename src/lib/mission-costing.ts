@@ -1,10 +1,10 @@
 /**
  * Mission Costing Engine — Pure Calculation Module
  *
- * Cost-plus pricing for drone missions. Three sequential stages:
+ * Market-aware pricing for drone missions. Three sequential stages:
  *   Stage 1: Direct expenses (manual inputs) → expensesSubtotal
  *   Stage 2: Indirect costs (auto %) → totalExpenses (break-even floor)
- *   Stage 3: Margin application → totalCharge (client quote)
+ *   Stage 3: True gross-margin floor + market anchor → client recommendation
  *
  * Zero dependencies. No DB, no React. Same logic duplicated in sentinel-core.
  */
@@ -46,8 +46,63 @@ export interface CostingResult {
   // Stage 3
   profitAmount: number;
   totalCharge: number;
+  grossMarginPct: number;
   taxEstimate: number;
 }
+
+export type PricingModel = "fixed" | "starting_at" | "range" | "custom";
+
+export type PricingRule = {
+  code: string;
+  name: string;
+  category: string;
+  pricingModel: PricingModel;
+  basePrice: number | null;
+  minimumPrice: number | null;
+  maximumPrice: number | null;
+  unit: string | null;
+  includedQuantity: number | null;
+  overageRate: number | null;
+  targetGrossMarginPct: number;
+  modifiers: Record<string, number>;
+  requiresCapability: string | null;
+  available: boolean;
+  effectiveDate: string;
+  reviewDueDate: string;
+};
+
+export type RushLevel = "standard" | "next_day" | "same_day";
+
+export type PricingScope = {
+  quantity?: number;
+  travelSurcharge?: number;
+  manualAuthorizationRequired?: boolean;
+  rush?: RushLevel;
+  modifierCodes?: string[];
+  verifiedCapabilities?: string[];
+  asOfDate?: string;
+};
+
+export type MarketPriceResult = {
+  basePrice: number;
+  quantityOverage: number;
+  modifierAmount: number;
+  travelSurcharge: number;
+  manualAuthorizationFee: number;
+  rushMultiplier: number;
+  rushAmount: number;
+  marketPrice: number;
+  quotable: boolean;
+  warnings: string[];
+};
+
+export type QuoteRecommendation = MarketPriceResult & {
+  trueCost: number;
+  costFloor: number;
+  recommendedQuote: number | null;
+  selectedBasis: "cost_floor" | "market_price" | "unavailable";
+  grossMarginPct: number | null;
+};
 
 export interface PackageComparison {
   packageCode: string;
@@ -68,6 +123,135 @@ export const PACKAGES: Record<string, { name: string; price: number }> = {
   commercial_marketing:   { name: "Commercial Marketing",   price: 850 },
   inspection_data:        { name: "Inspection Data",        price: 1200 },
 };
+
+const roundCurrency = (value: number): number => Math.round((value + Number.EPSILON) * 100) / 100;
+
+const assertNonNegative = (label: string, value: number): void => {
+  if (!Number.isFinite(value) || value < 0) {
+    throw new RangeError(`${label} must be a finite non-negative number`);
+  }
+};
+
+export function calculateCostFloor(trueCost: number, targetGrossMarginPct: number): number {
+  assertNonNegative("trueCost", trueCost);
+  if (
+    !Number.isFinite(targetGrossMarginPct) ||
+    targetGrossMarginPct < 0 ||
+    targetGrossMarginPct >= 100
+  ) {
+    throw new RangeError("targetGrossMarginPct must be between 0 and 100");
+  }
+
+  return roundCurrency(trueCost / (1 - targetGrossMarginPct / 100));
+}
+
+export function calculateMarketPrice(
+  rule: PricingRule,
+  scope: PricingScope,
+): MarketPriceResult {
+  const quantity = scope.quantity ?? 0;
+  const travelSurcharge = scope.travelSurcharge ?? 0;
+  assertNonNegative("quantity", quantity);
+  assertNonNegative("travelSurcharge", travelSurcharge);
+
+  const warnings: string[] = [];
+  let quotable = rule.available;
+  if (!rule.available) warnings.push("service_unavailable");
+
+  const verifiedCapabilities = new Set(scope.verifiedCapabilities ?? []);
+  if (rule.requiresCapability && !verifiedCapabilities.has(rule.requiresCapability)) {
+    quotable = false;
+    warnings.push(`required_capability_missing:${rule.requiresCapability}`);
+  }
+
+  const asOfDate = scope.asOfDate ?? new Date().toISOString().slice(0, 10);
+  if (asOfDate > rule.reviewDueDate) warnings.push("market_benchmark_stale");
+
+  const basePrice = rule.basePrice ?? rule.minimumPrice ?? 0;
+  if (rule.pricingModel === "custom" || basePrice === 0) {
+    quotable = false;
+    warnings.push("manual_scope_review");
+  }
+
+  const includedQuantity = rule.includedQuantity ?? quantity;
+  const quantityOverage = roundCurrency(
+    Math.max(0, quantity - includedQuantity) * (rule.overageRate ?? 0),
+  );
+
+  let modifierAmount = 0;
+  for (const code of scope.modifierCodes ?? []) {
+    const value = rule.modifiers[code];
+    if (value === undefined) throw new RangeError(`unknown modifier: ${code}`);
+    assertNonNegative(`modifier ${code}`, value);
+    modifierAmount += value;
+  }
+  modifierAmount = roundCurrency(modifierAmount);
+
+  const manualAuthorizationFee = scope.manualAuthorizationRequired
+    ? roundCurrency(rule.modifiers.manual_authorization ?? 250)
+    : 0;
+
+  const rush = scope.rush ?? "standard";
+  const rushRate = rush === "standard" ? 0 : rule.modifiers[rush];
+  if (rushRate === undefined) throw new RangeError(`unknown rush modifier: ${rush}`);
+  assertNonNegative(`rush modifier ${rush}`, rushRate);
+
+  const marketSubtotal = roundCurrency(
+    basePrice + quantityOverage + modifierAmount + travelSurcharge + manualAuthorizationFee,
+  );
+  const rushAmount = roundCurrency(marketSubtotal * rushRate);
+
+  return {
+    basePrice: roundCurrency(basePrice),
+    quantityOverage,
+    modifierAmount,
+    travelSurcharge: roundCurrency(travelSurcharge),
+    manualAuthorizationFee,
+    rushMultiplier: 1 + rushRate,
+    rushAmount,
+    marketPrice: roundCurrency(marketSubtotal + rushAmount),
+    quotable,
+    warnings,
+  };
+}
+
+export function recommendQuote({
+  trueCost,
+  rule,
+  scope,
+}: {
+  trueCost: number;
+  rule: PricingRule;
+  scope: PricingScope;
+}): QuoteRecommendation {
+  const costFloor = calculateCostFloor(trueCost, rule.targetGrossMarginPct);
+  const market = calculateMarketPrice(rule, scope);
+
+  if (!market.quotable) {
+    return {
+      ...market,
+      trueCost: roundCurrency(trueCost),
+      costFloor,
+      recommendedQuote: null,
+      selectedBasis: "unavailable",
+      grossMarginPct: null,
+    };
+  }
+
+  const recommendedQuote = Math.max(costFloor, market.marketPrice);
+  const grossMarginPct = recommendedQuote === 0
+    ? 0
+    : roundCurrency(((recommendedQuote - trueCost) / recommendedQuote) * 100);
+
+  return {
+    ...market,
+    trueCost: roundCurrency(trueCost),
+    costFloor,
+    recommendedQuote,
+    selectedBasis: costFloor >= market.marketPrice ? "cost_floor" : "market_price",
+    grossMarginPct,
+  };
+}
 
 // ── Calculation ──────────────────────────────────────────────────────
 
@@ -97,9 +281,10 @@ export function calculateMissionCost(
   const adminCostAmount = expensesSubtotal * (settings.adminCostPct / 100);
   const totalExpenses = expensesSubtotal + overheadAmount + depreciationAmount + adminCostAmount;
 
-  // Stage 3: Margin & Final Quote
-  const profitAmount = totalExpenses * (marginPct / 100);
-  const totalCharge = totalExpenses + profitAmount;
+  // Stage 3: True Gross-Margin Floor
+  const totalCharge = calculateCostFloor(totalExpenses, marginPct);
+  const profitAmount = totalCharge - totalExpenses;
+  const grossMarginPct = totalCharge === 0 ? 0 : (profitAmount / totalCharge) * 100;
   const taxEstimate = totalCharge * (taxRatePct / 100);
 
   return {
@@ -112,6 +297,7 @@ export function calculateMissionCost(
     totalExpenses,
     profitAmount,
     totalCharge,
+    grossMarginPct,
     taxEstimate,
   };
 }
@@ -219,7 +405,7 @@ export function costingToLineItems(
 
   if (result.profitAmount > 0) {
     items.push({
-      description: `Profit Margin (${marginPct}%)`,
+      description: `Gross Margin (${marginPct}%)`,
       quantity: 1,
       unit_price: result.profitAmount,
     });
