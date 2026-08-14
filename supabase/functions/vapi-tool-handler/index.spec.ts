@@ -12,15 +12,24 @@
 import { assertEquals, assertStringIncludes } from 'https://deno.land/std@0.190.0/testing/asserts.ts';
 import { handleGetPackagePricing, formatPriceAsWords } from './index.ts';
 
-// Mirrors the live catalogue's shape as of 2026-07-28: flat-price real-estate
-// packages plus quote-based (price 0) inspection work, and one inactive row
-// that must never be quoted.
+// Mirrors the LIVE catalogue, re-verified against drone_packages on
+// 2026-08-14. Two corrections were made that day:
+//
+//   - every row now carries `category`. The previous fixture omitted it, which
+//     meant category-based matching could not be exercised at all — the suite
+//     would have stayed green no matter what the resolver did with it.
+//   - ROOF_INSPECTION is priced 1200 live, not 0. The old fixture said 0, so
+//     this file had quietly drifted from the catalogue in the same way the
+//     hardcoded PACKAGES map did before it. LAND_SURVEY is the genuinely
+//     quote-based (price 0) active row and is now included as one.
 const CATALOGUE = [
-  { code: 'ROOF_INSPECTION', name: 'Roof Inspection', price: 0, service_type: 'roof_inspection', features: ['Grid photography coverage', 'Annotated damage report'], active: true },
-  { code: 'LISTING_LITE_225', name: 'Listing Lite', price: 225, service_type: 're_aerial', features: ['10 edited photos', 'Sky replacement'], active: true },
-  { code: 'CONSTRUCTION_450', name: 'Construction Progress', price: 450, service_type: 'construction', features: ['25 labeled photos'], active: true },
-  { code: 'LUXURY_750', name: 'Luxury Listing', price: 750, service_type: 're_aerial', features: ['40+ edited photos'], active: true },
-  { code: 'PREMIUM_1250', name: 'Premium Residential', price: 1250, service_type: 're_aerial', features: ['Retired tier'], active: false },
+  { code: 'LAND_SURVEY', name: 'Land Survey and Mapping', price: 0, service_type: 'property_survey', category: 'survey', features: ['Orthomosaic', 'Boundary overlay'], active: true },
+  { code: 'LISTING_LITE_225', name: 'Listing Lite', price: 225, service_type: 're_aerial', category: 'real_estate', features: ['10 edited photos', 'Sky replacement'], active: true },
+  { code: 'CONSTRUCTION_450', name: 'Construction Progress', price: 450, service_type: 'construction', category: 'construction', features: ['25 labeled photos'], active: true },
+  { code: 'LUXURY_750', name: 'Luxury Listing', price: 750, service_type: 're_aerial', category: 'real_estate', features: ['40+ edited photos'], active: true },
+  { code: 'COMMERCIAL_850', name: 'Commercial Marketing', price: 850, service_type: 're_aerial', category: 'commercial', features: ['4K video'], active: true },
+  { code: 'ROOF_INSPECTION', name: 'Roof Inspection', price: 1200, service_type: 'roof_inspection', category: 'inspection', features: ['Grid photography coverage', 'Annotated damage report'], active: true },
+  { code: 'PREMIUM_1250', name: 'Premium Residential', price: 1250, service_type: 're_aerial', category: 'real_estate', features: ['Retired tier'], active: false },
 ];
 
 /** Minimal stand-in for the PostgREST builder chain the handler uses. */
@@ -88,9 +97,13 @@ Deno.test('a code resolves directly', async () => {
   assertStringIncludes(result, 'seven hundred fifty dollars');
 });
 
+// Retargeted 2026-08-14 from ROOF_INSPECTION to LAND_SURVEY. ROOF_INSPECTION
+// is priced 1200 in the live catalogue, so it stopped being an example of
+// quote-based work; LAND_SURVEY is the price-0 active row. The behaviour under
+// test is unchanged: price 0 means "custom quote", never "zero dollars".
 Deno.test('quote-based work is never spoken as a dollar amount', async () => {
-  const result = await handleGetPackagePricing(stubSupabase(), { service_type: 'roof_inspection' });
-  assertStringIncludes(result, 'Roof Inspection');
+  const result = await handleGetPackagePricing(stubSupabase(), { service_type: 'property_survey' });
+  assertStringIncludes(result, 'Land Survey and Mapping');
   assertStringIncludes(result, 'custom quote');
   assertEquals(result.includes('zero dollars'), false);
   assertEquals(/\d/.test(result), false);
@@ -110,10 +123,49 @@ Deno.test('inactive packages are never quoted', async () => {
   assertEquals(direct.includes('twelve hundred fifty dollars'), false);
 });
 
-Deno.test('the retired $1,200 Inspection Data package is gone, not restated', async () => {
+// Narrowed 2026-08-14. The original guard also asserted that "twelve hundred"
+// never appears. That was right when ROOF_INSPECTION was priced 0 and the only
+// source of $1,200 was the deleted hardcoded map. The live catalogue now
+// prices ROOF_INSPECTION at 1200, so a blanket ban on that number would forbid
+// a correct answer read straight from the database.
+//
+// What actually must never come back is the RETIRED PACKAGE: a row named
+// "Inspection Data" with its own remembered price, invented by this function
+// rather than read from drone_packages. That is what is asserted now.
+Deno.test('the retired Inspection Data package is gone, not restated', async () => {
   const result = await handleGetPackagePricing(stubSupabase(), { service_type: 'inspection' });
   assertEquals(result.includes('Inspection Data'), false);
-  assertEquals(result.includes('twelve hundred'), false);
+});
+
+// Documents a DELIBERATE behaviour change made on 2026-08-14, flagged for
+// review before deploy. Aligning intake-lead with Paula required a single
+// shared key order (code -> service_type -> category -> name). Adding
+// `category` to that order means Paula now answers a bare "inspection" from
+// the catalogue instead of declining. The number she speaks is the live
+// ROOF_INSPECTION price, not a remembered one — change the row and the
+// spoken price changes with it.
+Deno.test('category is a valid match key, and the price spoken is the live row price', async () => {
+  const result = await handleGetPackagePricing(stubSupabase(), { service_type: 'inspection' });
+  assertStringIncludes(result, 'Roof Inspection');
+  assertStringIncludes(result, 'twelve hundred dollars');
+
+  // Same query against a catalogue where that row is repriced: the answer
+  // must follow the data. If this ever fails, a literal has crept back in.
+  const repriced = CATALOGUE.map((r) =>
+    r.code === 'ROOF_INSPECTION' ? { ...r, price: 1350 } : r);
+  const after = await handleGetPackagePricing(stubSupabase({ rows: repriced }), { service_type: 'inspection' });
+  assertStringIncludes(after, 'one thousand three hundred fifty dollars');
+  assertEquals(after.includes('twelve hundred'), false);
+});
+
+// A precise key must win over a coarse one. 'construction' is BOTH the
+// service_type and the category of CONSTRUCTION_450 here, but codes and
+// service_types are checked before categories, so the ordering is what pins
+// the result rather than luck in row order.
+Deno.test('a more precise key wins over category', async () => {
+  const result = await handleGetPackagePricing(stubSupabase(), { service_type: 'construction' });
+  assertStringIncludes(result, 'Construction Progress');
+  assertEquals(result.includes('Roof Inspection'), false);
 });
 
 Deno.test('missing service_type asks which service', async () => {

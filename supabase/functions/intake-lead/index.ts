@@ -15,6 +15,11 @@
 
 import { serve } from 'https://deno.land/std@0.190.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import {
+  PACKAGE_SELECT_COLUMNS,
+  type PackageRow,
+  resolvePackages,
+} from '../_shared/package-resolver.ts';
 
 const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -25,7 +30,7 @@ const corsHeaders: Record<string, string> = {
 // Required fields for intake payload validation
 export const REQUIRED_FIELDS = ['caller_name', 'caller_phone', 'service_type', 'job_description', 'call_id'] as const;
 
-type IntakePayload = {
+export type IntakePayload = {
   caller_name: string;
   caller_phone: string;
   caller_email?: string;
@@ -36,6 +41,24 @@ type IntakePayload = {
   preferred_date?: string;
   qualification_status?: string;
   sentiment?: string;
+};
+
+/**
+ * Shape of the drone_jobs row this function inserts.
+ *
+ * `status` is constrained to the two public.drone_job_status values this
+ * function is allowed to emit. Both were verified against the live enum on
+ * 2026-08-14; do not add a third without re-reading the enum, because
+ * PostgREST rejects the whole insert on an invalid value.
+ */
+export type DroneJobInsert = {
+  customer_id: string | null;
+  client_id: string;
+  package_id: string | null;
+  status: 'intake' | 'review_pending';
+  property_address: string;
+  scheduled_date: string | null;
+  admin_notes: string;
 };
 
 // Pure function: validate webhook secret
@@ -58,6 +81,76 @@ export function validateRequiredFields(body: Record<string, unknown>): { valid: 
 // Pure function: normalize phone number by stripping non-digits
 export function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, '');
+}
+
+/**
+ * Build the drone_jobs row for a voice order.
+ *
+ * Pure so the two production defects fixed on 2026-08-14 are testable without
+ * a database:
+ *
+ *  1. client_id was never set. drone_jobs carries BOTH customer_id (the
+ *     drone_jobs FK target) and client_id (the FK to clients). Paula's
+ *     lookup_customer tool queries drone_jobs by client_id, so a job created
+ *     with customer_id alone was invisible to Paula on the caller's next call
+ *     and she told returning customers "No active jobs". Verified on
+ *     DJ-2026-0005. client_id is already in scope from findOrCreateClient, it
+ *     simply was not passed.
+ *
+ *  2. An unmatched service_type fell through to the cheapest active package.
+ *     That is a wrong answer wearing the costume of a right one: nothing
+ *     errored, nothing logged, and the job looked correctly priced. There is
+ *     now NO fallback. An unmatched service_type leaves package_id null, puts
+ *     the job in review_pending so a human sees it, and records the exact
+ *     unmatched value in admin_notes so the reason is on the record.
+ *
+ * `packagesUnavailable` covers the case where the catalogue query itself
+ * failed. That is treated identically to "no match": we would rather route a
+ * job to a human than guess at what the customer bought.
+ */
+export function buildDroneJobInsert(args: {
+  payload: IntakePayload;
+  client_id: string;
+  customer_id: string | null;
+  packages: PackageRow[] | null | undefined;
+  packagesUnavailable?: boolean;
+}): { insert: DroneJobInsert; matchedOn: string | null; matchedCode: string | null } {
+  const { payload, client_id, customer_id, packages, packagesUnavailable } = args;
+
+  const resolution = packagesUnavailable
+    ? { matches: [] as PackageRow[], matchedOn: null, normalizedKey: null }
+    : resolvePackages(packages ?? [], payload.service_type);
+
+  const pkg = resolution.matches[0] ?? null;
+
+  const baseNotes =
+    `Voice order via Vapi. Call ID: ${payload.call_id}. ` +
+    `Service: ${payload.service_type}. Description: ${payload.job_description}`;
+
+  // No silent default. If we could not identify the package, say so loudly on
+  // the record and hand the job to a human.
+  const reviewNote = packagesUnavailable
+    ? ` [NEEDS REVIEW] Package catalogue could not be read at intake, so no ` +
+      `package was bound. Unmatched service_type: "${payload.service_type}". ` +
+      `package_id is null — select the correct package before scheduling or invoicing.`
+    : ` [NEEDS REVIEW] No active drone_package matched service_type ` +
+      `"${payload.service_type}". package_id is null — select the correct ` +
+      `package before scheduling or invoicing. Nothing was auto-selected on purpose.`;
+
+  return {
+    insert: {
+      customer_id,
+      client_id,
+      package_id: pkg?.id ?? null,
+      status: pkg ? 'intake' : 'review_pending',
+      property_address:
+        payload.property_address || `Address pending (voice order from ${payload.caller_name})`,
+      scheduled_date: payload.preferred_date || null,
+      admin_notes: pkg ? baseNotes : baseNotes + reviewNote,
+    },
+    matchedOn: resolution.matchedOn,
+    matchedCode: pkg?.code ?? null,
+  };
 }
 
 function json(data: unknown, status = 200): Response {
@@ -233,39 +326,50 @@ export async function handleRequest(req: Request): Promise<Response> {
       } else {
         const customer_id = customerResult as string;
 
-        // Find the best matching drone package by job_type
-        const { data: pkg } = await supabase
+        // Resolve the package against the LIVE catalogue using the same
+        // shared resolver Paula's get_package_pricing tool uses, so what the
+        // caller was quoted on the phone is what gets bound to the job.
+        //
+        // The whole active catalogue is fetched and matched in memory rather
+        // than filtered with .or(). caller-supplied service_type must never be
+        // interpolated into a PostgREST filter — see the same hardening note
+        // on findOrCreateClient above. The catalogue is ~13 rows.
+        const { data: packages, error: pkgError } = await supabase
           .from('drone_packages')
-          .select('id')
+          .select(PACKAGE_SELECT_COLUMNS)
           .eq('active', true)
-          .or(`category.eq.${payload.service_type},code.eq.${payload.service_type}`)
-          .limit(1)
-          .maybeSingle();
+          .order('price', { ascending: true });
 
-        // Fallback to cheapest active package
-        let package_id = pkg?.id;
-        if (!package_id) {
-          const { data: fallback } = await supabase
-            .from('drone_packages')
-            .select('id')
-            .eq('active', true)
-            .order('price', { ascending: true })
-            .limit(1)
-            .maybeSingle();
-          package_id = fallback?.id;
+        if (pkgError) {
+          console.error('drone_packages query failed:', pkgError.message);
         }
 
-        // Create drone_job in intake status
+        const { insert: jobInsert, matchedOn, matchedCode } = buildDroneJobInsert({
+          payload,
+          client_id,
+          customer_id,
+          packages: packages as unknown as PackageRow[] | null,
+          packagesUnavailable: Boolean(pkgError),
+        });
+
+        if (jobInsert.package_id) {
+          console.log(
+            `Voice order: service_type="${payload.service_type}" matched ${matchedCode} on ${matchedOn}`,
+          );
+        } else {
+          // Loud on purpose. The old behaviour here was silence plus the
+          // cheapest active package.
+          console.error(
+            `Voice order: NO package matched service_type="${payload.service_type}". ` +
+              `Job flagged review_pending with package_id null.`,
+          );
+        }
+
+        // Create drone_job. client_id is what Paula's lookup_customer queries
+        // on; omitting it hides the job from her on the next call.
         const { data: job, error: jobError } = await supabase
           .from('drone_jobs')
-          .insert({
-            customer_id,
-            package_id: package_id || null,
-            status: 'intake',
-            property_address: payload.property_address || `Address pending (voice order from ${payload.caller_name})`,
-            scheduled_date: payload.preferred_date || null,
-            admin_notes: `Voice order via Vapi. Call ID: ${payload.call_id}. Service: ${payload.service_type}. Description: ${payload.job_description}`,
-          })
+          .insert(jobInsert)
           .select('id')
           .single();
 
@@ -282,8 +386,14 @@ export async function handleRequest(req: Request): Promise<Response> {
           .insert({
             user_email: 'info@faithandharmonyllc.com',
             type: 'voice_order',
-            title: `Voice order from ${payload.caller_name}`,
-            body: `${payload.service_type}: ${payload.job_description.substring(0, 150)}`,
+            title: jobInsert.package_id
+              ? `Voice order from ${payload.caller_name}`
+              : `Voice order from ${payload.caller_name} — package needs review`,
+            body: jobInsert.package_id
+              ? `${payload.service_type}: ${payload.job_description.substring(0, 150)}`
+              : `No package matched service_type "${payload.service_type}". ` +
+                `Job is in review_pending with no package attached. ` +
+                `${payload.job_description.substring(0, 150)}`,
             link: drone_job_id ? `/admin/drone-jobs/${drone_job_id}` : '/admin/quote-requests',
           });
 

@@ -20,34 +20,26 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  PACKAGE_SELECT_COLUMNS,
+  type PackageRow as SharedPackageRow,
+  resolvePackages,
+} from "../_shared/package-resolver.ts";
 
 /**
- * Legacy service_type keys the assistant may still send.
+ * Package matching (and the LEGACY_KEY_TO_CODE map that used to live here)
+ * moved to ../_shared/package-resolver.ts on 2026-08-14.
  *
- * These were the keys of a hardcoded PACKAGES map that lived here until
- * 2026-07-28. They are NOT columns in drone_packages, so an assistant still
- * sending them has to be translated to a real `code` or it gets "no pricing".
- * Keep this map until the Vapi tool definition is confirmed to send codes.
- *
- * `inspection` is deliberately absent: the old map priced it at $1,200, and no
- * such package exists in the live catalogue. Inspection work is quote-based
- * (ROOF_INSPECTION, SOLAR_INSPECTION, INSURANCE_DOC all carry price 0), so the
- * lookup below resolves it by service_type and quotes no number at all.
+ * Reason: intake-lead resolved the SAME service_type string against
+ * drone_packages using different columns (category/code vs code/service_type/
+ * name). Only `code` overlapped, so a caller quoted correctly on the phone
+ * could have a different package bound to their job seconds later. Sharing one
+ * resolver is the fix; keeping a second copy here would recreate the defect.
  */
-const LEGACY_KEY_TO_CODE: Record<string, string> = {
-  re_basic: 'LISTING_LITE_225',
-  re_standard: 'LISTING_PRO_450',
-  re_premium: 'LUXURY_750',
-  construction: 'CONSTRUCTION_450',
-  commercial: 'COMMERCIAL_850',
-};
 
-type PackageRow = {
-  code: string;
+type PackageRow = SharedPackageRow & {
   name: string;
   price: number;
-  service_type: string | null;
-  features: string[] | null;
 };
 
 /**
@@ -354,7 +346,7 @@ export async function handleGetPackagePricing(
 
   const { data, error } = await supabase
     .from("drone_packages")
-    .select("code, name, price, service_type, features")
+    .select(PACKAGE_SELECT_COLUMNS)
     .eq("active", true)
     .order("price", { ascending: true });
 
@@ -364,13 +356,9 @@ export async function handleGetPackagePricing(
   }
 
   const rows = (data as unknown as PackageRow[]).map((r) => ({ ...r, price: Number(r.price) }));
-  const key = asked.toLowerCase();
-  const wanted = LEGACY_KEY_TO_CODE[key]?.toLowerCase() ?? key;
 
-  const byCode = rows.filter((r) => r.code?.toLowerCase() === wanted);
-  const byService = rows.filter((r) => r.service_type?.toLowerCase() === wanted);
-  const byName = rows.filter((r) => r.name?.toLowerCase() === wanted);
-  const matches = byCode.length ? byCode : byService.length ? byService : byName;
+  // Shared with intake-lead. Order: code -> service_type -> category -> name.
+  const { matches } = resolvePackages(rows, asked);
 
   if (!matches.length) {
     const names = rows.map((r) => r.name);
