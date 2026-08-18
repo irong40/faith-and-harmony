@@ -61,6 +61,7 @@ import DefaultHelmet from "./components/seo/DefaultHelmet";
 import PWAUpdatePrompt from "./components/pwa/PWAUpdatePrompt";
 import PWAInstallPrompt from "./components/pwa/PWAInstallPrompt";
 import GoogleMapsProvider from "./components/map/GoogleMapsProvider";
+import { Analytics } from "@vercel/analytics/react";
 
 const PageSpinner = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -116,6 +117,7 @@ const App = () => (
         <Sonner />
         <PWAUpdatePrompt />
         <PWAInstallPrompt />
+        <Analytics />
         <BrowserRouter>
           <DefaultHelmet />
           <Suspense fallback={<PageSpinner />}>
