@@ -102,3 +102,8 @@ verify_jwt = false
 
 [functions.weather-forecast-fetch]
 verify_jwt = false
+
+# The review page invokes this function with the authenticated user's JWT.
+# The handler also validates that JWT and requires the exact approved email.
+[functions.substack-review]
+verify_jwt = true
