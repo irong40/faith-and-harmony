@@ -4,6 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "substack:review": "node scripts/substack-review/cli.mjs",
+    "test:substack-review": "node --test scripts/substack-review/*.spec.mjs",
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",

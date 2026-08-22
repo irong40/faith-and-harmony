@@ -76,7 +76,11 @@ function createDependencies(): EmailDependencies {
     markReviewSent: async ({ id, messageId, sentAt }) => {
       const { error } = await supabase
         .from("substack_review_versions")
-        .update({ review_message_id: messageId, review_sent_at: sentAt })
+        .update({
+          review_message_id: messageId,
+          review_sent_at: sentAt,
+          last_error: null,
+        })
         .eq("id", id)
         .eq("status", "pending_review");
       if (error) throw error;
