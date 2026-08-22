@@ -26,6 +26,7 @@ const QuoteAcceptancePage = lazy(() => import("./pages/QuoteAcceptancePage"));
 const RequestQuote = lazy(() => import("./pages/RequestQuote"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
+const SubstackReview = lazy(() => import("./pages/SubstackReview"));
 
 // Lazy — admin shell + pages
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
@@ -127,6 +128,7 @@ const App = () => (
               <Route path="/quote" element={<ErrorBoundary><RequestQuote /></ErrorBoundary>} />
               <Route path="/privacy" element={<ErrorBoundary><Privacy /></ErrorBoundary>} />
               <Route path="/terms" element={<ErrorBoundary><Terms /></ErrorBoundary>} />
+              <Route path="/substack/review/:token" element={<ErrorBoundary><SubstackReview /></ErrorBoundary>} />
 
               {/* Tokenized client routes — no auth required */}
               <Route path="/proposal/:token" element={<ErrorBoundary><CustomerProposal /></ErrorBoundary>} />
