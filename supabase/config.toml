@@ -107,3 +107,8 @@ verify_jwt = false
 # The handler also validates that JWT and requires the exact approved email.
 [functions.substack-review]
 verify_jwt = true
+
+# The local worker invokes this function with the exact service role secret.
+# The handler validates that credential before reading any stored draft.
+[functions.send-substack-review-email]
+verify_jwt = false
