@@ -50,7 +50,9 @@ Under the Sentinel Aerial Inspections Master Services Agreement dated `{{MSA_DAT
 
 ### FGDC CSDGM (federal geospatial deliverables)
 
-Accompanying XML metadata file `{{METADATA_XML}}` conforms to FGDC Content Standard for Digital Geospatial Metadata (CSDGM), Version 2, FGDC-STD-001-1998.
+Accompanying XML metadata file `{{METADATA_XML}}` is written to the FGDC Content Standard for Digital Geospatial Metadata (CSDGM), Version 2, FGDC-STD-001-1998 schema. Validator output from `{{VALIDATOR_TOOL}}` is attached at `{{VALIDATION_LOG}}`; acceptance of the metadata record is the receiving agency's determination.
+
+> **Gate.** Include §C only when the XML is present in the delivery folder **and** a validator log with zero errors is attached. Sortie writes no FGDC or ISO metadata today, so until it does, delete §C per this file's header instruction rather than shipping a claim about a file that does not exist.
 
 ### ISO 19115 / 19139 (international / newer federal)
 
@@ -102,8 +104,8 @@ For federal deliverables, the final report PDF conforms to:
 | FAR 52.204-21 (Basic Safeguarding) | {{Y/N}} | Controls in effect |
 | DFARS 252.204-7012 (CUI) | {{Y/N}} | CMMC Level `{{LVL}}` |
 | Section 508 / WCAG 2.1 AA | {{Y/N}} | Section D |
-| Buy American Act | {{Y/N}} | Compliant / exempted |
+| Buy American Act | {{Y/N}} | Offeror certification submitted with the offer — see `{{BAA_CERT_REF}}` |
 
 ---
 
-*Company identifiers for federal work: CAGE Code `{{CAGE}}` · UEI `{{UEI_OR_PENDING}}` · NAICS `{{NAICS}}` · SDVOSB self-certification on file.*
+*Company identifiers for federal work: CAGE Code `{{CAGE}}` · UEI `{{UEI_OR_PENDING}}` · NAICS `{{NAICS}}` · SDVOSB: `{{SDVOSB_STATUS}}` (SBA VetCert).*

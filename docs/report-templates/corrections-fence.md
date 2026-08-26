@@ -36,7 +36,8 @@ This report contains information whose release could reasonably be expected to c
 - **Transmission**: Encrypted only (DoD SAFE / facility SFTP / approved cloud — never plain email or standard file share)
 - **Authorized recipients**: `{{RECIPIENT_LIST}}` (Warden / Chief of Security / facility COR / contract COR only)
 - **Retention**: per facility Records Retention Schedule `{{RRS}}`; SAI internal retention `{{RETENTION}}`
-- **Destruction**: NIST SP 800-88 Rev. 1 compliant
+- **Destruction**: performed using the Purge and Destroy methods described in NIST SP 800-88 Rev. 1;
+  method, operator, and date recorded in destruction log `{{DESTRUCTION_LOG_REF}}`
 
 ## 3. Scope of Work
 
@@ -102,11 +103,13 @@ This report contains information whose release could reasonably be expected to c
 
 | Sev | Definition | Response Expectation |
 |---|---|---|
-| 5 — Critical | Active breach or imminent failure; security compromise possible now | ≤ 24 hours |
+| 5 — Critical | A breach is open in the imagery, or fabric, topping, or foundation is documented as no longer continuous at this station | ≤ 24 hours |
 | 4 — Major | Significant degradation; partial defense; exploit scenario viable under common conditions | ≤ 72 hours |
 | 3 — Moderate | Degraded but functioning; exploit requires unlikely concurrence | ≤ 14 days |
 | 2 — Minor | Early-stage wear; cosmetic or future-maintenance concern | Scheduled maintenance cycle |
 | 1 — Informational | Observation; no defect | Log only |
+
+> Severity is a documentation and routing priority, not an engineering determination. It ranks how quickly SAI recommends a person look at the station in front of the camera. Whether a segment will fail, and when, requires a structural assessment of members and footings this flight did not see and does not attempt.
 
 ### 6.4 Findings Summary Statistics
 
@@ -129,11 +132,13 @@ This report contains information whose release could reasonably be expected to c
 
 Organized by severity and segment. Each line references the anomaly register (§6.1) and the specific evidence plate (Appendix A).
 
-## 9. Compliance Cross-Reference
+## 9. Standard Cross-Reference
 
-| Facility Requirement | Referenced Standard | Compliance Observation |
+> This table maps what the flight observed to the paragraph of the standard that names the same feature. It is not a compliance finding in either direction; whether the facility meets ASTM F2781, ACA 4-ACRS, or NIJ 0320.01 is the accrediting body's determination against records and on-site tests outside this engagement.
+
+| Facility Feature | Standard Naming It | What the Imagery Shows |
 |---|---|---|
-| Fence integrity | ASTM F2781 §X.Y | `{{COMPLIANT / NON-COMPLIANT / PARTIAL}}` |
+| Fence integrity | ASTM F2781 §X.Y | `{{ANOMALIES OBSERVED / NONE OBSERVED / NOT VISIBLE FROM THE AIR}}` — register rows `{{ROWS}}` |
 | Clear zone width | ACA 4-ACRS | |
 | Perimeter lighting coverage | NIJ 0320.01 | |
 | Sensor fence continuity | Facility SOP | |

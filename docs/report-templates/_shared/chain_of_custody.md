@@ -64,9 +64,9 @@ Any individual other than the operator who views or handles the raw/derivative m
 |---|---|---|---|---|
 | — | — | — | — | — |
 
-## F. Chain of Custody Attestation
+## F. Chain of Custody Statement
 
-I certify that I have personal knowledge of the matters stated herein, that the custody log above accurately reflects every transfer of the described digital evidence, and that no gaps, substitutions, or modifications to the raw media occurred outside of the entries documented.
+I have personal knowledge of the matters stated herein. The custody log above records every transfer of the described digital evidence known to me, and I am aware of no gaps, substitutions, or modifications to the raw media outside the entries documented. Entries marked "not recorded" are gaps in this log and must not be read as evidence that no transfer occurred.
 
 **Custodian of Record:** `{{CUSTODIAN_NAME}}`, `{{CUSTODIAN_TITLE}}`
 **Signature:** ____________________________ **Date:** `{{DATE}}`
