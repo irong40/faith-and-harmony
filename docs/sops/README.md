@@ -12,6 +12,11 @@ Standard Operating Procedures for all drone mission types.
 | 4 | [Land Survey & Mapping](land-survey-mapping.md) | Photogrammetry / orthomosaic | 20-60 min | Matrice 4E (RTK), GCPs |
 | 5 | [Insurance Documentation](insurance-documentation.md) | Damage claims evidence | 15-25 min | Mini 4 Pro + thermal, RAW mode |
 | 6 | [Solar Panel Inspection](solar-panel-inspection.md) | Array thermal assessment | 15-30 min | Matrice 4E + thermal (required) |
+| 7 | [Pavement Condition](pavement-condition.md) | ASTM D6433 distress documentation | 40-90 min (two passes) | Matrice 4E (RTK), wide + medium tele |
+| 8 | [Cemetery Documentation](cemetery-documentation.md) | Marker inventory + site map | 45-120 min | Matrice 4E (RTK), medium tele |
+
+Steeple and spire work is covered inside [Roof Inspection](roof-inspection.md),
+since it is the roof SOP plus one zone set and one added deliverable.
 
 ## Quick Reference — Pricing Ranges
 
@@ -23,6 +28,34 @@ Standard Operating Procedures for all drone mission types.
 | Land Survey & Mapping | $250 | $400-700 | $700-1,500+ large site |
 | Insurance Documentation | $250 | $400-600 | $600-1,000 litigation |
 | Solar Panel Inspection | $200 | $350-500 | $900-1,500+ commercial |
+| Pavement Condition | not set | not set | not set |
+| Cemetery Documentation | not set | not set | not set |
+
+## Scope Exclusions (added 2026-07-25)
+
+**SAI flies outdoors.** The following are declined, and declined on the first
+call rather than quoted to buy time:
+
+| Excluded | Examples |
+|---|---|
+| Indoor flight | Warehouses, plants, arenas, hangars, any roofed interior |
+| GPS-denied environments | Anywhere GNSS is unavailable or unreliable |
+| Confined space | Tanks, silos, vessels, ducts, tunnels |
+| Close-quarters work around large steel structure | Overhead cranes and rails, gantries, tight bridge undersides |
+
+Why: without GNSS the aircraft cannot be relied on to hold position, and vision
+positioning degrades against repetitive steel and low light. A large steel mass
+makes heading unpredictable. Inside a structure there is usually no safe abort
+direction. This work is served by collision-tolerant or caged aircraft built for
+it, which SAI does not operate. Insurance coverage for indoor operation has also
+never been confirmed.
+
+Precedent: a 50-ton overhead crane inspection was declined on 2026-07-25 for
+exactly these reasons.
+
+Lifting the exclusion needs all four of: a caged or collision-tolerant aircraft,
+written insurance confirmation, logged GPS-denied practice hours, and a published
+indoor SOP. Every SOP in this folder assumes outdoor flight with GNSS.
 
 ## Universal Pre-Flight (All Mission Types)
 
