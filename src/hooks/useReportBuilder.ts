@@ -176,6 +176,57 @@ export function useUpdateReport() {
   });
 }
 
+/** Thrown when the report changed between opening it and approving it. */
+export class StaleApprovalError extends Error {
+  constructor() {
+    super(
+      "This report changed after you opened it (a new PDF was attached, or it was already approved). " +
+        "The current version has been loaded; review it before approving."
+    );
+    this.name = "StaleApprovalError";
+  }
+}
+
+/**
+ * Approve exactly the engine PDF the reviewer is looking at.
+ *
+ * The update matches the report id AND status 'draft' AND the document id on
+ * screen, and must return the row it changed. If Sortie attached a newer PDF
+ * after the page loaded, nothing matches, nothing is approved, and the caller
+ * reloads so the new PDF is what gets reviewed.
+ */
+export function useApproveEngineReport() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; documentId: string }) => {
+      const { data, error } = await supabase
+        .from("job_reports")
+        .update({ status: "final", updated_at: new Date().toISOString() })
+        .eq("id", input.id)
+        .eq("status", "draft")
+        .eq("generated_document_id", input.documentId)
+        .select("id, status, generated_document_id");
+      if (error) throw error;
+      const row = (data ?? [])[0] as { id: string; status: ReportStatus; generated_document_id: string } | undefined;
+      if (!row) throw new StaleApprovalError();
+      return row;
+    },
+    onSuccess: (row) => {
+      // The authoritative row, straight into the cache the page reads from.
+      qc.setQueryData(["job-report", row.id], (old: unknown) =>
+        old && typeof old === "object" ? { ...(old as object), status: row.status } : old
+      );
+      qc.invalidateQueries({ queryKey: ["job-reports"] });
+    },
+    onError: (e: Error, input) => {
+      toast.error(e.message);
+      if (e instanceof StaleApprovalError) {
+        qc.invalidateQueries({ queryKey: ["job-report", input.id] });
+      }
+    },
+  });
+}
+
 export function useSaveReportImages(reportId: string) {
   const qc = useQueryClient();
   return useMutation({

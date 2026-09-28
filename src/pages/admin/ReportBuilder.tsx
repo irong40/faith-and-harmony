@@ -37,6 +37,7 @@ import {
   useJobReport,
   useCreateReport,
   useUpdateReport,
+  useApproveEngineReport,
 } from "@/hooks/useReportBuilder";
 import { engineDocumentOf } from "@/lib/engineReport";
 import type {
@@ -124,12 +125,9 @@ export default function ReportBuilder() {
   const createMutation = useCreateReport();
   const updateMutation = useUpdateReport();
   const engineDoc = engineDocumentOf(existingReport);
-  // Local echo of an approval: the report query is not refetched on update
-  // (a refetch would re-hydrate the legacy editor mid-typing).
-  const [approvedHere, setApprovedHere] = useState(false);
-  // The route reuses this component across report ids; an approval belongs to
-  // the report it was made on.
-  useEffect(() => setApprovedHere(false), [id]);
+  // Approval is bound to the document on screen and read back from the row;
+  // there is no local "approved" state to go stale.
+  const approveMutation = useApproveEngineReport();
 
   const manifest: SectionManifestEntry[] = useMemo(
     () => template?.sections_manifest ?? [],
@@ -154,18 +152,14 @@ export default function ReportBuilder() {
     );
   }, [emptyActiveSections, manifest]);
 
+  const reviewedDocumentId = engineDoc?.id ?? existingReport?.generated_document_id;
   const handleApproveEngineReport = useCallback(() => {
-    if (!reportId) return;
-    updateMutation.mutate(
-      { id: reportId, status: "final" },
-      {
-        onSuccess: () => {
-          setApprovedHere(true);
-          toast.success("Report approved. The delivery email will link it.");
-        },
-      }
+    if (!reportId || !reviewedDocumentId) return;
+    approveMutation.mutate(
+      { id: reportId, documentId: reviewedDocumentId },
+      { onSuccess: () => toast.success("Report approved. The delivery email will link it.") }
     );
-  }, [reportId, updateMutation]);
+  }, [reportId, reviewedDocumentId, approveMutation]);
 
   // Load existing report
   useEffect(() => {
@@ -400,8 +394,8 @@ export default function ReportBuilder() {
       >
         <EngineReportView
           document={engineDoc}
-          status={approvedHere ? "final" : existingReport.status}
-          approving={updateMutation.isPending}
+          status={existingReport.status}
+          approving={approveMutation.isPending}
           onApprove={handleApproveEngineReport}
         />
       </PageShell>

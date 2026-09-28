@@ -27,6 +27,7 @@ vi.mock("@/integrations/supabase/client", () => {
 
 const state = vi.hoisted(() => ({ report: null as Record<string, unknown> | null }));
 const updateMutate = vi.fn();
+const approveMutate = vi.fn();
 
 vi.mock("@/hooks/useReportBuilder", () => {
   const TEMPLATE_QUERY = { data: { id: "tpl-1", name: "Roof", service_type: "roof", sections_manifest: [] }, isLoading: false };
@@ -44,6 +45,7 @@ vi.mock("@/hooks/useReportBuilder", () => {
     useJobReports: () => EMPTY,
     useCreateReport: () => IDLE,
     useUpdateReport: () => ({ mutate: updateMutate, isPending: false }),
+    useApproveEngineReport: () => ({ mutate: approveMutate, isPending: false }),
     useSaveReportImages: () => IDLE,
     useDeleteReport: () => IDLE,
   };
@@ -81,6 +83,7 @@ beforeEach(() => {
   createSignedUrl.mockReset();
   createSignedUrl.mockResolvedValue({ data: { signedUrl: "https://signed/report.pdf" }, error: null });
   updateMutate.mockReset();
+  approveMutate.mockReset();
 });
 
 describe("ReportBuilder with an engine PDF", () => {
@@ -93,10 +96,12 @@ describe("ReportBuilder with an engine PDF", () => {
     expect(screen.getByTestId("engine-report-file").textContent).toContain("SAI-2026-0927");
 
     fireEvent.click(screen.getByRole("button", { name: /approve for delivery/i }));
-    expect(updateMutate).toHaveBeenCalledWith(
-      { id: "rpt-1", status: "final" },
+    // Approval names the exact document on screen, not just the report.
+    expect(approveMutate).toHaveBeenCalledWith(
+      { id: "rpt-1", documentId: "doc-1" },
       expect.objectContaining({ onSuccess: expect.any(Function) })
     );
+    expect(updateMutate).not.toHaveBeenCalled();
   });
 
   it("will not approve a PDF the engine released as a draft", async () => {
@@ -154,5 +159,15 @@ describe("ReportBuilder for a legacy draft", () => {
     expect(container.querySelector("main.overflow-y-auto")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /download pdf/i })).toBeNull();
     expect(container.querySelector(".print\\:block")).toBeNull();
+  });
+});
+
+describe("ReportBuilder approval state comes from the row", () => {
+  it("shows Approved only when the stored status is final", async () => {
+    state.report = { ...BASE, status: "final", generated_document_id: "doc-9", generated_documents: ENGINE_DOC };
+    renderBuilder();
+    await screen.findByTitle("Engine report PDF");
+    const approve = screen.getByRole("button", { name: /approved/i }) as HTMLButtonElement;
+    expect(approve.disabled).toBe(true);
   });
 });
