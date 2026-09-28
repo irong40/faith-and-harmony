@@ -10,7 +10,7 @@ import type {
   SectionDataMap,
   SectionManifestEntry,
 } from "@/types/report";
-import { ENGINE_DOCUMENT_EMBED } from "@/lib/engineReport";
+import { ENGINE_DOCUMENT_EMBED, isReleasedEngineDocument } from "@/lib/engineReport";
 import type { Json } from "@/integrations/supabase/types";
 
 // ---- helpers ----
@@ -173,6 +173,36 @@ export function useUpdateReport() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["job-reports"] }),
     onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+/**
+ * The job's approved, released engine PDF, or null. The same rule the delivery
+ * email applies (isReleasedEngineDocument over the recent final reports), so a
+ * screen that enables Send and the function that sends cannot disagree.
+ */
+export function useApprovedEngineReport(jobId: string | undefined) {
+  return useQuery({
+    queryKey: ["approved-engine-report", jobId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("job_reports")
+        .select(`id, title, status, ${ENGINE_DOCUMENT_EMBED}`)
+        .eq("job_id", jobId!)
+        .eq("status", "final")
+        .not("generated_document_id", "is", null)
+        .order("updated_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as Array<{
+        id: string;
+        title: string;
+        generated_documents: JobReport["generated_documents"];
+      }>;
+      const row = rows.find((r) => isReleasedEngineDocument(r.generated_documents));
+      return row ? { id: row.id, title: row.title, document: row.generated_documents! } : null;
+    },
+    enabled: !!jobId,
   });
 }
 

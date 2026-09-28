@@ -54,7 +54,10 @@ Deno.test("an approved engine report is linked from the private bucket", async (
   assertEquals(report.fileName, "Sentinel_CCAME_roof_inspection_2026-09-27.pdf");
   assertEquals(calls.signed[0][0], "generated-documents");
   assertEquals(calls.signed[0][2], REPORT_LINK_TTL_SECONDS);
-  // Only approved (final) reports that point at an engine PDF are considered.
+  // Only approved (final) reports that point at an engine PDF are considered,
+  // and only this job's: the job filter is what keeps one client's private
+  // report out of another client's email.
+  assert(calls.eq.some(([c, v]) => c === "job_id" && v === "j1"), "job filter missing");
   assert(calls.eq.some(([c, v]) => c === "status" && v === "final"));
   assert(calls.not.some(([c, op]) => c === "generated_document_id" && op === "is"));
 });

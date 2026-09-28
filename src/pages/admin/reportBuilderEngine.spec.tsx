@@ -128,6 +128,9 @@ describe("ReportBuilder with an engine PDF", () => {
     renderBuilder();
 
     await waitFor(() => expect(screen.getByText("Could not open the PDF")).toBeTruthy());
+    // A PDF nobody could open cannot have been reviewed.
+    const approve = screen.getByRole("button", { name: /approve for delivery/i }) as HTMLButtonElement;
+    expect(approve.disabled).toBe(true);
   });
 });
 

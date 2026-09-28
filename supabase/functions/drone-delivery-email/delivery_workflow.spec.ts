@@ -18,7 +18,7 @@ const JOB = {
   site_address: "20279 Brewers Neck Blvd, Carrollton, VA",
 };
 const APPROVED = [{
-  id: "r1", status: "final", generated_document_id: "d1",
+  id: "r1", job_id: JOB_ID, status: "final", generated_document_id: "d1",
   generated_documents: {
     file_name: "Sentinel_CCAME_roof_inspection_2026-09-27.pdf",
     file_path: "job-reports/j1/abc123-Sentinel_CCAME_roof_inspection_2026-09-27.pdf",
@@ -26,12 +26,15 @@ const APPROVED = [{
   },
 }];
 
+// A filter-aware fake: eq / in / not-is-null are APPLIED to the rows, so a
+// query that forgets a filter returns rows it must not (Codex second audit F3).
 // deno-lint-ignore no-explicit-any
 function fakeSupabase(opts: { job?: any; deliverables?: any[]; reports?: any[] } = {}) {
   // deno-lint-ignore no-explicit-any
   const log = { tables: [] as string[], updates: [] as any[], signed: [] as string[] };
-  const rows: Record<string, unknown> = {
-    drone_jobs: opts.job ?? JOB,
+  // deno-lint-ignore no-explicit-any
+  const tables: Record<string, any[]> = {
+    drone_jobs: [opts.job ?? JOB],
     drone_deliverables: opts.deliverables ?? [],
     drone_assets: [],
     job_reports: opts.reports ?? [],
@@ -41,20 +44,35 @@ function fakeSupabase(opts: { job?: any; deliverables?: any[]; reports?: any[] }
       log.tables.push(table);
       // deno-lint-ignore no-explicit-any
       let mode = "select", payload: any = null;
-      const result = () => {
+      // deno-lint-ignore no-explicit-any
+      const filters: Array<(row: any) => boolean> = [];
+      const rows = () => (tables[table] ?? []).filter((r) => filters.every((f) => f(r)));
+      const result = (one = false) => {
         if (mode === "update") {
           log.updates.push({ table, payload });
           return { data: null, error: null };
         }
-        return { data: rows[table], error: null };
+        const found = rows();
+        return one ? { data: found[0] ?? null, error: found[0] ? null : { message: "not found" } }
+                   : { data: found, error: null };
       };
       // deno-lint-ignore no-explicit-any
       const b: any = {
-        select: () => b, eq: () => b, in: () => b, not: () => b, order: () => b,
+        select: () => b,
+        // deno-lint-ignore no-explicit-any
+        eq: (col: string, val: any) => { filters.push((r) => r[col] === val); return b; },
+        // deno-lint-ignore no-explicit-any
+        in: (col: string, vals: any[]) => { filters.push((r) => vals.includes(r[col])); return b; },
+        // deno-lint-ignore no-explicit-any
+        not: (col: string, op: string, val: any) => {
+          if (op === "is" && val === null) filters.push((r) => r[col] != null);
+          return b;
+        },
+        order: () => b,
         limit: () => Promise.resolve(result()),
         // deno-lint-ignore no-explicit-any
         update: (p: any) => { mode = "update"; payload = p; return b; },
-        single: () => Promise.resolve(result()),
+        single: () => Promise.resolve(result(true)),
         // deno-lint-ignore no-explicit-any
         then: (ok: any, err: any) => Promise.resolve(result()).then(ok, err),
       };
@@ -183,4 +201,38 @@ Deno.test("nothing to deliver is still refused when there is no approved report 
     { supabase: client, resend, authorize: ALLOW });
   assertEquals(res.status, 400);
   assertEquals(sent.length, 0);
+});
+
+
+// --- job isolation (Codex second audit F3) -----------------------------------
+
+const OTHER_JOB_REPORT = {
+  id: "r-other", job_id: "11111111-2222-3333-4444-555555555555", status: "final",
+  generated_document_id: "d-other",
+  generated_documents: {
+    file_name: "Sentinel_OtherClient_roof_inspection_2026-09-20.pdf",
+    file_path: "job-reports/other/999999-Sentinel_OtherClient.pdf",
+    metadata: { source: "sentinel-reports", report_complete: true },
+  },
+};
+
+Deno.test("another job's approved report is never linked", async () => {
+  const { client, log } = fakeSupabase({ reports: [OTHER_JOB_REPORT] });
+  const { resend, sent } = fakeResend();
+  const res = await handleDeliveryRequest(req({ job_id: JOB_ID }),
+    { supabase: client, resend, authorize: ALLOW });
+  // With no deliverables and no report of its own, the job has nothing to send.
+  assertEquals(res.status, 400);
+  assertEquals(sent.length, 0);
+  assertEquals(log.signed.length, 0);
+});
+
+Deno.test("with reports from two jobs, only this job's report reaches the email", async () => {
+  const { client, log } = fakeSupabase({ reports: [OTHER_JOB_REPORT, ...APPROVED] });
+  const { resend, sent } = fakeResend();
+  const res = await handleDeliveryRequest(req({ job_id: JOB_ID }),
+    { supabase: client, resend, authorize: ALLOW });
+  assertEquals(res.status, 200);
+  assert(!sent[0].html.includes("OtherClient"), "another client's report was linked");
+  assertEquals(log.signed, ["job-reports/j1/abc123-Sentinel_CCAME_roof_inspection_2026-09-27.pdf"]);
 });

@@ -66,8 +66,10 @@ export function EngineReportView({ document: doc, status, approving, onApprove }
         <Button
           size="sm"
           onClick={onApprove}
-          disabled={!approval.ok || approving || status === "final"}
-          title={approval.reason}
+          // Approval means "I reviewed this PDF": impossible while it has not
+          // opened, or could not be.
+          disabled={!approval.ok || approving || status === "final" || !viewUrl || signFailed}
+          title={approval.reason ?? (!viewUrl || signFailed ? "Open the PDF before approving it." : undefined)}
         >
           {approving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
           {status === "final" ? "Approved" : "Approve for delivery"}

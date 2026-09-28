@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { emitActivityEvent } from "@/components/admin/ActivityFeed";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useApprovedEngineReport } from "@/hooks/useReportBuilder";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,6 +87,9 @@ function getDeliverableIcon(name: string | null) {
 
 export default function DeliveryReview() {
   const { id } = useParams<{ id: string }>();
+  // The approved engine PDF is a deliverable in its own right: the delivery
+  // email links it even when there is no Drive folder or deliverable row.
+  const { data: approvedReport } = useApprovedEngineReport(id);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -195,13 +199,14 @@ export default function DeliveryReview() {
 
   const handleSendToClient = async () => {
     if (!job || !clientEmail) return;
-    // Drive-package rule: the finalized report PDF belongs in the folder
-    // BEFORE the client gets the link. Soft gate, not a hard block.
-    if (!report || report.status !== "final") {
+    // One layout: the report engine draws the PDF, Sortie attaches it to the
+    // job, and approving it in the report screen is what puts it in this
+    // email. Soft gate, not a hard block.
+    if (!approvedReport) {
       const ok = window.confirm(
         report
-          ? `The report "${report.title}" is still a DRAFT. Finalize it, print the PDF, and drop it in the Drive folder before sending.\n\nSend without a finalized report?`
-          : "No report exists for this job. If this delivery should include one, create and finalize it first.\n\nSend without a report?"
+          ? `The report "${report.title}" has no approved engine PDF yet. Open the report, review the PDF and approve it; the delivery email then links it.\n\nSend without a report?`
+          : "No report exists for this job. If this delivery should include one, render it in the report engine and approve it first.\n\nSend without a report?"
       );
       if (!ok) return;
     }
@@ -565,7 +570,7 @@ export default function DeliveryReview() {
               <CardHeader>
                 <CardTitle>Report &amp; Close-Out</CardTitle>
                 <CardDescription>
-                  Finalize the report, print the PDF, and drop it in the Drive folder before sending
+                  Approve the engine report PDF; the delivery email links the approved PDF
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
@@ -620,7 +625,7 @@ export default function DeliveryReview() {
                 className="w-full"
                 size="lg"
                 onClick={() => setSendDialogOpen(true)}
-                disabled={!clientEmail || (!driveUrl && deliverables.length === 0)}
+                disabled={!clientEmail || (!driveUrl && deliverables.length === 0 && !approvedReport)}
               >
                 <Send className="mr-2 h-4 w-4" />
                 {isSent ? "Resend to Client" : "Send to Client"}
