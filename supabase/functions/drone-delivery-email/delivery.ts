@@ -483,9 +483,67 @@ export interface ResendLike {
   };
 }
 
+/** Who may trigger a delivery. See makeAuthorizer. */
+export interface CallerCheck {
+  ok: boolean;
+  status?: number;
+  reason?: string;
+  caller?: string;
+}
+export type Authorize = (req: Request) => Promise<CallerCheck>;
+
+/** Constant-time string comparison for bearer keys. */
+function sameKey(a: string, b: string): boolean {
+  if (!a || !b || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+/**
+ * The delivery function emails a client and, since the one-layout change, signs
+ * a link to their private report. It runs with verify_jwt = false (callers
+ * include server-to-server webhooks), so it authenticates here, before any
+ * lookup, signing or sending:
+ *   - a trusted pipeline key (the service-role key, used by square-webhook and
+ *     the n8n delivery workflow, plus any key in DELIVERY_TRUSTED_KEYS), or
+ *   - a signed-in user whom has_role() confirms is an admin (the CRM pages).
+ * Anything else is refused.
+ */
+export function makeAuthorizer(opts: {
+  trustedKeys: Array<string | undefined | null>;
+  // deno-lint-ignore no-explicit-any
+  getUser: (jwt: string) => Promise<{ data: { user: { id: string } | null } | null; error?: any }>;
+  // deno-lint-ignore no-explicit-any
+  isAdmin: (userId: string) => Promise<{ data: any; error?: any }>;
+}): Authorize {
+  const keys = opts.trustedKeys.filter((k): k is string => typeof k === "string" && k.length > 0);
+  return async (req: Request) => {
+    const header = req.headers.get("Authorization") ?? "";
+    const match = /^Bearer\s+(.+)$/i.exec(header.trim());
+    if (!match) return { ok: false, status: 401, reason: "missing bearer token" };
+    const token = match[1].trim();
+    if (keys.some((k) => sameKey(token, k))) return { ok: true, caller: "pipeline" };
+    try {
+      const { data, error } = await opts.getUser(token);
+      const user = data?.user;
+      if (error || !user) return { ok: false, status: 401, reason: "invalid token" };
+      const role = await opts.isAdmin(user.id);
+      if (role.error || role.data !== true) {
+        return { ok: false, status: 403, reason: "admin role required" };
+      }
+      return { ok: true, caller: `admin:${user.id}` };
+    } catch (_e) {
+      return { ok: false, status: 401, reason: "token check failed" };
+    }
+  };
+}
+
 export interface DeliveryDeps {
   supabase: SupabaseLike;
   resend: ResendLike;
+  /** Required in production. Absent means every request is refused (fail closed). */
+  authorize?: Authorize;
   /** Injectable for deterministic tests. */
   now?: () => Date;
   newToken?: () => string;
@@ -506,6 +564,14 @@ export async function handleDeliveryRequest(req: Request, deps: DeliveryDeps): P
   const { supabase, resend } = deps;
   const now = deps.now ?? (() => new Date());
   const newToken = deps.newToken ?? (() => crypto.randomUUID().replace(/-/g, ""));
+
+  // Before anything is read: no caller check wired up means no delivery.
+  const caller: CallerCheck = deps.authorize
+    ? await deps.authorize(req)
+    : { ok: false, status: 401, reason: "no caller check configured" };
+  if (!caller.ok) {
+    return json({ error: "Unauthorized", reason: caller.reason }, caller.status ?? 401);
+  }
 
   try {
     const { job_id, deliverable_ids, custom_message, download_url } =
@@ -572,8 +638,12 @@ export async function handleDeliveryRequest(req: Request, deps: DeliveryDeps): P
       job.download_url ||
       deliverables[0]?.download_url;
 
-    if (!primaryUrl && deliverables.length === 0) {
-      return json({ error: "No delivery URL or deliverables found for this job" }, 400);
+    // An approved report on its own is a delivery: look for it before deciding
+    // there is nothing to send.
+    const report = await findApprovedReport(supabase, job_id);
+
+    if (!primaryUrl && deliverables.length === 0 && !report) {
+      return json({ error: "No delivery URL, deliverables or approved report found for this job" }, 400);
     }
 
     const siteLabel =
@@ -588,8 +658,6 @@ export async function handleDeliveryRequest(req: Request, deps: DeliveryDeps): P
     const clientFirstName = (recipient?.name ?? "Client").split(" ")[0];
 
     const emailSubject = `Your Deliverables from Sentinel Aerial Inspections — ${jobTypeLabel} at ${siteLabel}`;
-
-    const report = await findApprovedReport(supabase, job_id);
 
     const emailHtml = buildEmailHtml({
       emailSubject,

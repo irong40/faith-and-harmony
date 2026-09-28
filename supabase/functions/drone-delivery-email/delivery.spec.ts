@@ -167,6 +167,9 @@ function assertNoZeroTile(html: string) {
   assert(!/>0<\/div>/.test(html), "rendered a zero-value tile");
 }
 
+/** These handler tests are about delivery content, not access. */
+const ALLOW = () => Promise.resolve({ ok: true, caller: "test" });
+
 function request(body: unknown): Request {
   return new Request("https://edge.local/drone-delivery-email", {
     method: "POST",
@@ -349,7 +352,7 @@ Deno.test("handler emails DJ-2026-0005 stats and marks the job delivered", async
 
   const res = await handleDeliveryRequest(
     request({ job_id: BASE_JOB.id }),
-    { supabase: client, resend },
+    { supabase: client, resend, authorize: ALLOW },
   );
   const body = await res.json();
 
@@ -387,7 +390,7 @@ Deno.test("handler renders no stats block when neither deliverables nor assets e
 
   const res = await handleDeliveryRequest(
     request({ job_id: BASE_JOB.id }),
-    { supabase: client, resend },
+    { supabase: client, resend, authorize: ALLOW },
   );
   const body = await res.json();
 
@@ -417,7 +420,7 @@ Deno.test("handler falls back to drone_assets for producers that populate it", a
 
   const res = await handleDeliveryRequest(
     request({ job_id: BASE_JOB.id }),
-    { supabase: client, resend },
+    { supabase: client, resend, authorize: ALLOW },
   );
   const body = await res.json();
 
@@ -438,7 +441,7 @@ Deno.test("a failed Resend send returns 502 and does NOT mark the job delivered"
 
   const res = await handleDeliveryRequest(
     request({ job_id: BASE_JOB.id }),
-    { supabase: client, resend },
+    { supabase: client, resend, authorize: ALLOW },
   );
   const body = await res.json();
 
@@ -452,7 +455,7 @@ Deno.test("handler requires job_id", async () => {
   const { client } = makeSupabase({ job: BASE_JOB });
   const { resend } = makeResend({ data: { id: "x" }, error: null });
 
-  const res = await handleDeliveryRequest(request({}), { supabase: client, resend });
+  const res = await handleDeliveryRequest(request({}), { supabase: client, resend, authorize: ALLOW });
   assertEquals(res.status, 400);
   assertEquals((await res.json()).error, "job_id is required");
 });
@@ -461,6 +464,6 @@ Deno.test("handler 404s when the job is missing", async () => {
   const { client } = makeSupabase({ job: null, jobError: { message: "no rows" } });
   const { resend } = makeResend({ data: { id: "x" }, error: null });
 
-  const res = await handleDeliveryRequest(request({ job_id: "nope" }), { supabase: client, resend });
+  const res = await handleDeliveryRequest(request({ job_id: "nope" }), { supabase: client, resend, authorize: ALLOW });
   assertEquals(res.status, 404);
 });
