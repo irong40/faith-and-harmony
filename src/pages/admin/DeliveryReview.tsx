@@ -4,6 +4,7 @@ import { emitActivityEvent } from "@/components/admin/ActivityFeed";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useApprovedEngineReport } from "@/hooks/useReportBuilder";
+import { hasSomethingToSend } from "@/lib/engineReport";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -625,7 +626,7 @@ export default function DeliveryReview() {
                 className="w-full"
                 size="lg"
                 onClick={() => setSendDialogOpen(true)}
-                disabled={!clientEmail || (!driveUrl && deliverables.length === 0 && !approvedReport)}
+                disabled={!clientEmail || !hasSomethingToSend({ driveUrl, fileCount: deliverables.length, approvedReport })}
               >
                 <Send className="mr-2 h-4 w-4" />
                 {isSent ? "Resend to Client" : "Send to Client"}

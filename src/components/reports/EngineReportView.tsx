@@ -3,7 +3,11 @@ import { CheckCircle, FileDown, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { canApproveEngineReport, signEngineReportUrl } from "@/lib/engineReport";
+import {
+  canApproveEngineReport,
+  fetchVerifiedEngineReport,
+  signEngineReportUrl,
+} from "@/lib/engineReport";
 import type { EngineReportDocument, ReportStatus } from "@/types/report";
 
 export interface EngineReportViewProps {
@@ -17,36 +21,55 @@ export interface EngineReportViewProps {
  * The CRM's whole job for a client report: show the PDF the engine drew,
  * let Adam approve it, and let him download it. Delivery links the approved
  * PDF automatically. Nothing here re-lays-out or re-renders the report.
+ *
+ * Approval waits for proof the PDF opened: the bytes are fetched, checked
+ * against the engine's recorded SHA-256, and shown from memory. An iframe
+ * load event is not proof, because browsers fire it for failed loads too.
  */
 export function EngineReportView({ document: doc, status, approving, onApprove }: EngineReportViewProps) {
+  // A blob: URL for bytes that passed verification, never a remote link.
   const [viewUrl, setViewUrl] = useState<string | null>(null);
-  const [signFailed, setSignFailed] = useState(false);
-  // Signed is not seen: approval waits for the viewer to finish loading.
-  const [loaded, setLoaded] = useState(false);
+  const [openError, setOpenError] = useState<string | null>(null);
+  const [downloadFailed, setDownloadFailed] = useState(false);
   const approval = canApproveEngineReport(doc);
   const meta = doc.metadata ?? {};
+  const expectedSha = meta.sha256;
 
   useEffect(() => {
     let live = true;
-    // Never show the previous document while the new one is being signed.
+    let blobUrl: string | null = null;
+    // Never show the previous document while the new one is being checked.
     setViewUrl(null);
-    setSignFailed(false);
-    setLoaded(false);
-    signEngineReportUrl(doc.file_path).then((url) => {
+    setOpenError(null);
+    (async () => {
+      const signed = await signEngineReportUrl(doc.file_path);
       if (!live) return;
-      setViewUrl(url);
-      setSignFailed(url === null);
-    });
+      if (!signed) {
+        setOpenError(`The file is listed but storage would not sign a link for ${doc.file_path}.`);
+        return;
+      }
+      const result = await fetchVerifiedEngineReport(signed, expectedSha);
+      if (!live) return;
+      if (!result.ok || !result.bytes) {
+        setOpenError(result.reason ?? "The PDF could not be verified.");
+        return;
+      }
+      blobUrl = URL.createObjectURL(new Blob([result.bytes], { type: "application/pdf" }));
+      setViewUrl(blobUrl);
+    })();
     return () => {
       live = false;
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
-  }, [doc.file_path]);
+  }, [doc.file_path, expectedSha]);
 
   const handleDownload = async () => {
     const url = await signEngineReportUrl(doc.file_path, { download: doc.file_name });
+    setDownloadFailed(!url);
     if (url) window.open(url, "_blank", "noopener");
-    else setSignFailed(true);
   };
+
+  const opened = Boolean(viewUrl) && !openError;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
@@ -69,10 +92,10 @@ export function EngineReportView({ document: doc, status, approving, onApprove }
         <Button
           size="sm"
           onClick={onApprove}
-          // Approval means "I reviewed this PDF": impossible while it has not
-          // opened, or could not be.
-          disabled={!approval.ok || approving || status === "final" || !viewUrl || signFailed || !loaded}
-          title={approval.reason ?? (!loaded || signFailed ? "Open the PDF before approving it." : undefined)}
+          // Approval means "I reviewed this PDF": impossible until the exact
+          // released bytes have opened.
+          disabled={!approval.ok || approving || status === "final" || !opened}
+          title={approval.reason ?? (!opened ? "The PDF has to open before it can be approved." : undefined)}
         >
           {approving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
           {status === "final" ? "Approved" : "Approve for delivery"}
@@ -87,20 +110,24 @@ export function EngineReportView({ document: doc, status, approving, onApprove }
         </Alert>
       )}
 
-      {signFailed ? (
+      {downloadFailed && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Download failed</AlertTitle>
+          <AlertDescription>Storage would not sign a download link for {doc.file_path}.</AlertDescription>
+        </Alert>
+      )}
+
+      {openError ? (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Could not open the PDF</AlertTitle>
-          <AlertDescription>
-            The file is listed but storage would not sign a link for {doc.file_path}.
-          </AlertDescription>
+          <AlertDescription>{openError}</AlertDescription>
         </Alert>
       ) : viewUrl ? (
         <iframe
           title="Engine report PDF"
           src={viewUrl}
-          onLoad={() => setLoaded(true)}
-          onError={() => { setLoaded(false); setSignFailed(true); }}
           className="min-h-[70vh] w-full flex-1 rounded border bg-white"
         />
       ) : (

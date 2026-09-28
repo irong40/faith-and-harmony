@@ -11,6 +11,8 @@ import {
   ENGINE_DOCUMENT_EMBED,
   canApproveEngineReport,
   engineDocumentOf,
+  fetchVerifiedEngineReport,
+  hasSomethingToSend,
   signEngineReportUrl,
 } from "./engineReport";
 import type { EngineReportDocument } from "@/types/report";
@@ -88,4 +90,56 @@ it("embeds the columns the viewer and the delivery email both read", () => {
     expect(ENGINE_DOCUMENT_EMBED).toContain(col);
   }
   expect(ENGINE_DOCUMENT_EMBED.startsWith("generated_documents(")).toBe(true);
+});
+
+describe("hasSomethingToSend", () => {
+  const report = { id: "rpt-1" };
+
+  it("enables Send with an approved report and nothing else", () => {
+    expect(hasSomethingToSend({ fileCount: 0, approvedReport: report })).toBe(true);
+    expect(hasSomethingToSend({ driveUrl: "", fileCount: 0, approvedReport: report })).toBe(true);
+  });
+
+  it("does not enable Send with no report, no files and no link", () => {
+    expect(hasSomethingToSend({ fileCount: 0, approvedReport: null })).toBe(false);
+    expect(hasSomethingToSend({ driveUrl: null, fileCount: 0, approvedReport: undefined })).toBe(false);
+  });
+
+  it("still sends files or a Drive link without a report", () => {
+    expect(hasSomethingToSend({ fileCount: 2, approvedReport: null })).toBe(true);
+    expect(hasSomethingToSend({ driveUrl: "https://drive/x", fileCount: 0, approvedReport: null })).toBe(true);
+  });
+});
+
+describe("fetchVerifiedEngineReport", () => {
+  const bytes = new TextEncoder().encode("%PDF-1.7 body");
+  const reply = (body: Uint8Array, status = 200) =>
+    vi.fn().mockResolvedValue({
+      ok: status < 300,
+      status,
+      arrayBuffer: async () => body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength),
+    }) as unknown as typeof fetch;
+
+  async function sha(body: Uint8Array) {
+    const d = await crypto.subtle.digest("SHA-256", body);
+    return Array.from(new Uint8Array(d), (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  it("accepts the released bytes", async () => {
+    const result = await fetchVerifiedEngineReport("u", await sha(bytes), reply(bytes));
+    expect(result.ok).toBe(true);
+  });
+
+  it("accepts an upper-case recorded digest", async () => {
+    const result = await fetchVerifiedEngineReport("u", (await sha(bytes)).toUpperCase(), reply(bytes));
+    expect(result.ok).toBe(true);
+  });
+
+  it("refuses a failed response, non-PDF bytes, a missing digest and a mismatch", async () => {
+    expect((await fetchVerifiedEngineReport("u", await sha(bytes), reply(bytes, 404))).ok).toBe(false);
+    const html = new TextEncoder().encode("<html>");
+    expect((await fetchVerifiedEngineReport("u", await sha(html), reply(html))).ok).toBe(false);
+    expect((await fetchVerifiedEngineReport("u", undefined, reply(bytes))).ok).toBe(false);
+    expect((await fetchVerifiedEngineReport("u", "0".repeat(64), reply(bytes))).ok).toBe(false);
+  });
 });

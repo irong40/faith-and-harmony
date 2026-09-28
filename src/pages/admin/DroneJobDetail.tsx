@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useApprovedEngineReport } from "@/hooks/useReportBuilder";
+import { hasSomethingToSend } from "@/lib/engineReport";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -1627,7 +1628,7 @@ export default function DroneJobDetail() {
                       <p className="text-sm text-muted-foreground">
                         Sending to: {job.clients?.email}
                       </p>
-                      <Button onClick={sendDelivery} disabled={sending || (assets.length === 0 && !approvedReport)}>
+                      <Button onClick={sendDelivery} disabled={sending || !hasSomethingToSend({ fileCount: assets.length, approvedReport })}>
                         {sending ? (
                           <>
                             <RefreshCw className="mr-2 h-4 w-4 animate-spin" />

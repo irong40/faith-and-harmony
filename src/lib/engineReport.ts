@@ -82,3 +82,69 @@ export async function signEngineReportUrl(
   if (error || !data?.signedUrl) return null;
   return data.signedUrl;
 }
+
+/** ok with the bytes, or not ok with the reason. Flat because the app does not build under strictNullChecks, so a union would not narrow. */
+export interface VerifiedPdf {
+  ok: boolean;
+  bytes?: ArrayBuffer;
+  reason?: string;
+}
+
+function toHex(buffer: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buffer), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * Fetch the PDF behind a signed link and prove it is the file the engine
+ * released: a successful response, PDF bytes, and the SHA-256 Sortie recorded
+ * when it stored the file. An iframe load event proves none of this, because
+ * browsers fire it for failed loads too. The viewer then shows these exact
+ * bytes, so what Adam approves is what was checked.
+ */
+export async function fetchVerifiedEngineReport(
+  url: string,
+  expectedSha256: string | undefined,
+  fetchImpl: typeof fetch = fetch
+): Promise<VerifiedPdf> {
+  let response: Response;
+  try {
+    response = await fetchImpl(url);
+  } catch {
+    return { ok: false, reason: "Storage did not return the PDF. Check the connection and reopen the report." };
+  }
+  if (!response.ok) {
+    return { ok: false, reason: `Storage returned ${response.status} for the PDF.` };
+  }
+  const bytes = await response.arrayBuffer();
+  const head = new TextDecoder().decode(new Uint8Array(bytes.slice(0, 5)));
+  if (head !== "%PDF-") {
+    return { ok: false, reason: "The stored file is not a PDF." };
+  }
+  if (!expectedSha256) {
+    return {
+      ok: false,
+      reason: "This PDF has no recorded checksum, so it cannot be tied to the engine's release. Attach it again from Sortie.",
+    };
+  }
+  const digest = toHex(await crypto.subtle.digest("SHA-256", bytes));
+  if (digest !== expectedSha256.toLowerCase()) {
+    return {
+      ok: false,
+      reason: "The stored PDF does not match the file the engine released. Attach it again from Sortie.",
+    };
+  }
+  return { ok: true, bytes };
+}
+
+/**
+ * Whether a delivery has anything to send: a Drive link, files, or an approved
+ * engine report. Both Send buttons (DeliveryReview, DroneJobDetail) use it, so
+ * an approved report alone always enables Send on both.
+ */
+export function hasSomethingToSend(input: {
+  driveUrl?: string | null;
+  fileCount: number;
+  approvedReport: unknown;
+}): boolean {
+  return Boolean(input.driveUrl) || input.fileCount > 0 || Boolean(input.approvedReport);
+}
