@@ -21,6 +21,8 @@ export interface EngineReportViewProps {
 export function EngineReportView({ document: doc, status, approving, onApprove }: EngineReportViewProps) {
   const [viewUrl, setViewUrl] = useState<string | null>(null);
   const [signFailed, setSignFailed] = useState(false);
+  // Signed is not seen: approval waits for the viewer to finish loading.
+  const [loaded, setLoaded] = useState(false);
   const approval = canApproveEngineReport(doc);
   const meta = doc.metadata ?? {};
 
@@ -29,6 +31,7 @@ export function EngineReportView({ document: doc, status, approving, onApprove }
     // Never show the previous document while the new one is being signed.
     setViewUrl(null);
     setSignFailed(false);
+    setLoaded(false);
     signEngineReportUrl(doc.file_path).then((url) => {
       if (!live) return;
       setViewUrl(url);
@@ -68,8 +71,8 @@ export function EngineReportView({ document: doc, status, approving, onApprove }
           onClick={onApprove}
           // Approval means "I reviewed this PDF": impossible while it has not
           // opened, or could not be.
-          disabled={!approval.ok || approving || status === "final" || !viewUrl || signFailed}
-          title={approval.reason ?? (!viewUrl || signFailed ? "Open the PDF before approving it." : undefined)}
+          disabled={!approval.ok || approving || status === "final" || !viewUrl || signFailed || !loaded}
+          title={approval.reason ?? (!loaded || signFailed ? "Open the PDF before approving it." : undefined)}
         >
           {approving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
           {status === "final" ? "Approved" : "Approve for delivery"}
@@ -96,6 +99,8 @@ export function EngineReportView({ document: doc, status, approving, onApprove }
         <iframe
           title="Engine report PDF"
           src={viewUrl}
+          onLoad={() => setLoaded(true)}
+          onError={() => { setLoaded(false); setSignFailed(true); }}
           className="min-h-[70vh] w-full flex-1 rounded border bg-white"
         />
       ) : (

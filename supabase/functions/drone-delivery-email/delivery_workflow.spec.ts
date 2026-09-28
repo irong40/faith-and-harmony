@@ -184,7 +184,7 @@ Deno.test("a job whose only deliverable is the approved report is delivered", as
 Deno.test("the approved report link reaches the email alongside other deliverables", async () => {
   const { client } = fakeSupabase({
     reports: APPROVED,
-    deliverables: [{ id: "d1", name: "Orthomosaic", download_url: "https://drive.example/f",
+    deliverables: [{ id: "d1", job_id: JOB_ID, name: "Orthomosaic", download_url: "https://drive.example/f",
       file_count: 3, total_size_bytes: 3_000_000 }],
   });
   const { resend, sent } = fakeResend();
@@ -192,6 +192,7 @@ Deno.test("the approved report link reaches the email alongside other deliverabl
     { supabase: client, resend, authorize: ALLOW });
   assertEquals(res.status, 200);
   assertStringIncludes(sent[0].html, "https://signed.example/job-reports/j1/");
+  assertStringIncludes(sent[0].html, "https://drive.example/f");
 });
 
 Deno.test("nothing to deliver is still refused when there is no approved report either", async () => {

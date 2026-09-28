@@ -247,6 +247,8 @@ export function useApproveEngineReport() {
         old && typeof old === "object" ? { ...(old as object), status: row.status } : old
       );
       qc.invalidateQueries({ queryKey: ["job-reports"] });
+      // Delivery screens decide whether Send is possible from this query.
+      qc.invalidateQueries({ queryKey: ["approved-engine-report"] });
     },
     onError: (e: Error, input) => {
       toast.error(e.message);
@@ -286,6 +288,7 @@ export function useDeleteReport() {
     onSuccess: () => {
       toast.success("Report deleted");
       qc.invalidateQueries({ queryKey: ["job-reports"] });
+      qc.invalidateQueries({ queryKey: ["approved-engine-report"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });

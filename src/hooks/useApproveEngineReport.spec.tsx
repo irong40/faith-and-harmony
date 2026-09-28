@@ -60,3 +60,19 @@ describe("useApproveEngineReport", () => {
     expect(result.current.error).toBeInstanceOf(StaleApprovalError);
   });
 });
+
+describe("useApproveEngineReport and delivery eligibility", () => {
+  it("invalidates the cached 'no approved report' answer the delivery screens hold", async () => {
+    outcome.rows = [{ id: "rpt-1", status: "final", generated_document_id: "doc-1" }];
+    const client = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000 } } });
+    // A delivery screen visited before approval cached "nothing to send".
+    client.setQueryData(["approved-engine-report", "job-1"], null);
+    expect(client.getQueryState(["approved-engine-report", "job-1"])?.isInvalidated).toBe(false);
+
+    const { result } = renderHook(() => useApproveEngineReport(), { wrapper: wrapper(client) });
+    result.current.mutate({ id: "rpt-1", documentId: "doc-1" });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(client.getQueryState(["approved-engine-report", "job-1"])?.isInvalidated).toBe(true);
+  });
+});

@@ -93,6 +93,10 @@ describe("ReportBuilder with an engine PDF", () => {
 
     const frame = await screen.findByTitle("Engine report PDF");
     expect(frame.getAttribute("src")).toBe("https://signed/report.pdf");
+    // Signed but not yet loaded: nothing has been seen, nothing can be approved.
+    const pending = screen.getByRole("button", { name: /approve for delivery/i }) as HTMLButtonElement;
+    expect(pending.disabled).toBe(true);
+    fireEvent.load(frame);
     expect(screen.getByTestId("engine-report-file").textContent).toContain("SAI-2026-0927");
 
     fireEvent.click(screen.getByRole("button", { name: /approve for delivery/i }));
