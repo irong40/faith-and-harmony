@@ -256,3 +256,61 @@ describe("ReportBuilder approval state comes from the row", () => {
     expect(approve.disabled).toBe(true);
   });
 });
+
+describe("ReportBuilder when the document changes while one is still opening", () => {
+  it("shows and approves only the current document, and revokes the old view", async () => {
+    let blobs = 0;
+    URL.createObjectURL = vi.fn(() => `blob:view-${++blobs}`);
+    createSignedUrl.mockImplementation((path: string) =>
+      Promise.resolve({ data: { signedUrl: `https://signed/${path}` }, error: null })
+    );
+    let releaseA: (value: unknown) => void = () => {};
+    fetchMock.mockImplementation((url: string) =>
+      url.includes("doc-a")
+        ? new Promise((resolve) => { releaseA = resolve; })
+        : Promise.resolve(respond(PDF_BYTES))
+    );
+    const docA = { ...ENGINE_DOC, file_name: "A.pdf", file_path: "job-reports/job-1/doc-a.pdf" };
+    const docB = { ...ENGINE_DOC, file_name: "B.pdf", file_path: "job-reports/job-1/doc-b.pdf" };
+    const docC = { ...ENGINE_DOC, file_name: "C.pdf", file_path: "job-reports/job-1/doc-c.pdf" };
+
+    state.report = { ...BASE, generated_document_id: "doc-a", generated_documents: docA };
+    // A fresh element each time: React skips a rerender of the identical element.
+    const tree = () => (
+      <MemoryRouter initialEntries={["/admin/reports/rpt-1/edit"]}>
+        <Routes>
+          <Route path="/admin/reports/:id/edit" element={<ReportBuilder />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    const view = render(tree());
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("https://signed/job-reports/job-1/doc-a.pdf"));
+
+    // B replaces A before A's download finishes.
+    state.report = { ...BASE, generated_document_id: "doc-b", generated_documents: docB };
+    view.rerender(tree());
+    const frame = await screen.findByTitle("Engine report PDF");
+    expect(frame.getAttribute("src")).toBe("blob:view-1");
+
+    // A arrives last and must change nothing.
+    releaseA(respond(PDF_BYTES));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
+    expect(screen.getByTitle("Engine report PDF").getAttribute("src")).toBe("blob:view-1");
+    expect(screen.getByTestId("engine-report-file").textContent).toContain("B.pdf");
+
+    await waitFor(() =>
+      expect((screen.getByRole("button", { name: /approve for delivery/i }) as HTMLButtonElement).disabled).toBe(false)
+    );
+    fireEvent.click(screen.getByRole("button", { name: /approve for delivery/i }));
+    expect(approveMutate).toHaveBeenCalledWith(
+      { id: "rpt-1", documentId: "doc-b" },
+      expect.objectContaining({ onSuccess: expect.any(Function) })
+    );
+
+    // Moving on to C releases B's view.
+    state.report = { ...BASE, generated_document_id: "doc-c", generated_documents: docC };
+    view.rerender(tree());
+    await waitFor(() => expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:view-1"));
+  });
+});

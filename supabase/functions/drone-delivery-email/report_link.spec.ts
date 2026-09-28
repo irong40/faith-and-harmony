@@ -148,3 +148,11 @@ Deno.test("a file name from disk cannot inject markup into the email", () => {
   assert(!html.includes("<img src=x"), "file name rendered as markup");
   assertStringIncludes(html, "&lt;img src=x onerror=alert(1)&gt;.pdf");
 });
+
+Deno.test("a report-only email does not promise a Drive link", () => {
+  const html = buildEmailHtml({ ...BASE_ARGS, primaryUrl: null,
+    report: { fileName: "R.pdf", url: "https://signed/R.pdf" } });
+  assert(!html.includes("Google Drive"), "report-only email mentions Google Drive");
+  assertStringIncludes(html, "Your download links are below.");
+  assertStringIncludes(buildEmailHtml({ ...BASE_ARGS }), "through the Google Drive link below");
+});

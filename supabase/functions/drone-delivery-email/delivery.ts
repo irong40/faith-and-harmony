@@ -374,7 +374,9 @@ export function buildEmailHtml(args: BuildEmailArgs): string {
         </p>
         <p style="color: #333; line-height: 1.6; margin: 0 0 24px 0; font-size: 15px;">
           Your <strong>${jobTypeLabel}</strong> deliverables for <strong>${siteLabel}</strong> are ready for review.
-          You can access everything through the Google Drive link below.
+          ${primaryUrl
+            ? "You can access everything through the Google Drive link below."
+            : "Your download links are below."}
         </p>
 ${renderStatsHtml(stats)}
         ${custom_message ? `
