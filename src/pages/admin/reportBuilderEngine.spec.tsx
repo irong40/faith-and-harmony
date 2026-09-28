@@ -103,7 +103,11 @@ describe("ReportBuilder with an engine PDF", () => {
     state.report = {
       ...BASE,
       generated_document_id: "doc-2",
-      generated_documents: { ...ENGINE_DOC, file_name: "DRAFT_roof.pdf", metadata: { report_complete: false } },
+      generated_documents: {
+        ...ENGINE_DOC,
+        file_name: "DRAFT_roof.pdf",
+        metadata: { source: "sentinel-reports", report_complete: false },
+      },
     };
     renderBuilder();
 
@@ -119,6 +123,25 @@ describe("ReportBuilder with an engine PDF", () => {
     renderBuilder();
 
     await waitFor(() => expect(screen.getByText("Could not open the PDF")).toBeTruthy());
+  });
+});
+
+describe("ReportBuilder for a report the retired print path logged", () => {
+  it("keeps the section editor: a document row without the engine stamp is not an engine PDF", () => {
+    // Shape of the one such row in production (2026-09-28): the old
+    // document-generator logged a path and uploaded nothing.
+    state.report = {
+      ...BASE,
+      generated_document_id: "doc-legacy",
+      generated_documents: {
+        file_name: "re_aerial_photography-report.pdf",
+        file_path: "reports/re_aerial_photography-report.pdf",
+        metadata: { report_id: "rpt-1" },
+      },
+    };
+    const { container } = renderBuilder();
+    expect(screen.queryByTitle("Engine report PDF")).toBeNull();
+    expect(container.querySelector("main.overflow-y-auto")).toBeTruthy();
   });
 });
 

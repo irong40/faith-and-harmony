@@ -39,7 +39,7 @@ Required legends applied to all deliverable files per DFARS 252.227-7013(f).
 
 ## B. Commercial License Grant (non-federal contracts)
 
-Under the Sentinel Aerial Inspections Master Services Agreement dated `{{MSA_DATE}}`:
+Under the written terms the client accepted for this engagement:
 
 - **Client receives** a perpetual, non-exclusive, royalty-free license to use, reproduce, and display the deliverables for the client's internal business purposes, including marketing the specific subject property and submission to carriers, regulatory bodies, or courts as required.
 - **SAI retains** copyright in all raw imagery and derivative works, and reserves the right to use anonymized, non-identifiable portions of the deliverables for portfolio, marketing, and training purposes unless a confidentiality clause prohibits such use.
@@ -108,4 +108,4 @@ For federal deliverables, the final report PDF conforms to:
 
 ---
 
-*Company identifiers for federal work: CAGE Code `{{CAGE}}` · UEI `{{UEI_OR_PENDING}}` · NAICS `{{NAICS}}` · SDVOSB: `{{SDVOSB_STATUS}}` (SBA VetCert).*
+*Company identifiers for federal work: CAGE Code `{{CAGE}}` · UEI `{{UEI_OR_PENDING}}` · NAICS `{{NAICS}}`.*

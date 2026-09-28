@@ -17,11 +17,35 @@ export const ENGINE_DOCUMENT_EMBED =
 
 type WithDocument = Pick<JobReport, "generated_documents">;
 
-/** The engine PDF attached to a report, or null for a legacy CRM draft. */
+/** Written by Sortie's attach_report_pdf on every engine PDF it stores. */
+export const ENGINE_SOURCE = "sentinel-reports";
+
+/**
+ * The engine PDF attached to a report, or null for a legacy CRM draft.
+ *
+ * Keyed on the engine's own stamp, not on a file path: the retired
+ * document-generator "generate-report" action wrote generated_documents rows
+ * with a file_path and no file for every report whose Download PDF was
+ * clicked, and those reports must keep opening in the section editor.
+ */
 export function engineDocumentOf(report: WithDocument | null | undefined): EngineReportDocument | null {
   const doc = report?.generated_documents;
   if (!doc || !doc.file_path) return null;
+  if (doc.metadata?.source !== ENGINE_SOURCE) return null;
   return doc;
+}
+
+/**
+ * The one rule for "this PDF may go to a client". The delivery email
+ * (drone-delivery-email/delivery.ts, isReleasedEngineDocument) and Sortie's
+ * crm.attach_report_pdf apply the same rule. An allow-list: missing metadata
+ * is a no.
+ */
+export function isReleasedEngineDocument(doc: EngineReportDocument | null | undefined): boolean {
+  if (!doc || !doc.file_path) return false;
+  if (doc.metadata?.source !== ENGINE_SOURCE) return false;
+  if (doc.metadata?.report_complete !== true) return false;
+  return !/^draft_/i.test(doc.file_name ?? "");
 }
 
 export interface ApprovalCheck {
@@ -32,13 +56,13 @@ export interface ApprovalCheck {
 /**
  * Only a released engine PDF can go to a client. The engine marks a PDF that
  * failed its release gates with report_complete=false and a DRAFT_ file name;
- * either one blocks approval. The delivery email applies the same rule.
+ * either one, or missing engine metadata, blocks approval.
  */
 export function canApproveEngineReport(doc: EngineReportDocument | null): ApprovalCheck {
   if (!doc) {
     return { ok: false, reason: "No engine PDF is attached. Render the report in the engine first." };
   }
-  if (doc.metadata?.report_complete === false || /^DRAFT_/i.test(doc.file_name)) {
+  if (!isReleasedEngineDocument(doc)) {
     return {
       ok: false,
       reason: "The engine released this PDF as a draft. Fix the flagged items and re-render it.",

@@ -67,6 +67,42 @@ Deno.test("a report the engine marked as a draft is never linked", async () => {
   assertEquals(calls.signed.length, 0);
 });
 
+// Shape of the legacy row in production (2026-09-28): the retired print path
+// logged a file_path, uploaded nothing, and wrote no engine metadata.
+const LEGACY_FINAL = {
+  id: "r0", status: "final", generated_document_id: "d0",
+  generated_documents: {
+    file_name: "re_aerial_photography-report.pdf",
+    file_path: "reports/re_aerial_photography-report.pdf",
+    metadata: { report_id: "r0" },
+  },
+};
+
+Deno.test("a legacy print-path row is never linked", async () => {
+  const { client, calls } = fakeSupabase([LEGACY_FINAL]);
+  assertEquals(await findApprovedReport(client, "j1"), null);
+  assertEquals(calls.signed.length, 0);
+});
+
+Deno.test("a newer legacy row does not hide the approved engine report", async () => {
+  const { client } = fakeSupabase([LEGACY_FINAL, APPROVED[0]]);
+  const report = await findApprovedReport(client, "j1");
+  assert(report);
+  assertEquals(report.fileName, "Sentinel_CCAME_roof_inspection_2026-09-27.pdf");
+});
+
+Deno.test("a draft_ file name blocks the link in any case, even marked complete", async () => {
+  const renamed = [{ ...APPROVED[0], generated_documents: {
+    ...APPROVED[0].generated_documents, file_name: "draft_Sentinel_CCAME.pdf" } }];
+  assertEquals(await findApprovedReport(fakeSupabase(renamed).client, "j1"), null);
+});
+
+Deno.test("missing engine metadata is a no", async () => {
+  const bare = [{ ...APPROVED[0], generated_documents: {
+    ...APPROVED[0].generated_documents, metadata: { source: "sentinel-reports" } } }];
+  assertEquals(await findApprovedReport(fakeSupabase(bare).client, "j1"), null);
+});
+
 Deno.test("no approved report, no link", async () => {
   const { client } = fakeSupabase([]);
   assertEquals(await findApprovedReport(client, "j1"), null);
@@ -101,4 +137,11 @@ Deno.test("the email wears the one layout's brand", () => {
   assertEquals(BRAND.navy, "#0f0f0f");
   const html = buildEmailHtml({ ...BASE_ARGS });
   assert(!html.includes("#3b82f6") && !html.includes("#2563eb"), "old blue left in the email");
+});
+
+Deno.test("a file name from disk cannot inject markup into the email", () => {
+  const html = buildEmailHtml({ ...BASE_ARGS,
+    report: { fileName: "<img src=x onerror=alert(1)>.pdf", url: "https://signed/R.pdf" } });
+  assert(!html.includes("<img src=x"), "file name rendered as markup");
+  assertStringIncludes(html, "&lt;img src=x onerror=alert(1)&gt;.pdf");
 });

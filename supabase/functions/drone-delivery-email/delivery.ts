@@ -23,7 +23,7 @@ export const BRAND = {
   tagline: "Veteran-Owned Aerial Services — Hampton Roads, VA",
   email: "deliveries@sentinelaerialinspections.com",
   website: "sentinelaerialinspections.com",
-  location: "Hampton Roads, Virginia",
+  location: "Chesapeake, Virginia", // matches the report letterhead
 };
 
 export interface DeliveryEmailRequest {
@@ -239,14 +239,24 @@ export function renderStatsHtml(stats: DeliveryStats): string {
         `;
 }
 
+/** File names come from disk; never let one become markup in the email. */
+export function escapeHtml(text: string): string {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 /**
  * The report Adam approved in the CRM, as a time-limited link.
  *
  * Reports are drawn by the report engine (sentinel-reports) and attached to the
  * job by Sortie as a PDF in the private `generated-documents` bucket. Only a
- * job report marked `final` (approved) whose engine metadata does not say it
- * failed a release gate is ever linked. Any lookup failure means "no report",
- * never a failed delivery.
+ * job report marked `final` (approved) whose document is a released engine
+ * PDF (see isReleasedEngineDocument) is ever linked. Any lookup failure means
+ * "no report", never a failed delivery.
  */
 export interface ApprovedReport {
   fileName: string;
@@ -254,6 +264,22 @@ export interface ApprovedReport {
 }
 
 export const REPORT_LINK_TTL_SECONDS = 14 * 24 * 60 * 60;
+
+/**
+ * The one rule for "this PDF may go to a client", shared in spirit with
+ * src/lib/engineReport.ts (isReleasedEngineDocument) and Sortie's
+ * crm.attach_report_pdf. An allow-list, not a deny-list: older CRM rows
+ * written by the retired document-generator "generate-report" action carry a
+ * file_path but no file and no engine metadata, and must never be linked.
+ */
+// deno-lint-ignore no-explicit-any
+export function isReleasedEngineDocument(doc: any): boolean {
+  if (!doc || typeof doc.file_path !== "string" || !doc.file_path) return false;
+  const meta = doc.metadata ?? {};
+  if (meta.source !== "sentinel-reports") return false;
+  if (meta.report_complete !== true) return false;
+  return !/^draft_/i.test(String(doc.file_name ?? ""));
+}
 
 // deno-lint-ignore no-explicit-any
 export async function findApprovedReport(supabase: any, jobId: string): Promise<ApprovedReport | null> {
@@ -265,10 +291,12 @@ export async function findApprovedReport(supabase: any, jobId: string): Promise<
       .eq("status", "final")
       .not("generated_document_id", "is", null)
       .order("updated_at", { ascending: false })
-      .limit(1);
-    const doc = Array.isArray(data) ? data[0]?.generated_documents : null;
-    if (!doc?.file_path) return null;
-    if (doc.metadata?.report_complete === false) return null;
+      .limit(10);
+    // The newest approved row can be a legacy one; take the newest that is a
+    // released engine PDF rather than giving up on the first miss.
+    const rows = Array.isArray(data) ? data : [];
+    const doc = rows.map((r) => r?.generated_documents).find(isReleasedEngineDocument);
+    if (!doc) return null;
     if (!supabase.storage) return null;
     const { data: signed, error } = await supabase.storage
       .from("generated-documents")
@@ -373,7 +401,7 @@ ${renderStatsHtml(stats)}
         <!-- Inspection Report -->
         <div style="border: 1px solid #d9d0c4; border-left: 4px solid ${BRAND.sky}; background-color: ${BRAND.light}; padding: 16px 20px; margin: 0 0 28px 0;">
           <p style="color: ${BRAND.navy}; margin: 0 0 4px 0; font-size: 15px; font-weight: 700;">Your inspection report</p>
-          <p style="color: #555; margin: 0 0 12px 0; font-size: 13px;">${report.fileName}</p>
+          <p style="color: #555; margin: 0 0 12px 0; font-size: 13px;">${escapeHtml(report.fileName)}</p>
           <a href="${report.url}" style="background-color: ${BRAND.sky}; color: white; padding: 10px 22px; text-decoration: none; display: inline-block; font-weight: 700; font-size: 14px;">
             Download the report (PDF)
           </a>

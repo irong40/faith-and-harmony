@@ -26,6 +26,12 @@ describe("engineDocumentOf", () => {
     expect(engineDocumentOf({ generated_documents: released })).toBe(released);
   });
 
+  it("ignores a document row the retired print path logged (no engine stamp)", () => {
+    const legacy = { file_name: "r.pdf", file_path: "reports/r.pdf", metadata: { report_id: "x" } };
+    expect(engineDocumentOf({ generated_documents: legacy })).toBeNull();
+    expect(engineDocumentOf({ generated_documents: { ...legacy, metadata: null } })).toBeNull();
+  });
+
   it("treats a report without a PDF as a legacy draft", () => {
     expect(engineDocumentOf({ generated_documents: null })).toBeNull();
     expect(engineDocumentOf({})).toBeNull();
@@ -52,6 +58,14 @@ describe("canApproveEngineReport", () => {
 
   it("blocks when there is no PDF at all", () => {
     expect(canApproveEngineReport(null).ok).toBe(false);
+  });
+
+  it("blocks when the engine never said the report was complete", () => {
+    expect(canApproveEngineReport({ ...released, metadata: { source: "sentinel-reports" } }).ok).toBe(false);
+  });
+
+  it("blocks a lower-case draft_ name", () => {
+    expect(canApproveEngineReport({ ...released, file_name: "draft_roof.pdf" }).ok).toBe(false);
   });
 });
 
