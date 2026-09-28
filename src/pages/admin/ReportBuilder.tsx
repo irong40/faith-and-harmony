@@ -127,6 +127,9 @@ export default function ReportBuilder() {
   // Local echo of an approval: the report query is not refetched on update
   // (a refetch would re-hydrate the legacy editor mid-typing).
   const [approvedHere, setApprovedHere] = useState(false);
+  // The route reuses this component across report ids; an approval belongs to
+  // the report it was made on.
+  useEffect(() => setApprovedHere(false), [id]);
 
   const manifest: SectionManifestEntry[] = useMemo(
     () => template?.sections_manifest ?? [],

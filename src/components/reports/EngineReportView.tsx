@@ -26,6 +26,8 @@ export function EngineReportView({ document: doc, status, approving, onApprove }
 
   useEffect(() => {
     let live = true;
+    // Never show the previous document while the new one is being signed.
+    setViewUrl(null);
     setSignFailed(false);
     signEngineReportUrl(doc.file_path).then((url) => {
       if (!live) return;
