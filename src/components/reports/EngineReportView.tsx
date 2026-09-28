@@ -41,7 +41,7 @@ export function EngineReportView({ document: doc, status, approving, onApprove }
     // Never show the previous document while the new one is being checked.
     setViewUrl(null);
     setOpenError(null);
-    (async () => {
+    const open = async () => {
       const signed = await signEngineReportUrl(doc.file_path);
       if (!live) return;
       if (!signed) {
@@ -56,7 +56,11 @@ export function EngineReportView({ document: doc, status, approving, onApprove }
       }
       blobUrl = URL.createObjectURL(new Blob([result.bytes], { type: "application/pdf" }));
       setViewUrl(blobUrl);
-    })();
+    };
+    // Anything unexpected still ends the spinner with a reason.
+    open().catch(() => {
+      if (live) setOpenError("The PDF could not be opened. Reopen the report to try again.");
+    });
     return () => {
       live = false;
       if (blobUrl) URL.revokeObjectURL(blobUrl);

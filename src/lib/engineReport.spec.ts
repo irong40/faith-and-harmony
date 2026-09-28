@@ -135,6 +135,17 @@ describe("fetchVerifiedEngineReport", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("reports an interrupted body instead of throwing", async () => {
+    const cut = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      arrayBuffer: () => Promise.reject(new TypeError("terminated")),
+    }) as unknown as typeof fetch;
+    const result = await fetchVerifiedEngineReport("u", await sha(bytes), cut);
+    expect(result.ok).toBe(false);
+    expect(result.reason).toMatch(/interrupted/);
+  });
+
   it("refuses a failed response, non-PDF bytes, a missing digest and a mismatch", async () => {
     expect((await fetchVerifiedEngineReport("u", await sha(bytes), reply(bytes, 404))).ok).toBe(false);
     const html = new TextEncoder().encode("<html>");

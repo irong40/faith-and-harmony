@@ -115,7 +115,14 @@ export async function fetchVerifiedEngineReport(
   if (!response.ok) {
     return { ok: false, reason: `Storage returned ${response.status} for the PDF.` };
   }
-  const bytes = await response.arrayBuffer();
+  // Headers can arrive and the body still fail part way, so reading the body
+  // and hashing it are failures to report, never exceptions to escape.
+  let bytes: ArrayBuffer;
+  try {
+    bytes = await response.arrayBuffer();
+  } catch {
+    return { ok: false, reason: "The PDF download was interrupted. Reopen the report to try again." };
+  }
   const head = new TextDecoder().decode(new Uint8Array(bytes.slice(0, 5)));
   if (head !== "%PDF-") {
     return { ok: false, reason: "The stored file is not a PDF." };
@@ -126,7 +133,12 @@ export async function fetchVerifiedEngineReport(
       reason: "This PDF has no recorded checksum, so it cannot be tied to the engine's release. Attach it again from Sortie.",
     };
   }
-  const digest = toHex(await crypto.subtle.digest("SHA-256", bytes));
+  let digest: string;
+  try {
+    digest = toHex(await crypto.subtle.digest("SHA-256", bytes));
+  } catch {
+    return { ok: false, reason: "This browser could not check the PDF's checksum." };
+  }
   if (digest !== expectedSha256.toLowerCase()) {
     return {
       ok: false,

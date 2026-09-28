@@ -175,6 +175,16 @@ describe("ReportBuilder with an engine PDF", () => {
     ["the network fails", () => Promise.reject(new TypeError("Failed to fetch")), /did not return the PDF/],
     ["an error page comes back", () => Promise.resolve(respond("<html>error</html>")), /not a PDF/],
     [
+      "the download is cut off after the headers arrive",
+      () =>
+        Promise.resolve({
+          ok: true,
+          status: 200,
+          arrayBuffer: () => Promise.reject(new TypeError("terminated")),
+        }),
+      /download was interrupted/,
+    ],
+    [
       "the bytes are not the released file",
       () => Promise.resolve(respond("%PDF-1.7 a different build")),
       /does not match the file the engine released/,
@@ -187,6 +197,7 @@ describe("ReportBuilder with an engine PDF", () => {
     await waitFor(() => expect(screen.getByText("Could not open the PDF")).toBeTruthy());
     expect(screen.getByText(message)).toBeTruthy();
     expect(screen.queryByTitle("Engine report PDF")).toBeNull();
+    expect(screen.queryByText("Opening the PDF")).toBeNull();
     const approve = screen.getByRole("button", { name: /approve for delivery/i }) as HTMLButtonElement;
     expect(approve.disabled).toBe(true);
   });
