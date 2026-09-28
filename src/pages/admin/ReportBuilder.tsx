@@ -6,7 +6,8 @@ import { ReportSectionNav } from "./components/ReportSectionNav";
 import { ReportJobSelector, type DroneJobOption } from "./components/ReportJobSelector";
 import { ReportSection, isSectionDataEmpty } from "@/components/reports/ReportSection";
 import { ReportPreview } from "@/components/reports/ReportPreview";
-import ReportPrintView from "@/components/reports/ReportPrintView";
+import { EngineReportView } from "@/components/reports/EngineReportView";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -26,7 +27,6 @@ import {
   Loader2,
   PanelRightClose,
   PanelRightOpen,
-  FileDown,
 } from "lucide-react";
 import PageShell from "@/components/admin/PageShell";
 import { LoadingState } from "@/components/admin/PageState";
@@ -37,8 +37,8 @@ import {
   useJobReport,
   useCreateReport,
   useUpdateReport,
-  useGenerateReportPDF,
 } from "@/hooks/useReportBuilder";
+import { engineDocumentOf } from "@/lib/engineReport";
 import type {
   ReportSectionKey,
   SectionDataMap,
@@ -123,18 +123,18 @@ export default function ReportBuilder() {
   const { data: existingReport, isLoading: reportLoading } = useJobReport(isEditMode ? id : undefined);
   const createMutation = useCreateReport();
   const updateMutation = useUpdateReport();
-  const pdfMutation = useGenerateReportPDF();
-  const printRef = useRef<HTMLDivElement>(null);
+  const engineDoc = engineDocumentOf(existingReport);
+  // Local echo of an approval: the report query is not refetched on update
+  // (a refetch would re-hydrate the legacy editor mid-typing).
+  const [approvedHere, setApprovedHere] = useState(false);
 
   const manifest: SectionManifestEntry[] = useMemo(
     () => template?.sections_manifest ?? [],
     [template]
   );
 
-  // Active sections with no content silently vanish from the printed PDF
-  // (ReportPrintView returns null for them) — surface that before it ships.
-  // Shares isSectionDataEmpty with ReportPrintView so the warning and the
-  // print output can never disagree about what "empty" means.
+  // Active sections with no content are dropped from the report. Surface that
+  // before a legacy draft is finalized.
   const emptyActiveSections = useMemo(
     () => activeSections.filter((key) => isSectionDataEmpty(sectionData[key])),
     [activeSections, sectionData]
@@ -147,30 +147,22 @@ export default function ReportBuilder() {
       .join("\n  - ");
     return window.confirm(
       `${emptyActiveSections.length} active section(s) are EMPTY and will be ` +
-        `omitted from the printed report:\n  - ${labels}\n\nContinue anyway?`
+        `omitted from the report:\n  - ${labels}\n\nContinue anyway?`
     );
   }, [emptyActiveSections, manifest]);
 
-  const handleDownloadPDF = useCallback(async () => {
+  const handleApproveEngineReport = useCallback(() => {
     if (!reportId) return;
-    if (!emptySectionWarning()) return;
-    // Log generation to edge function (tracking); printing IS the client
-    // deliverable, so a printed report is a final report
-    pdfMutation.mutate(reportId, {
-      onSuccess: () => {
-        if (existingReport?.status !== "final") {
-          updateMutation.mutate({ id: reportId, status: "final" });
-        }
-      },
-    });
-    // window.print() cannot await anything, so every bucket-relative image
-    // value must already hold a signed URL BEFORE the dialog snapshots the
-    // hidden print view — otherwise an unresolved image simply vanishes from
-    // the client PDF. Report load prewarms too; this is the backstop.
-    await prewarmReportImageUrls(images.map((img) => img.image_url));
-    // Trigger browser print dialog for actual PDF
-    setTimeout(() => window.print(), 300);
-  }, [reportId, pdfMutation, emptySectionWarning, existingReport?.status, updateMutation, images]);
+    updateMutation.mutate(
+      { id: reportId, status: "final" },
+      {
+        onSuccess: () => {
+          setApprovedHere(true);
+          toast.success("Report approved. The delivery email will link it.");
+        },
+      }
+    );
+  }, [reportId, updateMutation]);
 
   // Load existing report
   useEffect(() => {
@@ -180,8 +172,8 @@ export default function ReportBuilder() {
     setSectionData(existingReport.section_data);
     setActiveSections(existingReport.active_sections);
     setImages(existingReport.report_images ?? []);
-    // Resolve signed URLs for every attached image up front so preview and
-    // the always-mounted hidden print view render from a warm cache.
+    // Resolve signed URLs for every attached image up front so the preview
+    // renders from a warm cache.
     void prewarmReportImageUrls(
       (existingReport.report_images ?? []).map((img) => img.image_url)
     );
@@ -386,7 +378,34 @@ export default function ReportBuilder() {
     );
   }
 
-  // ---- 3-column editor ----
+  // ---- Engine report: view, approve, download ----
+  // The engine drew this PDF. The CRM shows it as-is and gates delivery on
+  // Adam's approval; there is nothing to lay out here.
+  if (isEditMode && existingReport && engineDoc) {
+    return (
+      <PageShell
+        title={existingReport.title}
+        description="Rendered by the report engine. Approve it to include it in the delivery email."
+        icon={FileText}
+        breadcrumbs={[{ label: "Reports", href: "/admin/reports" }, { label: existingReport.title }]}
+        width="full"
+        actions={
+          <Button variant="ghost" onClick={() => navigate("/admin/reports")}>
+            <ArrowLeft className="h-4 w-4 mr-2" /> Back to Reports
+          </Button>
+        }
+      >
+        <EngineReportView
+          document={engineDoc}
+          status={approvedHere ? "final" : existingReport.status}
+          approving={updateMutation.isPending}
+          onApprove={handleApproveEngineReport}
+        />
+      </PageShell>
+    );
+  }
+
+  // ---- 3-column editor (legacy CRM draft, no engine PDF) ----
   const currentData = selectedSection ? sectionData[selectedSection] : undefined;
   const currentImages = selectedSection ? images.filter((i) => i.section_key === selectedSection) : [];
 
@@ -406,14 +425,19 @@ export default function ReportBuilder() {
     // zero scrolling panes, Save 2888px above the fold — with this chain already
     // exactly as it reads now. If scrolling dies here again, check AdminLayout's
     // root FIRST. jsdom cannot catch it; measure in a browser.
-    // The `print:` overrides matter: a printed page has no viewport to fill and
-    // no scrolling, so the flex/overflow constraints that make the editor work
-    // on screen would squeeze the hidden print view below into the leftover
-    // height. `print:flex-none print:block print:overflow-visible` releases
-    // them and lets the report paginate normally.
-    <div className="flex min-h-0 flex-1 flex-col print:block print:flex-none print:overflow-visible">
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* One layout (2026-09-28): client PDFs come from the report engine. */}
+      <Alert className="shrink-0 rounded-none border-x-0 border-t-0">
+        <FileText className="h-4 w-4" />
+        <AlertTitle>Legacy draft: no engine PDF yet</AlertTitle>
+        <AlertDescription>
+          The CRM no longer prints client reports. Render this job in the report engine
+          (Sortie, or <code>sortie-attach-report</code>) and the PDF lands here for approval.
+          These fields stay editable as working notes.
+        </AlertDescription>
+      </Alert>
       {/* Top bar */}
-      <div className="shrink-0 border-b bg-card px-4 py-2 flex items-center gap-3 print:hidden">
+      <div className="shrink-0 border-b bg-card px-4 py-2 flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate("/admin/reports")}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -444,7 +468,7 @@ export default function ReportBuilder() {
         </Button>
       </div>
 
-      <div className="flex min-h-0 flex-1 overflow-hidden print:hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* LEFT sidebar — flex column so the heading stays put and only the
             section list scrolls. */}
         <aside className="hidden w-64 shrink-0 flex-col overflow-hidden border-r bg-card p-3 lg:flex">
@@ -493,40 +517,12 @@ export default function ReportBuilder() {
           <aside className="hidden w-96 shrink-0 flex-col overflow-hidden border-l bg-muted/30 xl:flex">
             <div className="shrink-0 border-b p-3 flex items-center justify-between">
               <h3 className="font-semibold text-sm">Preview</h3>
-              <Button variant="outline" size="sm" disabled={pdfMutation.isPending} onClick={handleDownloadPDF}>
-                {pdfMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileDown className="h-4 w-4 mr-1" />}
-                Download PDF
-              </Button>
+              <span className="text-xs text-muted-foreground">Working copy, not the client layout</span>
             </div>
             <ReportPreview activeSections={activeSections} sectionData={sectionData} manifest={manifest} images={images} />
           </aside>
         )}
       </div>
-
-      {/* Hidden print view — only visible during window.print() */}
-      {template && reportId && (
-        <div className="hidden print:block">
-          <ReportPrintView
-            ref={printRef}
-            report={{
-              id: reportId,
-              job_id: selectedJob?.id,
-              template_id: selectedTemplateId || "",
-              status: "draft",
-              title,
-              section_data: sectionData,
-              active_sections: activeSections,
-              report_date: new Date().toISOString().split("T")[0],
-              prepared_by: "Adam Pierce, Founder",
-              classification: "CLIENT CONFIDENTIAL",
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            }}
-            template={template}
-            images={images}
-          />
-        </div>
-      )}
     </div>
   );
 }

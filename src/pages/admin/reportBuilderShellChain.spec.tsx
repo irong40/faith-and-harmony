@@ -104,7 +104,6 @@ vi.mock("@/hooks/useReportBuilder", () => {
     useUpdateReport: () => IDLE_MUTATION,
     useSaveReportImages: () => IDLE_MUTATION,
     useDeleteReport: () => IDLE_MUTATION,
-    useGenerateReportPDF: () => IDLE_MUTATION,
   };
 });
 

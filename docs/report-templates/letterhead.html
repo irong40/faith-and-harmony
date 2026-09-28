@@ -4,20 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{DOCUMENT_TITLE}} — Sentinel Aerial Inspections</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- One layout (2026-09-28): this file mirrors sentinel_reports/layout.py.
+     The engine is the source of truth; change the tokens there first. -->
 <style>
   @page {
     size: letter;
     margin: 0.75in 0.9in;
     @bottom-right {
       content: "Page " counter(page) " of " counter(pages);
-      font-family: 'Inter', 'Segoe UI', sans-serif;
+      font-family: 'Geist', 'Segoe UI', sans-serif;
       font-size: 8pt;
       color: #64607a;
     }
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Geist', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
     font-size: 10.5pt;
     line-height: 1.55;
     color: #1a1a1a;
@@ -30,7 +34,7 @@
     justify-content: space-between;
     align-items: center;
     padding-bottom: 12px;
-    border-bottom: 4px solid #c44a1a;
+    border-bottom: 4px solid #e85d26;
     margin-bottom: 20px;
   }
   .letterhead-brand {
@@ -43,15 +47,16 @@
     width: auto;
   }
   .letterhead-company {
-    font-size: 17pt;
-    font-weight: 800;
+    font-family: 'Bebas Neue', 'Geist', sans-serif;
+    font-size: 22pt;
+    font-weight: 400;
     color: #0f0f0f;
     letter-spacing: 0.5px;
     text-transform: uppercase;
   }
   .letterhead-tagline {
     font-size: 8.5pt;
-    color: #c44a1a;
+    color: #e85d26;
     font-weight: 600;
     letter-spacing: 1.2px;
     text-transform: uppercase;
@@ -67,7 +72,7 @@
     color: #0f0f0f;
   }
   .letterhead-contact a {
-    color: #c44a1a;
+    color: #e85d26;
     text-decoration: none;
   }
 
@@ -89,21 +94,23 @@
 
   /* --- DOCUMENT META BLOCK --- */
   .doc-title-block {
-    border-left: 5px solid #c44a1a;
+    border-left: 5px solid #e85d26;
     padding-left: 16px;
     margin-bottom: 24px;
   }
   .doc-type {
     font-size: 9pt;
-    color: #c44a1a;
+    color: #e85d26;
     font-weight: 700;
     letter-spacing: 1.5px;
     text-transform: uppercase;
     margin-bottom: 4px;
   }
   .doc-title {
-    font-size: 20pt;
-    font-weight: 700;
+    font-family: 'Bebas Neue', 'Geist', sans-serif;
+    font-size: 26pt;
+    font-weight: 400;
+    letter-spacing: 0.5px;
     color: #0f0f0f;
     line-height: 1.2;
     margin-bottom: 8px;
@@ -119,9 +126,9 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px 24px;
-    background: #f7f5f2;
-    border: 1px solid #e5e0d8;
-    border-left: 4px solid #c44a1a;
+    background: #faf8f3;
+    border: 1px solid #d9d0c4;
+    border-left: 4px solid #e85d26;
     padding: 14px 18px;
     margin-bottom: 24px;
     font-size: 9.5pt;
@@ -147,17 +154,18 @@
 
   /* --- CONTENT --- */
   .content { margin-bottom: 30px; }
+  h1, h2 { font-family: 'Bebas Neue', 'Geist', sans-serif; font-weight: 400; }
   h1 {
-    font-size: 16pt;
+    font-size: 20pt;
     color: #0f0f0f;
     margin: 24px 0 12px 0;
     padding-bottom: 6px;
-    border-bottom: 2px solid #c44a1a;
+    border-bottom: 2px solid #e85d26;
   }
   h2 {
-    font-size: 13pt;
+    font-size: 15pt;
     color: #0f0f0f;
-    border-bottom: 1px solid #c44a1a;
+    border-bottom: 1px solid #e85d26;
     padding-bottom: 4px;
     margin: 20px 0 10px 0;
     text-transform: uppercase;
@@ -165,7 +173,7 @@
   }
   h3 {
     font-size: 11pt;
-    color: #c44a1a;
+    color: #e85d26;
     margin: 14px 0 6px 0;
     font-weight: 700;
   }
@@ -182,7 +190,7 @@
   /* --- CALLOUTS --- */
   .callout {
     background: #fff3ec;
-    border-left: 4px solid #c44a1a;
+    border-left: 4px solid #e85d26;
     padding: 10px 14px;
     margin: 12px 0;
     font-size: 10pt;
@@ -227,10 +235,10 @@
   }
   td {
     padding: 6px 10px;
-    border-bottom: 1px solid #e5e0d8;
+    border-bottom: 1px solid #d9d0c4;
     vertical-align: top;
   }
-  tr:nth-child(even) td { background: #faf8f4; }
+  tr:nth-child(even) td { background: #faf8f3; }
 
   .sev-1, .status-done, .priority-low { color: #2d7a3a; font-weight: 600; }
   .sev-2, .status-pending, .priority-medium { color: #dfae62; font-weight: 600; }
@@ -240,7 +248,7 @@
 
   /* --- EVIDENCE / PHOTO CARDS --- */
   .evidence-card {
-    border: 1px solid #e5e0d8;
+    border: 1px solid #d9d0c4;
     padding: 12px;
     margin: 10px 0;
     page-break-inside: avoid;
@@ -263,7 +271,7 @@
     border: 2px solid #0f0f0f;
     padding: 16px;
     margin: 24px 0;
-    background: #faf8f4;
+    background: #faf8f3;
   }
   .signature-block {
     margin-top: 24px;
@@ -285,7 +293,7 @@
 
   /* --- FOOTER --- */
   .letterhead-footer {
-    border-top: 3px solid #c44a1a;
+    border-top: 3px solid #e85d26;
     padding-top: 10px;
     margin-top: 30px;
     display: flex;
@@ -302,7 +310,7 @@
   .footer-badge {
     display: inline-block;
     padding: 2px 8px;
-    background: #c44a1a;
+    background: #e85d26;
     color: #ffffff;
     font-size: 7pt;
     font-weight: 700;
@@ -333,14 +341,13 @@
     <img src="assets/sai-logo.png" alt="Sentinel Aerial Inspections" class="letterhead-logo">
     <div>
       <div class="letterhead-company">Sentinel Aerial Inspections</div>
-      <div class="letterhead-tagline">Veteran-Owned &middot; FAA Part 107 Certified &middot; Insured</div>
+      <div class="letterhead-tagline">Veteran-Owned &middot; FAA Part 107 Certified</div>
     </div>
   </div>
   <div class="letterhead-contact">
     <strong>Faith &amp; Harmony LLC (DBA)</strong><br>
-    Hampton Roads, Virginia<br>
-    (757) 843-8772<br>
-    <a href="mailto:info@sentinelaerialinspections.com">info@sentinelaerialinspections.com</a><br>
+    Chesapeake, Virginia<br>
+    757.843.8772<br>
     <a href="https://sentinelaerialinspections.com">sentinelaerialinspections.com</a>
   </div>
 </div>
@@ -380,13 +387,11 @@
 <!-- FOOTER -->
 <div class="letterhead-footer">
   <div>
-    <span class="footer-badge">SDVOSB</span><span class="footer-badge">FAA Part 107</span>
+    <span class="footer-badge">FAA Part 107</span>
     Sentinel Aerial Inspections &mdash; a DBA of Faith &amp; Harmony LLC
     <div class="letterhead-footer-legal">
-      This document contains proprietary information prepared for the exclusive use of the named client.
-      Unauthorized reproduction, distribution, or disclosure is prohibited. All imagery, data, and analysis are
-      provided under the terms of the Sentinel Aerial Inspections Master Services Agreement. Findings reflect
-      conditions observed on the stated flight date only.
+      Prepared for the exclusive use of the named client. Findings reflect conditions
+      observed on the stated flight date only.
     </div>
   </div>
   <div style="text-align: right;">

@@ -10,12 +10,15 @@ export const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Sentinel Aerial Inspections Branding
+// Sentinel Aerial Inspections branding. One layout across every system
+// (2026-09-28): these are the report engine's tokens, taken from the live site
+// (sentinelaerialinspections.com): ink #0F0F0F, orange #E85D26 / #C44A1A,
+// paper #FAF8F3. The key names are kept so the template below reads the same.
 export const BRAND = {
-  navy: "#0f1e36",
-  sky: "#3b82f6",
-  accent: "#f59e0b",
-  light: "#f0f4f8",
+  navy: "#0f0f0f",
+  sky: "#e85d26",
+  accent: "#c44a1a",
+  light: "#faf8f3",
   companyName: "Sentinel Aerial Inspections",
   tagline: "Veteran-Owned Aerial Services — Hampton Roads, VA",
   email: "deliveries@sentinelaerialinspections.com",
@@ -221,7 +224,7 @@ export function renderStatsHtml(stats: DeliveryStats): string {
       : "0";
     const leftBorder = first ? "" : " border-left: none;";
     return `
-            <td style="text-align: center; padding: 16px; background-color: ${BRAND.light}; border-radius: ${radius}; border: 1px solid #dde3ea;${leftBorder}">
+            <td style="text-align: center; padding: 16px; background-color: ${BRAND.light}; border-radius: ${radius}; border: 1px solid #d9d0c4;${leftBorder}">
               <div style="font-size: 28px; font-weight: 700; color: ${BRAND.navy};">${tile.value}</div>
               <div style="font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">${tile.label}</div>
             </td>`;
@@ -236,6 +239,47 @@ export function renderStatsHtml(stats: DeliveryStats): string {
         `;
 }
 
+/**
+ * The report Adam approved in the CRM, as a time-limited link.
+ *
+ * Reports are drawn by the report engine (sentinel-reports) and attached to the
+ * job by Sortie as a PDF in the private `generated-documents` bucket. Only a
+ * job report marked `final` (approved) whose engine metadata does not say it
+ * failed a release gate is ever linked. Any lookup failure means "no report",
+ * never a failed delivery.
+ */
+export interface ApprovedReport {
+  fileName: string;
+  url: string;
+}
+
+export const REPORT_LINK_TTL_SECONDS = 14 * 24 * 60 * 60;
+
+// deno-lint-ignore no-explicit-any
+export async function findApprovedReport(supabase: any, jobId: string): Promise<ApprovedReport | null> {
+  try {
+    const { data } = await supabase
+      .from("job_reports")
+      .select("id, status, generated_document_id, generated_documents(file_name, file_path, metadata)")
+      .eq("job_id", jobId)
+      .eq("status", "final")
+      .not("generated_document_id", "is", null)
+      .order("updated_at", { ascending: false })
+      .limit(1);
+    const doc = Array.isArray(data) ? data[0]?.generated_documents : null;
+    if (!doc?.file_path) return null;
+    if (doc.metadata?.report_complete === false) return null;
+    if (!supabase.storage) return null;
+    const { data: signed, error } = await supabase.storage
+      .from("generated-documents")
+      .createSignedUrl(doc.file_path, REPORT_LINK_TTL_SECONDS);
+    if (error || !signed?.signedUrl) return null;
+    return { fileName: doc.file_name ?? "Report.pdf", url: signed.signedUrl };
+  } catch (_e) {
+    return null;
+  }
+}
+
 export interface BuildEmailArgs {
   emailSubject: string;
   siteLabel: string;
@@ -245,6 +289,7 @@ export interface BuildEmailArgs {
   primaryUrl?: string | null;
   deliverables: DeliverableRow[];
   stats: DeliveryStats;
+  report?: ApprovedReport | null;
   year?: number;
 }
 
@@ -258,6 +303,7 @@ export function buildEmailHtml(args: BuildEmailArgs): string {
     primaryUrl,
     deliverables,
     stats,
+    report,
   } = args;
   const year = args.year ?? new Date().getFullYear();
 
@@ -269,12 +315,12 @@ export function buildEmailHtml(args: BuildEmailArgs): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${emailSubject}</title>
 </head>
-<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #eef2f7;">
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f0ebe4;">
   <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; margin-top: 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
 
     <!-- Header -->
     <tr>
-      <td style="background: linear-gradient(135deg, ${BRAND.navy} 0%, #1a3152 100%); padding: 32px; text-align: center;">
+      <td style="background: linear-gradient(135deg, ${BRAND.navy} 0%, #252525 100%); padding: 32px; text-align: center;">
         <h1 style="color: white; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.5px;">
           ${BRAND.companyName}
         </h1>
@@ -286,7 +332,7 @@ export function buildEmailHtml(args: BuildEmailArgs): string {
 
     <!-- Title Banner -->
     <tr>
-      <td style="background: linear-gradient(135deg, ${BRAND.sky} 0%, #2563eb 100%); padding: 20px; text-align: center;">
+      <td style="background: linear-gradient(135deg, ${BRAND.sky} 0%, ${BRAND.accent} 100%); padding: 20px; text-align: center;">
         <h2 style="color: white; margin: 0; font-size: 20px; font-weight: 700;">Your Deliverables Are Ready</h2>
         <p style="color: rgba(255,255,255,0.85); margin: 6px 0 0 0; font-size: 13px;">${siteLabel}</p>
       </td>
@@ -305,7 +351,7 @@ export function buildEmailHtml(args: BuildEmailArgs): string {
 ${renderStatsHtml(stats)}
         ${custom_message ? `
         <!-- Personal Note -->
-        <div style="background-color: #f0f6ff; border-left: 4px solid ${BRAND.sky}; padding: 16px; margin: 0 0 28px 0; border-radius: 0 8px 8px 0;">
+        <div style="background-color: #fff3ec; border-left: 4px solid ${BRAND.sky}; padding: 16px; margin: 0 0 28px 0; border-radius: 0 8px 8px 0;">
           <p style="color: #333; margin: 0; line-height: 1.6; font-size: 14px;">${custom_message}</p>
         </div>
         ` : ""}
@@ -314,7 +360,7 @@ ${renderStatsHtml(stats)}
         <!-- Primary CTA -->
         <div style="text-align: center; margin: 28px 0;">
           <a href="${primaryUrl}"
-             style="background: linear-gradient(135deg, ${BRAND.sky} 0%, #2563eb 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 700; font-size: 16px; letter-spacing: 0.3px;">
+             style="background: linear-gradient(135deg, ${BRAND.sky} 0%, ${BRAND.accent} 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 700; font-size: 16px; letter-spacing: 0.3px;">
             View Your Deliverables
           </a>
           <p style="color: #888; font-size: 12px; margin: 12px 0 0 0;">
@@ -323,18 +369,30 @@ ${renderStatsHtml(stats)}
         </div>
         ` : ""}
 
+        ${report ? `
+        <!-- Inspection Report -->
+        <div style="border: 1px solid #d9d0c4; border-left: 4px solid ${BRAND.sky}; background-color: ${BRAND.light}; padding: 16px 20px; margin: 0 0 28px 0;">
+          <p style="color: ${BRAND.navy}; margin: 0 0 4px 0; font-size: 15px; font-weight: 700;">Your inspection report</p>
+          <p style="color: #555; margin: 0 0 12px 0; font-size: 13px;">${report.fileName}</p>
+          <a href="${report.url}" style="background-color: ${BRAND.sky}; color: white; padding: 10px 22px; text-decoration: none; display: inline-block; font-weight: 700; font-size: 14px;">
+            Download the report (PDF)
+          </a>
+          <p style="color: #888; font-size: 12px; margin: 10px 0 0 0;">This link works for 14 days.</p>
+        </div>
+        ` : ""}
+
         ${deliverables.length > 1 ? `
         <!-- Additional Deliverables -->
         <h3 style="color: ${BRAND.navy}; margin: 28px 0 12px 0; font-size: 15px; font-weight: 600;">Additional Downloads</h3>
-        <table style="width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid #d9d0c4; border-radius: 8px; overflow: hidden;">
           ${deliverables.slice(1).map((d) => `
           <tr>
-            <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 12px 16px; border-bottom: 1px solid #d9d0c4;">
               <strong style="color: ${BRAND.navy}; font-size: 14px;">${d.name}</strong>
               ${d.description ? `<br><span style="color: #666; font-size: 13px;">${d.description}</span>` : ""}
             </td>
             ${d.download_url ? `
-            <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; text-align: right; white-space: nowrap;">
+            <td style="padding: 12px 16px; border-bottom: 1px solid #d9d0c4; text-align: right; white-space: nowrap;">
               <a href="${d.download_url}" style="color: ${BRAND.sky}; font-weight: 600; text-decoration: none; font-size: 14px;">
                 Download
               </a>
@@ -503,6 +561,8 @@ export async function handleDeliveryRequest(req: Request, deps: DeliveryDeps): P
 
     const emailSubject = `Your Deliverables from Sentinel Aerial Inspections — ${jobTypeLabel} at ${siteLabel}`;
 
+    const report = await findApprovedReport(supabase, job_id);
+
     const emailHtml = buildEmailHtml({
       emailSubject,
       siteLabel,
@@ -512,6 +572,7 @@ export async function handleDeliveryRequest(req: Request, deps: DeliveryDeps): P
       primaryUrl,
       deliverables,
       stats,
+      report,
       year: now().getFullYear(),
     });
 

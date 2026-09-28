@@ -124,6 +124,7 @@ A report is ready to deliver when all of these are true:
 |---|---|---|
 | 2026-04-14 | Initial build — 9 templates + 6 shared components + SAI letterhead | COO |
 | 2026-04-14 | Added `_sai_constants.md` single-source-of-truth file | COO |
+| 2026-09-28 | One layout: the report engine (sentinel-reports) now draws every client PDF. `letterhead.html` moved to the engine tokens (site orange #E85D26, Bebas Neue + Geist, Chesapeake contact). Removed the SDVOSB badge, the "Insured" tagline and the MSA footer text. These files are content references; the engine renders. | technical-writer |
 
 ---
 

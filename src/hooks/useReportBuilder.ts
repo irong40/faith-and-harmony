@@ -10,6 +10,7 @@ import type {
   SectionDataMap,
   SectionManifestEntry,
 } from "@/types/report";
+import { ENGINE_DOCUMENT_EMBED } from "@/lib/engineReport";
 import type { Json } from "@/integrations/supabase/types";
 
 // ---- helpers ----
@@ -75,7 +76,7 @@ export function useJobReports(options?: {
     queryFn: async () => {
       let q = supabase
         .from("job_reports")
-        .select("*, clients(name, company), report_templates(name)")
+        .select(`*, clients(name, company), report_templates(name), ${ENGINE_DOCUMENT_EMBED}`)
         .order("updated_at", { ascending: false });
       if (options?.status) q = q.eq("status", options.status);
       if (options?.job_id) q = q.eq("job_id", options.job_id);
@@ -97,7 +98,7 @@ export function useJobReport(id: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("job_reports")
-        .select("*, report_images(*)")
+        .select(`*, report_images(*), ${ENGINE_DOCUMENT_EMBED}`)
         .eq("id", id!)
         .single();
       if (error) throw error;
@@ -209,23 +210,6 @@ export function useDeleteReport() {
   });
 }
 
-export function useGenerateReportPDF() {
-  return useMutation({
-    mutationFn: async (reportId: string) => {
-      const { data, error } = await supabase.functions.invoke("document-generator", {
-        body: { action: "generate-report", report_id: reportId },
-      });
-      if (error) throw error;
-      return data as { success: boolean; download_url?: string };
-    },
-    onSuccess: (result) => {
-      if (result.download_url) {
-        window.open(result.download_url, "_blank");
-        toast.success("PDF generated");
-      } else {
-        toast.success("Report logged — save as PDF from the print dialog");
-      }
-    },
-    onError: (e: Error) => toast.error(`PDF generation failed: ${e.message}`),
-  });
-}
+// useGenerateReportPDF retired 2026-09-28 (one layout). The CRM no longer
+// draws client PDFs through window.print(); the report engine renders them and
+// attaches them to the job. See src/lib/engineReport.ts.
