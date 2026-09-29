@@ -314,3 +314,17 @@ describe("ReportBuilder when the document changes while one is still opening", (
     await waitFor(() => expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:view-1"));
   });
 });
+
+describe("Finalize on a legacy draft", () => {
+  it("names the document state the editor loaded", () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    state.report = { ...BASE, generated_document_id: null, generated_documents: null };
+    renderBuilder();
+    fireEvent.click(screen.getByRole("button", { name: /finalize/i }));
+    expect(updateMutate).toHaveBeenCalledWith(
+      { id: "rpt-1", status: "final", expectDocumentId: null },
+      expect.anything()
+    );
+    confirm.mockRestore();
+  });
+});

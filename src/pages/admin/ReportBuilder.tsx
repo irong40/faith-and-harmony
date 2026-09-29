@@ -307,7 +307,7 @@ export default function ReportBuilder() {
     if (!reportId) return;
     if (!emptySectionWarning()) return;
     updateMutation.mutate(
-      { id: reportId, status: "final" },
+      { id: reportId, status: "final", expectDocumentId: existingReport?.generated_document_id ?? null },
       { onSuccess: () => toast.success("Report finalized") }
     );
   };

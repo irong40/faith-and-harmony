@@ -162,17 +162,46 @@ export function useUpdateReport() {
       section_data?: Partial<SectionDataMap>;
       active_sections?: ReportSectionKey[];
       status?: ReportStatus;
+      /**
+       * Required with `status`: the generated_document_id the editor loaded
+       * (null when it had none). Finalizing is conditional on that exact
+       * state, so a PDF Sortie attached after the page opened can never be
+       * approved by a button that never showed it.
+       */
+      expectDocumentId?: string | null;
     }) => {
       const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
       if (input.title !== undefined) update.title = input.title;
       if (input.section_data !== undefined) update.section_data = input.section_data as unknown as Json;
       if (input.active_sections !== undefined) update.active_sections = input.active_sections;
       if (input.status !== undefined) update.status = input.status;
-      const { error } = await supabase.from("job_reports").update(update).eq("id", input.id);
+      if (input.status === undefined) {
+        const { error } = await supabase.from("job_reports").update(update).eq("id", input.id);
+        if (error) throw error;
+        return;
+      }
+      if (input.expectDocumentId === undefined) {
+        throw new Error("A report's status can only change against the document state it was opened with.");
+      }
+      const base = supabase.from("job_reports").update(update).eq("id", input.id).eq("status", "draft");
+      const scoped =
+        input.expectDocumentId === null
+          ? base.is("generated_document_id", null)
+          : base.eq("generated_document_id", input.expectDocumentId);
+      const { data, error } = await scoped.select("id");
       if (error) throw error;
+      if (!data || data.length === 0) throw new StaleApprovalError();
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["job-reports"] }),
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error, input) => {
+      toast.error(e.message);
+      if (e instanceof StaleApprovalError) {
+        // Reload, so the page shows the report as it is now (an attached
+        // engine PDF opens in the viewer, with its own approval).
+        qc.invalidateQueries({ queryKey: ["job-report", input.id] });
+        qc.invalidateQueries({ queryKey: ["job-reports"] });
+      }
+    },
   });
 }
 
