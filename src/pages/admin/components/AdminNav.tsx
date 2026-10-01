@@ -25,6 +25,7 @@ import {
   MessageSquare,
   Plane,
   Plus,
+  Radar,
   Route as RouteIcon,
   Settings as SettingsIcon,
   Target,
@@ -110,6 +111,10 @@ const AREAS: NavArea[] = [
 
 const HOME: NavItem = { href: "/admin", label: "Dashboard", icon: LayoutDashboard };
 
+// The agent office. A top-level destination like Dashboard, not an area: it has
+// no sections, and it is where an admin lands after signing in.
+const OFFICE: NavItem = { href: "/admin/office", label: "Office", icon: Radar };
+
 const SETTINGS_ITEMS: NavItem[] = [
   { href: "/admin/settings", label: "Integrations", icon: SettingsIcon },
   { href: "/admin/settings/pricing", label: "Pricing & Billing", icon: DollarSign },
@@ -184,6 +189,7 @@ export default function AdminNav() {
   // Dashboard IS /admin, so it must match exactly — a prefix test would keep it
   // lit on every page in the portal.
   const homeActive = pathname === HOME.href;
+  const officeActive = isPathActive(pathname, OFFICE.href);
   const settingsActive = pathname.startsWith("/admin/settings");
 
   // Radix does not close a Sheet when the router navigates underneath it.
@@ -253,6 +259,19 @@ export default function AdminNav() {
                   >
                     <HOME.icon className="h-4 w-4 shrink-0" />
                     {HOME.label}
+                  </Link>
+                  <Link
+                    to={OFFICE.href}
+                    className={cn(
+                      "mt-1 flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      officeActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-foreground hover:bg-accent"
+                    )}
+                    aria-current={officeActive ? "page" : undefined}
+                  >
+                    <OFFICE.icon className="h-4 w-4 shrink-0" />
+                    {OFFICE.label}
                   </Link>
 
                   {AREAS.map((area) => {
@@ -342,6 +361,17 @@ export default function AdminNav() {
                 >
                   <HOME.icon className="h-4 w-4" />
                   {HOME.label}
+                </Button>
+              </Link>
+              <Link to={OFFICE.href}>
+                <Button
+                  variant={officeActive ? "default" : "ghost"}
+                  size="sm"
+                  className="gap-1.5"
+                  aria-current={officeActive ? "page" : undefined}
+                >
+                  <OFFICE.icon className="h-4 w-4" />
+                  {OFFICE.label}
                 </Button>
               </Link>
 

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RefreshCw, LogOut, Plane, Play, RotateCcw, LayoutDashboard, MapIcon, Route, Camera } from "lucide-react";
+import { RefreshCw, LogOut, Plane, Play, Radar, RotateCcw, LayoutDashboard, MapIcon, Route, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isToday, isBefore, startOfDay } from "date-fns";
 import PilotCard from "@/components/pilot/PilotCard";
@@ -146,6 +146,16 @@ export default function PilotDashboard() {
                             isOnline={isOnline}
                             onSync={handleSync}
                         />
+                        {/* Admin only. The Office itself lives in the admin
+                            portal; Trestle just links to it, so a pilot never
+                            sees company decisions or CRM numbers. */}
+                        {isAdmin && (
+                            <Link to="/admin/office">
+                                <Button variant="ghost" size="icon" title="Office" aria-label="Office">
+                                    <Radar className="h-5 w-5" />
+                                </Button>
+                            </Link>
+                        )}
                         {isAdmin && (
                             <Link to="/admin">
                                 <Button variant="ghost" size="icon" title="Admin Dashboard">
