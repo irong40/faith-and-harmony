@@ -662,7 +662,11 @@ export default function Office() {
                 detail={crm.billing?.payments_pending ? `${crm.billing.payments_pending} pending` : "none pending"}
               />
               <Stat value={crm.billing?.delivered_unbilled ?? 0} label="Delivered, not billed" detail="jobs delivered with no payment on record" />
-              <Stat value={crm.jobs.total ?? 0} label="Drone jobs" detail={countPairs(crm.jobs.by_status)} />
+              <Stat
+                value={crm.jobs.total ?? 0}
+                label="Drone jobs"
+                detail={[countPairs(crm.jobs.by_status), crm.jobs.archived ? `${crm.jobs.archived} archived` : ""].filter(Boolean).join(" · ")}
+              />
               <Stat value={crm.jobs.stale_scheduled ?? 0} label="Scheduled in the past" detail="jobs still marked scheduled" />
               <Stat value={crm.leads?.total ?? 0} label="Leads" detail={`${crm.leads?.new_7d ?? 0} new in 7 days`} />
               <Stat value={quoteTotal} label="Quotes" detail={countPairs(crm.quotes?.by_status)} />

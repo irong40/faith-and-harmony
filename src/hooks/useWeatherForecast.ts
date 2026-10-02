@@ -62,6 +62,7 @@ export function useWeatherHeldJobs() {
         .from('drone_jobs')
         .select('id, job_number, scheduled_date, scheduled_time, status, weather_hold, weather_hold_reasons')
         .eq('weather_hold', true)
+        .is('archived_at', null)
         .not('status', 'in', '("delivered","cancelled")')
         .order('scheduled_date', { ascending: true });
 

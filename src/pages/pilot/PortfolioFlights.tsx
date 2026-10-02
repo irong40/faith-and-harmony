@@ -45,6 +45,7 @@ export default function PortfolioFlights() {
         .select("id, job_number, property_address, property_city, scheduled_date, status, drone_packages(name, code)")
         .eq("pilot_id", user!.id)
         .eq("is_test", true)
+        .is("archived_at", null)
         .neq("status", "cancelled")
         .order("scheduled_date", { ascending: false });
 

@@ -19,11 +19,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, RefreshCw, Plus, Eye, Camera, Calendar, CheckCircle, AlertTriangle, XCircle, Send, User } from "lucide-react";
+import { Search, RefreshCw, Plus, Eye, Camera, Calendar, CheckCircle, AlertTriangle, XCircle, Send, User, Archive, ArchiveRestore } from "lucide-react";
 import { format } from "date-fns";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import PageShell from "@/components/admin/PageShell";
 import { qaVerdict } from "@/lib/qa-threshold";
+import { archivePatch, isArchived, jobsInView } from "@/lib/jobArchive";
 import type { Database } from "@/integrations/supabase/types";
 
 type DroneJobStatus = Database["public"]["Enums"]["drone_job_status"];
@@ -59,6 +60,8 @@ interface DroneJob {
   processing_template_id: string | null;
   delivery_status: string | null;
   delivery_sent_at: string | null;
+  archived_at: string | null;
+  archive_reason: string | null;
   drone_packages?: { name: string; code: string; price: number } | null;
   drone_assets?: { id: string }[];
   clients?: { name: string; company: string | null } | null;
@@ -109,6 +112,9 @@ export default function DroneJobs() {
   const [deliveryFilter, setDeliveryFilter] = useState<string>(searchParams.get("delivery") || "all");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
+  // Live jobs by default. The archive is a separate view, never mixed in:
+  // archived jobs are test, spec and cancelled records kept only for history.
+  const [showArchived, setShowArchived] = useState(false);
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -151,7 +157,31 @@ export default function DroneJobs() {
     fetchJobs();
   }, []);
 
-  const filteredJobs = jobs.filter((job) => {
+  // Archiving hides a job from every list and dashboard. Nothing is deleted and
+  // the status is left alone, so Restore brings it back exactly as it was.
+  const setArchived = async (job: DroneJob, archive: boolean) => {
+    const { error } = await supabase.from("drone_jobs").update(archivePatch(archive)).eq("id", job.id);
+    if (error) {
+      toast({
+        title: archive ? "Could not archive the job" : "Could not restore the job",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({
+      title: archive ? `${job.job_number} archived` : `${job.job_number} restored`,
+      description: archive
+        ? "Hidden from lists and dashboards. Nothing was deleted. Find it under Archived."
+        : "Back in the live mission list, with the status it had.",
+    });
+    fetchJobs();
+  };
+
+  const liveJobs = jobsInView(jobs, false);
+  const archivedCount = jobs.length - liveJobs.length;
+
+  const filteredJobs = jobsInView(jobs, showArchived).filter((job) => {
     const searchLower = searchTerm.toLowerCase();
     const clientName = job.clients?.name || "";
     const pilotName = job.profiles?.full_name || "";
@@ -203,16 +233,16 @@ export default function DroneJobs() {
   };
 
   // Summary counts
-  const activeCount = jobs.filter(j => !["delivered", "cancelled"].includes(j.status)).length;
-  const scheduledThisWeek = jobs.filter(j => {
+  const activeCount = liveJobs.filter(j => !["delivered", "cancelled"].includes(j.status)).length;
+  const scheduledThisWeek = liveJobs.filter(j => {
     if (!j.scheduled_date) return false;
     const date = new Date(j.scheduled_date);
     const now = new Date();
     const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     return date >= now && date <= weekFromNow && j.status === "scheduled";
   }).length;
-  const awaitingQA = jobs.filter(j => j.status === "qa").length;
-  const deliveredCount = jobs.filter(j => j.status === "delivered").length;
+  const awaitingQA = liveJobs.filter(j => j.status === "qa").length;
+  const deliveredCount = liveJobs.filter(j => j.status === "delivered").length;
 
   return (
     <PageShell
@@ -364,6 +394,15 @@ export default function DroneJobs() {
               title="To date"
             />
           </div>
+          <Button
+            variant={showArchived ? "default" : "outline"}
+            onClick={() => setShowArchived((v) => !v)}
+            aria-pressed={showArchived}
+            className="sm:ml-auto"
+          >
+            <Archive className="mr-2 h-4 w-4" />
+            {showArchived ? "Back to live jobs" : `Archived (${archivedCount})`}
+          </Button>
         </div>
 
         {/* Table */}
@@ -393,7 +432,7 @@ export default function DroneJobs() {
               ) : filteredJobs.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                    No drone jobs found
+                    {showArchived ? "No archived jobs" : "No drone jobs found"}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -449,7 +488,14 @@ export default function DroneJobs() {
                         ? format(new Date(job.scheduled_date), "MMM d")
                         : "—"}
                     </TableCell>
-                    <TableCell>{getStatusBadge(job.status)}</TableCell>
+                    <TableCell>
+                      {getStatusBadge(job.status)}
+                      {isArchived(job) && (
+                        <Badge variant="outline" className="ml-1" title={job.archive_reason ?? undefined}>
+                          Archived
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell className="hidden md:table-cell">
                       {(() => {
                         const ds = job.delivery_status ?? "not_ready";
@@ -495,6 +541,15 @@ export default function DroneJobs() {
                           <Eye className="h-4 w-4" />
                         </Button>
                       </Link>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setArchived(job, !isArchived(job))}
+                        title={isArchived(job) ? "Restore to the live list" : "Archive (hide, nothing is deleted)"}
+                        aria-label={isArchived(job) ? `Restore ${job.job_number}` : `Archive ${job.job_number}`}
+                      >
+                        {isArchived(job) ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))

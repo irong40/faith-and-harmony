@@ -105,6 +105,7 @@ export default function Dashboard() {
         .from("drone_jobs")
         .select("id, job_number, site_address, property_address, scheduled_date, scheduled_time, status, delivery_status, pilot_id, clients(name), profiles(full_name)")
         .not("status", "in", '("delivered","cancelled")')
+        .is("archived_at", null)
         .order("scheduled_date", { ascending: true });
       if (error) throw error;
       return (data || []) as MissionRow[];
@@ -119,7 +120,8 @@ export default function Dashboard() {
       const { data, error } = await supabase
         .from("drone_jobs")
         .select("id")
-        .eq("delivery_status", "ready");
+        .eq("delivery_status", "ready")
+        .is("archived_at", null);
       if (error) throw error;
       return data || [];
     },

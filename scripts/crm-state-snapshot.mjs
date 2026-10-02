@@ -81,6 +81,7 @@ ${alerts.length ? alerts.map((a) => `- ${a}`).join("\n") : "- None"}
 
 ## Jobs (${s.jobs?.total ?? "?"})
 - By status: ${obj(s.jobs?.by_status)}
+- Archived (test, spec and cancelled records; not counted above): ${s.jobs?.archived ?? 0}
 - Stale scheduled (date in past): **${s.jobs?.stale_scheduled ?? "?"}**
 - Uploaded, awaiting QA: ${s.jobs?.uploaded_awaiting_qa ?? "?"}
 
