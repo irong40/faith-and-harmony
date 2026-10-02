@@ -23,7 +23,7 @@ report-templates/
 │
 ├── wildlife-census.md               Deer, geese, waterfowl, livestock counts
 ├── insurance-damage.md              Post-event claim documentation (HAAG-aligned)
-├── land-survey-ortho.md             Photogrammetric mapping (ASPRS-compliant)
+├── land-survey-ortho.md             Photogrammetric mapping (ASPRS 2023 accuracy class reported)
 ├── roof-inspection.md               Non-claim roof condition assessment
 ├── solar-thermal.md                 PV array IR inspection (IEC 62446-3)
 ├── construction-progress.md         Recurring weekly/bi-weekly site reports

@@ -42,3 +42,9 @@ venv/
 
 # Supabase CLI local state (machine-specific)
 supabase/.temp/
+
+# Session and CLI scratch (regenerated per session — not shared state)
+.claude/project-state.json
+.claude/session-handoff.md
+.planning/agent-history.json
+logs/

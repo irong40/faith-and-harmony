@@ -15,7 +15,9 @@ All flight operations documented in this report were conducted in accordance wit
 - **State & local ordinances** — Verified for `{{COUNTY}}`, `{{STATE}}`
 - **Site-specific requirements** — `{{SITE_REQUIREMENTS_OR_NONE}}` (e.g., facility SOP, OSHA, HIPAA if medical facility)
 
-No operations were conducted over non-participating persons without a Part 107.39 waiver or Category 1/2/3 compliant sUAS. No operations were conducted beyond visual line of sight (BVLOS) without Part 107.31 waiver.
+No operations were conducted over non-participating persons without a Part 107.39 waiver, or without an sUAS covered by a manufacturer's Declaration of Compliance for the applicable category under 14 CFR 107 Subpart D. The category is the manufacturer's declaration and the FAA's acceptance of it; the DOC reference is recorded at `{{DOC_REF}}`. No operations were conducted beyond visual line of sight (BVLOS) without Part 107.31 waiver.
+
+> Render only the waiver half of the sentence above when no DOC reference is on file for the airframe.
 
 ## Methodology Statement
 

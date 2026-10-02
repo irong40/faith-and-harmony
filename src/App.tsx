@@ -31,6 +31,7 @@ const SubstackReview = lazy(() => import("./pages/SubstackReview"));
 // Lazy — admin shell + pages
 const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const Office = lazy(() => import("./pages/admin/Office"));
 const ServiceRequests = lazy(() => import("./pages/admin/ServiceRequests"));
 const DroneJobs = lazy(() => import("./pages/admin/DroneJobs"));
 const DroneJobDetail = lazy(() => import("./pages/admin/DroneJobDetail"));
@@ -79,7 +80,10 @@ function RootRedirect() {
     if (isTrestleDomain()) return <Navigate to="/auth" replace />;
     return <LandingPage />;
   }
-  if (isAdmin) return <Navigate to="/admin" replace />;
+  // An admin on the Faith & Harmony domain starts at the Office (what needs a
+  // decision today). On the Trestle domain the landing stays Mission Control:
+  // Trestle is the field tool and is kept narrow on purpose.
+  if (isAdmin) return <Navigate to={isTrestleDomain() ? "/admin" : "/admin/office"} replace />;
   if (isPilot) return <Navigate to="/pilot" replace />;
   // User is authenticated but has no admin/pilot role — show landing page on F&H domain,
   // or redirect to auth on Trestle domain (auth page will show "no role" state)
@@ -150,6 +154,10 @@ const App = () => (
                 {/* Dashboard IS /admin. The old /admin/dashboard is a stored
                     URL, so it redirects here rather than the other way round. */}
                 <Route index element={<Dashboard />} />
+
+                {/* Office — the agent office: decisions, the team, the board.
+                    Admin only, like everything under this shell. */}
+                <Route path="office" element={<Office />} />
 
                 {/* Pipeline — inbound demand */}
                 <Route path="pipeline" element={<Pipeline />} />

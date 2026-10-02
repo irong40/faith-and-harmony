@@ -1,7 +1,7 @@
 # Land Survey, Mapping & Orthomosaic Deliverable — SAI Template
 
 > **Service line**: Photogrammetric mapping, orthomosaic, DSM/DTM, 3D model, volumetrics, topographic survey (non-PE-stamped)
-> **Grade**: Commercial / Federal / Survey-Grade (with RTK + GCPs)
+> **Grade**: Commercial / Federal photogrammetric mapping deliverable, not PE-stamped. Positional accuracy is reported in §6 as a tested ASPRS 2023 accuracy class computed from independent check points. This is not a boundary survey and carries no surveyor's seal.
 > **Based on**: ASPRS Positional Accuracy Standards 2023, Pix4D Quality Report structure, FGDC metadata standard
 > **Cover letterhead**: `letterhead.html` with `{{DOCUMENT_TYPE}} = "Mapping & Survey Deliverable"`
 
