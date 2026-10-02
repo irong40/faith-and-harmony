@@ -196,6 +196,7 @@ export async function pullMissions(pilotId: string): Promise<void> {
     .from('drone_jobs')
     .select('*, clients(name), drone_packages(id, name, code)')
     .eq('pilot_id', pilotId)
+    .is('archived_at', null)
     .neq('status', 'cancelled')
     .order('scheduled_date', { ascending: true });
 

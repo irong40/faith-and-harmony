@@ -1,26 +1,22 @@
--- NOT APPLIED. Waiting on Adam.
+-- Applied live via MCP 2026-10-02 as version 20261002122347, on Adam's instruction
+-- ("run the database command"); this file is the repo mirror (version matches
+-- live history so db push never re-applies it).
 --
--- The Office page (/admin/office) reads public.office_snapshot and reads and
--- writes public.office_inbox as the signed-in admin. Today those tables answer
--- only to the service role, so the page shows "Office access is not turned on
--- yet" until this runs.
+-- Office page in the admin portal (/admin/office). A signed-in ADMIN can read the
+-- office snapshot, read the message list, and send a message. anon gets nothing;
+-- a non-admin authenticated user fails every policy. No UPDATE and no DELETE for
+-- anyone but the service role.
 --
--- This file is kept OUT of supabase/migrations on purpose: a `supabase db push`
--- from any session must not grant access as a side effect. To turn it on, Adam
--- runs it himself in the Supabase SQL editor (project FaithandHarmonyAPP), or
--- tells Claude to apply it. After it is applied, move it into
--- supabase/migrations/ under the version Supabase recorded.
---
--- What it grants, and to whom:
---   * A signed-in user whose user_roles row says admin can READ the snapshot
---     and the message list, and INSERT a message.
---   * The insert is column-scoped to (kind, digest_date, item, body). A browser
---     can never set picked_up_at or ledger_line; only the desktop sync does.
---   * anon gets nothing. A signed-in pilot or client fails every policy.
---   * No UPDATE and no DELETE for anyone but the service role.
+-- Checked after applying, by switching roles in one rolled-back block:
+--   admin:      reads snapshot (1 row), reads messages, sends a message;
+--               refused on ledger_line, on UPDATE and on DELETE
+--   non-admin:  0 rows on both reads, insert refused by row-level security
+--   anonymous:  permission denied on read and on insert
 
 grant select on public.office_snapshot to authenticated;
 grant select on public.office_inbox to authenticated;
+-- Column-scoped insert: the browser can never set picked_up_at or ledger_line.
+-- Those two are written only by the desktop sync, with the service role.
 grant insert (kind, digest_date, item, body) on public.office_inbox to authenticated;
 
 create policy "Admins read the office snapshot"

@@ -73,7 +73,7 @@ export interface OfficeSnapshot {
   automations?: { checked_at: string | null; overall: string; results: OfficeAutomation[] };
   crm?: {
     generated_at?: string;
-    jobs?: { total?: number; by_status?: Record<string, number>; stale_scheduled?: number };
+    jobs?: { total?: number; archived?: number; by_status?: Record<string, number>; stale_scheduled?: number };
     leads?: { total?: number; new_7d?: number };
     quotes?: { by_status?: Record<string, number>; accepted_without_job?: number };
     billing?: { payments_total?: number; payments_pending?: number; delivered_unbilled?: number };

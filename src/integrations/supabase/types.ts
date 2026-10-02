@@ -1288,6 +1288,8 @@ export type Database = {
         Row: {
           admin_notes: string | null
           aircraft_id: string | null
+          archive_reason: string | null
+          archived_at: string | null
           client_id: string | null
           completed_at: string | null
           construction_context: Json | null
@@ -1361,6 +1363,8 @@ export type Database = {
         Insert: {
           admin_notes?: string | null
           aircraft_id?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
           client_id?: string | null
           completed_at?: string | null
           construction_context?: Json | null
@@ -1434,6 +1438,8 @@ export type Database = {
         Update: {
           admin_notes?: string | null
           aircraft_id?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
           client_id?: string | null
           completed_at?: string | null
           construction_context?: Json | null

@@ -33,6 +33,7 @@ export function ReportJobSelector({ onSelect }: JobSelectorProps) {
         .select(
           "id, job_number, property_address, property_type, client_id, scheduled_date, clients(name, company), aircraft:aircraft_id(nickname, model)"
         )
+        .is("archived_at", null)
         .order("scheduled_date", { ascending: false })
         .limit(200);
       setJobs(
