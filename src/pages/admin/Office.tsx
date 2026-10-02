@@ -273,7 +273,7 @@ function TellTheCoo({ messages, send }: { messages: OfficeMessage[]; send: Send 
             <Button type="submit" disabled={busy || !text.trim()}>
               {busy ? "Sending" : "Send to the COO"}
             </Button>
-            <p className="text-xs text-muted-foreground">Collected within 5 minutes. Planned on the next intake run.</p>
+            <p className="text-xs text-muted-foreground">Collected within 5 minutes, then planned and started right away.</p>
           </div>
           {failed && (
             <p role="alert" className="text-xs text-destructive">
