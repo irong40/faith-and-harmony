@@ -41,6 +41,17 @@ export interface OfficeCallEarlier {
 }
 
 /**
+ * A question Adam asked and what the office answered (added 2026-10-04). `by`
+ * is "COO" or the roster name of the employee who found the answer.
+ */
+export interface OfficeAnswer {
+  q: string;
+  a: string;
+  by: string;
+  at: string;
+}
+
+/**
  * One MATTER that is blocked on Adam or held for him, built live from the
  * queue by the desktop sync (lib/office_calls.py). Several jobs about the same
  * thing are one call: `id` is the newest of them, `earlier` the rest.
@@ -64,6 +75,12 @@ export interface OfficeCall {
   earlier: OfficeCallEarlier[];
   /** His reply as the office recorded it. Null while open. */
   reply: { text: string; at: string; job: string } | null;
+  /**
+   * Questions he asked on this call, with the office's answers, oldest first.
+   * An answered question leaves the call open. Absent on a snapshot from a
+   * sync older than 2026-10-04.
+   */
+  asked?: OfficeAnswer[];
 }
 
 export interface OfficeEmployee {
@@ -99,6 +116,8 @@ export interface OfficeSnapshot {
   jobs?: OfficeJob[];
   /** Absent on a snapshot from a sync older than 2026-10-03. */
   calls?: OfficeCall[];
+  /** Answers to questions that were not about a call, newest first. */
+  answers?: OfficeAnswer[];
   dispatcher?: {
     running: boolean;
     last_pass_at: string;
@@ -306,7 +325,9 @@ export function isCallReply(m: OfficeMessage): boolean {
  */
 export function pendingReply(messages: OfficeMessage[], call: OfficeCall): OfficeMessage | null {
   const ids = [call.id, ...(call.earlier ?? []).map((e) => e.id)];
-  const since = call.since ? new Date(call.since).getTime() : 0;
+  // A question the office has answered no longer stands in for a reply: the
+  // call is open again from the moment of that answer.
+  const since = Math.max(call.since ? new Date(call.since).getTime() : 0, lastAnswerAt(call));
   return (
     messages.find((m) => {
       if (m.kind === "release") return call.held && ids.includes(m.body);
@@ -334,6 +355,27 @@ export function splitCalls(
     (c.reply || pendingReply(messages, c) ? answered : open).push(c);
   }
   return { open, answered };
+}
+
+/** When the office last answered a question on this call, in ms. 0 when it never has. */
+export function lastAnswerAt(call: OfficeCall): number {
+  let latest = 0;
+  for (const a of call.asked ?? []) {
+    const t = new Date(a.at).getTime();
+    if (!Number.isNaN(t) && t > latest) latest = t;
+  }
+  return latest;
+}
+
+/** A reply that ends in a question mark is a question: the office answers it, and the call stays open. */
+export function isQuestion(text: string | null | undefined): boolean {
+  return /\?\s*$/.test(text ?? "");
+}
+
+/** "COO", or the employee's plain title when a roster employee found the answer. */
+export function answeredBy(by: string | null | undefined): string {
+  if (!by) return "COO";
+  return ROLE[by] ? ROLE[by][1] : by;
 }
 
 export function replyText(call: OfficeCall, pending: OfficeMessage | null): string {

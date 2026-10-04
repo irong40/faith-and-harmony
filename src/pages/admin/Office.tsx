@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useOffice, useSendOfficeMessage, type OfficeMessageInput } from "@/hooks/useOffice";
 import {
   ago,
+  answeredBy,
   automationTone,
   boardColumns,
   callMeta,
@@ -20,6 +21,7 @@ import {
   employeeState,
   freshness,
   isAccessNotGranted,
+  isQuestion,
   messageLabel,
   messageStatus,
   pendingAnswer,
@@ -31,6 +33,7 @@ import {
   sortAutomations,
   splitCalls,
   splitDecisions,
+  type OfficeAnswer,
   type OfficeCall,
   type OfficeDecision,
   type OfficeJob,
@@ -228,6 +231,30 @@ function ClosedDecision({ decision, pending }: { decision: OfficeDecision; pendi
 }
 
 // -------------------------------------------------------
+// A question Adam asked and the office's answer. Added 2026-10-04: before
+// this a question got no answer and the call read as answered.
+// -------------------------------------------------------
+function AnswerList({ answers }: { answers: OfficeAnswer[] }) {
+  return (
+    <ul className={cn("space-y-3 rounded-md border p-3", TONE.info)}>
+      {answers.map((qa) => (
+        <li key={qa.at} className="text-sm text-foreground">
+          <p className="break-words">
+            <span className="font-medium">You asked: </span>
+            {qa.q}
+          </p>
+          <p className="mt-1 break-words">
+            <span className="font-medium">{answeredBy(qa.by)} answered: </span>
+            {qa.a}
+          </p>
+          <p className="mt-1 font-mono text-xs text-muted-foreground">{ago(qa.at)}</p>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// -------------------------------------------------------
 // One matter blocked on Adam, live from the queue. Added 2026-10-03: before
 // this, a job that blocked after the morning Outbrief showed only on the board.
 // His reply goes to the planner as a directive that names the job.
@@ -283,6 +310,11 @@ function OpenCall({ call, send }: { call: OfficeCall; send: Send }) {
           </ul>
         </details>
       )}
+      {(call.asked ?? []).length > 0 && (
+        <div className="mt-3">
+          <AnswerList answers={call.asked ?? []} />
+        </div>
+      )}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {call.held ? (
           <Button size="sm" disabled={busy} onClick={() => post({ kind: "release", body: call.id })}>
@@ -297,7 +329,7 @@ function OpenCall({ call, send }: { call: OfficeCall; send: Send }) {
               value={note}
               onChange={(e) => setNote(e.target.value)}
               maxLength={600}
-              placeholder="Or type your answer"
+              placeholder="Or type your answer, or a question"
               aria-label={`Your reply on ${call.title}`}
               className="h-9 min-w-[12rem] flex-1"
               disabled={busy}
@@ -320,15 +352,22 @@ function OpenCall({ call, send }: { call: OfficeCall; send: Send }) {
 
 function AnsweredCall({ call, pending }: { call: OfficeCall; pending: OfficeMessage | null }) {
   const received = Boolean(call.reply || pending?.picked_up_at);
+  const text = replyText(call, pending);
+  // A question is not a reply: the office answers it and this call comes back open.
+  const asking = !call.held && isQuestion(text);
   return (
     <div className="rounded-lg border bg-foreground/5 p-3">
       <h3 className="text-sm font-medium leading-snug">{call.title}</h3>
       <p className="mt-1 break-words text-sm">
-        <span className="font-medium">You replied: </span>
-        {replyText(call, pending)}
+        <span className="font-medium">{asking ? "You asked: " : "You replied: "}</span>
+        {text}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        {received ? "Received by the office. It plans the next step right away." : "Sent. The office collects it within 5 minutes."}
+        {!received
+          ? "Sent. The office collects it within 5 minutes."
+          : asking
+            ? "Received. The COO answers from the job's record, usually within a few minutes. This call comes back with the answer."
+            : "Received by the office. It plans the next step right away."}
       </p>
     </div>
   );
@@ -337,7 +376,7 @@ function AnsweredCall({ call, pending }: { call: OfficeCall; pending: OfficeMess
 // -------------------------------------------------------
 // Tell the COO: a directive, plus everything sent so far.
 // -------------------------------------------------------
-function TellTheCoo({ messages, send }: { messages: OfficeMessage[]; send: Send }) {
+function TellTheCoo({ messages, answers, send }: { messages: OfficeMessage[]; answers: OfficeAnswer[]; send: Send }) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
@@ -368,7 +407,8 @@ function TellTheCoo({ messages, send }: { messages: OfficeMessage[]; send: Send 
       <CardHeader className="pb-3">
         <CardTitle className="text-base">Tell the COO</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Say what you want done. The COO turns it into a job and assigns it to the right employee.
+          Say what you want done, or ask a question. The COO turns work into a job for the right employee, and answers
+          a question here.
         </p>
       </CardHeader>
       <CardContent>
@@ -394,6 +434,13 @@ function TellTheCoo({ messages, send }: { messages: OfficeMessage[]; send: Send 
             </p>
           )}
         </form>
+
+        {answers.length > 0 && (
+          <>
+            <h3 className="mb-2 mt-6 text-sm font-semibold">Answers from the office</h3>
+            <AnswerList answers={answers} />
+          </>
+        )}
 
         <h3 className="mb-2 mt-6 text-sm font-semibold">Sent to the office</h3>
         {messages.length === 0 ? (
@@ -659,7 +706,7 @@ export default function Office() {
         </Section>
 
         <div className="mb-8">
-          <TellTheCoo messages={messages} send={send} />
+          <TellTheCoo messages={messages} answers={snapshot.answers ?? []} send={send} />
         </div>
       </div>
 
