@@ -177,12 +177,12 @@ describe("Office page: calls blocked on Adam", () => {
     expect(screen.getByText("calls waiting on you").previousElementSibling?.textContent).toBe("2");
   });
 
-  it("sends I did it as a reply that names the job", () => {
+  it("sends Mark as done as a reply that names the job", () => {
     officeState.data!.snapshot!.calls = [blockedCall()];
     renderOffice();
-    fireEvent.click(screen.getByRole("button", { name: "I did it" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mark as done" }));
     expect(mutate.mock.calls[0][0]).toEqual({ kind: "directive", body: "RE job 2026-10-03-adam-copy-part2: done" });
-    expect(disabled(screen.getByRole("button", { name: "I did it" }))).toBe(true);
+    expect(disabled(screen.getByRole("button", { name: "Mark as done" }))).toBe(true);
   });
 
   it("sends a reply in Adam's own words, trimmed, and not an empty one", () => {
@@ -198,14 +198,14 @@ describe("Office page: calls blocked on Adam", () => {
   it("does not ask twice: a call whose decision is still open is left to that decision", () => {
     officeState.data!.snapshot!.calls = [blockedCall({ decision: 4 })];
     renderOffice();
-    expect(screen.queryByRole("button", { name: "I did it" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Mark as done" })).toBeNull();
     expect(screen.getByRole("button", { name: "Yes" })).toBeTruthy();
   });
 
   it("moves a replied call to Answered, with no reply box on it", () => {
     officeState.data!.snapshot!.calls = [blockedCall({ reply: { text: "a, rewrite it", at: iso(5), job: "2026-10-03-adam-copy-part2" } })];
     renderOffice();
-    expect(screen.queryByRole("button", { name: "I did it" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Mark as done" })).toBeNull();
     expect(screen.getByText("Answered (2)")).toBeTruthy();
     expect(screen.getByText("a, rewrite it")).toBeTruthy();
   });
