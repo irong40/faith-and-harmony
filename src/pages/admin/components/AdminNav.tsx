@@ -27,6 +27,7 @@ import {
   Plus,
   Radar,
   Route as RouteIcon,
+  ScrollText,
   Settings as SettingsIcon,
   Target,
   Users,
@@ -104,6 +105,7 @@ const AREAS: NavArea[] = [
     href: "/admin/reports",
     sections: [
       { href: "/admin/reports", label: "Reports", icon: FileText },
+      { href: "/admin/reports/office", label: "Office Reports", icon: ScrollText },
       { href: "/admin/documents", label: "Documents", icon: FileOutput },
     ],
   },

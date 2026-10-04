@@ -48,6 +48,7 @@ const CalendarOps = lazy(() => import("./pages/admin/CalendarOps"));
 const AdminLeads = lazy(() => import("./pages/admin/Leads"));
 const Accessories = lazy(() => import("./pages/admin/Accessories"));
 const Reports = lazy(() => import("./pages/admin/Reports"));
+const OfficeReports = lazy(() => import("./pages/admin/OfficeReports"));
 const ReportBuilder = lazy(() => import("./pages/admin/ReportBuilder"));
 
 // Lazy — pilot pages
@@ -178,6 +179,8 @@ const App = () => (
                 {/* Reports */}
                 <Route path="documents" element={<Documents />} />
                 <Route path="reports" element={<Reports />} />
+                {/* What the agent office files for Adam: staff meeting minutes. Read only. */}
+                <Route path="reports/office" element={<OfficeReports />} />
                 <Route path="reports/new" element={<ReportBuilder />} />
                 <Route path="reports/:id/edit" element={<ReportBuilder />} />
 
