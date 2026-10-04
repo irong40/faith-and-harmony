@@ -291,13 +291,13 @@ function OpenCall({ call, send }: { call: OfficeCall; send: Send }) {
         ) : (
           <>
             <Button size="sm" disabled={busy} onClick={() => reply("done")}>
-              I did it
+              Mark as done
             </Button>
             <Input
               value={note}
               onChange={(e) => setNote(e.target.value)}
               maxLength={600}
-              placeholder="Or reply in your own words"
+              placeholder="Or type your answer"
               aria-label={`Your reply on ${call.title}`}
               className="h-9 min-w-[12rem] flex-1"
               disabled={busy}
