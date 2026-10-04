@@ -10,11 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { useOffice, useSendOfficeMessage } from "@/hooks/useOffice";
+import { useOffice, useSendOfficeMessage, type OfficeMessageInput } from "@/hooks/useOffice";
 import {
   ago,
   automationTone,
   boardColumns,
+  callMeta,
   countPairs,
   employeeState,
   freshness,
@@ -22,10 +23,15 @@ import {
   messageLabel,
   messageStatus,
   pendingAnswer,
+  pendingReply,
   releaseSent,
+  replyBody,
+  replyText,
   roleOf,
   sortAutomations,
+  splitCalls,
   splitDecisions,
+  type OfficeCall,
   type OfficeDecision,
   type OfficeJob,
   type OfficeMessage,
@@ -217,6 +223,113 @@ function ClosedDecision({ decision, pending }: { decision: OfficeDecision; pendi
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// -------------------------------------------------------
+// One matter blocked on Adam, live from the queue. Added 2026-10-03: before
+// this, a job that blocked after the morning Outbrief showed only on the board.
+// His reply goes to the planner as a directive that names the job.
+// -------------------------------------------------------
+function OpenCall({ call, send }: { call: OfficeCall; send: Send }) {
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
+  const who = call.assignee ? roleOf(call.assignee)[1] : "COO";
+
+  const post = (input: OfficeMessageInput) => {
+    setBusy(true);
+    setFailed(null);
+    send.mutate(input, {
+      // On success the call moves to Answered, so this component unmounts and
+      // there is no state left to reset.
+      onError: (error) => {
+        setBusy(false);
+        setFailed(`Not sent. ${errorText(error)} Check "Sent to the office" before trying again.`);
+      },
+    });
+  };
+  const reply = (text: string) => post({ kind: "directive", body: replyBody(call.id, text) });
+
+  return (
+    <div className="rounded-lg border bg-card p-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <h3 className="min-w-0 flex-1 text-sm font-semibold leading-snug">{call.title}</h3>
+        <Pill tone={call.held ? "hold" : "warn"}>{call.held ? "Held" : "Blocked"}</Pill>
+      </div>
+      {call.needs && (
+        <p className="mt-2 break-words text-sm">
+          <span className="font-medium">{call.held ? "Held: " : "Needs: "}</span>
+          {call.needs}
+        </p>
+      )}
+      {call.sheet && <p className="mt-1 break-all font-mono text-xs text-muted-foreground">Sheet: {call.sheet}</p>}
+      <p className="mt-1 font-mono text-xs text-muted-foreground">
+        {who} · {callMeta(call)}
+      </p>
+      {call.earlier.length > 0 && (
+        <details className="mt-2">
+          <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+            Earlier asks in this matter ({call.earlier.length})
+          </summary>
+          <ul className="mt-2 space-y-2">
+            {call.earlier.map((e) => (
+              <li key={e.id} className="break-words text-xs">
+                <span className="font-medium">{e.title}: </span>
+                {e.needs || "no detail recorded"}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {call.held ? (
+          <Button size="sm" disabled={busy} onClick={() => post({ kind: "release", body: call.id })}>
+            Release this job
+          </Button>
+        ) : (
+          <>
+            <Button size="sm" disabled={busy} onClick={() => reply("done")}>
+              I did it
+            </Button>
+            <Input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={600}
+              placeholder="Or reply in your own words"
+              aria-label={`Your reply on ${call.title}`}
+              className="h-9 min-w-[12rem] flex-1"
+              disabled={busy}
+            />
+            <Button size="sm" variant="outline" disabled={busy || !note.trim()} onClick={() => reply(note)}>
+              Send reply
+            </Button>
+          </>
+        )}
+      </div>
+      {busy && <p className="mt-2 text-xs text-muted-foreground">Sending</p>}
+      {failed && (
+        <p role="alert" className="mt-2 text-xs text-destructive">
+          {failed}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function AnsweredCall({ call, pending }: { call: OfficeCall; pending: OfficeMessage | null }) {
+  const received = Boolean(call.reply || pending?.picked_up_at);
+  return (
+    <div className="rounded-lg border bg-foreground/5 p-3">
+      <h3 className="text-sm font-medium leading-snug">{call.title}</h3>
+      <p className="mt-1 break-words text-sm">
+        <span className="font-medium">You replied: </span>
+        {replyText(call, pending)}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {received ? "Received by the office. It plans the next step right away." : "Sent. The office collects it within 5 minutes."}
+      </p>
     </div>
   );
 }
@@ -458,6 +571,10 @@ export default function Office() {
   const outbrief = snapshot.outbrief;
   const decisions = outbrief?.decisions ?? [];
   const { open, closed } = splitDecisions(decisions, outbrief?.date, messages);
+  // `earlier` is filled in here so a snapshot from an older sync cannot break the page.
+  const calls = (snapshot.calls ?? []).map((c) => ({ ...c, earlier: c.earlier ?? [] }));
+  const { open: openCalls, answered: answeredCalls } = splitCalls(calls, open, messages);
+  const waitingOnYou = open.length + openCalls.length;
   const team = snapshot.team ?? [];
   const jobs = snapshot.jobs ?? [];
   const columns = boardColumns(jobs);
@@ -481,7 +598,7 @@ export default function Office() {
         </p>
       )}
       <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-        <Tile value={open.length} label={open.length === 1 ? "decision waiting on you" : "decisions waiting on you"} tone={open.length ? "warn" : "good"} />
+        <Tile value={waitingOnYou} label={waitingOnYou === 1 ? "call waiting on you" : "calls waiting on you"} tone={waitingOnYou ? "warn" : "good"} />
         <Tile value={waiting} label={waiting === 1 ? "job held or blocked" : "jobs held or blocked"} tone={waiting ? "warn" : "good"} />
         <Tile value={doing} label={doing === 1 ? "job in progress" : dispatcher?.running && !doing ? "dispatcher is starting a pass" : "jobs in progress"} tone={doing ? "info" : "idle"} />
         <Tile value={failing} label={`automations failing${warning ? `, ${warning} warning` : ""}`} tone={failing ? "crit" : warning ? "warn" : "good"} />
@@ -490,27 +607,43 @@ export default function Office() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <Section
           title="Your calls"
-          meta={`Outbrief of ${outbrief?.date ?? "?"} · ${open.length} open, ${closed.length} answered`}
+          meta={`${waitingOnYou} waiting on you · Outbrief of ${outbrief?.date ?? "?"}: ${open.length} open, ${closed.length} answered`}
         >
-          {open.length > 0 ? (
+          {open.length > 0 && (
             <div className="space-y-3">
               {open.map((d) => (
                 <OpenDecision key={d.n} decision={d} date={outbrief?.date ?? null} send={send} />
               ))}
             </div>
-          ) : (
+          )}
+          {openCalls.length > 0 && (
+            <div className={cn(open.length > 0 && "mt-5")}>
+              <p className="mb-2 font-mono text-xs uppercase tracking-wide text-muted-foreground">
+                Blocked on you · {openCalls.length} · live from the queue
+              </p>
+              <div className="space-y-3">
+                {openCalls.map((c) => (
+                  <OpenCall key={c.id} call={c} send={send} />
+                ))}
+              </div>
+            </div>
+          )}
+          {waitingOnYou === 0 && (
             <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
               {decisions.length
                 ? `Nothing is waiting on your call. All ${decisions.length} decisions in the Outbrief of ${outbrief?.date} are answered.`
                 : `The Outbrief of ${outbrief?.date ?? "today"} had no decisions for you.`}
             </p>
           )}
-          {closed.length > 0 && (
+          {closed.length + answeredCalls.length > 0 && (
             <details className="mt-3">
               <summary className="cursor-pointer text-sm font-medium text-muted-foreground">
-                Answered ({closed.length})
+                Answered ({closed.length + answeredCalls.length})
               </summary>
               <div className="mt-3 space-y-2">
+                {answeredCalls.map((c) => (
+                  <AnsweredCall key={c.id} call={c} pending={pendingReply(messages, c)} />
+                ))}
                 {closed.map((d) => (
                   <ClosedDecision key={d.n} decision={d} pending={pendingAnswer(messages, outbrief?.date, d.n)} />
                 ))}

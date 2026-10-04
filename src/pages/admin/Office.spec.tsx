@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import type { OfficeData } from "@/hooks/useOffice";
+import type { OfficeCall } from "@/lib/office";
 
 // The page is driven entirely by these two hooks, so the spec controls them and
 // asserts on what the page SENDS. A real Supabase call here would need an admin
@@ -156,5 +157,68 @@ describe("Office page", () => {
     officeState.data = { snapshot: null, updatedAt: null, messages: [] };
     renderOffice();
     expect(screen.getByText("The office has not reported yet")).toBeTruthy();
+  });
+});
+
+// Added 2026-10-03: every matter blocked on Adam is a call, live from the queue.
+const blockedCall = (over: Partial<OfficeCall> = {}): OfficeCall => ({
+  id: "2026-10-03-adam-copy-part2", title: "Marketing copy build, part 2",
+  needs: "Decide on pavement: (a) rewrite the copy, or (b) publish as staged.", held: false,
+  assignee: "engineering-devops-automator", since: iso(120), sheet: "agent-office/operations/copy-sheet.md",
+  decision: null, unblocks: 3, earlier: [], reply: null, ...over,
+});
+
+describe("Office page: calls blocked on Adam", () => {
+  it("lists a blocked job under Your calls and counts it with the open decision", () => {
+    officeState.data!.snapshot!.calls = [blockedCall()];
+    renderOffice();
+    expect(screen.getByText("Marketing copy build, part 2")).toBeTruthy();
+    expect(screen.getByText(/3 jobs wait behind this/)).toBeTruthy();
+    expect(screen.getByText("calls waiting on you").previousElementSibling?.textContent).toBe("2");
+  });
+
+  it("sends I did it as a reply that names the job", () => {
+    officeState.data!.snapshot!.calls = [blockedCall()];
+    renderOffice();
+    fireEvent.click(screen.getByRole("button", { name: "I did it" }));
+    expect(mutate.mock.calls[0][0]).toEqual({ kind: "directive", body: "RE job 2026-10-03-adam-copy-part2: done" });
+    expect(disabled(screen.getByRole("button", { name: "I did it" }))).toBe(true);
+  });
+
+  it("sends a reply in Adam's own words, trimmed, and not an empty one", () => {
+    officeState.data!.snapshot!.calls = [blockedCall()];
+    renderOffice();
+    const send = screen.getByRole("button", { name: "Send reply" });
+    expect(disabled(send)).toBe(true);
+    fireEvent.change(screen.getByLabelText("Your reply on Marketing copy build, part 2"), { target: { value: "  a, rewrite it  " } });
+    fireEvent.click(send);
+    expect(mutate.mock.calls[0][0]).toEqual({ kind: "directive", body: "RE job 2026-10-03-adam-copy-part2: a, rewrite it" });
+  });
+
+  it("does not ask twice: a call whose decision is still open is left to that decision", () => {
+    officeState.data!.snapshot!.calls = [blockedCall({ decision: 4 })];
+    renderOffice();
+    expect(screen.queryByRole("button", { name: "I did it" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Yes" })).toBeTruthy();
+  });
+
+  it("moves a replied call to Answered, with no reply box on it", () => {
+    officeState.data!.snapshot!.calls = [blockedCall({ reply: { text: "a, rewrite it", at: iso(5), job: "2026-10-03-adam-copy-part2" } })];
+    renderOffice();
+    expect(screen.queryByRole("button", { name: "I did it" })).toBeNull();
+    expect(screen.getByText("Answered (2)")).toBeTruthy();
+    expect(screen.getByText("a, rewrite it")).toBeTruthy();
+  });
+
+  it("releases a held call by its exact id", () => {
+    officeState.data!.snapshot!.calls = [blockedCall({ id: "2026-10-01-coo-held-job", held: true, needs: "held for Adam" })];
+    renderOffice();
+    fireEvent.click(screen.getByRole("button", { name: "Release this job" }));
+    expect(mutate.mock.calls[0][0]).toEqual({ kind: "release", body: "2026-10-01-coo-held-job" });
+  });
+
+  it("still renders when the snapshot comes from a sync that has no calls yet", () => {
+    renderOffice();
+    expect(screen.getByText("call waiting on you").previousElementSibling?.textContent).toBe("1");
   });
 });

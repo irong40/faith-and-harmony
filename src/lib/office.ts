@@ -32,6 +32,40 @@ export interface OfficeJob {
   updated: string | null;
 }
 
+/** An older job in the same matter that is also still blocked. Shown, never hidden. */
+export interface OfficeCallEarlier {
+  id: string;
+  title: string;
+  needs: string;
+  since: string | null;
+}
+
+/**
+ * One MATTER that is blocked on Adam or held for him, built live from the
+ * queue by the desktop sync (lib/office_calls.py). Several jobs about the same
+ * thing are one call: `id` is the newest of them, `earlier` the rest.
+ */
+export interface OfficeCall {
+  id: string;
+  title: string;
+  /** What Adam has to do or decide, in the job's own words. */
+  needs: string;
+  /** True when the job only needs his Release. */
+  held: boolean;
+  assignee: string;
+  /** When the job last changed. A reply older than this no longer answers it. */
+  since: string | null;
+  /** The instruction sheet the job points him at, if it names one. */
+  sheet: string;
+  /** The Outbrief item this matter belongs to, if any. */
+  decision: number | null;
+  /** Queued jobs that cannot start until this is answered. */
+  unblocks: number;
+  earlier: OfficeCallEarlier[];
+  /** His reply as the office recorded it. Null while open. */
+  reply: { text: string; at: string; job: string } | null;
+}
+
 export interface OfficeEmployee {
   name: string;
   does: string;
@@ -63,6 +97,8 @@ export interface OfficeSnapshot {
   };
   team?: OfficeEmployee[];
   jobs?: OfficeJob[];
+  /** Absent on a snapshot from a sync older than 2026-10-03. */
+  calls?: OfficeCall[];
   dispatcher?: {
     running: boolean;
     last_pass_at: string;
@@ -221,7 +257,7 @@ export function messageStatus(m: OfficeMessage, now: number = Date.now()): { ton
 }
 
 export function messageLabel(m: OfficeMessage): string {
-  if (m.kind === "directive") return "To the COO";
+  if (m.kind === "directive") return isCallReply(m) ? "Reply on a call" : "To the COO";
   if (m.kind === "release") return "Released job";
   return `Answer to #${m.item}`;
 }
@@ -242,4 +278,71 @@ export function isAccessNotGranted(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
   const e = error as { code?: unknown; message?: unknown };
   return e.code === "42501" || (typeof e.message === "string" && /permission denied/i.test(e.message));
+}
+
+// ---------------------------------------------------------------------------
+// Calls: what is blocked on Adam right now.
+//
+// A reply is an ordinary directive whose body starts "RE job <id>:". The
+// planner on the desktop reads the job that id names and plans the next step.
+// No new message kind and no new column: the database grant stays as it is.
+// ---------------------------------------------------------------------------
+
+export function replyBody(jobId: string, text: string): string {
+  return `RE job ${jobId}: ${text.trim()}`;
+}
+
+export function isCallReply(m: OfficeMessage): boolean {
+  return m.kind === "directive" && m.body.startsWith("RE job ");
+}
+
+/**
+ * The newest message that answers this call: a reply to any job in the matter
+ * sent after the job last changed, or a Release for a held one. A reply sent
+ * BEFORE the job last changed answered an earlier ask, not the one on screen.
+ */
+export function pendingReply(messages: OfficeMessage[], call: OfficeCall): OfficeMessage | null {
+  const ids = [call.id, ...(call.earlier ?? []).map((e) => e.id)];
+  const since = call.since ? new Date(call.since).getTime() : 0;
+  return (
+    messages.find((m) => {
+      if (m.kind === "release") return call.held && ids.includes(m.body);
+      if (m.kind !== "directive" || new Date(m.created_at).getTime() <= since) return false;
+      return ids.some((id) => m.body.startsWith(`RE job ${id}:`));
+    }) ?? null
+  );
+}
+
+/**
+ * Open calls and answered ones. A call whose Outbrief decision is still open
+ * is left out of both: that decision's own card is already asking, and one
+ * matter must not ask twice.
+ */
+export function splitCalls(
+  calls: OfficeCall[],
+  openDecisions: OfficeDecision[],
+  messages: OfficeMessage[]
+): { open: OfficeCall[]; answered: OfficeCall[] } {
+  const asked = new Set(openDecisions.map((d) => d.n));
+  const open: OfficeCall[] = [];
+  const answered: OfficeCall[] = [];
+  for (const c of calls) {
+    if (c.decision != null && asked.has(c.decision)) continue;
+    (c.reply || pendingReply(messages, c) ? answered : open).push(c);
+  }
+  return { open, answered };
+}
+
+export function replyText(call: OfficeCall, pending: OfficeMessage | null): string {
+  if (call.reply) return call.reply.text;
+  if (!pending) return "";
+  return pending.kind === "release" ? "Released to run" : pending.body.replace(/^RE job [^:]+:\s*/, "");
+}
+
+/** "blocked 8 h ago · 3 jobs wait behind this · follows decision #10" */
+export function callMeta(call: OfficeCall, now: number = Date.now()): string {
+  const parts = [`${call.held ? "held" : "blocked"} ${ago(call.since, now)}`];
+  if (call.unblocks) parts.push(`${call.unblocks} ${call.unblocks === 1 ? "job waits" : "jobs wait"} behind this`);
+  if (call.decision != null) parts.push(`follows decision #${call.decision}`);
+  return parts.join(" · ");
 }

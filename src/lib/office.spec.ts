@@ -2,14 +2,21 @@ import { describe, expect, it } from "vitest";
 import {
   ago,
   boardColumns,
+  callMeta,
   employeeState,
   freshness,
   isAccessNotGranted,
+  messageLabel,
   messageStatus,
+  pendingReply,
   releaseSent,
+  replyBody,
+  replyText,
   roleOf,
   sortAutomations,
+  splitCalls,
   splitDecisions,
+  type OfficeCall,
   type OfficeDecision,
   type OfficeJob,
   type OfficeMessage,
@@ -144,5 +151,66 @@ describe("isAccessNotGranted", () => {
     expect(isAccessNotGranted({ code: "PGRST116", message: "JSON object requested, multiple rows returned" })).toBe(false);
     expect(isAccessNotGranted(new Error("Failed to fetch"))).toBe(false);
     expect(isAccessNotGranted(null)).toBe(false);
+  });
+});
+
+const call = (over: Partial<OfficeCall> = {}): OfficeCall => ({
+  id: "2026-10-03-adam-copy-part2", title: "Marketing copy, part 2", needs: "Decide a or b", held: false,
+  assignee: "", since: minsAgo(120), sheet: "", decision: null, unblocks: 0, earlier: [], reply: null, ...over,
+});
+
+describe("calls", () => {
+  it("a blocked job with no reply is open", () => {
+    expect(splitCalls([call()], [], []).open).toHaveLength(1);
+  });
+
+  it("leaves out a call whose Outbrief decision is still open, so one matter asks once", () => {
+    const c = call({ decision: 4 });
+    expect(splitCalls([c], [decision(4)], [])).toEqual({ open: [], answered: [] });
+    expect(splitCalls([c], [decision(7)], []).open).toEqual([c]); // #4 is answered: the follow-up shows
+  });
+
+  it("is answered once the office has recorded the reply", () => {
+    const c = call({ reply: { text: "a", at: minsAgo(5), job: "2026-10-03-adam-copy-part2" } });
+    expect(splitCalls([c], [], []).answered).toEqual([c]);
+    expect(replyText(c, null)).toBe("a");
+  });
+
+  it("is answered the moment a reply is sent, before the office collects it", () => {
+    const sent = message({ kind: "directive", digest_date: null, item: null, body: replyBody("2026-10-03-adam-copy-part2", " go with a "), created_at: minsAgo(1) });
+    expect(sent.body).toBe("RE job 2026-10-03-adam-copy-part2: go with a");
+    expect(splitCalls([call()], [], [sent]).answered).toHaveLength(1);
+    expect(replyText(call(), sent)).toBe("go with a");
+    expect(messageLabel(sent)).toBe("Reply on a call");
+  });
+
+  it("does not count a reply sent before the job last changed: that ask is gone", () => {
+    const old = message({ kind: "directive", body: replyBody("2026-10-03-adam-copy-part2", "a"), created_at: minsAgo(300) });
+    expect(pendingReply([old], call())).toBeNull();
+  });
+
+  it("counts a reply to an earlier job in the same matter", () => {
+    const c = call({ earlier: [{ id: "2026-07-25-old-job", title: "Old", needs: "", since: null }] });
+    const sent = message({ kind: "directive", body: replyBody("2026-07-25-old-job", "done"), created_at: minsAgo(1) });
+    expect(pendingReply([sent], c)).toBe(sent);
+  });
+
+  it("does not mistake an ordinary directive, or a reply to another job, for a reply", () => {
+    const other = message({ kind: "directive", body: replyBody("2026-10-03-adam-something-else", "done") });
+    const plain = message({ kind: "directive", body: "Find out why LinkedIn stopped posting." });
+    expect(pendingReply([other, plain], call())).toBeNull();
+    expect(messageLabel(plain)).toBe("To the COO");
+  });
+
+  it("a Release answers a held call and nothing else", () => {
+    const rel = message({ kind: "release", body: "2026-10-03-adam-copy-part2" });
+    expect(pendingReply([rel], call({ held: true }))).toBe(rel);
+    expect(replyText(call({ held: true }), rel)).toBe("Released to run");
+    expect(pendingReply([rel], call())).toBeNull();
+  });
+
+  it("says how long, what waits behind it, and which decision it follows", () => {
+    expect(callMeta(call({ unblocks: 3, decision: 10 }), NOW)).toBe("blocked 2 h ago · 3 jobs wait behind this · follows decision #10");
+    expect(callMeta(call({ held: true, unblocks: 1 }), NOW)).toBe("held 2 h ago · 1 job waits behind this");
   });
 });
