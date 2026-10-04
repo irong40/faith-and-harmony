@@ -145,6 +145,8 @@ export const ROLE: Record<string, [code: string, title: string]> = {
   "part107-quiz-writer": ["QUIZ", "Part 107 quiz writer"],
   "marketing-reviewer": ["MKT", "Marketing reviewer"],
   "content-manager": ["CM", "Content manager"],
+  "content-writer": ["WR", "Content writer"],
+  "seo-analyst": ["SEO", "Search specialist"],
 };
 
 export function roleOf(name: string): [string, string] {

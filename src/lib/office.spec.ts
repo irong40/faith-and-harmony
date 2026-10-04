@@ -132,6 +132,8 @@ describe("employeeState", () => {
 describe("roleOf", () => {
   it("falls back to the raw name for an employee hired after this page shipped", () => {
     expect(roleOf("finance-officer")).toEqual(["FIN", "Finance"]);
+    expect(roleOf("content-writer")).toEqual(["WR", "Content writer"]);
+    expect(roleOf("seo-analyst")).toEqual(["SEO", "Search specialist"]);
     expect(roleOf("new-hire-agent")).toEqual(["NEW-H", "new-hire-agent"]);
   });
 });
