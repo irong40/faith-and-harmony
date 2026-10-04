@@ -102,6 +102,7 @@ describe("Office reports page", () => {
     expect(frame).toBeTruthy();
     expect(frame.getAttribute("sandbox")).toBe("");
     expect(frame.getAttribute("srcdoc")).toContain("Letterhead minutes");
+    expect(frame.getAttribute("srcdoc")).toContain("padding:28px 36px");
     // The office's HTML is never written into this page itself.
     expect(container.querySelector("script")).toBeNull();
     expect(screen.queryByText("Letterhead minutes")).toBeNull();

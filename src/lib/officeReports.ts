@@ -91,6 +91,20 @@ export function stripFrontMatter(md: string): string {
   return (md ?? "").replace(/^\uFEFF?---\r?\n[\s\S]*?\r?\n---\r?\n?/, "").replace(/^\s+/, "");
 }
 
+const FRAME_STYLE =
+  "<style>html{background:#fff}body{padding:28px 36px !important;max-width:60rem;margin:0 auto !important}</style>";
+
+/**
+ * The letterhead copy is laid out for paper: its margins come from @page, which a
+ * screen ignores, so the text ran to the edge of the frame. This adds screen
+ * padding. It adds a style rule only; the frame's empty sandbox is what keeps
+ * the document from running anything.
+ */
+export function framedHtml(html: string): string {
+  const doc = html ?? "";
+  return /<\/head>/i.test(doc) ? doc.replace(/<\/head>/i, `${FRAME_STYLE}</head>`) : doc + FRAME_STYLE;
+}
+
 /** Only web and mail links are followed. Anything else is shown as plain text. */
 export function safeHref(href: string): string | null {
   return /^(https:\/\/|http:\/\/|mailto:|tel:)/i.test(href ?? "") ? href : null;
