@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  framedHtml,
   groupByMonth,
   kindLabel,
   longDate,
@@ -72,6 +73,20 @@ describe("stripFrontMatter", () => {
   });
   it("leaves a report with no tag block alone, including one that only has a rule in it", () => {
     expect(stripFrontMatter("# Staff Meeting\n\n---\n\nBody")).toBe("# Staff Meeting\n\n---\n\nBody");
+  });
+});
+
+describe("framedHtml", () => {
+  it("adds screen padding inside the head and changes nothing else", () => {
+    const html = "<!DOCTYPE html><html><head><title>Minutes</title></head><body><p>Text</p></body></html>";
+    const out = framedHtml(html);
+    expect(out.startsWith("<!DOCTYPE html><html><head><title>Minutes</title><style>")).toBe(true);
+    expect(out.endsWith("</style></head><body><p>Text</p></body></html>")).toBe(true);
+    expect(out.replace(/<style>.*?<\/style>/, "")).toBe(html);
+  });
+  it("still pads a fragment that has no head", () => {
+    expect(framedHtml("<p>Text</p>").startsWith("<p>Text</p><style>")).toBe(true);
+    expect(framedHtml("")).toContain("<style>");
   });
 });
 

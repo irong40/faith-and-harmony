@@ -8,7 +8,15 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useOfficeReportBody, useOfficeReports } from "@/hooks/useOfficeReports";
 import { ago, isAccessNotGranted } from "@/lib/office";
-import { groupByMonth, kindLabel, longDate, pickReport, shortDate, type OfficeReportSummary } from "@/lib/officeReports";
+import {
+  framedHtml,
+  groupByMonth,
+  kindLabel,
+  longDate,
+  pickReport,
+  shortDate,
+  type OfficeReportSummary,
+} from "@/lib/officeReports";
 
 // ---------------------------------------------------------------------------
 // Office reports — what the agent office files for Adam to read. Staff meeting
@@ -98,7 +106,7 @@ function ReportViewer({ report }: { report: OfficeReportSummary }) {
         <iframe
           title={`${report.title}, as written`}
           sandbox=""
-          srcDoc={data.body_html ?? ""}
+          srcDoc={framedHtml(data.body_html ?? "")}
           className="h-[80vh] w-full rounded-lg border bg-white"
         />
       ) : (
