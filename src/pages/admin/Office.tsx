@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
-import { LayoutDashboard, Radar, RefreshCw } from "lucide-react";
+import { LayoutDashboard, Radar, RefreshCw, ScrollText } from "lucide-react";
 import PageShell from "@/components/admin/PageShell";
 import { EmptyState, ErrorState, LoadingState } from "@/components/admin/PageState";
 import { Badge } from "@/components/ui/badge";
@@ -509,6 +509,12 @@ export default function Office() {
       <Button variant="outline" size="sm" className="gap-2" onClick={() => refetch()} disabled={isFetching}>
         <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
         Refresh
+      </Button>
+      <Button asChild variant="ghost" size="sm" className="gap-2">
+        <Link to="/admin/reports/office">
+          <ScrollText className="h-4 w-4" />
+          Meeting minutes
+        </Link>
       </Button>
       <Button asChild variant="ghost" size="sm" className="gap-2">
         <Link to="/admin">
