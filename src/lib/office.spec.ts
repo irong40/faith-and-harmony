@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   ago,
+  answeredBy,
   boardColumns,
   callMeta,
   employeeState,
   freshness,
   isAccessNotGranted,
+  isQuestion,
+  lastAnswerAt,
   messageLabel,
   messageStatus,
   pendingReply,
@@ -214,5 +217,43 @@ describe("calls", () => {
   it("says how long, what waits behind it, and which decision it follows", () => {
     expect(callMeta(call({ unblocks: 3, decision: 10 }), NOW)).toBe("blocked 2 h ago · 3 jobs wait behind this · follows decision #10");
     expect(callMeta(call({ held: true, unblocks: 1 }), NOW)).toBe("held 2 h ago · 1 job waits behind this");
+  });
+});
+
+// Added 2026-10-04. Adam: "what happens when I ask a question instead of marking
+// as done?" A question is not a reply: the office answers it and the call stays open.
+describe("questions on a call", () => {
+  const asked = [{ q: "why July?", a: "It is the batch label.", by: "COO", at: minsAgo(3) }];
+  const question = message({
+    kind: "directive", digest_date: null, item: null,
+    body: replyBody("2026-10-03-adam-copy-part2", "why July?"), created_at: minsAgo(8),
+  });
+
+  it("a question in transit reads as sent, like any reply", () => {
+    expect(splitCalls([call()], [], [question]).answered).toHaveLength(1);
+    expect(isQuestion(replyText(call(), question))).toBe(true);
+  });
+
+  it("once the office has answered it, the call is open again", () => {
+    const c = call({ asked });
+    expect(pendingReply([question], c)).toBeNull();
+    expect(splitCalls([c], [], [question]).open).toEqual([c]);
+    expect(lastAnswerAt(c)).toBe(new Date(asked[0].at).getTime());
+  });
+
+  it("a reply sent after the answer answers the call", () => {
+    const later = message({ id: "m2", kind: "directive", body: replyBody("2026-10-03-adam-copy-part2", "go with a"), created_at: minsAgo(1) });
+    expect(pendingReply([later, question], call({ asked }))).toBe(later);
+  });
+
+  it("tells a question from an answer, and names who answered", () => {
+    expect(isQuestion("why are we worried about July? ")).toBe(true);
+    expect(isQuestion("done")).toBe(false);
+    expect(isQuestion(null)).toBe(false);
+    expect(answeredBy("COO")).toBe("COO");
+    expect(answeredBy("seo-analyst")).toBe("Search specialist");
+    expect(answeredBy("")).toBe("COO");
+    expect(lastAnswerAt(call())).toBe(0);
+    expect(lastAnswerAt(call({ asked: [{ q: "q", a: "a", by: "COO", at: "not a date" }] }))).toBe(0);
   });
 });

@@ -161,6 +161,7 @@ describe("Office page", () => {
 });
 
 // Added 2026-10-03: every matter blocked on Adam is a call, live from the queue.
+// 2026-10-04: a question he asks on a call gets an answer; see the last describe.
 const blockedCall = (over: Partial<OfficeCall> = {}): OfficeCall => ({
   id: "2026-10-03-adam-copy-part2", title: "Marketing copy build, part 2",
   needs: "Decide on pavement: (a) rewrite the copy, or (b) publish as staged.", held: false,
@@ -220,5 +221,54 @@ describe("Office page: calls blocked on Adam", () => {
   it("still renders when the snapshot comes from a sync that has no calls yet", () => {
     renderOffice();
     expect(screen.getByText("call waiting on you").previousElementSibling?.textContent).toBe("1");
+  });
+});
+
+// Added 2026-10-04: a question gets an answer, and the call stays open.
+describe("Office page: questions and answers", () => {
+  const asked = [{
+    q: "why are we worried about July?",
+    a: "July is the label on the copy batch. The job still needs your pavement decision.",
+    by: "COO",
+    at: iso(3),
+  }];
+
+  it("shows the office's answer on the call and leaves the call open for his reply", () => {
+    officeState.data!.snapshot!.calls = [blockedCall({ asked })];
+    officeState.data!.messages = [{
+      id: "q1", created_at: iso(8), kind: "directive", digest_date: null, item: null,
+      body: "RE job 2026-10-03-adam-copy-part2: why are we worried about July?", picked_up_at: iso(7), ledger_line: null,
+    }];
+    renderOffice();
+    expect(screen.getByText("why are we worried about July?")).toBeTruthy();
+    expect(screen.getByText(/July is the label on the copy batch/)).toBeTruthy();
+    expect(screen.getByText("COO answered:", { exact: false })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Mark as done" })).toBeTruthy();
+    expect(screen.getByText("calls waiting on you").previousElementSibling?.textContent).toBe("2");
+  });
+
+  it("says a question is being answered, not that the call was answered", () => {
+    officeState.data!.snapshot!.calls = [
+      blockedCall({ reply: { text: "why are we worried about July?", at: iso(2), job: "2026-10-03-adam-copy-part2" } }),
+    ];
+    renderOffice();
+    expect(screen.getByText("You asked:", { exact: false })).toBeTruthy();
+    expect(screen.getByText(/This call comes back with the answer/)).toBeTruthy();
+    expect(screen.queryByText("You replied:", { exact: false })).toBeNull();
+  });
+
+  it("lists answers to questions that were not about a call, naming the employee who answered", () => {
+    officeState.data!.snapshot!.answers = [
+      { q: "what did we bill in September?", a: "Nothing is on file for September.", by: "finance-officer", at: iso(10) },
+    ];
+    renderOffice();
+    expect(screen.getByText("Answers from the office")).toBeTruthy();
+    expect(screen.getByText("what did we bill in September?")).toBeTruthy();
+    expect(screen.getByText("Finance answered:", { exact: false })).toBeTruthy();
+  });
+
+  it("shows no answers heading when there are none", () => {
+    renderOffice();
+    expect(screen.queryByText("Answers from the office")).toBeNull();
   });
 });
