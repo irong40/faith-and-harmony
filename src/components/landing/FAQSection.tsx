@@ -22,7 +22,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "What equipment do you use?",
-    answer: "Primary operations use the DJI Matrice 4E, a commercial grade aircraft with a mechanical shutter, built in RTK positioning, and 49 minutes of flight time per battery. The Mavic 3 Enterprise serves as the secondary aircraft for residential work and as a backup. The Emlid Reach RS3 provides survey grade RTK corrections for mapping and photogrammetry jobs.",
+    answer: "Mapping and visual documentation flights use the DJI Matrice 4E, an enterprise aircraft with wide, medium, and tele cameras. Listing photography and video flights use the DJI Mini 4 Pro. Mapping deliverables are high resolution, and each job states its positioning and measurement limits.",
   },
   {
     question: "Are you insured?",
@@ -30,11 +30,11 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "How much does drone photography cost?",
-    answer: "Residential photography starts at $225 for the Listing Lite package (10 edited photos, next day delivery). The Listing Pro package is $450 and includes 25 photos, a 60 second video reel, and a 2D boundary overlay. Commercial packages start at $450 per visit for construction progress monitoring and go up to $1,200 for the full Inspection Data package.",
+    answer: "Residential photography starts at $450 for the Listing Pro package, which includes 25 edited photos, a 60 second highlight reel, and an illustrative property overlay. The Luxury Listing package starts at $750. Construction progress monitoring starts at $450 per visit, Commercial Marketing starts at $850, and Roof Documentation starts at $1,200. Mapping is quoted to the property and the deliverables.",
   },
   {
     question: "Can you fly thermal for roof inspections?",
-    answer: "The Matrice 4E supports thermal imaging attachments. Thermal roof inspections identify moisture intrusion, insulation gaps, and electrical hotspots that are invisible in standard photography. Contact us to discuss your specific inspection requirements and confirm equipment availability for your job date.",
+    answer: "No. Sentinel does not currently offer thermal imaging. The Matrice 4E is a visual mapping aircraft and has no thermal camera. Roof Documentation is a visual service: grid photography, detail images, and an annotated report for review by your qualified professional.",
   },
   {
     question: "What is LAANC authorization and why does it matter?",

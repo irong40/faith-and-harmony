@@ -12,7 +12,7 @@ const localBusinessSchema = {
   "priceRange": "$$",
   "address": {
     "@type": "PostalAddress",
-    "addressLocality": "Virginia Beach",
+    "addressLocality": "Chesapeake",
     "addressRegion": "VA",
     "addressCountry": "US"
   },
@@ -46,15 +46,8 @@ const serviceSchema = {
   "@graph": [
     {
       "@type": "Service",
-      "name": "Listing Lite Aerial Photography",
-      "description": "10 edited aerial photos with sky replacement. Next day delivery.",
-      "provider": { "@type": "LocalBusiness", "name": "Sentinel Aerial Inspections" },
-      "offers": { "@type": "Offer", "price": "225", "priceCurrency": "USD" }
-    },
-    {
-      "@type": "Service",
       "name": "Listing Pro Aerial Photography",
-      "description": "25 edited aerial photos, 60 second reel, 2D boundary overlay, 48 hour turnaround.",
+      "description": "25 edited aerial photos, a 60 second highlight reel and an illustrative property overlay. Standard delivery within 48 hours after capture.",
       "provider": { "@type": "LocalBusiness", "name": "Sentinel Aerial Inspections" },
       "offers": { "@type": "Offer", "price": "450", "priceCurrency": "USD" }
     },
@@ -68,21 +61,21 @@ const serviceSchema = {
     {
       "@type": "Service",
       "name": "Construction Progress Monitoring",
-      "description": "Orthomosaic, site overview, date stamped archive per visit.",
+      "description": "25 labeled photos and four short video clips with compass-bearing views for progress comparisons, per visit.",
       "provider": { "@type": "LocalBusiness", "name": "Sentinel Aerial Inspections" },
       "offers": { "@type": "Offer", "price": "450", "priceCurrency": "USD" }
     },
     {
       "@type": "Service",
       "name": "Commercial Marketing Package",
-      "description": "4K video, 3D model, raw footage, perpetual license.",
+      "description": "30+ edited aerial photos, a 90 second highlight video and an illustrative property overlay.",
       "provider": { "@type": "LocalBusiness", "name": "Sentinel Aerial Inspections" },
       "offers": { "@type": "Offer", "price": "850", "priceCurrency": "USD" }
     },
     {
       "@type": "Service",
-      "name": "Inspection Data Package",
-      "description": "Inspection grid photography, annotated report, exportable data.",
+      "name": "Roof Documentation",
+      "description": "Visual roof documentation with grid photography, detail images and an annotated report for review by your qualified professional.",
       "provider": { "@type": "LocalBusiness", "name": "Sentinel Aerial Inspections" },
       "offers": { "@type": "Offer", "price": "1200", "priceCurrency": "USD" }
     }

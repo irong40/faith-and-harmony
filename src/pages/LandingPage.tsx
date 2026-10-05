@@ -68,15 +68,14 @@ export default function LandingPage() {
               <h3 className="fh-card-title">Sentinel Aerial Inspections</h3>
               <p className="fh-card-desc">
                 Professional drone services for real estate, construction, and property
-                inspection. Aerial photography, orthomosaic mapping, thermal imaging, and
+                documentation. Aerial photography, orthomosaic mapping, 3D models, and
                 construction progress monitoring with enterprise-grade equipment.
               </p>
               <ul className="fh-card-list">
                 <li>Aerial Photography &amp; Video</li>
-                <li>Roof &amp; Property Inspections</li>
+                <li>Roof &amp; Property Documentation</li>
                 <li>Orthomosaic Mapping &amp; 3D Models</li>
                 <li>Construction Progress Documentation</li>
-                <li>Thermal Imaging &amp; Analysis</li>
               </ul>
               <a
                 href="https://sentinelaerialinspections.com"
@@ -132,8 +131,8 @@ export default function LandingPage() {
               <p>
                 Our flagship division, Sentinel Aerial Inspections, provides professional
                 drone services across coastal Virginia and northeast North Carolina. We
-                operate enterprise-grade equipment including the DJI Matrice 4E, Mavic 3
-                Enterprise, and Mini 4 Pro — delivering data our clients can act on.
+                fly the DJI Matrice 4E and the DJI Mini 4 Pro, and we deliver data our
+                clients can act on.
               </p>
               <p>
                 Every project benefits from our in-house technology stack: automated
@@ -143,9 +142,9 @@ export default function LandingPage() {
             </div>
             <div className="fh-about-stats">
               {[
-                { value: "3", label: "Enterprise Drones" },
+                { value: "2", label: "Aircraft" },
                 { value: "HR", label: "Hampton Roads" },
-                { value: "24h", label: "Turnaround" },
+                { value: "48h", label: "Standard Delivery" },
                 { value: "100%", label: "Veteran Owned" },
               ].map((s) => (
                 <div key={s.label} className="fh-stat">

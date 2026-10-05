@@ -15,11 +15,9 @@ import { useState, useEffect } from "react";
 // Canonical package codes (no re_* prefixes). "" = not sure / resolved in editor.
 const JOB_TYPES: { value: string; label: string }[] = [
   { value: "", label: "Not sure / other" },
-  { value: "listing_lite", label: "Real estate — listing (basic)" },
-  { value: "listing_pro", label: "Real estate — listing (pro)" },
+  { value: "listing_pro", label: "Real estate listing" },
   { value: "construction_progress", label: "Construction progress" },
   { value: "land_documentation", label: "Vacant land documentation" },
-  { value: "thermal_documentation", label: "Thermal documentation" },
   { value: "volumetric_stockpile", label: "Volumetric / stockpile" },
   { value: "mapping_ortho", label: "Mapping / orthomosaic" },
 ];
@@ -29,7 +27,6 @@ const DELIVERABLES: { value: string; label: string; tip: string }[] = [
   { value: "Video", label: "Video", tip: "Smooth aerial video — flyovers and slow pans that show the full site and key features in motion." },
   { value: "Orthomosaic/Map", label: "Map / Ortho", tip: "A single stitched, top-down image of the whole site, scaled to real-world measurements so you can measure distances and overlay parcel or property lines." },
   { value: "3D model", label: "3D model", tip: "A navigable 3D model of the site or structure built from the captured imagery — view it from any angle." },
-  { value: "Thermal", label: "Thermal", tip: "Thermal (heat-signature) imagery that documents temperature differences across a roof, surface, or area." },
   { value: "Volumetric", label: "Volumetric", tip: "Volume measurements of stockpiles, excavations, or material — calculated from the captured 3D data." },
 ];
 
@@ -209,7 +206,7 @@ export default function RequestQuoteForm() {
         <div className="fh-quote-hint">Site, acreage, what you want captured, deadlines. The more detail, the faster we scope it.</div>
         <textarea id="q-desc" rows={5} maxLength={4000} value={form.job_description}
           onChange={(e) => set("job_description", e.target.value)}
-          placeholder="e.g. I need a 250-acre roof + thermal scan of a warehouse near Norfolk base next Tuesday. Looking for an orthomosaic I can overlay parcel lines on." />
+          placeholder="e.g. I need roof documentation and a site map of a warehouse near Norfolk base next Tuesday. Looking for an orthomosaic I can overlay parcel lines on." />
         <span className="fh-field-err">Please describe the job.</span>
       </div>
       <div className="fh-quote-row">
