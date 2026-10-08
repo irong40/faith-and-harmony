@@ -238,9 +238,23 @@ interface QAResults {
   overall_score: number;
 }
 
+const QA_RETIRED = true;
+const QA_RETIRED_MESSAGE = "QA runs in Sortie. Photo checks (classifier, stills grade, artifact validation) run when the job is processed in Sortie.";
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Retired 2026-10-08: the Gemini 1.5 model this QA called was shut down by Google
+  // on 2025-09-24 and no score was ever written. Photo QA now runs in Sortie
+  // (classifier, stills grade, artifact validation) on linked jobs. The code below
+  // is kept; set QA_RETIRED to false to bring it back with a working model.
+  if (QA_RETIRED) {
+    return new Response(JSON.stringify({ retired: true, message: QA_RETIRED_MESSAGE }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   try {

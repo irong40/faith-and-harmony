@@ -781,7 +781,7 @@ export default function DroneJobDetail() {
                 : {
                     title: hasAssets ? "Run quality analysis" : "Upload the captured files",
                     hint: hasAssets
-                      ? "Files are in. Run QA before processing."
+                      ? "Files are in. Process in Sortie; QA runs there."
                       : "Add the pilot's photos/videos, then run QA.",
                     buttons: (
                       <Button size="sm" onClick={goto(hasAssets ? "qa" : "assets")}>
@@ -1133,22 +1133,8 @@ export default function DroneJobDetail() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Quality Analysis</h2>
-                <Button
-                  onClick={runQAAnalysis}
-                  disabled={runningQA || assets.length === 0}
-                >
-                  {runningQA ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="mr-2 h-4 w-4" />
-                      Run QA Analysis
-                    </>
-                  )}
-                </Button>
+                {/* CRM photo QA retired 2026-10-08 (Gemini 1.5 shut down); QA runs in Sortie. */}
+                <p className="text-sm text-muted-foreground">QA runs in Sortie</p>
               </div>
 
               {job.qa_summary ? (
@@ -1160,8 +1146,8 @@ export default function DroneJobDetail() {
                 <Card>
                   <CardContent className="py-12 text-center text-muted-foreground">
                     <Clock className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                    <p>No QA analysis yet</p>
-                    <p className="text-sm">Upload assets and run QA analysis to see results</p>
+                    <p>QA runs in Sortie</p>
+                    <p className="text-sm">Photo checks (classifier, stills grade, artifact validation) run when this job is processed in Sortie</p>
                   </CardContent>
                 </Card>
               )}
