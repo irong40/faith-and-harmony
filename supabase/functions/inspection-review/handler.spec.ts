@@ -19,6 +19,8 @@ import {
   type ReviewRun,
   STATUTORY_PHOTOGRAMMETRY_NOTE,
 } from "./email.ts";
+// The plan's single test command runs this file; pull the wiring tests in too.
+import "./store.spec.ts";
 
 const SERVICE_KEY = "service-role-secret";
 const SECRET_KEY = "sb_secret_abcdefghijklmnop";
@@ -30,7 +32,10 @@ const RUN_ID = "11111111-1111-4111-8111-111111111111";
 
 // Copied byte for byte from Sortie
 // sortie/services/reports/generator.py STATUTORY_PHOTOGRAMMETRY_NOTE (line 2715).
-// If either side changes, this test must fail until both agree again.
+// What this test guards: email.ts and this copy agree. It cannot see Sortie, so
+// a change to generator.py alone fails nothing here. The cross-repo check is
+// supabase/migration-checks/inspection-review/check_statutory_note.py (needs the
+// Sortie checkout); run it whenever either side changes.
 const PYTHON_STATUTORY_NOTE =
   "Any determination of topography or contours, or any depiction of physical improvements, property lines or boundaries is for general information only and shall not be used for the design, modification, or construction of improvements to real property or for flood plain determination.";
 
@@ -321,6 +326,47 @@ Deno.test("send: a provider rejection is 502 and the run is not marked sent", as
   assertEquals(calls.marks.length, 0);
 });
 
+Deno.test("send: if marking sent fails after Resend accepted, the send still succeeds", async () => {
+  // The email is already in Adam's inbox. A 500 here would make Sortie rotate
+  // the token and resend, leaving a first email whose links answer 404.
+  const { deps: d, calls } = deps(await run(), {
+    markEmailSent: () => Promise.reject(new Error("db write failed")),
+  });
+  const response = await handleInspectionReview(sendRequest(sendBody()), d);
+  assertEquals(response.status, 200);
+  const body = await response.json();
+  assertEquals(body.email_id, "email-123");
+  assertStringIncludes(body.warning, "review_email_sent_at");
+  assertEquals(calls.sent.length, 1);
+  assertEquals(calls.logs.length, 1);
+  assertStringIncludes(calls.logs[0], RUN_ID);
+  assertStringIncludes(calls.logs[0], "db write failed");
+  assertFalse(calls.logs[0].includes(TOKEN), "the raw token must never be logged");
+});
+
+Deno.test("send: a stored hash with no expiry is treated as expired (410)", async () => {
+  // The DB CHECK inspection_runs_token_pair forbids this state; the handler
+  // must still fail closed if it ever appears.
+  const { deps: d, calls } = deps(await run({ review_token_expires_at: null }));
+  const response = await handleInspectionReview(sendRequest(sendBody()), d);
+  assertEquals(response.status, 410);
+  assertEquals(calls.sent.length, 0);
+});
+
+Deno.test("GET: a stored hash with no expiry is treated as expired (410)", async () => {
+  const { deps: d, calls } = deps(await run({ review_token_expires_at: null }));
+  const response = await handleInspectionReview(decisionRequest(TOKEN, "approve"), d);
+  assertEquals(response.status, 410);
+  assertEquals(calls.decisions.length, 0);
+});
+
+Deno.test("GET: an unparseable expiry is treated as expired (410)", async () => {
+  const { deps: d, calls } = deps(await run({ review_token_expires_at: "not a date" }));
+  const response = await handleInspectionReview(decisionRequest(TOKEN, "approve"), d);
+  assertEquals(response.status, 410);
+  assertEquals(calls.decisions.length, 0);
+});
+
 // ─── GET: signed-link decision ───────────────────────────────────────────
 
 Deno.test("GET: unknown token is 404 'Review link not found' as text/plain", async () => {
@@ -495,6 +541,10 @@ Deno.test("secureEqual compares exactly", () => {
   assertFalse(secureEqual("abc", "abcd"));
   assertFalse(secureEqual("", "a"));
   assert(secureEqual("", ""));
+  // A trailing NUL pads to the same bytes as the missing index (?? 0), so
+  // only the length check tells these apart.
+  assertFalse(secureEqual("abc", "abc\0"));
+  assertFalse(secureEqual("abc\0\0", "abc"));
 });
 
 Deno.test("send uses the constant-time helper for the auth header and the token hash", async () => {

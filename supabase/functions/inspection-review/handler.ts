@@ -171,7 +171,20 @@ async function handleSend(
     deps.logError(`Resend rejected the review email for run ${run.id}`);
     return json({ error: "Email provider rejected the message" }, 502);
   }
-  await deps.markEmailSent({ id: run.id, sentAt: deps.now().toISOString() });
+  // The email is already in Adam's inbox. If recording that fails, still answer
+  // success: a 500 would make Sortie rotate the token and resend, and the links
+  // in this first email would then answer 404. review_email_sent_at is
+  // bookkeeping, not part of the gate.
+  try {
+    await deps.markEmailSent({ id: run.id, sentAt: deps.now().toISOString() });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    deps.logError(`Review email sent for run ${run.id} but marking it sent failed: ${reason}`);
+    return json({
+      email_id: result.id,
+      warning: "Email sent; review_email_sent_at was not recorded",
+    });
+  }
   return json({ email_id: result.id });
 }
 
