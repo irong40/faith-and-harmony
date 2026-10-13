@@ -102,3 +102,9 @@ verify_jwt = false
 
 [functions.weather-forecast-fetch]
 verify_jwt = false
+
+# inspection-review: does its own auth. POST send needs the service key
+# (constant-time compare); the GET decision link in the review email carries
+# no JWT, only the single-use review token whose sha256 is stored on the run.
+[functions.inspection-review]
+verify_jwt = false
