@@ -63,6 +63,7 @@ type Calls = {
   decisions: { id: string; status: string; reviewedBy: string }[];
   compares: [string, string][];
   logs: string[];
+  lookups: string[];
 };
 
 function deps(
@@ -75,6 +76,7 @@ function deps(
     decisions: [],
     compares: [],
     logs: [],
+    lookups: [],
   };
   // Stateful fake of the database: a decision changes the stored status, so
   // a second click sees the closed run exactly as the real table would.
@@ -86,10 +88,12 @@ function deps(
     now: () => NOW,
     loadRunById: (id) =>
       Promise.resolve(current && current.id === id ? current : null),
-    loadRunByTokenHash: (hash) =>
-      Promise.resolve(
+    loadRunByTokenHash: (hash) => {
+      calls.lookups.push(hash);
+      return Promise.resolve(
         current && current.review_token_hash === hash ? current : null,
-      ),
+      );
+    },
     sendEmail: (payload) => {
       calls.sent.push(payload);
       return Promise.resolve({ id: "email-123" });
@@ -176,12 +180,16 @@ Deno.test("send: wrong bearer key is 401", async () => {
 });
 
 Deno.test("send: an empty configured service key never authorizes 'Bearer '", async () => {
-  const { deps: d } = deps(await run(), { serviceRoleKey: "", secretKeys: [] });
-  const response = await handleInspectionReview(
-    sendRequest(sendBody(), { Authorization: "Bearer " }),
-    d,
-  );
+  const { deps: d, calls } = deps(await run(), { serviceRoleKey: "", secretKeys: [] });
+  // Fetch Headers trim trailing whitespace, so a real Request can never carry
+  // exactly "Bearer ". Override the headers to reach the guard directly.
+  const request = sendRequest(sendBody(), {});
+  Object.defineProperty(request, "headers", {
+    value: new Map([["Authorization", "Bearer "]]),
+  });
+  const response = await handleInspectionReview(request, d);
   assertEquals(response.status, 401);
+  assertEquals(calls.sent.length, 0);
 });
 
 Deno.test("send: a registered sb_secret_ apikey is accepted", async () => {
@@ -332,6 +340,18 @@ Deno.test("GET: missing token is 404 and never looks up an empty hash", async ()
   );
   assertEquals(response.status, 404);
   assertPlainText(response);
+  assertEquals(calls.decisions.length, 0);
+  assertEquals(calls.lookups.length, 0);
+});
+
+Deno.test("GET: a loaded run whose stored hash differs is treated as not found", async () => {
+  // Defence in depth: never trust the lookup alone; compare the stored hash.
+  const other = await run({ review_token_hash: "f".repeat(64) });
+  const { deps: d, calls } = deps(other, {
+    loadRunByTokenHash: () => Promise.resolve(other),
+  });
+  const response = await handleInspectionReview(decisionRequest(TOKEN, "approve"), d);
+  assertEquals(response.status, 404);
   assertEquals(calls.decisions.length, 0);
 });
 
