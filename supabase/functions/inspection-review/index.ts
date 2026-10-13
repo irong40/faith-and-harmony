@@ -10,12 +10,12 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import {
-  type DecisionResult,
   handleInspectionReview,
   type InspectionReviewDependencies,
   parseRuntimeSecretKeys,
 } from "./handler.ts";
-import { type EmailPayload, FROM_EMAIL, type ReviewRun, sendWithResend } from "./email.ts";
+import { type EmailPayload, FROM_EMAIL, sendWithResend } from "./email.ts";
+import { createRunStore } from "./store.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -23,21 +23,6 @@ const SUPABASE_SECRET_KEYS = parseRuntimeSecretKeys(
   Deno.env.get("SUPABASE_SECRET_KEYS") ?? "",
 );
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
-
-const runColumns = [
-  "id",
-  "run_key",
-  "profile",
-  "status",
-  "expected_detections",
-  "documented_extent_m2",
-  "created_at",
-  "code_version",
-  "e3_summary",
-  "outputs",
-  "review_token_hash",
-  "review_token_expires_at",
-].join(",");
 
 function requireEnvironment(): void {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !RESEND_API_KEY) {
@@ -56,24 +41,7 @@ function createDependencies(): InspectionReviewDependencies {
     secretKeys: SUPABASE_SECRET_KEYS,
     functionsBaseUrl: SUPABASE_URL,
     now: () => new Date(),
-    loadRunById: async (id) => {
-      const { data, error } = await supabase
-        .from("inspection_runs")
-        .select(runColumns)
-        .eq("id", id)
-        .maybeSingle();
-      if (error) throw error;
-      return data ? data as unknown as ReviewRun : null;
-    },
-    loadRunByTokenHash: async (hash) => {
-      const { data, error } = await supabase
-        .from("inspection_runs")
-        .select(runColumns)
-        .eq("review_token_hash", hash)
-        .maybeSingle();
-      if (error) throw error;
-      return data ? data as unknown as ReviewRun : null;
-    },
+    ...createRunStore(supabase),
     sendEmail: async (payload: EmailPayload) => {
       const result = await sendWithResend(
         fetch,
@@ -85,27 +53,6 @@ function createDependencies(): InspectionReviewDependencies {
         return null;
       }
       return result;
-    },
-    markEmailSent: async ({ id, sentAt }) => {
-      const { error } = await supabase
-        .from("inspection_runs")
-        .update({ review_email_sent_at: sentAt })
-        .eq("id", id)
-        .eq("status", "awaiting_review");
-      if (error) throw error;
-    },
-    decide: async ({ id, status, reviewedBy }): Promise<DecisionResult> => {
-      // Optimistic: only a run still awaiting review can be decided. The
-      // database guard stamps reviewed_at and refuses anything else.
-      const { data, error } = await supabase
-        .from("inspection_runs")
-        .update({ status, reviewed_by: reviewedBy })
-        .eq("id", id)
-        .eq("status", "awaiting_review")
-        .select("id,status");
-      if (error) return { kind: "refused", message: error.message };
-      if (!data || data.length === 0) return { kind: "stale" };
-      return { kind: "ok" };
     },
     logError: (message) => console.error(`[inspection-review] ${message}`),
   };
