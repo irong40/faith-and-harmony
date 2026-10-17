@@ -296,6 +296,27 @@ describe("Office marketplace jobs", () => {
     officeState.data!.snapshot!.marketplace = { status: "UNKNOWN: DroneSniper mission file missing", missions: [] } as never;
     renderOffice();
     expect(screen.getByText(/the desktop could not read the mission feed/)).toBeTruthy();
+    // QA 2026-10-17: the empty state and "0 near you" must not also claim there are no missions.
+    expect(screen.queryByText(/No open missions near you/)).toBeNull();
+    expect(screen.queryByText(/0 near you/)).toBeNull();
+    expect(screen.getByText(/missions unknown/)).toBeTruthy();
+  });
+
+  it("does not resend a selected mission that a refresh moved to Waiting", () => {
+    officeState.data!.snapshot!.marketplace = { status: "ok", missions: [m("167155"), m("171386")] } as never;
+    const view = renderOffice();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select mission 167155" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select mission 171386" }));
+    officeState.data = {
+      ...officeState.data!,
+      snapshot: {
+        ...officeState.data!.snapshot!,
+        marketplace: { status: "ok", missions: [m("167155", { status: "interested" }), m("171386")] } as never,
+      },
+    };
+    view.rerender(<MemoryRouter><Office /></MemoryRouter>);
+    fireEvent.click(screen.getByRole("button", { name: /I'm interested \(1\)/ }));
+    expect(mutate.mock.calls[0][0]).toEqual({ kind: "interest", body: "171386" });
   });
 
   it("puts a possible award at the top with the 24-hour warning", () => {

@@ -167,13 +167,14 @@ function MissionCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-medium">
-              {mission.city}, {mission.state} · {mission.miles ?? "?"} mi
+              {[mission.city, mission.state].filter(Boolean).join(", ") || `Job ${mission.id}`} ·{" "}
+              {mission.miles ?? "?"} mi
             </p>
             <Pill tone={air.tone}>{air.label}</Pill>
             {mission.status !== "open" && <Pill tone={st.tone}>{st.label}</Pill>}
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Job {mission.id} · {mission.acres} ac · capture {mission.capture ?? "?"} · due {mission.due ?? "?"}
+            Job {mission.id} · {mission.acres ?? "?"} ac · capture {mission.capture ?? "?"} · due {mission.due ?? "?"}
             {mission.deviation && mission.deviation !== "None" ? ` · ${mission.deviation}` : ""}
           </p>
           <p className="mt-1 break-words text-xs">{mission.airspace_text}</p>
@@ -206,14 +207,19 @@ function Marketplace({ market, messages, send }: { market: OfficeMarketplace; me
   const [failed, setFailed] = useState<string | null>(null);
   const { open, waiting, award, lost } = splitMissions(market.missions ?? [], messages);
   const lastInterest = messages.find((m) => m.kind === "interest");
+  const feedOk = market.status === "ok";
+  // Only missions still Open can be sent: a refresh that moved a selected
+  // mission to Waiting (interest already sent) must not send it again.
+  const openIds = new Set(open.map((m) => m.id));
+  const live = picked.filter((id) => openIds.has(id));
 
   const toggle = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   const sendInterest = () => {
-    if (!picked.length) return;
+    if (!live.length) return;
     setBusy(true);
     setFailed(null);
     send.mutate(
-      { kind: "interest", body: picked.join(",") },
+      { kind: "interest", body: live.join(",") },
       {
         onSuccess: () => {
           setBusy(false);
@@ -226,13 +232,14 @@ function Marketplace({ market, messages, send }: { market: OfficeMarketplace; me
       }
     );
   };
-  const pickFlyable = () => setPicked(open.filter(flyableNow).map((m) => m.id));
+  const pickFlyable = () =>
+    setPicked((p) => [...new Set([...p.filter((id) => openIds.has(id)), ...open.filter(flyableNow).map((m) => m.id)])]);
 
   const meta = [
     market.source ?? "FlyGuys",
     market.pulled_at ? `pulled ${ago(market.pulled_at)}` : null,
     market.total_open != null ? `${market.total_open} open nationwide` : null,
-    `${(market.missions ?? []).length} near you`,
+    feedOk ? `${(market.missions ?? []).length} near you` : "missions unknown",
   ]
     .filter(Boolean)
     .join(" · ");
@@ -268,13 +275,13 @@ function Marketplace({ market, messages, send }: { market: OfficeMarketplace; me
         <Button size="sm" variant="ghost" onClick={pickFlyable} disabled={!open.some(flyableNow)}>
           Select flyable
         </Button>
-        {picked.length > 0 && (
+        {live.length > 0 && (
           <Button size="sm" variant="ghost" onClick={() => setPicked([])}>
             Clear
           </Button>
         )}
-        <Button size="sm" onClick={sendInterest} disabled={!picked.length || busy}>
-          {busy ? "Sending" : `I'm interested${picked.length ? ` (${picked.length})` : ""}`}
+        <Button size="sm" onClick={sendInterest} disabled={!live.length || busy}>
+          {busy ? "Sending" : `I'm interested${live.length ? ` (${live.length})` : ""}`}
         </Button>
       </div>
       <p className="mb-3 text-xs text-muted-foreground">
@@ -292,11 +299,11 @@ function Marketplace({ market, messages, send }: { market: OfficeMarketplace; me
             <MissionCard key={m.id} mission={m} selected={picked.includes(m.id)} onToggle={() => toggle(m.id)} />
           ))}
         </div>
-      ) : (
+      ) : feedOk ? (
         <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
           No open missions near you that you have not already answered.
         </p>
-      )}
+      ) : null}
 
       {waiting.length > 0 && (
         <details className="mt-4" open>
