@@ -13,17 +13,20 @@ import { cn } from "@/lib/utils";
 import { useOffice, useSendOfficeMessage, type OfficeMessageInput } from "@/hooks/useOffice";
 import {
   ago,
+  airspaceTone,
   answeredBy,
   automationTone,
   boardColumns,
   callMeta,
   countPairs,
   employeeState,
+  flyableNow,
   freshness,
   isAccessNotGranted,
   isQuestion,
   messageLabel,
   messageStatus,
+  missionStatusTone,
   pendingAnswer,
   pendingReply,
   releaseSent,
@@ -33,11 +36,14 @@ import {
   sortAutomations,
   splitCalls,
   splitDecisions,
+  splitMissions,
   type OfficeAnswer,
   type OfficeCall,
   type OfficeDecision,
   type OfficeJob,
+  type OfficeMarketplace,
   type OfficeMessage,
+  type OfficeMission,
   type Tone,
 } from "@/lib/office";
 
@@ -45,7 +51,7 @@ import {
 // Office — what the agents are doing, and what needs Adam's call.
 //
 // Read path: one snapshot row the desktop sync pushes every 5 minutes.
-// Write path: rows in office_inbox (answer, directive, release) that the same
+// Write path: rows in office_inbox (answer, directive, release, interest) that the same
 // sync collects. This page never reaches the agents directly, so everything it
 // shows is "as of the last report" and says how old that report is.
 // ---------------------------------------------------------------------------
@@ -125,6 +131,202 @@ function Tile({ value, label, tone }: { value: number; label: string; tone: Tone
 }
 
 type Send = ReturnType<typeof useSendOfficeMessage>;
+
+// -------------------------------------------------------
+// Marketplace jobs (2026-10-17): FlyGuys missions near base. Pressing
+// "I'm interested" writes an `interest` row; the desktop sync sends Adam's
+// name and email to FlyGuys and writes the result back. Outcomes come from
+// FlyGuys email ("Mission Not Assigned", or any other mail naming the
+// mission, shown as a possible award to confirm in the FlyGuys app).
+// -------------------------------------------------------
+
+function MissionCard({
+  mission,
+  selected,
+  onToggle,
+}: {
+  mission: OfficeMission;
+  selected?: boolean;
+  onToggle?: () => void;
+}) {
+  const air = airspaceTone(mission.airspace_level);
+  const st = missionStatusTone(mission.status);
+  const map = mission.lat && mission.lng ? `https://www.google.com/maps?q=${mission.lat},${mission.lng}` : null;
+  return (
+    <div className={cn("rounded-md border bg-card p-3", selected && "ring-2 ring-primary")}>
+      <div className="flex items-start gap-2">
+        {onToggle && (
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4"
+            checked={!!selected}
+            onChange={onToggle}
+            aria-label={`Select mission ${mission.id}`}
+          />
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-medium">
+              {mission.city}, {mission.state} · {mission.miles ?? "?"} mi
+            </p>
+            <Pill tone={air.tone}>{air.label}</Pill>
+            {mission.status !== "open" && <Pill tone={st.tone}>{st.label}</Pill>}
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Job {mission.id} · {mission.acres} ac · capture {mission.capture ?? "?"} · due {mission.due ?? "?"}
+            {mission.deviation && mission.deviation !== "None" ? ` · ${mission.deviation}` : ""}
+          </p>
+          <p className="mt-1 break-words text-xs">{mission.airspace_text}</p>
+          {mission.outcome_subject && (
+            <p className="mt-1 break-words text-xs">
+              <span className="font-medium">FlyGuys: </span>
+              {mission.outcome_subject}
+              {mission.outcome_at ? ` (${ago(mission.outcome_at)})` : ""}
+            </p>
+          )}
+          {mission.status === "possible_award" && (
+            <p className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+              Check the FlyGuys Pilots app and confirm within 24 hours, or it may be reassigned.
+            </p>
+          )}
+          {map && (
+            <a href={map} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs underline">
+              Map
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Marketplace({ market, messages, send }: { market: OfficeMarketplace; messages: OfficeMessage[]; send: Send }) {
+  const [picked, setPicked] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
+  const { open, waiting, award, lost } = splitMissions(market.missions ?? [], messages);
+  const lastInterest = messages.find((m) => m.kind === "interest");
+
+  const toggle = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+  const sendInterest = () => {
+    if (!picked.length) return;
+    setBusy(true);
+    setFailed(null);
+    send.mutate(
+      { kind: "interest", body: picked.join(",") },
+      {
+        onSuccess: () => {
+          setBusy(false);
+          setPicked([]);
+        },
+        onError: (error) => {
+          setBusy(false);
+          setFailed(`Not sent. ${errorText(error)}`);
+        },
+      }
+    );
+  };
+  const pickFlyable = () => setPicked(open.filter(flyableNow).map((m) => m.id));
+
+  const meta = [
+    market.source ?? "FlyGuys",
+    market.pulled_at ? `pulled ${ago(market.pulled_at)}` : null,
+    market.total_open != null ? `${market.total_open} open nationwide` : null,
+    `${(market.missions ?? []).length} near you`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <Section title="Marketplace jobs" meta={meta}>
+      {market.status !== "ok" && (
+        <p role="alert" className="mb-3 rounded-lg border border-amber-600/30 bg-amber-500/10 p-3 text-sm">
+          {market.status}. This is not "no missions": the desktop could not read the mission feed.
+        </p>
+      )}
+      {market.outcomes_status && market.outcomes_status !== "ok" && market.outcomes_status !== "never" && (
+        <p role="alert" className="mb-3 rounded-lg border border-amber-600/30 bg-amber-500/10 p-3 text-sm">
+          FlyGuys email check: {market.outcomes_status}. Award and Not Assigned updates are unknown until it clears.
+        </p>
+      )}
+
+      {award.length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="font-mono text-xs uppercase tracking-wide text-amber-700 dark:text-amber-400">
+            Possible award · {award.length}
+          </p>
+          {award.map((m) => (
+            <MissionCard key={m.id} mission={m} />
+          ))}
+        </div>
+      )}
+
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <p className="mr-auto font-mono text-xs uppercase tracking-wide text-muted-foreground">
+          Open · {open.length} · {open.filter(flyableNow).length} flyable without an authorization wait
+        </p>
+        <Button size="sm" variant="ghost" onClick={pickFlyable} disabled={!open.some(flyableNow)}>
+          Select flyable
+        </Button>
+        {picked.length > 0 && (
+          <Button size="sm" variant="ghost" onClick={() => setPicked([])}>
+            Clear
+          </Button>
+        )}
+        <Button size="sm" onClick={sendInterest} disabled={!picked.length || busy}>
+          {busy ? "Sending" : `I'm interested${picked.length ? ` (${picked.length})` : ""}`}
+        </Button>
+      </div>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Sends your name, email and the SAI note to FlyGuys for the selected missions. The office sends it within 5 minutes.
+        {lastInterest ? ` Last send: ${lastInterest.ledger_line ?? "waiting for the office to collect it"}` : ""}
+      </p>
+      {failed && (
+        <p role="alert" className="mb-3 text-xs text-destructive">
+          {failed}
+        </p>
+      )}
+      {open.length > 0 ? (
+        <div className="grid gap-2 md:grid-cols-2">
+          {open.map((m) => (
+            <MissionCard key={m.id} mission={m} selected={picked.includes(m.id)} onToggle={() => toggle(m.id)} />
+          ))}
+        </div>
+      ) : (
+        <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+          No open missions near you that you have not already answered.
+        </p>
+      )}
+
+      {waiting.length > 0 && (
+        <details className="mt-4" open>
+          <summary className="cursor-pointer text-sm font-medium text-muted-foreground">
+            Waiting on FlyGuys ({waiting.length})
+          </summary>
+          <div className="mt-2 grid gap-2 md:grid-cols-2">
+            {waiting.map((m) => (
+              <MissionCard key={m.id} mission={m} />
+            ))}
+          </div>
+        </details>
+      )}
+      {lost.length > 0 && (
+        <details className="mt-3">
+          <summary className="cursor-pointer text-sm font-medium text-muted-foreground">Not assigned ({lost.length})</summary>
+          <div className="mt-2 grid gap-2 md:grid-cols-2">
+            {lost.map((m) => (
+              <MissionCard key={m.id} mission={m} />
+            ))}
+          </div>
+        </details>
+      )}
+      <p className="mt-3 text-xs text-muted-foreground">
+        Authorization is from FAA data at the capture altitude on a circle sized from acreage; the real KML may differ.
+        Temporary flight restrictions are not included: check B4UFLY on the day.
+      </p>
+    </Section>
+  );
+}
 
 // -------------------------------------------------------
 // One open decision: Yes, No, or Adam's own words.
@@ -709,6 +911,8 @@ export default function Office() {
           <TellTheCoo messages={messages} answers={snapshot.answers ?? []} send={send} />
         </div>
       </div>
+
+      {snapshot.marketplace && <Marketplace market={snapshot.marketplace} messages={messages} send={send} />}
 
       <Section title="The team" meta={`${team.length} employees · ${busyCount} with work · ${team.length - busyCount} without`}>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

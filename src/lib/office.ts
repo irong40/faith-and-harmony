@@ -135,9 +135,49 @@ export interface OfficeSnapshot {
     drip?: { by_status?: Record<string, number>; last_sent?: string | null };
   };
   activity?: { at: string; text: string }[];
+  /** FlyGuys missions near base (2026-10-17). Absent on a snapshot from an older sync. */
+  marketplace?: OfficeMarketplace;
 }
 
-export type OfficeMessageKind = "answer" | "directive" | "release";
+/** FAA authorization verdict DroneSniper computed for the capture altitude. */
+export type AirspaceLevel = "NONE" | "EASY_LAANC" | "DRONEZONE" | "SKIP" | "UNKNOWN";
+/** open: nothing sent · interested: sent, no answer · lost: "Mission Not Assigned" email · possible_award: another FlyGuys email names it. */
+export type MissionStatus = "open" | "interested" | "lost" | "possible_award";
+
+export interface OfficeMission {
+  id: string;
+  name: string | null;
+  city: string | null;
+  state: string | null;
+  miles: number | null;
+  acres: string | number | null;
+  capture: string | null;
+  due: string | null;
+  deviation: string;
+  flyguys_airspace: string;
+  airspace_level: AirspaceLevel;
+  airspace_text: string;
+  lat: string | number | null;
+  lng: string | number | null;
+  status: MissionStatus;
+  interest_at: string | null;
+  outcome_subject: string | null;
+  outcome_at: string | null;
+}
+
+export interface OfficeMarketplace {
+  source?: string;
+  /** "ok", or UNKNOWN/ERROR text when the desktop could not read the mission feed. */
+  status: string;
+  pulled_at?: string | null;
+  total_open?: number | null;
+  /** "ok", "never", or AUTHFAIL/ERROR text from the FlyGuys email check. */
+  outcomes_status?: string | null;
+  outcomes_checked_at?: string | null;
+  missions: OfficeMission[];
+}
+
+export type OfficeMessageKind = "answer" | "directive" | "release" | "interest";
 
 export interface OfficeMessage {
   id: string;
@@ -281,6 +321,7 @@ export function messageStatus(m: OfficeMessage, now: number = Date.now()): { ton
 export function messageLabel(m: OfficeMessage): string {
   if (m.kind === "directive") return isCallReply(m) ? "Reply on a call" : "To the COO";
   if (m.kind === "release") return "Released job";
+  if (m.kind === "interest") return "FlyGuys interest";
   return `Answer to #${m.item}`;
 }
 
@@ -390,4 +431,50 @@ export function callMeta(call: OfficeCall, now: number = Date.now()): string {
   if (call.unblocks) parts.push(`${call.unblocks} ${call.unblocks === 1 ? "job waits" : "jobs wait"} behind this`);
   if (call.decision != null) parts.push(`follows decision #${call.decision}`);
   return parts.join(" · ");
+}
+
+// ---------------------------------------------------------------- marketplace
+
+export function airspaceTone(level: string): { tone: Tone; label: string } {
+  if (level === "NONE") return { tone: "good", label: "No authorization" };
+  if (level === "EASY_LAANC") return { tone: "info", label: "Easy LAANC" };
+  if (level === "DRONEZONE") return { tone: "warn", label: "DroneZone" };
+  if (level === "SKIP") return { tone: "crit", label: "Skip" };
+  return { tone: "idle", label: "Airspace unknown" };
+}
+
+export function missionStatusTone(status: MissionStatus): { tone: Tone; label: string } {
+  if (status === "interested") return { tone: "info", label: "Interest sent" };
+  if (status === "lost") return { tone: "idle", label: "Not assigned" };
+  if (status === "possible_award") return { tone: "warn", label: "Possible award" };
+  return { tone: "hold", label: "Open" };
+}
+
+/** Interest messages not yet collected or not refused, that name this mission. */
+export function interestPending(messages: OfficeMessage[], missionId: string): OfficeMessage | null {
+  return (
+    messages.find(
+      (m) =>
+        m.kind === "interest" &&
+        m.body.split(/[\s,]+/).includes(missionId) &&
+        !(m.ledger_line && /^(REFUSED|FAILED)/.test(m.ledger_line))
+    ) ?? null
+  );
+}
+
+/** Groups for the page: what needs a decision, what is waiting on FlyGuys, what is closed. */
+export function splitMissions(missions: OfficeMission[], messages: OfficeMessage[]) {
+  const byMiles = (a: OfficeMission, b: OfficeMission) => (a.miles ?? 9999) - (b.miles ?? 9999);
+  const open = missions.filter((m) => m.status === "open" && !interestPending(messages, m.id)).sort(byMiles);
+  const waiting = missions
+    .filter((m) => m.status === "interested" || (m.status === "open" && interestPending(messages, m.id)))
+    .sort(byMiles);
+  const award = missions.filter((m) => m.status === "possible_award").sort(byMiles);
+  const lost = missions.filter((m) => m.status === "lost").sort(byMiles);
+  return { open, waiting, award, lost };
+}
+
+/** Missions you can take without an authorization wait. */
+export function flyableNow(m: OfficeMission): boolean {
+  return m.airspace_level === "NONE" || m.airspace_level === "EASY_LAANC";
 }
