@@ -9,6 +9,7 @@ import {
   floorRooms,
   initials,
   missionPending,
+  missionSendIds,
   missionTabs,
   splitMissions,
   STALE_WORKING_MS,
@@ -213,5 +214,45 @@ describe("applyPresenceChange", () => {
     const row = { id: 7, at: at(0), agent: "a", event: "step", job_id: null, text: "x" };
     const once = applyPresenceChange(base, "office_presence_log", "INSERT", row);
     expect(applyPresenceChange(once, "office_presence_log", "INSERT", row).events).toHaveLength(1);
+  });
+});
+
+describe("deskState fallback to the snapshot (QA 2026-10-17)", () => {
+  it("uses the live row when presence has one", () => {
+    const s = deskState(presence({ state: "working", updated_at: at(2) }), employee({ doing: "Other job" }), NOW);
+    expect(s).toMatchObject({ state: "working", source: "live", label: "Working now" });
+  });
+  it("lets an idle live row win over a snapshot that still says doing", () => {
+    const s = deskState(presence({ state: "idle", finished_at: at(30), updated_at: at(30) }), employee({ doing: "Old job" }), NOW);
+    expect(s).toMatchObject({ state: "recent", source: "live" });
+  });
+  it("reads Working from the snapshot when presence has no row for the desk", () => {
+    const s = deskState(undefined, employee({ doing: "September close" }), NOW);
+    expect(s).toMatchObject({ state: "working", source: "snapshot", tone: "good" });
+    expect(s.label).toMatch(/snapshot/);
+  });
+  it("says no work recorded only when neither presence nor the snapshot has anything", () => {
+    expect(deskState(undefined, employee(), NOW)).toMatchObject({ state: "never", source: "snapshot" });
+    expect(deskState(undefined, undefined, NOW)).toMatchObject({ state: "never" });
+  });
+  it("falls back the same way when the presence read errored (no rows reach the desk)", () => {
+    // An errored or never-loaded query gives the page no presence rows at all.
+    const rows: OfficePresence[] = [];
+    const byAgent = new Map(rows.map((p) => [p.agent, p]));
+    const s = deskState(byAgent.get("finance-officer"), employee({ doing: "September close" }), NOW);
+    expect(s).toMatchObject({ state: "working", source: "snapshot" });
+  });
+});
+
+describe("missionSendIds", () => {
+  const open = new Set(["1", "2"]);
+  it("refuses interest from a feed that is not current", () => {
+    expect(missionSendIds("interest", ["1", "2"], open, false)).toEqual([]);
+  });
+  it("allows a decline from a stale feed: nothing goes to FlyGuys", () => {
+    expect(missionSendIds("decline", ["1"], open, false)).toEqual(["1"]);
+  });
+  it("sends only missions still in New", () => {
+    expect(missionSendIds("interest", ["1", "9"], open, true)).toEqual(["1"]);
   });
 });

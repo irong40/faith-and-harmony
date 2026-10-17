@@ -32,6 +32,7 @@ import {
   messageLabel,
   messageStatus,
   missionStatusTone,
+  missionSendIds,
   missionTabs,
   pendingAnswer,
   pendingReply,
@@ -280,9 +281,9 @@ function Marketplace({ market, messages, send }: { market: OfficeMarketplace; me
   // mutation with answers and releases, and a second send replaces the first
   // call's callbacks, which left this button stuck on "Sending" (Codex 2026-10-17).
   const sendMissions = async (kind: "interest" | "decline", ids: string[]) => {
-    const go = ids.filter((id) => openIds.has(id));
-    // A decline sends nothing to FlyGuys, so only interest needs a current feed.
-    if (!go.length || busy || (kind === "interest" && !feedOk)) return;
+    // Interest needs a current feed; a decline sends nothing to FlyGuys (missionSendIds).
+    const go = missionSendIds(kind, ids, openIds, feedOk);
+    if (!go.length || busy) return;
     setBusy(kind);
     setFailed(null);
     try {
@@ -941,7 +942,7 @@ interface DeskInfo {
 function Desk({ desk, selected, onSelect }: { desk: DeskInfo; selected: boolean; onSelect: () => void }) {
   const { presence: p, employee: e, state } = desk;
   const working = state.state === "working" || state.state === "stale";
-  const now = working ? p?.title : null;
+  const now = working ? (state.source === "live" ? p?.title : e?.doing) : null;
   return (
     <button
       type="button"
@@ -962,7 +963,7 @@ function Desk({ desk, selected, onSelect }: { desk: DeskInfo; selected: boolean;
         <span className="mt-1 line-clamp-2 block text-xs text-muted-foreground">
           {now ?? (e?.last_done ? `Last: ${e.last_done}` : p?.title ? `Last: ${p.title}` : "Nothing yet")}
         </span>
-        {working && p?.step && (
+        {working && state.source === "live" && p?.step && (
           <span className="mt-1 line-clamp-2 block rounded bg-emerald-600/10 px-2 py-1 text-xs text-emerald-700 dark:text-emerald-400">
             {p.step}
           </span>
@@ -1003,7 +1004,14 @@ function DeskPanel({ desk, events, onClose }: { desk: DeskInfo; events: OfficePr
           <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {working ? "On the desk now" : "Last job"}
           </p>
-          {p?.title ? (
+          {state.source === "snapshot" && working ? (
+            <div className="rounded-md border bg-muted/30 p-3 text-sm">
+              <p className="font-medium">{e?.doing}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                From the 5-minute office snapshot: no live check-in for this desk, so steps are not shown.
+              </p>
+            </div>
+          ) : p?.title ? (
             <div className="rounded-md border bg-muted/30 p-3 text-sm">
               <p className="font-medium">{p.title}</p>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -1101,7 +1109,8 @@ function Floor({
     >
       {presenceQuery.error && (
         <p role="alert" className="mb-3 rounded-lg border border-amber-600/30 bg-amber-500/10 p-3 text-sm">
-          Live presence is unavailable ({errorText(presenceQuery.error)}). Desks show the last snapshot only.
+          Live updates are paused ({errorText(presenceQuery.error)}). Desks show the office snapshot, which
+          updates every 5 minutes: a desk reads Working when that snapshot lists a job in progress, and steps are not shown.
         </p>
       )}
       <div className={cn("grid items-start gap-4", current && "lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]")}>

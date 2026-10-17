@@ -285,14 +285,6 @@ export function splitDecisions(
   return { open, closed };
 }
 
-export function employeeState(t: OfficeEmployee): { tone: Tone; label: string } {
-  if (t.doing) return { tone: "info", label: "Working" };
-  if (t.queued) return { tone: "good", label: "Up next" };
-  if (t.held) return { tone: "hold", label: "Held" };
-  if (t.blocked) return { tone: "warn", label: "Blocked" };
-  return { tone: "idle", label: "Idle" };
-}
-
 export interface BoardColumn {
   key: "todo" | "doing" | "waiting" | "done";
   label: string;
@@ -720,21 +712,51 @@ function latest(...isos: (string | null | undefined)[]): string | null {
   return best;
 }
 
+/**
+ * Where a desk's state came from. "live": the agent's own presence row.
+ * "snapshot": no presence row (none yet, or the presence read failed or never
+ * loaded), so the 5-minute snapshot's team entry decides (QA 2026-10-17).
+ */
+export type DeskSource = "live" | "snapshot";
+
 export function deskState(
   presence: OfficePresence | undefined,
   employee: OfficeEmployee | undefined,
   now: number = Date.now()
-): { state: DeskState; tone: Tone; label: string } {
-  if (presence?.state === "working") {
-    const age = now - new Date(presence.updated_at).getTime();
-    if (age <= STALE_WORKING_MS) return { state: "working", tone: "good", label: "Working now" };
-    return { state: "stale", tone: "warn", label: `No check-in for ${ago(presence.updated_at, now).replace(" ago", "")}, may have stopped` };
+): { state: DeskState; tone: Tone; label: string; source: DeskSource } {
+  if (presence) {
+    if (presence.state === "working") {
+      const age = now - new Date(presence.updated_at).getTime();
+      if (age <= STALE_WORKING_MS) return { state: "working", tone: "good", label: "Working now", source: "live" };
+      return {
+        state: "stale",
+        tone: "warn",
+        label: `No check-in for ${ago(presence.updated_at, now).replace(" ago", "")}, may have stopped`,
+        source: "live",
+      };
+    }
+  } else if (employee?.doing) {
+    // A dispatcher job the snapshot saw in progress. Without this a desk running
+    // one read "No work recorded" whenever presence had no row for it.
+    return { state: "working", tone: "good", label: "Working (5-minute snapshot)", source: "snapshot" };
   }
+  const source: DeskSource = presence ? "live" : "snapshot";
   const last = latest(presence?.finished_at, presence?.updated_at, employee?.last_done_at);
-  if (!last) return { state: "never", tone: "idle", label: "No work recorded" };
+  if (!last) return { state: "never", tone: "idle", label: "No work recorded", source };
   const age = now - new Date(last).getTime();
-  if (age < RECENT_MS) return { state: "recent", tone: "info", label: `Active ${ago(last, now)}` };
-  return { state: "quiet", tone: "idle", label: `Last active ${ago(last, now)}` };
+  if (age < RECENT_MS) return { state: "recent", tone: "info", label: `Active ${ago(last, now)}`, source };
+  return { state: "quiet", tone: "idle", label: `Last active ${ago(last, now)}`, source };
+}
+
+/**
+ * The ids a marketplace press may send: those still in New, and for interest
+ * only from a current feed. A decline sends nothing to FlyGuys, so it does not
+ * need the feed. Empty = send nothing. The page's buttons are also disabled on
+ * a stale feed; this is the guard that holds even if a button is not.
+ */
+export function missionSendIds(kind: "interest" | "decline", ids: string[], openIds: Set<string>, feedOk: boolean): string[] {
+  if (kind === "interest" && !feedOk) return [];
+  return ids.filter((id) => openIds.has(id));
 }
 
 /** The check-ins for the desk's current job, oldest first; without one, the desk's last 10. */
