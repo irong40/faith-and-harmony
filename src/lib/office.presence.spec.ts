@@ -227,7 +227,7 @@ describe("deskState fallback to the snapshot (QA 2026-10-17)", () => {
     expect(s).toMatchObject({ state: "recent", source: "live" });
   });
   it("reads Working from the snapshot when presence has no row for the desk", () => {
-    const s = deskState(undefined, employee({ doing: "September close" }), NOW);
+    const s = deskState(undefined, employee({ doing: "September close" }), NOW, at(3));
     expect(s).toMatchObject({ state: "working", source: "snapshot", tone: "good" });
     expect(s.label).toMatch(/snapshot/);
   });
@@ -239,7 +239,7 @@ describe("deskState fallback to the snapshot (QA 2026-10-17)", () => {
     // An errored or never-loaded query gives the page no presence rows at all.
     const rows: OfficePresence[] = [];
     const byAgent = new Map(rows.map((p) => [p.agent, p]));
-    const s = deskState(byAgent.get("finance-officer"), employee({ doing: "September close" }), NOW);
+    const s = deskState(byAgent.get("finance-officer"), employee({ doing: "September close" }), NOW, at(3));
     expect(s).toMatchObject({ state: "working", source: "snapshot" });
   });
 });
@@ -254,5 +254,29 @@ describe("missionSendIds", () => {
   });
   it("sends only missions still in New", () => {
     expect(missionSendIds("interest", ["1", "9"], open, true)).toEqual(["1"]);
+  });
+});
+
+describe("deskState never shows an old snapshot as working (Codex 2026-10-17)", () => {
+  const busy = employee({ doing: "September close" });
+  it("is working while the snapshot is fresh", () => {
+    expect(deskState(undefined, busy, NOW, at(10)).state).toBe("working");
+  });
+  it("goes to may-have-stopped once the snapshot is old, with no green tone", () => {
+    const pushed = at(20);
+    const s = deskState(undefined, busy, NOW, pushed);
+    expect(s).toMatchObject({ state: "stale", tone: "warn", source: "snapshot" });
+    expect(s.label).toMatch(/May have stopped \(snapshot from 20 min ago\)/);
+  });
+  it("still reads may-have-stopped with the clock 7 days on", () => {
+    const pushed = at(0);
+    const later = NOW + 7 * 86_400_000;
+    const s = deskState(undefined, busy, later, pushed);
+    expect(s.state).toBe("stale");
+    expect(s.tone).not.toBe("good");
+    expect(s.label).toMatch(/snapshot from 7 d ago/);
+  });
+  it("does not trust a snapshot whose time is unknown", () => {
+    expect(deskState(undefined, busy, NOW, null)).toMatchObject({ state: "stale", label: "May have stopped (snapshot age unknown)" });
   });
 });

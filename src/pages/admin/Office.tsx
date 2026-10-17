@@ -1082,9 +1082,12 @@ function DeskPanel({ desk, events, onClose }: { desk: DeskInfo; events: OfficePr
 function Floor({
   team,
   dispatcher,
+  snapshotAt,
 }: {
   team: OfficeEmployee[];
   dispatcher: OfficeSnapshot["dispatcher"];
+  /** When the snapshot holding `team` was pushed. */
+  snapshotAt: string | null;
 }) {
   const presenceQuery = useOfficePresence();
   const [selected, setSelected] = useState<string | null>(null);
@@ -1095,7 +1098,7 @@ function Floor({
   const info = (name: string): DeskInfo => {
     const p = byAgent.get(name);
     const e = byName.get(name);
-    return { name, presence: p, employee: e, state: deskState(p, e) };
+    return { name, presence: p, employee: e, state: deskState(p, e, Date.now(), snapshotAt) };
   };
   const rooms = floorRooms(team.map((t) => t.name), presence);
   const all = rooms.flatMap((r) => r.desks.map(info));
@@ -1107,10 +1110,16 @@ function Floor({
       title="The office floor"
       meta={`${all.length} desks · ${count("working")} working now · ${count("recent")} active today · ${count("never")} never used`}
     >
+      {/* Say what is actually on screen. After one good read, a failed refresh keeps
+          the cached check-ins (rows still win); only a read that never loaded falls
+          back to the snapshot (Codex 2026-10-17). */}
       {presenceQuery.error && (
         <p role="alert" className="mb-3 rounded-lg border border-amber-600/30 bg-amber-500/10 p-3 text-sm">
-          Live updates are paused ({errorText(presenceQuery.error)}). Desks show the office snapshot, which
-          updates every 5 minutes: a desk reads Working when that snapshot lists a job in progress, and steps are not shown.
+          {presenceQuery.data
+            ? `Live updates are paused (${errorText(presenceQuery.error)}). Showing check-ins as of ${
+                presenceQuery.dataUpdatedAt ? clock(new Date(presenceQuery.dataUpdatedAt).toISOString()) : "the last good read"
+              }.`
+            : `Live updates are paused (${errorText(presenceQuery.error)}). Desks show the office snapshot, which updates every 5 minutes: a desk reads Working when that snapshot lists a job in progress, and steps are not shown.`}
         </p>
       )}
       <div className={cn("grid items-start gap-4", current && "lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]")}>
@@ -1548,7 +1557,7 @@ export default function Office() {
           </p>
         ))}
 
-      {view === "floor" && <Floor team={team} dispatcher={dispatcher} />}
+      {view === "floor" && <Floor team={team} dispatcher={dispatcher} snapshotAt={data?.updatedAt ?? snapshot.generated_at ?? null} />}
 
       {view === "board" && (
         <Section title="The board" meta={`${jobs.length} jobs`}>

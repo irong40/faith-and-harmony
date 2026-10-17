@@ -10,7 +10,7 @@ import type { OfficeCall, OfficePresence, OfficePresenceEvent } from "@/lib/offi
 const mutate = vi.fn();
 const refetch = vi.fn();
 let officeState: { data?: OfficeData; error: unknown; isLoading: boolean; isFetching: boolean };
-let presenceState: { data?: { presence: OfficePresence[]; events: OfficePresenceEvent[] }; error: unknown };
+let presenceState: { data?: { presence: OfficePresence[]; events: OfficePresenceEvent[] }; error: unknown; dataUpdatedAt?: number };
 
 vi.mock("@/hooks/useOffice", () => ({
   useOffice: () => ({ ...officeState, refetch }),
@@ -475,6 +475,32 @@ describe("Office floor", () => {
     renderOffice("floor");
     const room = screen.getByRole("region", { name: "Scheduled automations" });
     expect(within(room).getByText("security audit")).toBeTruthy();
+  });
+
+  it("says it shows cached check-ins when a refresh fails after a good read", () => {
+    const readAt = new Date("2026-10-17T18:05:00Z");
+    presenceState = {
+      data: { presence: [working()], events: [] },
+      error: new Error("socket closed"),
+      dataUpdatedAt: readAt.getTime(),
+    };
+    renderOffice("floor");
+    const banner = screen.getByRole("alert");
+    expect(banner.textContent).toMatch(/Live updates are paused \(socket closed\)\. Showing check-ins as of /);
+    expect(banner.textContent).not.toMatch(/snapshot/);
+    // Row precedence unchanged: the cached live row still drives the desk.
+    expect(screen.getByRole("button", { name: "Finance: Working now" })).toBeTruthy();
+  });
+
+  it("does not count a desk as working from a snapshot that stopped arriving", () => {
+    presenceState = { data: undefined, error: new Error("socket closed") };
+    officeState.data!.updatedAt = iso(7 * 24 * 60);
+    officeState.data!.snapshot!.team = [
+      { name: "finance-officer", does: "", doing: "September close", queued: 0, held: 0, blocked: 0, done_7d: 0, last_done: "", last_done_at: null, lessons: 0 },
+    ];
+    renderOffice("floor");
+    expect(screen.getByRole("button", { name: /^Finance: May have stopped \(snapshot from 7 d ago\)/ })).toBeTruthy();
+    expect(screen.getByText(/0 working now/)).toBeTruthy();
   });
 
   it("says live updates are paused and that desks show the 5-minute snapshot", () => {
