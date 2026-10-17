@@ -142,7 +142,8 @@ export interface OfficeSnapshot {
 /** FAA authorization verdict DroneSniper computed for the capture altitude. */
 export type AirspaceLevel = "NONE" | "EASY_LAANC" | "DRONEZONE" | "SKIP" | "UNKNOWN";
 /** open: nothing sent · interested: sent, no answer · lost: "Mission Not Assigned" email · possible_award: another FlyGuys email names it. */
-export type MissionStatus = "open" | "interested" | "lost" | "possible_award";
+/** mission_email: a FlyGuys email names the mission but does not read like an assignment; read it. */
+export type MissionStatus = "open" | "interested" | "lost" | "possible_award" | "mission_email";
 
 export interface OfficeMission {
   id: string;
@@ -163,6 +164,8 @@ export interface OfficeMission {
   interest_at: string | null;
   outcome_subject: string | null;
   outcome_at: string | null;
+  /** Interest was sent and the mission has since left the sourcing map (assigned missions leave it). */
+  off_map?: boolean;
 }
 
 export interface OfficeMarketplace {
@@ -314,6 +317,7 @@ export function automationTone(level: string): { tone: Tone; label: string } {
 /** What happened to a message after it was sent. The office writes REFUSED or FAILED when it would not act. */
 export function messageStatus(m: OfficeMessage, now: number = Date.now()): { tone: Tone; text: string } {
   if (m.ledger_line && /^(REFUSED|FAILED)/.test(m.ledger_line)) return { tone: "crit", text: m.ledger_line };
+  if (m.ledger_line && /^(UNKNOWN|SKIPPED)/.test(m.ledger_line)) return { tone: "warn", text: m.ledger_line };
   if (m.picked_up_at) return { tone: "good", text: `Received by the office ${ago(m.picked_up_at, now)}` };
   return { tone: "idle", text: "Sent. The office collects it within 5 minutes." };
 }
@@ -447,17 +451,23 @@ export function missionStatusTone(status: MissionStatus): { tone: Tone; label: s
   if (status === "interested") return { tone: "info", label: "Interest sent" };
   if (status === "lost") return { tone: "idle", label: "Not assigned" };
   if (status === "possible_award") return { tone: "warn", label: "Possible award" };
+  if (status === "mission_email") return { tone: "warn", label: "Mission email: review" };
   return { tone: "hold", label: "Open" };
 }
 
-/** Interest messages not yet collected or not refused, that name this mission. */
+/**
+ * An interest message for this mission that is still in flight: not yet
+ * collected, being sent, or sent with an unknown outcome. Once the office
+ * reports a definite result the snapshot's own status takes over, so a mission
+ * FlyGuys said is no longer open does not sit in Waiting (Codex 2026-10-17).
+ */
 export function interestPending(messages: OfficeMessage[], missionId: string): OfficeMessage | null {
   return (
     messages.find(
       (m) =>
         m.kind === "interest" &&
         m.body.split(/[\s,]+/).includes(missionId) &&
-        !(m.ledger_line && /^(REFUSED|FAILED)/.test(m.ledger_line))
+        (!m.picked_up_at || /^(SENDING|UNKNOWN|SKIPPED)/.test(m.ledger_line ?? ""))
     ) ?? null
   );
 }
@@ -469,12 +479,12 @@ export function splitMissions(missions: OfficeMission[], messages: OfficeMessage
   const waiting = missions
     .filter((m) => m.status === "interested" || (m.status === "open" && interestPending(messages, m.id)))
     .sort(byMiles);
-  const award = missions.filter((m) => m.status === "possible_award").sort(byMiles);
+  const award = missions.filter((m) => m.status === "possible_award" || m.status === "mission_email").sort(byMiles);
   const lost = missions.filter((m) => m.status === "lost").sort(byMiles);
   return { open, waiting, award, lost };
 }
 
-/** Missions you can take without an authorization wait. */
+/** Clear on the airspace SCREEN (Class G or easy LAANC). A screen, not a clearance: the real KML is checked before flight. */
 export function flyableNow(m: OfficeMission): boolean {
   return m.airspace_level === "NONE" || m.airspace_level === "EASY_LAANC";
 }
