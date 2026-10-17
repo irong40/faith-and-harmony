@@ -1,7 +1,19 @@
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import type { OfficeMessage, OfficeMessageKind, OfficeSnapshot } from "@/lib/office";
+import {
+  applyPresenceChange,
+  PRESENCE_LOG_LIMIT,
+  type OfficeMessage,
+  type OfficeMessageKind,
+  type OfficePresence,
+  type OfficePresenceData,
+  type OfficePresenceEvent,
+  type OfficeSnapshot,
+} from "@/lib/office";
+
+export type { OfficePresenceData } from "@/lib/office";
 
 // `office_snapshot` and `office_inbox` are not in the generated Database type
 // (they were created for the agent office, outside the CRM schema), so the
@@ -94,4 +106,66 @@ export function useSendOfficeMessage() {
       );
     },
   });
+}
+
+// ---------------------------------------------------------------------------
+// The office floor: live presence. Unlike the snapshot (pushed every 5
+// minutes), these rows change the moment an agent checks in, so the page reads
+// them once and then follows Realtime. Both tables are admin-read under RLS.
+// ---------------------------------------------------------------------------
+
+export const OFFICE_PRESENCE_KEY = ["office-presence"] as const;
+
+export async function fetchOfficePresence(): Promise<OfficePresenceData> {
+  const since = new Date(Date.now() - 14 * 86_400_000).toISOString();
+  const [rows, log] = await Promise.all([
+    db.from("office_presence").select("*"),
+    db
+      .from("office_presence_log")
+      .select("id, at, agent, event, job_id, text")
+      .gte("at", since)
+      .order("at", { ascending: false })
+      .limit(PRESENCE_LOG_LIMIT),
+  ]);
+  if (rows.error) throw rows.error;
+  if (log.error) throw log.error;
+  return {
+    presence: (rows.data ?? []) as OfficePresence[],
+    events: ((log.data ?? []) as OfficePresenceEvent[]).reverse(),
+  };
+}
+
+export function useOfficePresence() {
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    queryKey: OFFICE_PRESENCE_KEY,
+    queryFn: fetchOfficePresence,
+    staleTime: 60_000,
+    // Realtime carries the changes; this poll only repairs a dropped socket.
+    refetchInterval: 300_000,
+    refetchOnWindowFocus: true,
+    retry: 1,
+  });
+
+  useEffect(() => {
+    const onChange = (table: "office_presence" | "office_presence_log") => (payload: {
+      eventType: string;
+      new: Record<string, unknown>;
+      old: Record<string, unknown>;
+    }) => {
+      queryClient.setQueryData<OfficePresenceData>(OFFICE_PRESENCE_KEY, (old) =>
+        old ? applyPresenceChange(old, table, payload.eventType, payload.new, payload.old) : old
+      );
+    };
+    const channel = db
+      .channel("office-presence-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "office_presence" }, onChange("office_presence"))
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "office_presence_log" }, onChange("office_presence_log"))
+      .subscribe();
+    return () => {
+      db.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  return query;
 }
