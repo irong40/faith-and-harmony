@@ -256,10 +256,13 @@ export function ago(iso: string | null | undefined, now: number = Date.now()): s
  * minutes covers one missed run. Past 90 the desktop is off or asleep, and the
  * page says so instead of showing old numbers as if they were live.
  */
+/** A snapshot older than this missed a sync run (the sync runs every 5 minutes; 12 covers one miss). */
+export const SNAPSHOT_FRESH_MS = 12 * 60_000;
+
 export function freshness(updatedAt: string | null, now: number = Date.now()): { tone: Tone; text: string } {
   if (!updatedAt) return { tone: "idle", text: "Waiting for the first status" };
   const mins = (now - new Date(updatedAt).getTime()) / 60000;
-  if (mins <= 12) return { tone: "good", text: `Live. Office reported ${ago(updatedAt, now)}` };
+  if (mins <= SNAPSHOT_FRESH_MS / 60000) return { tone: "good", text: `Live. Office reported ${ago(updatedAt, now)}` };
   if (mins <= 90) return { tone: "warn", text: `Office last reported ${ago(updatedAt, now)}` };
   return { tone: "crit", text: `Office silent since ${ago(updatedAt, now)}. The desktop may be off or asleep.` };
 }
@@ -722,7 +725,9 @@ export type DeskSource = "live" | "snapshot";
 export function deskState(
   presence: OfficePresence | undefined,
   employee: OfficeEmployee | undefined,
-  now: number = Date.now()
+  now: number = Date.now(),
+  /** When the snapshot holding `employee` was pushed. Its `doing` counts only while fresh. */
+  snapshotAt: string | null = null
 ): { state: DeskState; tone: Tone; label: string; source: DeskSource } {
   if (presence) {
     if (presence.state === "working") {
@@ -737,8 +742,20 @@ export function deskState(
     }
   } else if (employee?.doing) {
     // A dispatcher job the snapshot saw in progress. Without this a desk running
-    // one read "No work recorded" whenever presence had no row for it.
-    return { state: "working", tone: "good", label: "Working (5-minute snapshot)", source: "snapshot" };
+    // one read "No work recorded" whenever presence had no row for it. Only a
+    // FRESH snapshot counts: once the desktop stops syncing, the job may have
+    // ended long ago, so it reads "may have stopped" and is not counted as
+    // working (Codex 2026-10-17).
+    const t = snapshotAt ? new Date(snapshotAt).getTime() : NaN;
+    if (!Number.isNaN(t) && now - t <= SNAPSHOT_FRESH_MS) {
+      return { state: "working", tone: "good", label: "Working (5-minute snapshot)", source: "snapshot" };
+    }
+    return {
+      state: "stale",
+      tone: "warn",
+      label: Number.isNaN(t) ? "May have stopped (snapshot age unknown)" : `May have stopped (snapshot from ${ago(snapshotAt, now)})`,
+      source: "snapshot",
+    };
   }
   const source: DeskSource = presence ? "live" : "snapshot";
   const last = latest(presence?.finished_at, presence?.updated_at, employee?.last_done_at);
