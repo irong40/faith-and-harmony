@@ -24,7 +24,10 @@ export const OFFICE_QUERY_KEY = ["office"] as const;
 export async function fetchOffice(): Promise<OfficeData> {
   const [snap, inbox] = await Promise.all([
     db.from("office_snapshot").select("payload, updated_at").eq("id", "current").maybeSingle(),
-    db.from("office_inbox").select(MESSAGE_COLUMNS).order("created_at", { ascending: false }).limit(20),
+    // 50, not 20: interest messages hold a sent mission out of Open until the snapshot
+    // reports it; a short window could drop that hold during a failed push (Codex 2026-10-17).
+    // The page still shows only the newest 8.
+    db.from("office_inbox").select(MESSAGE_COLUMNS).order("created_at", { ascending: false }).limit(50),
   ]);
   if (snap.error) throw snap.error;
   if (inbox.error) throw inbox.error;
