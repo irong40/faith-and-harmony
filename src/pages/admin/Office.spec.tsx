@@ -338,6 +338,18 @@ describe("Office marketplace jobs", () => {
     expect(screen.getByText("167155")).toBeTruthy();
   });
 
+  it("shows the full airspace screen text on every row, in every tab", () => {
+    const text = "No authorization needed (Class G) (screen; re-check the real KML)";
+    officeState.data!.snapshot!.marketplace = {
+      status: "ok",
+      missions: [m("167155", { airspace_text: text }), m("171386", { airspace_text: text, status: "interested" })],
+    } as never;
+    renderOffice("marketplace");
+    expect(screen.getAllByText(text)).toHaveLength(1);
+    fireEvent.click(screen.getByRole("tab", { name: /^Waiting on FlyGuys/ }));
+    expect(screen.getAllByText(text)).toHaveLength(1);
+  });
+
   it("shows the extra FlyGuys fields when the snapshot has them", () => {
     officeState.data!.snapshot!.marketplace = {
       status: "ok",

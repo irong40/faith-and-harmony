@@ -3,6 +3,7 @@ import {
   applyPresenceChange,
   buildInbox,
   declinePending,
+  notDeclinedIds,
   deskState,
   deskTimeline,
   floorRooms,
@@ -56,11 +57,40 @@ describe("decline", () => {
     expect(declinePending([msg("decline", "167155", { ledger_line: "REFUSED decline: x" })], "167155")).toBeNull();
     expect(declinePending([msg("decline", "167155,171386")], "171386")).not.toBeNull();
   });
-  it("lets the newest press win between interest and decline", () => {
-    const newerDecline = [msg("decline", "1"), msg("interest", "1")];
-    expect(missionPending(newerDecline, "1")?.kind).toBe("decline");
-    const newerInterest = [msg("interest", "1"), msg("decline", "1")];
-    expect(missionPending(newerInterest, "1")?.kind).toBe("interest");
+  it("lets interest win over a decline, whichever was pressed last", () => {
+    expect(missionPending([msg("decline", "1"), msg("interest", "1")], "1")?.kind).toBe("interest");
+    expect(missionPending([msg("interest", "1"), msg("decline", "1")], "1")?.kind).toBe("interest");
+    const r = splitMissions([mission("1")], [msg("decline", "1"), msg("interest", "1")]);
+    expect(r.declined).toHaveLength(0);
+    expect(r.waiting.map((m) => m.id)).toEqual(["1"]);
+  });
+  it("never declines a mission the office named as NOT declined, in a mixed batch line", () => {
+    const line =
+      "DECLINED 333333: marked not for me. Nothing was sent to FlyGuys. NOT declined 111111: interest was already sent; withdraw it in the FlyGuys Pilots app";
+    const messages = [msg("decline", "333333,111111", { picked_up_at: at(0), ledger_line: line })];
+    expect(declinePending(messages, "333333")).not.toBeNull();
+    expect(declinePending(messages, "111111")).toBeNull();
+    const r = splitMissions([mission("333333"), mission("111111")], messages);
+    expect(r.declined.map((m) => m.id)).toEqual(["333333"]);
+    expect(r.open.map((m) => m.id)).toEqual(["111111"]);
+  });
+  it("reads several ids after NOT declined", () => {
+    expect([...notDeclinedIds("NOT declined 1, 2,3: interest was already sent")]).toEqual(["1", "2", "3"]);
+    expect(notDeclinedIds(null).size).toBe(0);
+  });
+  it("declines nothing on a REFUSED or FAILED line", () => {
+    for (const line of ["REFUSED decline: a send is in progress; nothing was declined; press again", "FAILED decline: x"]) {
+      const messages = [msg("decline", "1,2", { picked_up_at: at(0), ledger_line: line })];
+      const r = splitMissions([mission("1"), mission("2")], messages);
+      expect(r.declined).toHaveLength(0);
+      expect(r.open.map((m) => m.id)).toEqual(["1", "2"]);
+    }
+  });
+  it("never moves a mission with a recorded interest to Declined", () => {
+    for (const status of ["interested", "unknown", "possible_award", "mission_email", "lost", "rejected"] as const) {
+      const r = splitMissions([mission("1", { status })], [msg("decline", "1")]);
+      expect(r.declined).toHaveLength(0);
+    }
   });
   it("lets the snapshot status win over a pending message", () => {
     const r = splitMissions([mission("1", { status: "interested" })], [msg("decline", "1")]);
