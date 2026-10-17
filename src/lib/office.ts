@@ -502,9 +502,24 @@ export function interestPending(messages: OfficeMessage[], missionId: string): O
 }
 
 /**
- * A "Not for me" message naming this mission that the office has not refused
- * or failed. Mirrors interestPending: it keeps the mission out of New from the
- * press until the snapshot reports it declined. Nothing goes to FlyGuys.
+ * Missions the office named as NOT declined in its result line. One decline
+ * press can carry several missions, and the desktop answers per mission:
+ *   "DECLINED 333333: marked not for me. ... NOT declined 111111: interest was
+ *    already sent; withdraw it in the FlyGuys Pilots app"
+ * Every id listed after "NOT declined" (up to the colon) was refused.
+ */
+export function notDeclinedIds(ledgerLine: string | null | undefined): Set<string> {
+  const ids = new Set<string>();
+  for (const m of (ledgerLine ?? "").matchAll(/NOT declined\s+([\d,\s]+)/g)) {
+    for (const id of m[1].split(/[\s,]+/)) if (id) ids.add(id);
+  }
+  return ids;
+}
+
+/**
+ * A "Not for me" message that still declines this mission: it names the
+ * mission, the office did not refuse or fail the whole press, and the result
+ * line does not list this mission as NOT declined. Nothing goes to FlyGuys.
  */
 export function declinePending(messages: OfficeMessage[], missionId: string): OfficeMessage | null {
   return (
@@ -512,20 +527,20 @@ export function declinePending(messages: OfficeMessage[], missionId: string): Of
       (m) =>
         m.kind === "decline" &&
         m.body.split(/[\s,]+/).includes(missionId) &&
-        !/^(REFUSED|FAILED)/.test(m.ledger_line ?? "")
+        !/^(REFUSED|FAILED)/.test(m.ledger_line ?? "") &&
+        !notDeclinedIds(m.ledger_line).has(missionId)
     ) ?? null
   );
 }
 
 /**
- * The newest pending interest or decline for a mission. Messages are newest
- * first, so whichever Adam pressed last wins while the snapshot catches up.
+ * What a pending message does to a mission the snapshot still lists as open.
+ * Interest ALWAYS wins over a decline, whatever the order of the presses: once
+ * interest may have reached FlyGuys, the page must not file the mission as
+ * declined (Codex 2026-10-17). A decline counts only with no interest pending.
  */
 export function missionPending(messages: OfficeMessage[], missionId: string): OfficeMessage | null {
-  const i = interestPending(messages, missionId);
-  const d = declinePending(messages, missionId);
-  if (!i || !d) return i ?? d;
-  return messages.indexOf(i) < messages.indexOf(d) ? i : d;
+  return interestPending(messages, missionId) ?? declinePending(messages, missionId);
 }
 
 /** Groups for the page: what needs a decision, what is waiting on FlyGuys, what is closed. */

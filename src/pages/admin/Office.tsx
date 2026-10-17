@@ -420,8 +420,11 @@ function Marketplace({ market, messages, send }: { market: OfficeMarketplace; me
                       </td>
                       <td className="p-2 text-right font-mono tabular-nums">{m.miles ?? "?"}</td>
                       <td className="p-2 text-right font-mono tabular-nums">{m.acres ?? "?"}</td>
-                      <td className="min-w-[9rem] p-2">
+                      <td className="min-w-[14rem] p-2">
                         <Pill tone={air.tone}>{air.label}</Pill>
+                        {/* The full screen verdict, visible on every row (phones have no hover).
+                            It carries the "screen; re-check the real KML" warning (Codex 2026-10-17). */}
+                        {m.airspace_text && <p className="mt-1 whitespace-normal break-words text-xs">{m.airspace_text}</p>}
                         <p className="mt-1 text-xs text-muted-foreground">
                           {m.flyguys_airspace ? `FlyGuys: ${m.flyguys_airspace}` : ""}
                           {m.airspace_checked_at ? `${m.flyguys_airspace ? " · " : ""}screened ${ago(m.airspace_checked_at)}` : ""}
