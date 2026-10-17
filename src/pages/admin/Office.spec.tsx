@@ -477,10 +477,33 @@ describe("Office floor", () => {
     expect(within(room).getByText("security audit")).toBeTruthy();
   });
 
-  it("says live presence is unavailable instead of showing every desk as idle without warning", () => {
+  it("says live updates are paused and that desks show the 5-minute snapshot", () => {
     presenceState = { data: undefined, error: new Error("permission denied for table office_presence") };
     renderOffice("floor");
-    expect(screen.getByText(/Live presence is unavailable/)).toBeTruthy();
+    expect(screen.getByText(/Live updates are paused/)).toBeTruthy();
+    expect(screen.getByText(/Desks show the office snapshot, which\s+updates every 5 minutes/)).toBeTruthy();
     expect(screen.getByRole("button", { name: /^Finance:/ })).toBeTruthy();
+  });
+
+  it("shows a dispatcher job from the snapshot when presence errored, not No work recorded", () => {
+    presenceState = { data: undefined, error: new Error("socket closed") };
+    officeState.data!.snapshot!.team = [
+      { name: "finance-officer", does: "Monthly close.", doing: "September close", queued: 0, held: 0, blocked: 0, done_7d: 0, last_done: "", last_done_at: null, lessons: 0 },
+    ];
+    renderOffice("floor");
+    const desk = screen.getByRole("button", { name: "Finance: Working (5-minute snapshot)" });
+    expect(within(desk).getByText("September close")).toBeTruthy();
+    fireEvent.click(desk);
+    expect(screen.getByText(/From the 5-minute office snapshot/)).toBeTruthy();
+  });
+
+  it("shows a snapshot job when presence loaded but has no row for that desk", () => {
+    presenceState = { data: { presence: [], events: [] }, error: null };
+    officeState.data!.snapshot!.team = [
+      { name: "finance-officer", does: "", doing: "September close", queued: 0, held: 0, blocked: 0, done_7d: 0, last_done: "", last_done_at: null, lessons: 0 },
+    ];
+    renderOffice("floor");
+    expect(screen.getByRole("button", { name: "Finance: Working (5-minute snapshot)" })).toBeTruthy();
+    expect(screen.queryByText("No work recorded")).toBeNull();
   });
 });

@@ -4,7 +4,6 @@ import {
   answeredBy,
   boardColumns,
   callMeta,
-  employeeState,
   freshness,
   isAccessNotGranted,
   isQuestion,
@@ -118,17 +117,6 @@ describe("messageStatus", () => {
   it("distinguishes sent from received", () => {
     expect(messageStatus(message({}), NOW).text).toMatch(/collects it within 5 minutes/);
     expect(messageStatus(message({ picked_up_at: minsAgo(3) }), NOW).text).toBe("Received by the office 3 min ago");
-  });
-});
-
-describe("employeeState", () => {
-  const base = { name: "x", does: "", doing: "", queued: 0, held: 0, blocked: 0, done_7d: 0, last_done: "", last_done_at: null, lessons: 0 };
-  it("ranks working over queued over held over blocked over idle", () => {
-    expect(employeeState({ ...base, doing: "job", queued: 2 }).label).toBe("Working");
-    expect(employeeState({ ...base, queued: 2, held: 1 }).label).toBe("Up next");
-    expect(employeeState({ ...base, held: 1, blocked: 1 }).label).toBe("Held");
-    expect(employeeState({ ...base, blocked: 1 }).label).toBe("Blocked");
-    expect(employeeState(base).label).toBe("Idle");
   });
 });
 
