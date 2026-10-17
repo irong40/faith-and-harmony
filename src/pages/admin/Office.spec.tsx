@@ -272,3 +272,38 @@ describe("Office page: questions and answers", () => {
     expect(screen.queryByText("Answers from the office")).toBeNull();
   });
 });
+
+describe("Office marketplace jobs", () => {
+  const m = (id: string, over: Record<string, unknown> = {}) => ({
+    id, name: `M ${id}`, city: "Chesapeake", state: "Virginia", miles: 5, acres: 20, capture: "10/23/26",
+    due: "10/31/26", deviation: "", flyguys_airspace: "", airspace_level: "NONE",
+    airspace_text: "No authorization needed (Class G)", lat: 36.7, lng: -76.2, status: "open",
+    interest_at: null, outcome_subject: null, outcome_at: null, ...over,
+  });
+
+  it("sends interest for exactly the selected missions", () => {
+    officeState.data!.snapshot!.marketplace = {
+      status: "ok", missions: [m("167155"), m("172283", { airspace_level: "DRONEZONE" })],
+    } as never;
+    renderOffice();
+    expect(screen.getByText("Marketplace jobs")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Select flyable" }));
+    fireEvent.click(screen.getByRole("button", { name: /I'm interested \(1\)/ }));
+    expect(mutate.mock.calls[0][0]).toEqual({ kind: "interest", body: "167155" });
+  });
+
+  it("says UNKNOWN, not 'no missions', when the desktop could not read the feed", () => {
+    officeState.data!.snapshot!.marketplace = { status: "UNKNOWN: DroneSniper mission file missing", missions: [] } as never;
+    renderOffice();
+    expect(screen.getByText(/the desktop could not read the mission feed/)).toBeTruthy();
+  });
+
+  it("puts a possible award at the top with the 24-hour warning", () => {
+    officeState.data!.snapshot!.marketplace = {
+      status: "ok", missions: [m("169545", { status: "possible_award", outcome_subject: "Mission 169545" })],
+    } as never;
+    renderOffice();
+    expect(screen.getByText(/Possible award · 1/)).toBeTruthy();
+    expect(screen.getByText(/confirm within 24 hours/)).toBeTruthy();
+  });
+});
