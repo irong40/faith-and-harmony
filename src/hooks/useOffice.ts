@@ -135,6 +135,18 @@ export async function fetchOfficePresence(): Promise<OfficePresenceData> {
   };
 }
 
+let channelSeq = 0;
+
+/** "office-presence-<uuid>", unique per call even where crypto.randomUUID is missing. */
+export function presenceChannelName(): string {
+  channelSeq += 1;
+  const id =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  return `office-presence-${id}-${channelSeq}`;
+}
+
 export function useOfficePresence() {
   const queryClient = useQueryClient();
   const query = useQuery({
@@ -157,8 +169,10 @@ export function useOfficePresence() {
         old ? applyPresenceChange(old, table, payload.eventType, payload.new, payload.old) : old
       );
     };
+    // A fresh name per subscription: a remount (or StrictMode's double effect)
+    // must never join a channel that is still leaving (QA 2026-10-17).
     const channel = db
-      .channel("office-presence-realtime")
+      .channel(presenceChannelName())
       .on("postgres_changes", { event: "*", schema: "public", table: "office_presence" }, onChange("office_presence"))
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "office_presence_log" }, onChange("office_presence_log"))
       .subscribe();
