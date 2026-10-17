@@ -66,9 +66,16 @@ describe("interestPending", () => {
     expect(interestPending([msg("167155,171386")], "171386")).not.toBeNull();
     expect(interestPending([msg("1671550")], "167155")).toBeNull();
   });
+  it("keeps a send that is in flight or of unknown outcome pending, so it cannot be sent twice", () => {
+    expect(interestPending([msg("167155", { picked_up_at: "x", ledger_line: "SENDING interest to FlyGuys" })], "167155")).not.toBeNull();
+    expect(interestPending([msg("167155", { picked_up_at: "x", ledger_line: "UNKNOWN delivery for 167155" })], "167155")).not.toBeNull();
+  });
+  it("hands over to the snapshot once the office reports a definite result", () => {
+    expect(interestPending([msg("167155", { picked_up_at: "x", ledger_line: "INTEREST SENT to FlyGuys: added 0; no longer open 167155" })], "167155")).toBeNull();
+  });
   it("ignores refused or failed sends so the mission can be picked again", () => {
-    expect(interestPending([msg("167155", { ledger_line: "FAILED interest for 167155" })], "167155")).toBeNull();
-    expect(interestPending([msg("167155", { ledger_line: "REFUSED interest: x" })], "167155")).toBeNull();
+    expect(interestPending([msg("167155", { picked_up_at: "x", ledger_line: "FAILED interest for 167155" })], "167155")).toBeNull();
+    expect(interestPending([msg("167155", { picked_up_at: "x", ledger_line: "REFUSED interest: x" })], "167155")).toBeNull();
   });
   it("ignores other message kinds", () => {
     expect(interestPending([msg("167155", { kind: "directive" })], "167155")).toBeNull();

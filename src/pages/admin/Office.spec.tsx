@@ -13,7 +13,8 @@ let officeState: { data?: OfficeData; error: unknown; isLoading: boolean; isFetc
 
 vi.mock("@/hooks/useOffice", () => ({
   useOffice: () => ({ ...officeState, refetch }),
-  useSendOfficeMessage: () => ({ mutate }),
+  // mutateAsync records into the same spy, so assertions on mutate cover both paths.
+  useSendOfficeMessage: () => ({ mutate, mutateAsync: async (x: unknown) => { mutate(x); return x; } }),
 }));
 
 import Office from "./Office";
@@ -287,7 +288,7 @@ describe("Office marketplace jobs", () => {
     } as never;
     renderOffice();
     expect(screen.getByText("Marketplace jobs")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Select flyable" }));
+    fireEvent.click(screen.getByRole("button", { name: "Select screen-clear" }));
     fireEvent.click(screen.getByRole("button", { name: /I'm interested \(1\)/ }));
     expect(mutate.mock.calls[0][0]).toEqual({ kind: "interest", body: "167155" });
   });
@@ -300,6 +301,27 @@ describe("Office marketplace jobs", () => {
     expect(screen.queryByText(/No open missions near you/)).toBeNull();
     expect(screen.queryByText(/0 near you/)).toBeNull();
     expect(screen.getByText(/missions unknown/)).toBeTruthy();
+  });
+
+  it("refuses to send from a stale feed", () => {
+    officeState.data!.snapshot!.marketplace = {
+      status: "STALE: the last 3 FlyGuys pull(s) failed", missions: [m("167155")],
+    } as never;
+    renderOffice();
+    expect(screen.getByText(/STALE: the last 3 FlyGuys pull/)).toBeTruthy();
+    expect((screen.getByRole("button", { name: /I'm interested/ }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Select screen-clear" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("files a non-assignment FlyGuys email for review, not as an award", () => {
+    officeState.data!.snapshot!.marketplace = {
+      status: "ok", missions: [m("169545", { status: "mission_email", outcome_subject: "Mission update 169545", off_map: true })],
+    } as never;
+    renderOffice();
+    expect(screen.getByText("Mission email: review")).toBeTruthy();
+    expect(screen.getByText(/if it is an assignment, confirm/)).toBeTruthy();
+    expect(screen.getByText(/No longer on the sourcing map/)).toBeTruthy();
+    expect(screen.queryByText("Possible award")).toBeNull();
   });
 
   it("does not resend a selected mission that a refresh moved to Waiting", () => {
@@ -324,7 +346,7 @@ describe("Office marketplace jobs", () => {
       status: "ok", missions: [m("169545", { status: "possible_award", outcome_subject: "Mission 169545" })],
     } as never;
     renderOffice();
-    expect(screen.getByText(/Possible award · 1/)).toBeTruthy();
+    expect(screen.getByText(/Needs your attention · 1/)).toBeTruthy();
     expect(screen.getByText(/confirm within 24 hours/)).toBeTruthy();
   });
 });

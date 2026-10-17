@@ -190,6 +190,14 @@ function MissionCard({
               Check the FlyGuys Pilots app and confirm within 24 hours, or it may be reassigned.
             </p>
           )}
+          {mission.status === "mission_email" && (
+            <p className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+              FlyGuys emailed about this mission. Read it: if it is an assignment, confirm in the app within 24 hours.
+            </p>
+          )}
+          {mission.off_map && (
+            <p className="mt-1 text-xs text-muted-foreground">No longer on the sourcing map (assigned missions leave it).</p>
+          )}
           {map && (
             <a href={map} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs underline">
               Map
@@ -214,23 +222,21 @@ function Marketplace({ market, messages, send }: { market: OfficeMarketplace; me
   const live = picked.filter((id) => openIds.has(id));
 
   const toggle = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
-  const sendInterest = () => {
-    if (!live.length) return;
+  // mutateAsync, not mutate with per-call callbacks: the page shares one
+  // mutation with answers and releases, and a second send replaces the first
+  // call's callbacks, which left this button stuck on "Sending" (Codex 2026-10-17).
+  const sendInterest = async () => {
+    if (!live.length || !feedOk) return;
     setBusy(true);
     setFailed(null);
-    send.mutate(
-      { kind: "interest", body: live.join(",") },
-      {
-        onSuccess: () => {
-          setBusy(false);
-          setPicked([]);
-        },
-        onError: (error) => {
-          setBusy(false);
-          setFailed(`Not sent. ${errorText(error)}`);
-        },
-      }
-    );
+    try {
+      await send.mutateAsync({ kind: "interest", body: live.join(",") });
+      setPicked([]);
+    } catch (error) {
+      setFailed(`Not sent. ${errorText(error)}`);
+    } finally {
+      setBusy(false);
+    }
   };
   const pickFlyable = () =>
     setPicked((p) => [...new Set([...p.filter((id) => openIds.has(id)), ...open.filter(flyableNow).map((m) => m.id)])]);
@@ -260,7 +266,7 @@ function Marketplace({ market, messages, send }: { market: OfficeMarketplace; me
       {award.length > 0 && (
         <div className="mb-4 space-y-2">
           <p className="font-mono text-xs uppercase tracking-wide text-amber-700 dark:text-amber-400">
-            Possible award · {award.length}
+            Needs your attention · {award.length}
           </p>
           {award.map((m) => (
             <MissionCard key={m.id} mission={m} />
@@ -270,17 +276,17 @@ function Marketplace({ market, messages, send }: { market: OfficeMarketplace; me
 
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <p className="mr-auto font-mono text-xs uppercase tracking-wide text-muted-foreground">
-          Open · {open.length} · {open.filter(flyableNow).length} flyable without an authorization wait
+          Open · {open.length} · {open.filter(flyableNow).length} clear on the airspace screen
         </p>
-        <Button size="sm" variant="ghost" onClick={pickFlyable} disabled={!open.some(flyableNow)}>
-          Select flyable
+        <Button size="sm" variant="ghost" onClick={pickFlyable} disabled={!feedOk || !open.some(flyableNow)}>
+          Select screen-clear
         </Button>
         {live.length > 0 && (
           <Button size="sm" variant="ghost" onClick={() => setPicked([])}>
             Clear
           </Button>
         )}
-        <Button size="sm" onClick={sendInterest} disabled={!live.length || busy}>
+        <Button size="sm" onClick={sendInterest} disabled={!feedOk || !live.length || busy}>
           {busy ? "Sending" : `I'm interested${live.length ? ` (${live.length})` : ""}`}
         </Button>
       </div>
@@ -328,7 +334,7 @@ function Marketplace({ market, messages, send }: { market: OfficeMarketplace; me
         </details>
       )}
       <p className="mt-3 text-xs text-muted-foreground">
-        Authorization is from FAA data at the capture altitude on a circle sized from acreage; the real KML may differ.
+        Authorization is an FAA-data SCREEN at the capture altitude on a generous circle around the site, not a clearance: check the real KML before flight.
         Temporary flight restrictions are not included: check B4UFLY on the day.
       </p>
     </Section>
