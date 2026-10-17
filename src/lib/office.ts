@@ -143,7 +143,8 @@ export interface OfficeSnapshot {
 export type AirspaceLevel = "NONE" | "EASY_LAANC" | "DRONEZONE" | "SKIP" | "UNKNOWN";
 /** open: nothing sent · interested: sent, no answer · lost: "Mission Not Assigned" email · possible_award: another FlyGuys email names it. */
 /** mission_email: a FlyGuys email names the mission but does not read like an assignment; read it. */
-export type MissionStatus = "open" | "interested" | "lost" | "possible_award" | "mission_email";
+/** unknown: a send may or may not have reached FlyGuys (never retried automatically). rejected: FlyGuys said it is no longer open. */
+export type MissionStatus = "open" | "interested" | "lost" | "possible_award" | "mission_email" | "unknown" | "rejected";
 
 export interface OfficeMission {
   id: string;
@@ -158,6 +159,8 @@ export interface OfficeMission {
   flyguys_airspace: string;
   airspace_level: AirspaceLevel;
   airspace_text: string;
+  /** When DroneSniper last ran the airspace screen for this mission. */
+  airspace_checked_at?: string | null;
   lat: string | number | null;
   lng: string | number | null;
   status: MissionStatus;
@@ -452,14 +455,18 @@ export function missionStatusTone(status: MissionStatus): { tone: Tone; label: s
   if (status === "lost") return { tone: "idle", label: "Not assigned" };
   if (status === "possible_award") return { tone: "warn", label: "Possible award" };
   if (status === "mission_email") return { tone: "warn", label: "Mission email: review" };
+  if (status === "unknown") return { tone: "warn", label: "Delivery unknown: check the app" };
+  if (status === "rejected") return { tone: "idle", label: "No longer open" };
   return { tone: "hold", label: "Open" };
 }
 
 /**
- * An interest message for this mission that is still in flight: not yet
- * collected, being sent, or sent with an unknown outcome. Once the office
- * reports a definite result the snapshot's own status takes over, so a mission
- * FlyGuys said is no longer open does not sit in Waiting (Codex 2026-10-17).
+ * An interest message naming this mission that the office has not refused or
+ * failed. While the snapshot still lists the mission as open, such a message
+ * keeps it out of Open, from the press until the desktop's own snapshot
+ * reports the new status. Without that, a refresh between the office writing
+ * "INTEREST SENT" and the next snapshot reopened it (Codex re-review). The
+ * desktop also refuses any mission it has ever sent, so this is the second lock.
  */
 export function interestPending(messages: OfficeMessage[], missionId: string): OfficeMessage | null {
   return (
@@ -467,7 +474,7 @@ export function interestPending(messages: OfficeMessage[], missionId: string): O
       (m) =>
         m.kind === "interest" &&
         m.body.split(/[\s,]+/).includes(missionId) &&
-        (!m.picked_up_at || /^(SENDING|UNKNOWN|SKIPPED)/.test(m.ledger_line ?? ""))
+        !/^(REFUSED|FAILED)/.test(m.ledger_line ?? "")
     ) ?? null
   );
 }
@@ -477,10 +484,10 @@ export function splitMissions(missions: OfficeMission[], messages: OfficeMessage
   const byMiles = (a: OfficeMission, b: OfficeMission) => (a.miles ?? 9999) - (b.miles ?? 9999);
   const open = missions.filter((m) => m.status === "open" && !interestPending(messages, m.id)).sort(byMiles);
   const waiting = missions
-    .filter((m) => m.status === "interested" || (m.status === "open" && interestPending(messages, m.id)))
+    .filter((m) => m.status === "interested" || m.status === "unknown" || (m.status === "open" && interestPending(messages, m.id)))
     .sort(byMiles);
   const award = missions.filter((m) => m.status === "possible_award" || m.status === "mission_email").sort(byMiles);
-  const lost = missions.filter((m) => m.status === "lost").sort(byMiles);
+  const lost = missions.filter((m) => m.status === "lost" || m.status === "rejected").sort(byMiles);
   return { open, waiting, award, lost };
 }
 

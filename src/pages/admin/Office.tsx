@@ -177,7 +177,10 @@ function MissionCard({
             Job {mission.id} · {mission.acres ?? "?"} ac · capture {mission.capture ?? "?"} · due {mission.due ?? "?"}
             {mission.deviation && mission.deviation !== "None" ? ` · ${mission.deviation}` : ""}
           </p>
-          <p className="mt-1 break-words text-xs">{mission.airspace_text}</p>
+          <p className="mt-1 break-words text-xs">
+            {mission.airspace_text}
+            {mission.airspace_checked_at ? ` · screened ${ago(mission.airspace_checked_at)}` : ""}
+          </p>
           {mission.outcome_subject && (
             <p className="mt-1 break-words text-xs">
               <span className="font-medium">FlyGuys: </span>
@@ -325,7 +328,7 @@ function Marketplace({ market, messages, send }: { market: OfficeMarketplace; me
       )}
       {lost.length > 0 && (
         <details className="mt-3">
-          <summary className="cursor-pointer text-sm font-medium text-muted-foreground">Not assigned ({lost.length})</summary>
+          <summary className="cursor-pointer text-sm font-medium text-muted-foreground">Closed: not assigned or no longer open ({lost.length})</summary>
           <div className="mt-2 grid gap-2 md:grid-cols-2">
             {lost.map((m) => (
               <MissionCard key={m.id} mission={m} />
