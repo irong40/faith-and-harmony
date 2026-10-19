@@ -44,13 +44,6 @@ const serviceSchema = {
   "@graph": [
     {
       "@type": "Service",
-      "name": "Listing Lite Aerial Photography",
-      "description": "10 edited aerial photos with sky replacement. Next day delivery.",
-      "provider": { "@type": "LocalBusiness", "name": "Sentinel Aerial Inspections" },
-      "offers": { "@type": "Offer", "price": "225", "priceCurrency": "USD" }
-    },
-    {
-      "@type": "Service",
       "name": "Listing Pro Aerial Photography",
       "description": "25 edited aerial photos, 60 second reel, 2D boundary overlay, 48 hour delivery.",
       "provider": { "@type": "LocalBusiness", "name": "Sentinel Aerial Inspections" },
@@ -79,10 +72,14 @@ const serviceSchema = {
     },
     {
       "@type": "Service",
-      "name": "Inspection Data Package",
-      "description": "Inspection grid photography, annotated report, exportable data.",
+      "name": "Roof and Facility Inspection",
+      "description": "Systematic roof inspection with grid photography and annotated report. Starting at $1,200.",
       "provider": { "@type": "LocalBusiness", "name": "Sentinel Aerial Inspections" },
-      "offers": { "@type": "Offer", "price": "1200", "priceCurrency": "USD" }
+      "offers": {
+        "@type": "Offer",
+        "priceCurrency": "USD",
+        "priceSpecification": { "@type": "PriceSpecification", "minPrice": "1200", "priceCurrency": "USD" }
+      }
     }
   ]
 };

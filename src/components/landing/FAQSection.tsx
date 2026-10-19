@@ -30,7 +30,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "How much does drone photography cost?",
-    answer: "Residential photography starts at $225 for the Listing Lite package (10 edited photos, next day delivery). The Listing Pro package is $450 and includes 25 photos, a 60 second video reel, and a 2D boundary overlay. Commercial packages start at $450 per visit for construction progress monitoring and go up to $1,200 for the full Inspection Data package.",
+    answer: "Residential photography starts at $450 for the Listing Pro package, which includes 25 photos, a 60 second video reel, and a 2D boundary overlay. Commercial packages start at $450 per visit for construction progress monitoring. Roof and Facility Inspection is starting at $1,200.",
   },
   {
     question: "What is LAANC authorization and why does it matter?",
