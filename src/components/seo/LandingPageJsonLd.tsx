@@ -59,14 +59,14 @@ const serviceSchema = {
     {
       "@type": "Service",
       "name": "Construction Progress Monitoring",
-      "description": "Orthomosaic, site overview, date stamped archive per visit.",
+      "description": "25 labeled photos, 4 short video clips, compass bearing shots, progress comparison ready, 48 hour delivery.",
       "provider": { "@type": "LocalBusiness", "name": "Sentinel Aerial Inspections" },
       "offers": { "@type": "Offer", "price": "450", "priceCurrency": "USD" }
     },
     {
       "@type": "Service",
       "name": "Commercial Marketing Package",
-      "description": "4K video, 3D model, raw footage, perpetual license.",
+      "description": "30+ edited photos, 90 second highlight video, property boundaries overlay, premium color grading, 48 hour delivery.",
       "provider": { "@type": "LocalBusiness", "name": "Sentinel Aerial Inspections" },
       "offers": { "@type": "Offer", "price": "850", "priceCurrency": "USD" }
     },
