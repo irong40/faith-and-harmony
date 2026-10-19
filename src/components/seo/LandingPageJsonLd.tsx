@@ -30,7 +30,6 @@ const localBusinessSchema = {
   ],
   "hasCredential": [
     "FAA Part 107 Remote Pilot Certificate",
-    "LAANC Authorization",
     "$1M Liability Insurance"
   ],
   "foundingDate": "2026",
@@ -54,7 +53,7 @@ const serviceSchema = {
     {
       "@type": "Service",
       "name": "Listing Pro Aerial Photography",
-      "description": "25 edited aerial photos, 60 second reel, 2D boundary overlay, 48 hour turnaround.",
+      "description": "25 edited aerial photos, 60 second reel, 2D boundary overlay, 48 hour delivery.",
       "provider": { "@type": "LocalBusiness", "name": "Sentinel Aerial Inspections" },
       "offers": { "@type": "Offer", "price": "450", "priceCurrency": "USD" }
     },

@@ -22,7 +22,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "What equipment do you use?",
-    answer: "Primary operations use the DJI Matrice 4E, a commercial grade aircraft with a mechanical shutter, built in RTK positioning, and 49 minutes of flight time per battery. The Mavic 3 Enterprise serves as the secondary aircraft for residential work and as a backup. The Emlid Reach RS3 provides survey grade RTK corrections for mapping and photogrammetry jobs.",
+    answer: "Primary operations use the DJI Matrice 4E, a commercial grade aircraft with a mechanical shutter, built in RTK positioning, and 49 minutes of flight time per battery.",
   },
   {
     question: "Are you insured?",
@@ -38,7 +38,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "What is LAANC authorization and why does it matter?",
-    answer: "LAANC stands for Low Altitude Authorization and Notification Capability. It is the FAA system that grants real time permission to fly in controlled airspace around airports and military installations. Without it, commercial drone flights in those areas are illegal. Hampton Roads has a dense network of controlled airspace. Sentinel maintains active LAANC authorization across the entire service area.",
+    answer: "LAANC stands for Low Altitude Authorization and Notification Capability. It is the FAA system that grants real time permission to fly in controlled airspace around airports and military installations. Without it, commercial drone flights in those areas are illegal. Hampton Roads has a dense network of controlled airspace. Sentinel requests FAA airspace authorization through LAANC for each flight in controlled airspace.",
   },
   {
     question: "What areas of Hampton Roads do you cover?",

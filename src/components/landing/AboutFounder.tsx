@@ -12,7 +12,6 @@ export default function AboutFounder() {
           </p>
           <div className="lp-founder-credentials">
             <div className="lp-founder-credential">FAA PART 107 CERTIFIED</div>
-            <div className="lp-founder-credential">LAANC AUTHORIZED</div>
             <div className="lp-founder-credential">$1M LIABILITY INSURANCE</div>
             <div className="lp-founder-credential">VETERAN OWNED SMALL BUSINESS</div>
           </div>

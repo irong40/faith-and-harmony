@@ -132,8 +132,8 @@ export default function LandingPage() {
               <p>
                 Our flagship division, Sentinel Aerial Inspections, provides professional
                 drone services across coastal Virginia and northeast North Carolina. We
-                operate enterprise-grade equipment including the DJI Matrice 4E, Mavic 3
-                Enterprise, and Mini 4 Pro — delivering data our clients can act on.
+                operate enterprise-grade equipment including the DJI Matrice 4E and
+                Mini 4 Pro — delivering data our clients can act on.
               </p>
               <p>
                 Every project benefits from our in-house technology stack: automated
