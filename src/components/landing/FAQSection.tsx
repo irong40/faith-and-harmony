@@ -22,7 +22,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "What equipment do you use?",
-    answer: "Primary operations use the DJI Matrice 4E, a commercial grade aircraft with a mechanical shutter, built in RTK positioning, and 49 minutes of flight time per battery.",
+    answer: "Primary operations use the DJI Matrice 4E.",
   },
   {
     question: "Are you insured?",
@@ -33,16 +33,12 @@ export const FAQ_ITEMS: FAQItem[] = [
     answer: "Residential photography starts at $225 for the Listing Lite package (10 edited photos, next day delivery). The Listing Pro package is $450 and includes 25 photos, a 60 second video reel, and a 2D boundary overlay. Commercial packages start at $450 per visit for construction progress monitoring and go up to $1,200 for the full Inspection Data package.",
   },
   {
-    question: "Can you fly thermal for roof inspections?",
-    answer: "The Matrice 4E supports thermal imaging attachments. Thermal roof inspections identify moisture intrusion, insulation gaps, and electrical hotspots that are invisible in standard photography. Contact us to discuss your specific inspection requirements and confirm equipment availability for your job date.",
-  },
-  {
     question: "What is LAANC authorization and why does it matter?",
     answer: "LAANC stands for Low Altitude Authorization and Notification Capability. It is the FAA system that grants real time permission to fly in controlled airspace around airports and military installations. Without it, commercial drone flights in those areas are illegal. Hampton Roads has a dense network of controlled airspace. Sentinel requests FAA airspace authorization through LAANC for each flight in controlled airspace.",
   },
   {
     question: "What areas of Hampton Roads do you cover?",
-    answer: "Virginia Beach, Norfolk, Chesapeake, Portsmouth, Newport News, Hampton, Suffolk, and Williamsburg. Coverage extends into Maryland and Northern North Carolina. We routinely operate near the military installations that many operators avoid.",
+    answer: "Virginia Beach, Norfolk, Chesapeake, Portsmouth, Newport News, Hampton, Suffolk, and Williamsburg. Coverage extends into Maryland and Northern North Carolina.",
   },
 ];
 

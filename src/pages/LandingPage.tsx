@@ -143,9 +143,8 @@ export default function LandingPage() {
             </div>
             <div className="fh-about-stats">
               {[
-                { value: "3", label: "Enterprise Drones" },
+                { value: "2", label: "Aircraft" },
                 { value: "HR", label: "Hampton Roads" },
-                { value: "24h", label: "Turnaround" },
                 { value: "100%", label: "Veteran Owned" },
               ].map((s) => (
                 <div key={s.label} className="fh-stat">
