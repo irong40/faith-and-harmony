@@ -25,7 +25,6 @@ const localBusinessSchema = {
     "Hampton, VA",
     "Suffolk, VA",
     "Williamsburg, VA",
-    "Maryland",
     "Northern North Carolina"
   ],
   "hasCredential": [

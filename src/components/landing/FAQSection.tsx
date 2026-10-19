@@ -18,7 +18,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "Do you serve Virginia Beach, Chesapeake, and Norfolk?",
-    answer: "Yes. The full service area covers Virginia Beach, Norfolk, Chesapeake, Portsmouth, Newport News, Hampton, Suffolk, and Williamsburg. We also serve Maryland and Northern North Carolina. If your property is in Hampton Roads, we can reach it.",
+    answer: "Yes. The full service area covers Virginia Beach, Norfolk, Chesapeake, Portsmouth, Newport News, Hampton, Suffolk, and Williamsburg. We also serve Northern North Carolina. If your property is in Hampton Roads, we can reach it.",
   },
   {
     question: "What equipment do you use?",
@@ -38,7 +38,7 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "What areas of Hampton Roads do you cover?",
-    answer: "Virginia Beach, Norfolk, Chesapeake, Portsmouth, Newport News, Hampton, Suffolk, and Williamsburg. Coverage extends into Maryland and Northern North Carolina.",
+    answer: "Virginia Beach, Norfolk, Chesapeake, Portsmouth, Newport News, Hampton, Suffolk, and Williamsburg. Coverage extends into Northern North Carolina.",
   },
 ];
 
