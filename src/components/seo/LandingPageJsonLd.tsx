@@ -28,14 +28,19 @@ const localBusinessSchema = {
     "Northern North Carolina"
   ],
   "hasCredential": [
-    "FAA Part 107 Remote Pilot Certificate",
     "$1M Liability Insurance"
   ],
   "foundingDate": "2026",
   "founder": {
     "@type": "Person",
     "name": "Dr. Adam Pierce",
-    "jobTitle": "Owner and Chief Pilot"
+    "jobTitle": "Owner and Chief Pilot",
+    "hasCredential": {
+      "@type": "EducationalOccupationalCredential",
+      "name": "FAA Part 107 Remote Pilot Certificate",
+      "credentialCategory": "certificate",
+      "recognizedBy": { "@type": "GovernmentOrganization", "name": "Federal Aviation Administration" }
+    }
   }
 };
 

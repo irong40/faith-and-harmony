@@ -21,7 +21,7 @@ export default function PortfolioGrid() {
       <div className="lp-container">
         <h2 className="lp-section-title">Our Work</h2>
         <p className="lp-portfolio-grid__subtitle">
-          Aerial photography and property documentation across Hampton Roads. All photos captured with FAA Part 107 certified pilots.
+          Aerial photography and property documentation across Hampton Roads. All photos flown by an FAA Part 107 certified remote pilot.
         </p>
         <div className="lp-portfolio-grid__grid">
           {PORTFOLIO_ITEMS.map((item, index) => (

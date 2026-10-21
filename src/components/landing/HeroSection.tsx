@@ -15,7 +15,7 @@ export default function HeroSection() {
           <span className="lp-hero__headline-location">Hampton Roads VA</span>
         </h1>
         <p className="lp-hero__sub">
-          Real estate agents and contractors across Hampton Roads rely on Sentinel for aerial photos, inspection data, and construction documentation. FAA Part 107 certified. Standard media packages delivered within 48 hours.
+          Real estate agents and contractors across Hampton Roads rely on Sentinel for aerial photos, inspection data, and construction documentation. Flown by an FAA Part 107 certified remote pilot. Standard media packages delivered within 48 hours.
         </p>
         <div className="lp-hero__actions">
           <a href="#quote" className="lp-cta-button">Get a Quote</a>
