@@ -31,7 +31,7 @@ export default function PricingSection() {
                   <li>25 photos</li>
                   <li>60 second reel</li>
                   <li>2D boundary overlay</li>
-                  <li>48 hour turnaround</li>
+                  <li>48 hour delivery</li>
                 </ul>
                 <a href="#quote?service=listing-pro" className="lp-cta-button lp-pricing__cta">Get a Quote</a>
               </div>

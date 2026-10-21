@@ -1,7 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 
 const SITE_URL = import.meta.env.VITE_PUBLIC_URL || 'https://faithandharmonyllc.com';
-const DESCRIPTION = 'Veteran owned drone services in Hampton Roads VA. FAA Part 107 certified, LAANC authorized for military airspace, 48 hour turnaround. Aerial photography, property inspections, and 3D photogrammetry for real estate professionals and commercial contractors.';
+const DESCRIPTION = 'Veteran owned drone services in Hampton Roads VA. Flown by an FAA Part 107 certified remote pilot. Aerial photography, property inspections, and 3D photogrammetry for real estate professionals and commercial contractors.';
 
 export default function LandingPageHelmet() {
   return (

@@ -25,19 +25,22 @@ const localBusinessSchema = {
     "Hampton, VA",
     "Suffolk, VA",
     "Williamsburg, VA",
-    "Maryland",
     "Northern North Carolina"
   ],
   "hasCredential": [
-    "FAA Part 107 Remote Pilot Certificate",
-    "LAANC Authorization",
     "$1M Liability Insurance"
   ],
   "foundingDate": "2026",
   "founder": {
     "@type": "Person",
     "name": "Dr. Adam Pierce",
-    "jobTitle": "Owner and Chief Pilot"
+    "jobTitle": "Owner and Chief Pilot",
+    "hasCredential": {
+      "@type": "EducationalOccupationalCredential",
+      "name": "FAA Part 107 Remote Pilot Certificate",
+      "credentialCategory": "certificate",
+      "recognizedBy": { "@type": "GovernmentOrganization", "name": "Federal Aviation Administration" }
+    }
   }
 };
 
@@ -46,15 +49,8 @@ const serviceSchema = {
   "@graph": [
     {
       "@type": "Service",
-      "name": "Listing Lite Aerial Photography",
-      "description": "10 edited aerial photos with sky replacement. Next day delivery.",
-      "provider": { "@type": "LocalBusiness", "name": "Sentinel Aerial Inspections" },
-      "offers": { "@type": "Offer", "price": "225", "priceCurrency": "USD" }
-    },
-    {
-      "@type": "Service",
       "name": "Listing Pro Aerial Photography",
-      "description": "25 edited aerial photos, 60 second reel, 2D boundary overlay, 48 hour turnaround.",
+      "description": "25 edited aerial photos, 60 second reel, 2D boundary overlay, 48 hour delivery.",
       "provider": { "@type": "LocalBusiness", "name": "Sentinel Aerial Inspections" },
       "offers": { "@type": "Offer", "price": "450", "priceCurrency": "USD" }
     },
@@ -68,23 +64,27 @@ const serviceSchema = {
     {
       "@type": "Service",
       "name": "Construction Progress Monitoring",
-      "description": "Orthomosaic, site overview, date stamped archive per visit.",
+      "description": "25 labeled photos, 4 short video clips, compass bearing shots, progress comparison ready, 48 hour delivery.",
       "provider": { "@type": "LocalBusiness", "name": "Sentinel Aerial Inspections" },
       "offers": { "@type": "Offer", "price": "450", "priceCurrency": "USD" }
     },
     {
       "@type": "Service",
       "name": "Commercial Marketing Package",
-      "description": "4K video, 3D model, raw footage, perpetual license.",
+      "description": "30+ edited photos, 90 second highlight video, property boundaries overlay, premium color grading, 48 hour delivery.",
       "provider": { "@type": "LocalBusiness", "name": "Sentinel Aerial Inspections" },
       "offers": { "@type": "Offer", "price": "850", "priceCurrency": "USD" }
     },
     {
       "@type": "Service",
-      "name": "Inspection Data Package",
-      "description": "Inspection grid photography, annotated report, exportable data.",
+      "name": "Roof and Facility Inspection",
+      "description": "Systematic roof inspection with grid photography and annotated report. Starting at $1,200.",
       "provider": { "@type": "LocalBusiness", "name": "Sentinel Aerial Inspections" },
-      "offers": { "@type": "Offer", "price": "1200", "priceCurrency": "USD" }
+      "offers": {
+        "@type": "Offer",
+        "priceCurrency": "USD",
+        "priceSpecification": { "@type": "PriceSpecification", "minPrice": "1200", "priceCurrency": "USD" }
+      }
     }
   ]
 };

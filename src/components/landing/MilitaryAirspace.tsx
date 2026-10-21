@@ -9,7 +9,7 @@ export default function MilitaryAirspace() {
         <div className="lp-airspace-grid">
           <div className="lp-airspace-card">
             <h3>NORFOLK NAVAL STATION</h3>
-            <p>The world's largest naval base. Class D and Class C airspace surrounds the installation. LAANC authorization is required for any commercial flight within the grid. Sentinel maintains active authorization.</p>
+            <p>The world's largest naval base. Class D and Class C airspace surrounds the installation. LAANC authorization is required for any commercial flight within the grid. Sentinel requests that authorization for each flight.</p>
           </div>
           <div className="lp-airspace-card">
             <h3>NAS OCEANA</h3>
