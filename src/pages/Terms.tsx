@@ -29,7 +29,7 @@ export default function Terms() {
           </p>
 
           <h2>Our Services</h2>
-          <p>We provide aerial photography, drone mapping, photogrammetry, and property inspection services across coastal Virginia, Maryland, and northeastern North Carolina. The specific scope of any engagement is set out in the quote or proposal we agree on with you.</p>
+          <p>We provide aerial photography, drone mapping, photogrammetry, and property inspection services across coastal Virginia and northeastern North Carolina. The specific scope of any engagement is set out in the quote or proposal we agree on with you.</p>
 
           <h2>Quotes and Estimates</h2>
           <p>Quotes describe the work, the deliverables, and the price for a defined scope. Quotes remain valid for the period stated in the quote. Work that falls outside the agreed scope may change the price, and we will tell you before we proceed.</p>
