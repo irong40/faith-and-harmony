@@ -34,7 +34,9 @@ import {
   Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
-import { useJobReports, useDeleteReport, useGenerateReportPDF } from "@/hooks/useReportBuilder";
+import { useJobReports, useDeleteReport } from "@/hooks/useReportBuilder";
+import { engineDocumentOf, signEngineReportUrl } from "@/lib/engineReport";
+import { toast } from "sonner";
 import type { ReportStatus } from "@/types/report";
 
 const STATUS_BADGE: Record<ReportStatus, { label: string; variant: "outline" | "default" | "secondary"; className: string }> = {
@@ -52,7 +54,19 @@ export default function Reports() {
   const statusFilter = tab === "all" ? undefined : (tab as ReportStatus);
   const { data: reports, isLoading } = useJobReports({ status: statusFilter });
   const deleteMutation = useDeleteReport();
-  const pdfMutation = useGenerateReportPDF();
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  // Client PDFs come from the report engine; the list only fetches them.
+  const downloadEnginePdf = async (reportId: string, filePath: string, fileName: string) => {
+    setDownloadingId(reportId);
+    try {
+      const url = await signEngineReportUrl(filePath, { download: fileName });
+      if (url) window.open(url, "_blank", "noopener");
+      else toast.error("Storage would not sign a link for this PDF.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const filtered = (reports ?? []).filter((r) => {
     if (!search) return true;
@@ -132,6 +146,7 @@ export default function Reports() {
                     <TableBody>
                       {filtered.map((report) => {
                         const badge = STATUS_BADGE[report.status];
+                        const enginePdf = engineDocumentOf(report);
                         return (
                           <TableRow
                             key={report.id}
@@ -164,9 +179,13 @@ export default function Reports() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  title="Download PDF"
-                                  disabled={pdfMutation.isPending}
-                                  onClick={() => pdfMutation.mutate(report.id)}
+                                  title={enginePdf ? "Download PDF" : "No engine PDF yet"}
+                                  aria-label={enginePdf ? "Download PDF" : "No engine PDF yet"}
+                                  disabled={!enginePdf || downloadingId === report.id}
+                                  onClick={() =>
+                                    enginePdf &&
+                                    downloadEnginePdf(report.id, enginePdf.file_path, enginePdf.file_name)
+                                  }
                                 >
                                   <Download className="h-4 w-4" />
                                 </Button>

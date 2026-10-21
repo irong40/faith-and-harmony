@@ -437,6 +437,27 @@ export interface ReportTemplate {
   is_active: boolean;
 }
 
+// ---- Engine report PDF (generated_documents row written by the engine) ----
+
+/** What the report engine records next to every PDF it hands to the CRM. */
+export interface EngineReportMetadata {
+  source?: string;
+  engine_version?: string;
+  report_id?: string;
+  /** False when the engine released the PDF as a DRAFT_ (gates not met). */
+  report_complete?: boolean;
+  blocks?: string[];
+  sha256?: string;
+}
+
+export interface EngineReportDocument {
+  id?: string;
+  file_name: string;
+  file_path: string;
+  metadata: EngineReportMetadata | null;
+  created_at?: string;
+}
+
 // ---- Job Report (from job_reports table) ----
 
 export interface JobReport {
@@ -445,6 +466,8 @@ export interface JobReport {
   client_id?: string;
   template_id: string;
   generated_document_id?: string;
+  /** Embedded via job_reports.generated_document_id when the query asks for it. */
+  generated_documents?: EngineReportDocument | null;
   status: ReportStatus;
   title: string;
   section_data: Partial<SectionDataMap>;

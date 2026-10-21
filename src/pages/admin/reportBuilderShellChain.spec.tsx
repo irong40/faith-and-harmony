@@ -102,9 +102,9 @@ vi.mock("@/hooks/useReportBuilder", () => {
     useJobReports: () => TEMPLATES_QUERY,
     useCreateReport: () => IDLE_MUTATION,
     useUpdateReport: () => IDLE_MUTATION,
+    useApproveEngineReport: () => IDLE_MUTATION,
     useSaveReportImages: () => IDLE_MUTATION,
     useDeleteReport: () => IDLE_MUTATION,
-    useGenerateReportPDF: () => IDLE_MUTATION,
   };
 });
 

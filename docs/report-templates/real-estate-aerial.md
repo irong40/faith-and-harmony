@@ -113,7 +113,7 @@
 
 ## 10. License & Rights Grant
 
-Per the Sentinel Aerial Inspections MSA dated `{{MSA}}`:
+Under the written terms the client accepted for this engagement:
 
 - **Licensee**: `{{BROKERAGE}}` and listing agent `{{AGENT}}`
 - **Permitted use**: marketing of the subject property at the address above, including MLS upload, brokerage websites, social media, print collateral, and aggregator syndication
@@ -152,7 +152,7 @@ Real-estate-specific:
 - **A** — Shot list as planned vs. delivered
 - **B** — Technical specs sheet for prints
 - **C** — Signed homeowner release form
-- **D** — License grant language (full MSA excerpt)
+- **D** — License grant language (excerpt of the accepted engagement terms)
 - **E** — Flight log + weather + airspace authorization
 
 ---

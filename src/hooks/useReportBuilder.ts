@@ -10,6 +10,7 @@ import type {
   SectionDataMap,
   SectionManifestEntry,
 } from "@/types/report";
+import { ENGINE_DOCUMENT_EMBED, isReleasedEngineDocument } from "@/lib/engineReport";
 import type { Json } from "@/integrations/supabase/types";
 
 // ---- helpers ----
@@ -75,7 +76,7 @@ export function useJobReports(options?: {
     queryFn: async () => {
       let q = supabase
         .from("job_reports")
-        .select("*, clients(name, company), report_templates(name)")
+        .select(`*, clients(name, company), report_templates(name), ${ENGINE_DOCUMENT_EMBED}`)
         .order("updated_at", { ascending: false });
       if (options?.status) q = q.eq("status", options.status);
       if (options?.job_id) q = q.eq("job_id", options.job_id);
@@ -97,7 +98,7 @@ export function useJobReport(id: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("job_reports")
-        .select("*, report_images(*)")
+        .select(`*, report_images(*), ${ENGINE_DOCUMENT_EMBED}`)
         .eq("id", id!)
         .single();
       if (error) throw error;
@@ -161,17 +162,129 @@ export function useUpdateReport() {
       section_data?: Partial<SectionDataMap>;
       active_sections?: ReportSectionKey[];
       status?: ReportStatus;
+      /**
+       * Required with `status`: the generated_document_id the editor loaded
+       * (null when it had none). Finalizing is conditional on that exact
+       * state, so a PDF Sortie attached after the page opened can never be
+       * approved by a button that never showed it.
+       */
+      expectDocumentId?: string | null;
     }) => {
       const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
       if (input.title !== undefined) update.title = input.title;
       if (input.section_data !== undefined) update.section_data = input.section_data as unknown as Json;
       if (input.active_sections !== undefined) update.active_sections = input.active_sections;
       if (input.status !== undefined) update.status = input.status;
-      const { error } = await supabase.from("job_reports").update(update).eq("id", input.id);
+      if (input.status === undefined) {
+        const { error } = await supabase.from("job_reports").update(update).eq("id", input.id);
+        if (error) throw error;
+        return;
+      }
+      if (input.expectDocumentId === undefined) {
+        throw new Error("A report's status can only change against the document state it was opened with.");
+      }
+      const base = supabase.from("job_reports").update(update).eq("id", input.id).eq("status", "draft");
+      const scoped =
+        input.expectDocumentId === null
+          ? base.is("generated_document_id", null)
+          : base.eq("generated_document_id", input.expectDocumentId);
+      const { data, error } = await scoped.select("id");
       if (error) throw error;
+      if (!data || data.length === 0) throw new StaleApprovalError();
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["job-reports"] }),
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error, input) => {
+      toast.error(e.message);
+      if (e instanceof StaleApprovalError) {
+        // Reload, so the page shows the report as it is now (an attached
+        // engine PDF opens in the viewer, with its own approval).
+        qc.invalidateQueries({ queryKey: ["job-report", input.id] });
+        qc.invalidateQueries({ queryKey: ["job-reports"] });
+      }
+    },
+  });
+}
+
+/**
+ * The job's approved, released engine PDF, or null. The same rule the delivery
+ * email applies (isReleasedEngineDocument over the recent final reports), so a
+ * screen that enables Send and the function that sends cannot disagree.
+ */
+export function useApprovedEngineReport(jobId: string | undefined) {
+  return useQuery({
+    queryKey: ["approved-engine-report", jobId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("job_reports")
+        .select(`id, title, status, ${ENGINE_DOCUMENT_EMBED}`)
+        .eq("job_id", jobId!)
+        .eq("status", "final")
+        .not("generated_document_id", "is", null)
+        .order("updated_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      const rows = (data ?? []) as unknown as Array<{
+        id: string;
+        title: string;
+        generated_documents: JobReport["generated_documents"];
+      }>;
+      const row = rows.find((r) => isReleasedEngineDocument(r.generated_documents));
+      return row ? { id: row.id, title: row.title, document: row.generated_documents! } : null;
+    },
+    enabled: !!jobId,
+  });
+}
+
+/** Thrown when the report changed between opening it and approving it. */
+export class StaleApprovalError extends Error {
+  constructor() {
+    super(
+      "This report changed after you opened it (a new PDF was attached, or it was already approved). " +
+        "The current version has been loaded; review it before approving."
+    );
+    this.name = "StaleApprovalError";
+  }
+}
+
+/**
+ * Approve exactly the engine PDF the reviewer is looking at.
+ *
+ * The update matches the report id AND status 'draft' AND the document id on
+ * screen, and must return the row it changed. If Sortie attached a newer PDF
+ * after the page loaded, nothing matches, nothing is approved, and the caller
+ * reloads so the new PDF is what gets reviewed.
+ */
+export function useApproveEngineReport() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; documentId: string }) => {
+      const { data, error } = await supabase
+        .from("job_reports")
+        .update({ status: "final", updated_at: new Date().toISOString() })
+        .eq("id", input.id)
+        .eq("status", "draft")
+        .eq("generated_document_id", input.documentId)
+        .select("id, status, generated_document_id");
+      if (error) throw error;
+      const row = (data ?? [])[0] as { id: string; status: ReportStatus; generated_document_id: string } | undefined;
+      if (!row) throw new StaleApprovalError();
+      return row;
+    },
+    onSuccess: (row) => {
+      // The authoritative row, straight into the cache the page reads from.
+      qc.setQueryData(["job-report", row.id], (old: unknown) =>
+        old && typeof old === "object" ? { ...(old as object), status: row.status } : old
+      );
+      qc.invalidateQueries({ queryKey: ["job-reports"] });
+      // Delivery screens decide whether Send is possible from this query.
+      qc.invalidateQueries({ queryKey: ["approved-engine-report"] });
+    },
+    onError: (e: Error, input) => {
+      toast.error(e.message);
+      if (e instanceof StaleApprovalError) {
+        qc.invalidateQueries({ queryKey: ["job-report", input.id] });
+      }
+    },
   });
 }
 
@@ -204,28 +317,12 @@ export function useDeleteReport() {
     onSuccess: () => {
       toast.success("Report deleted");
       qc.invalidateQueries({ queryKey: ["job-reports"] });
+      qc.invalidateQueries({ queryKey: ["approved-engine-report"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 }
 
-export function useGenerateReportPDF() {
-  return useMutation({
-    mutationFn: async (reportId: string) => {
-      const { data, error } = await supabase.functions.invoke("document-generator", {
-        body: { action: "generate-report", report_id: reportId },
-      });
-      if (error) throw error;
-      return data as { success: boolean; download_url?: string };
-    },
-    onSuccess: (result) => {
-      if (result.download_url) {
-        window.open(result.download_url, "_blank");
-        toast.success("PDF generated");
-      } else {
-        toast.success("Report logged — save as PDF from the print dialog");
-      }
-    },
-    onError: (e: Error) => toast.error(`PDF generation failed: ${e.message}`),
-  });
-}
+// useGenerateReportPDF retired 2026-09-28 (one layout). The CRM no longer
+// draws client PDFs through window.print(); the report engine renders them and
+// attaches them to the job. See src/lib/engineReport.ts.

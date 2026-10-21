@@ -10,17 +10,20 @@ export const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Sentinel Aerial Inspections Branding
+// Sentinel Aerial Inspections branding. One layout across every system
+// (2026-09-28): these are the report engine's tokens, taken from the live site
+// (sentinelaerialinspections.com): ink #0F0F0F, orange #E85D26 / #C44A1A,
+// paper #FAF8F3. The key names are kept so the template below reads the same.
 export const BRAND = {
-  navy: "#0f1e36",
-  sky: "#3b82f6",
-  accent: "#f59e0b",
-  light: "#f0f4f8",
+  navy: "#0f0f0f",
+  sky: "#e85d26",
+  accent: "#c44a1a",
+  light: "#faf8f3",
   companyName: "Sentinel Aerial Inspections",
   tagline: "Veteran-Owned Aerial Services — Hampton Roads, VA",
   email: "deliveries@sentinelaerialinspections.com",
   website: "sentinelaerialinspections.com",
-  location: "Hampton Roads, Virginia",
+  location: "Chesapeake, Virginia", // matches the report letterhead
 };
 
 export interface DeliveryEmailRequest {
@@ -221,7 +224,7 @@ export function renderStatsHtml(stats: DeliveryStats): string {
       : "0";
     const leftBorder = first ? "" : " border-left: none;";
     return `
-            <td style="text-align: center; padding: 16px; background-color: ${BRAND.light}; border-radius: ${radius}; border: 1px solid #dde3ea;${leftBorder}">
+            <td style="text-align: center; padding: 16px; background-color: ${BRAND.light}; border-radius: ${radius}; border: 1px solid #d9d0c4;${leftBorder}">
               <div style="font-size: 28px; font-weight: 700; color: ${BRAND.navy};">${tile.value}</div>
               <div style="font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">${tile.label}</div>
             </td>`;
@@ -236,6 +239,75 @@ export function renderStatsHtml(stats: DeliveryStats): string {
         `;
 }
 
+/** File names come from disk; never let one become markup in the email. */
+export function escapeHtml(text: string): string {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * The report Adam approved in the CRM, as a time-limited link.
+ *
+ * Reports are drawn by the report engine (sentinel-reports) and attached to the
+ * job by Sortie as a PDF in the private `generated-documents` bucket. Only a
+ * job report marked `final` (approved) whose document is a released engine
+ * PDF (see isReleasedEngineDocument) is ever linked. Any lookup failure means
+ * "no report", never a failed delivery.
+ */
+export interface ApprovedReport {
+  fileName: string;
+  url: string;
+}
+
+export const REPORT_LINK_TTL_SECONDS = 14 * 24 * 60 * 60;
+
+/**
+ * The one rule for "this PDF may go to a client", shared in spirit with
+ * src/lib/engineReport.ts (isReleasedEngineDocument) and Sortie's
+ * crm.attach_report_pdf. An allow-list, not a deny-list: older CRM rows
+ * written by the retired document-generator "generate-report" action carry a
+ * file_path but no file and no engine metadata, and must never be linked.
+ */
+// deno-lint-ignore no-explicit-any
+export function isReleasedEngineDocument(doc: any): boolean {
+  if (!doc || typeof doc.file_path !== "string" || !doc.file_path) return false;
+  const meta = doc.metadata ?? {};
+  if (meta.source !== "sentinel-reports") return false;
+  if (meta.report_complete !== true) return false;
+  return !/^draft_/i.test(String(doc.file_name ?? ""));
+}
+
+// deno-lint-ignore no-explicit-any
+export async function findApprovedReport(supabase: any, jobId: string): Promise<ApprovedReport | null> {
+  try {
+    const { data } = await supabase
+      .from("job_reports")
+      .select("id, status, generated_document_id, generated_documents(file_name, file_path, metadata)")
+      .eq("job_id", jobId)
+      .eq("status", "final")
+      .not("generated_document_id", "is", null)
+      .order("updated_at", { ascending: false })
+      .limit(10);
+    // The newest approved row can be a legacy one; take the newest that is a
+    // released engine PDF rather than giving up on the first miss.
+    const rows = Array.isArray(data) ? data : [];
+    const doc = rows.map((r) => r?.generated_documents).find(isReleasedEngineDocument);
+    if (!doc) return null;
+    if (!supabase.storage) return null;
+    const { data: signed, error } = await supabase.storage
+      .from("generated-documents")
+      .createSignedUrl(doc.file_path, REPORT_LINK_TTL_SECONDS);
+    if (error || !signed?.signedUrl) return null;
+    return { fileName: doc.file_name ?? "Report.pdf", url: signed.signedUrl };
+  } catch (_e) {
+    return null;
+  }
+}
+
 export interface BuildEmailArgs {
   emailSubject: string;
   siteLabel: string;
@@ -245,6 +317,7 @@ export interface BuildEmailArgs {
   primaryUrl?: string | null;
   deliverables: DeliverableRow[];
   stats: DeliveryStats;
+  report?: ApprovedReport | null;
   year?: number;
 }
 
@@ -258,6 +331,7 @@ export function buildEmailHtml(args: BuildEmailArgs): string {
     primaryUrl,
     deliverables,
     stats,
+    report,
   } = args;
   const year = args.year ?? new Date().getFullYear();
 
@@ -269,12 +343,12 @@ export function buildEmailHtml(args: BuildEmailArgs): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${emailSubject}</title>
 </head>
-<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #eef2f7;">
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f0ebe4;">
   <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; margin-top: 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
 
     <!-- Header -->
     <tr>
-      <td style="background: linear-gradient(135deg, ${BRAND.navy} 0%, #1a3152 100%); padding: 32px; text-align: center;">
+      <td style="background: linear-gradient(135deg, ${BRAND.navy} 0%, #252525 100%); padding: 32px; text-align: center;">
         <h1 style="color: white; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.5px;">
           ${BRAND.companyName}
         </h1>
@@ -286,7 +360,7 @@ export function buildEmailHtml(args: BuildEmailArgs): string {
 
     <!-- Title Banner -->
     <tr>
-      <td style="background: linear-gradient(135deg, ${BRAND.sky} 0%, #2563eb 100%); padding: 20px; text-align: center;">
+      <td style="background: linear-gradient(135deg, ${BRAND.sky} 0%, ${BRAND.accent} 100%); padding: 20px; text-align: center;">
         <h2 style="color: white; margin: 0; font-size: 20px; font-weight: 700;">Your Deliverables Are Ready</h2>
         <p style="color: rgba(255,255,255,0.85); margin: 6px 0 0 0; font-size: 13px;">${siteLabel}</p>
       </td>
@@ -300,12 +374,14 @@ export function buildEmailHtml(args: BuildEmailArgs): string {
         </p>
         <p style="color: #333; line-height: 1.6; margin: 0 0 24px 0; font-size: 15px;">
           Your <strong>${jobTypeLabel}</strong> deliverables for <strong>${siteLabel}</strong> are ready for review.
-          You can access everything through the Google Drive link below.
+          ${primaryUrl
+            ? "You can access everything through the Google Drive link below."
+            : "Your download links are below."}
         </p>
 ${renderStatsHtml(stats)}
         ${custom_message ? `
         <!-- Personal Note -->
-        <div style="background-color: #f0f6ff; border-left: 4px solid ${BRAND.sky}; padding: 16px; margin: 0 0 28px 0; border-radius: 0 8px 8px 0;">
+        <div style="background-color: #fff3ec; border-left: 4px solid ${BRAND.sky}; padding: 16px; margin: 0 0 28px 0; border-radius: 0 8px 8px 0;">
           <p style="color: #333; margin: 0; line-height: 1.6; font-size: 14px;">${custom_message}</p>
         </div>
         ` : ""}
@@ -314,7 +390,7 @@ ${renderStatsHtml(stats)}
         <!-- Primary CTA -->
         <div style="text-align: center; margin: 28px 0;">
           <a href="${primaryUrl}"
-             style="background: linear-gradient(135deg, ${BRAND.sky} 0%, #2563eb 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 700; font-size: 16px; letter-spacing: 0.3px;">
+             style="background: linear-gradient(135deg, ${BRAND.sky} 0%, ${BRAND.accent} 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 700; font-size: 16px; letter-spacing: 0.3px;">
             View Your Deliverables
           </a>
           <p style="color: #888; font-size: 12px; margin: 12px 0 0 0;">
@@ -323,18 +399,30 @@ ${renderStatsHtml(stats)}
         </div>
         ` : ""}
 
+        ${report ? `
+        <!-- Inspection Report -->
+        <div style="border: 1px solid #d9d0c4; border-left: 4px solid ${BRAND.sky}; background-color: ${BRAND.light}; padding: 16px 20px; margin: 0 0 28px 0;">
+          <p style="color: ${BRAND.navy}; margin: 0 0 4px 0; font-size: 15px; font-weight: 700;">Your inspection report</p>
+          <p style="color: #555; margin: 0 0 12px 0; font-size: 13px;">${escapeHtml(report.fileName)}</p>
+          <a href="${report.url}" style="background-color: ${BRAND.sky}; color: white; padding: 10px 22px; text-decoration: none; display: inline-block; font-weight: 700; font-size: 14px;">
+            Download the report (PDF)
+          </a>
+          <p style="color: #888; font-size: 12px; margin: 10px 0 0 0;">This link works for 14 days.</p>
+        </div>
+        ` : ""}
+
         ${deliverables.length > 1 ? `
         <!-- Additional Deliverables -->
         <h3 style="color: ${BRAND.navy}; margin: 28px 0 12px 0; font-size: 15px; font-weight: 600;">Additional Downloads</h3>
-        <table style="width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid #d9d0c4; border-radius: 8px; overflow: hidden;">
           ${deliverables.slice(1).map((d) => `
           <tr>
-            <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 12px 16px; border-bottom: 1px solid #d9d0c4;">
               <strong style="color: ${BRAND.navy}; font-size: 14px;">${d.name}</strong>
               ${d.description ? `<br><span style="color: #666; font-size: 13px;">${d.description}</span>` : ""}
             </td>
             ${d.download_url ? `
-            <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; text-align: right; white-space: nowrap;">
+            <td style="padding: 12px 16px; border-bottom: 1px solid #d9d0c4; text-align: right; white-space: nowrap;">
               <a href="${d.download_url}" style="color: ${BRAND.sky}; font-weight: 600; text-decoration: none; font-size: 14px;">
                 Download
               </a>
@@ -397,9 +485,67 @@ export interface ResendLike {
   };
 }
 
+/** Who may trigger a delivery. See makeAuthorizer. */
+export interface CallerCheck {
+  ok: boolean;
+  status?: number;
+  reason?: string;
+  caller?: string;
+}
+export type Authorize = (req: Request) => Promise<CallerCheck>;
+
+/** Constant-time string comparison for bearer keys. */
+function sameKey(a: string, b: string): boolean {
+  if (!a || !b || a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+/**
+ * The delivery function emails a client and, since the one-layout change, signs
+ * a link to their private report. It runs with verify_jwt = false (callers
+ * include server-to-server webhooks), so it authenticates here, before any
+ * lookup, signing or sending:
+ *   - a trusted pipeline key (the service-role key, used by square-webhook and
+ *     the n8n delivery workflow, plus any key in DELIVERY_TRUSTED_KEYS), or
+ *   - a signed-in user whom has_role() confirms is an admin (the CRM pages).
+ * Anything else is refused.
+ */
+export function makeAuthorizer(opts: {
+  trustedKeys: Array<string | undefined | null>;
+  // deno-lint-ignore no-explicit-any
+  getUser: (jwt: string) => Promise<{ data: { user: { id: string } | null } | null; error?: any }>;
+  // deno-lint-ignore no-explicit-any
+  isAdmin: (userId: string) => Promise<{ data: any; error?: any }>;
+}): Authorize {
+  const keys = opts.trustedKeys.filter((k): k is string => typeof k === "string" && k.length > 0);
+  return async (req: Request) => {
+    const header = req.headers.get("Authorization") ?? "";
+    const match = /^Bearer\s+(.+)$/i.exec(header.trim());
+    if (!match) return { ok: false, status: 401, reason: "missing bearer token" };
+    const token = match[1].trim();
+    if (keys.some((k) => sameKey(token, k))) return { ok: true, caller: "pipeline" };
+    try {
+      const { data, error } = await opts.getUser(token);
+      const user = data?.user;
+      if (error || !user) return { ok: false, status: 401, reason: "invalid token" };
+      const role = await opts.isAdmin(user.id);
+      if (role.error || role.data !== true) {
+        return { ok: false, status: 403, reason: "admin role required" };
+      }
+      return { ok: true, caller: `admin:${user.id}` };
+    } catch (_e) {
+      return { ok: false, status: 401, reason: "token check failed" };
+    }
+  };
+}
+
 export interface DeliveryDeps {
   supabase: SupabaseLike;
   resend: ResendLike;
+  /** Required in production. Absent means every request is refused (fail closed). */
+  authorize?: Authorize;
   /** Injectable for deterministic tests. */
   now?: () => Date;
   newToken?: () => string;
@@ -420,6 +566,14 @@ export async function handleDeliveryRequest(req: Request, deps: DeliveryDeps): P
   const { supabase, resend } = deps;
   const now = deps.now ?? (() => new Date());
   const newToken = deps.newToken ?? (() => crypto.randomUUID().replace(/-/g, ""));
+
+  // Before anything is read: no caller check wired up means no delivery.
+  const caller: CallerCheck = deps.authorize
+    ? await deps.authorize(req)
+    : { ok: false, status: 401, reason: "no caller check configured" };
+  if (!caller.ok) {
+    return json({ error: "Unauthorized", reason: caller.reason }, caller.status ?? 401);
+  }
 
   try {
     const { job_id, deliverable_ids, custom_message, download_url } =
@@ -486,8 +640,12 @@ export async function handleDeliveryRequest(req: Request, deps: DeliveryDeps): P
       job.download_url ||
       deliverables[0]?.download_url;
 
-    if (!primaryUrl && deliverables.length === 0) {
-      return json({ error: "No delivery URL or deliverables found for this job" }, 400);
+    // An approved report on its own is a delivery: look for it before deciding
+    // there is nothing to send.
+    const report = await findApprovedReport(supabase, job_id);
+
+    if (!primaryUrl && deliverables.length === 0 && !report) {
+      return json({ error: "No delivery URL, deliverables or approved report found for this job" }, 400);
     }
 
     const siteLabel =
@@ -512,6 +670,7 @@ export async function handleDeliveryRequest(req: Request, deps: DeliveryDeps): P
       primaryUrl,
       deliverables,
       stats,
+      report,
       year: now().getFullYear(),
     });
 

@@ -70,11 +70,10 @@ const sectionMap: Record<ReportSectionKey, React.ComponentType<any>> = {
 };
 
 /**
- * Shallow content check shared by the builder's empty-section warning and
- * ReportPrintView's omission logic, so "will be omitted from the printed
- * report" and what actually prints can never disagree. A section whose
- * data is missing, or whose top-level values are all null/""/[] (e.g. the
- * operator typed and then cleared a field), has no printable content.
+ * Shallow content check behind the builder's empty-section warning. A
+ * section whose data is missing, or whose top-level values are all
+ * null/""/[] (e.g. the operator typed and then cleared a field), has no
+ * content. (ReportPrintView, its other caller, retired 2026-09-28.)
  */
 export function isSectionDataEmpty(d: unknown): boolean {
   return (

@@ -24,7 +24,7 @@
 
 9. **No legal opinion.** This report does not constitute a legal opinion, appraisal, title examination, boundary survey, or adjudication of property rights. Where boundary lines are overlaid, they are approximate and derived from third-party GIS.
 
-10. **Liability cap.** Per the Master Services Agreement, SAI's liability for errors, omissions, or consequential damages arising from use of this report is limited to the fees paid for the specific engagement.
+10. **Liability.** Liability for errors or omissions arising from use of this report is governed by the written terms the client accepted for this engagement.
 
 ## B. Service-Line-Specific Limitations
 

@@ -45,7 +45,7 @@
 
 | Parameter | Value |
 |---|---|
-| Thermal sensor | `{{MODEL}}` (e.g., DJI M4T thermal, 640×512, 13mm, LWIR 8-14 μm) |
+| Thermal sensor | `{{MODEL}}` (the thermal sensor actually flown; e.g. 640×512, 13mm, LWIR 8-14 μm) |
 | Palette | White-Hot (industry standard) |
 | Emissivity | `{{EMISSIVITY}}` (0.98 default for mammalian fur) |
 | Range | High-Gain mode `{{RANGE_MIN}}°C – {{RANGE_MAX}}°C` |
