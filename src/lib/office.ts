@@ -52,6 +52,22 @@ export interface OfficeAnswer {
 }
 
 /**
+ * A plain-language version of a call, written by the COO (call_cards.py,
+ * added 2026-11-05: Adam could not tell how to answer calls written for
+ * agents). Each option's `reply` is sent as his reply when he clicks it.
+ */
+export interface OfficeCallCard {
+  ask: string;
+  why: string;
+  recommend: string;
+  kind: "decision" | "action" | "info";
+  steps: string[];
+  options: { label: string; reply: string }[];
+  /** True when the answer is a fact he has to type. */
+  needs_text: boolean;
+}
+
+/**
  * One MATTER that is blocked on Adam or held for him, built live from the
  * queue by the desktop sync (lib/office_calls.py). Several jobs about the same
  * thing are one call: `id` is the newest of them, `earlier` the rest.
@@ -81,6 +97,8 @@ export interface OfficeCall {
    * sync older than 2026-10-04.
    */
   asked?: OfficeAnswer[];
+  /** The plain-language card. Absent until the COO has written one. */
+  card?: OfficeCallCard;
 }
 
 export interface OfficeEmployee {
@@ -630,7 +648,7 @@ export function buildInbox(input: {
     ...input.calls.map((c): InboxItem => ({
       key: `call-${c.id}`,
       kind: "call",
-      title: c.title,
+      title: c.card?.ask || c.title,
       tone: c.unblocks > 0 ? "crit" : c.held ? "hold" : "warn",
       from: c.assignee ? roleOf(c.assignee)[1] : "COO",
       at: c.since,
