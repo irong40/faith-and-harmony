@@ -644,6 +644,104 @@ function OpenCall({ call, send }: { call: OfficeCall; send: Send }) {
     });
   };
   const reply = (text: string) => post({ kind: "directive", body: replyBody(call.id, text) });
+  const card = call.card;
+
+  // 2026-11-05 (Adam): the plain-language card comes first and he answers with
+  // one click. The agent's own wording stays one click away under Details.
+  if (card) {
+    return (
+      <div className="rounded-lg border bg-card p-4">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <h3 className="min-w-0 flex-1 text-base font-semibold leading-snug">{card.ask}</h3>
+          <Pill tone={call.held ? "hold" : card.kind === "action" ? "info" : "warn"}>
+            {call.held ? "Held" : card.kind === "action" ? "Your step" : card.kind === "info" ? "Need a fact" : "Your call"}
+          </Pill>
+        </div>
+        <p className="mt-2 text-sm text-muted-foreground">{card.why}</p>
+        <p className="mt-3 rounded-md border border-blue-600/30 bg-blue-600/10 p-3 text-sm">
+          <span className="font-medium">The office recommends: </span>
+          {card.recommend}
+        </p>
+        {card.steps.length > 0 && (
+          <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm">
+            {card.steps.map((s, i) => (
+              <li key={i}>{s}</li>
+            ))}
+          </ol>
+        )}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {call.held && (
+            <Button size="sm" disabled={busy} onClick={() => post({ kind: "release", body: call.id })}>
+              Release this job
+            </Button>
+          )}
+          {!call.held &&
+            card.options.map((o, i) => (
+              <Button
+                key={o.label}
+                size="sm"
+                variant={i === 0 ? "default" : "outline"}
+                disabled={busy}
+                title={o.reply}
+                onClick={() => reply(o.reply)}
+              >
+                {o.label}
+              </Button>
+            ))}
+        </div>
+        {!call.held && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={600}
+              placeholder={card.needs_text ? "Type the answer here" : "Or answer in your own words, or ask a question"}
+              aria-label={`Your answer: ${card.ask}`}
+              className="h-9 min-w-[12rem] flex-1"
+              disabled={busy}
+            />
+            <Button size="sm" variant="outline" disabled={busy || !note.trim()} onClick={() => reply(note)}>
+              Send
+            </Button>
+          </div>
+        )}
+        {(call.asked ?? []).length > 0 && (
+          <div className="mt-3">
+            <AnswerList answers={call.asked ?? []} />
+          </div>
+        )}
+        <details className="mt-3">
+          <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+            Details (what the agent wrote)
+          </summary>
+          <div className="mt-2 space-y-2 text-xs">
+            <p className="font-medium">{call.title}</p>
+            {call.needs && <p className="break-words">{call.needs}</p>}
+            {call.sheet && <p className="break-all font-mono text-muted-foreground">Sheet: {call.sheet}</p>}
+            <p className="font-mono text-muted-foreground">
+              {who} · {callMeta(call)}
+            </p>
+            {call.earlier.length > 0 && (
+              <ul className="space-y-1">
+                {call.earlier.map((e) => (
+                  <li key={e.id} className="break-words">
+                    <span className="font-medium">Earlier: {e.title}: </span>
+                    {e.needs || "no detail recorded"}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </details>
+        {busy && <p className="mt-2 text-xs text-muted-foreground">Sending</p>}
+        {failed && (
+          <p role="alert" className="mt-2 text-xs text-destructive">
+            {failed}
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg border bg-card p-4">

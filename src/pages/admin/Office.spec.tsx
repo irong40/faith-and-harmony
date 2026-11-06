@@ -211,6 +211,58 @@ describe("Office page: calls blocked on Adam", () => {
     expect(mutate.mock.calls[0][0]).toEqual({ kind: "directive", body: "RE job 2026-10-03-adam-copy-part2: a, rewrite it" });
   });
 
+  it("shows the plain card first and sends a clicked answer as the reply (2026-11-05)", () => {
+    officeState.data!.snapshot!.calls = [blockedCall({
+      card: {
+        ask: "Should the corrected post go out Friday?",
+        why: "It cannot be scheduled until you answer.",
+        recommend: "Yes, the fix passed the source check.",
+        kind: "decision",
+        steps: [],
+        options: [
+          { label: "Yes, post Friday", reply: "Yes, schedule the corrected post for Friday." },
+          { label: "Hold it", reply: "Hold the corrected post until I look at it." },
+        ],
+        needs_text: false,
+      },
+    })];
+    renderOffice();
+    openItem("Should the corrected post go out Friday?");
+    expect(screen.getByText("Yes, the fix passed the source check.")).toBeTruthy();
+    expect(screen.getByText("Details (what the agent wrote)")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Mark as done" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Hold it" }));
+    expect(mutate.mock.calls[0][0]).toEqual({
+      kind: "directive",
+      body: "RE job 2026-10-03-adam-copy-part2: Hold the corrected post until I look at it.",
+    });
+    expect(disabled(screen.getByRole("button", { name: "Yes, post Friday" }))).toBe(true);
+  });
+
+  it("shows the steps for a card that needs Adam to act, and still takes typed text", () => {
+    officeState.data!.snapshot!.calls = [blockedCall({
+      card: {
+        ask: "Sign in to NotebookLM so the quiz refill can run.",
+        why: "The refill stops until the sign-in is saved.",
+        recommend: "Sign in now; it takes a minute.",
+        kind: "action",
+        steps: ["Open the NotebookLM window", "Sign in with your Google account"],
+        options: [
+          { label: "Done, I signed in", reply: "I signed in to NotebookLM. Run the refill." },
+          { label: "Not now", reply: "I cannot sign in now. Ask me tomorrow." },
+        ],
+        needs_text: false,
+      },
+    })];
+    renderOffice();
+    openItem("Sign in to NotebookLM so the quiz refill can run.");
+    expect(screen.getByText("Sign in with your Google account")).toBeTruthy();
+    expect(screen.getByText("Your step")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Your answer: Sign in to NotebookLM so the quiz refill can run."), { target: { value: " which account? " } });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    expect(mutate.mock.calls[0][0]).toEqual({ kind: "directive", body: "RE job 2026-10-03-adam-copy-part2: which account?" });
+  });
+
   it("does not ask twice: a call whose decision is still open is left to that decision", () => {
     officeState.data!.snapshot!.calls = [blockedCall({ decision: 4 })];
     renderOffice();
