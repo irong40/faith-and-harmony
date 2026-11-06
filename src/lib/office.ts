@@ -137,6 +137,16 @@ export interface OfficeSnapshot {
   activity?: { at: string; text: string }[];
   /** FlyGuys missions near base (2026-10-17). Absent on a snapshot from an older sync. */
   marketplace?: OfficeMarketplace;
+  /** Open escalation files in agent-office/escalations. */
+  escalations?: OfficeEscalation[];
+}
+
+export interface OfficeEscalation {
+  file: string;
+  title: string;
+  updated: string | null;
+  /** high | medium | low, as the file states it. Anything else reads as low. */
+  severity: string;
 }
 
 /** FAA authorization verdict DroneSniper computed for the capture altitude. */
@@ -144,7 +154,8 @@ export type AirspaceLevel = "NONE" | "EASY_LAANC" | "DRONEZONE" | "SKIP" | "UNKN
 /** open: nothing sent · interested: sent, no answer · lost: "Mission Not Assigned" email · possible_award: another FlyGuys email names it. */
 /** mission_email: a FlyGuys email names the mission but does not read like an assignment; read it. */
 /** unknown: a send may or may not have reached FlyGuys (never retried automatically). rejected: FlyGuys said it is no longer open. */
-export type MissionStatus = "open" | "interested" | "lost" | "possible_award" | "mission_email" | "unknown" | "rejected";
+/** declined: Adam pressed "Not for me". Nothing was sent to FlyGuys; the office only recorded it. */
+export type MissionStatus = "open" | "interested" | "lost" | "possible_award" | "mission_email" | "unknown" | "rejected" | "declined";
 
 export interface OfficeMission {
   id: string;
@@ -169,6 +180,15 @@ export interface OfficeMission {
   outcome_at: string | null;
   /** Interest was sent and the mission has since left the sourcing map (assigned missions leave it). */
   off_map?: boolean;
+  /** Extra FlyGuys columns (2026-10-17). Optional: a snapshot from an older sync has none of them. */
+  deviation_detail?: string | null;
+  /** FlyGuys mission coordinator named on the mission. */
+  mc?: string | null;
+  /** Street number as FlyGuys publishes it (the map gives the number, not the street). */
+  address?: string | null;
+  zip?: string | null;
+  /** FlyGuys' own status, e.g. "Pilot Sourcing". */
+  mission_status?: string | null;
 }
 
 export interface OfficeMarketplace {
@@ -183,7 +203,7 @@ export interface OfficeMarketplace {
   missions: OfficeMission[];
 }
 
-export type OfficeMessageKind = "answer" | "directive" | "release" | "interest";
+export type OfficeMessageKind = "answer" | "directive" | "release" | "interest" | "decline";
 
 export interface OfficeMessage {
   id: string;
@@ -236,10 +256,13 @@ export function ago(iso: string | null | undefined, now: number = Date.now()): s
  * minutes covers one missed run. Past 90 the desktop is off or asleep, and the
  * page says so instead of showing old numbers as if they were live.
  */
+/** A snapshot older than this missed a sync run (the sync runs every 5 minutes; 12 covers one miss). */
+export const SNAPSHOT_FRESH_MS = 12 * 60_000;
+
 export function freshness(updatedAt: string | null, now: number = Date.now()): { tone: Tone; text: string } {
   if (!updatedAt) return { tone: "idle", text: "Waiting for the first status" };
   const mins = (now - new Date(updatedAt).getTime()) / 60000;
-  if (mins <= 12) return { tone: "good", text: `Live. Office reported ${ago(updatedAt, now)}` };
+  if (mins <= SNAPSHOT_FRESH_MS / 60000) return { tone: "good", text: `Live. Office reported ${ago(updatedAt, now)}` };
   if (mins <= 90) return { tone: "warn", text: `Office last reported ${ago(updatedAt, now)}` };
   return { tone: "crit", text: `Office silent since ${ago(updatedAt, now)}. The desktop may be off or asleep.` };
 }
@@ -263,14 +286,6 @@ export function splitDecisions(
   const closed: OfficeDecision[] = [];
   for (const d of decisions) (d.answer || pendingAnswer(messages, date, d.n) ? closed : open).push(d);
   return { open, closed };
-}
-
-export function employeeState(t: OfficeEmployee): { tone: Tone; label: string } {
-  if (t.doing) return { tone: "info", label: "Working" };
-  if (t.queued) return { tone: "good", label: "Up next" };
-  if (t.held) return { tone: "hold", label: "Held" };
-  if (t.blocked) return { tone: "warn", label: "Blocked" };
-  return { tone: "idle", label: "Idle" };
 }
 
 export interface BoardColumn {
@@ -329,6 +344,7 @@ export function messageLabel(m: OfficeMessage): string {
   if (m.kind === "directive") return isCallReply(m) ? "Reply on a call" : "To the COO";
   if (m.kind === "release") return "Released job";
   if (m.kind === "interest") return "FlyGuys interest";
+  if (m.kind === "decline") return "FlyGuys: not for me";
   return `Answer to #${m.item}`;
 }
 
@@ -457,6 +473,7 @@ export function missionStatusTone(status: MissionStatus): { tone: Tone; label: s
   if (status === "mission_email") return { tone: "warn", label: "Mission email: review" };
   if (status === "unknown") return { tone: "warn", label: "Delivery unknown: check the app" };
   if (status === "rejected") return { tone: "idle", label: "No longer open" };
+  if (status === "declined") return { tone: "idle", label: "Not for me" };
   return { tone: "hold", label: "Open" };
 }
 
@@ -479,19 +496,366 @@ export function interestPending(messages: OfficeMessage[], missionId: string): O
   );
 }
 
+/**
+ * Missions the office named as NOT declined in its result line. One decline
+ * press can carry several missions, and the desktop answers per mission:
+ *   "DECLINED 333333: marked not for me. ... NOT declined 111111: interest was
+ *    already sent; withdraw it in the FlyGuys Pilots app"
+ * Every id listed after "NOT declined" (up to the colon) was refused.
+ */
+export function notDeclinedIds(ledgerLine: string | null | undefined): Set<string> {
+  const ids = new Set<string>();
+  for (const m of (ledgerLine ?? "").matchAll(/NOT declined\s+([\d,\s]+)/g)) {
+    for (const id of m[1].split(/[\s,]+/)) if (id) ids.add(id);
+  }
+  return ids;
+}
+
+/**
+ * A "Not for me" message that still declines this mission: it names the
+ * mission, the office did not refuse or fail the whole press, and the result
+ * line does not list this mission as NOT declined. Nothing goes to FlyGuys.
+ */
+export function declinePending(messages: OfficeMessage[], missionId: string): OfficeMessage | null {
+  return (
+    messages.find(
+      (m) =>
+        m.kind === "decline" &&
+        m.body.split(/[\s,]+/).includes(missionId) &&
+        !/^(REFUSED|FAILED)/.test(m.ledger_line ?? "") &&
+        !notDeclinedIds(m.ledger_line).has(missionId)
+    ) ?? null
+  );
+}
+
+/**
+ * What a pending message does to a mission the snapshot still lists as open.
+ * Interest ALWAYS wins over a decline, whatever the order of the presses: once
+ * interest may have reached FlyGuys, the page must not file the mission as
+ * declined (Codex 2026-10-17). A decline counts only with no interest pending.
+ */
+export function missionPending(messages: OfficeMessage[], missionId: string): OfficeMessage | null {
+  return interestPending(messages, missionId) ?? declinePending(messages, missionId);
+}
+
 /** Groups for the page: what needs a decision, what is waiting on FlyGuys, what is closed. */
 export function splitMissions(missions: OfficeMission[], messages: OfficeMessage[]) {
   const byMiles = (a: OfficeMission, b: OfficeMission) => (a.miles ?? 9999) - (b.miles ?? 9999);
-  const open = missions.filter((m) => m.status === "open" && !interestPending(messages, m.id)).sort(byMiles);
+  // Only an OPEN mission is held back by a pending message: once the snapshot
+  // reports a status, the snapshot wins (Codex re-review).
+  const pend = (m: OfficeMission) => (m.status === "open" ? missionPending(messages, m.id) : null);
+  const open = missions.filter((m) => m.status === "open" && !pend(m)).sort(byMiles);
   const waiting = missions
-    .filter((m) => m.status === "interested" || m.status === "unknown" || (m.status === "open" && interestPending(messages, m.id)))
+    .filter((m) => m.status === "interested" || m.status === "unknown" || pend(m)?.kind === "interest")
     .sort(byMiles);
   const award = missions.filter((m) => m.status === "possible_award" || m.status === "mission_email").sort(byMiles);
   const lost = missions.filter((m) => m.status === "lost" || m.status === "rejected").sort(byMiles);
-  return { open, waiting, award, lost };
+  const declined = missions.filter((m) => m.status === "declined" || pend(m)?.kind === "decline").sort(byMiles);
+  return { open, waiting, award, lost, declined };
+}
+
+export type MissionTab = "new" | "waiting" | "attention" | "declined" | "closed";
+
+/**
+ * The marketplace table's tabs. Needs attention = anything Adam must look at in
+ * the FlyGuys app: a possible award, a mission email, or a send whose delivery
+ * is unknown. Waiting = interest sent and nothing back yet.
+ */
+export function missionTabs(missions: OfficeMission[], messages: OfficeMessage[]): Record<MissionTab, OfficeMission[]> {
+  const { open, waiting, award, lost, declined } = splitMissions(missions, messages);
+  return {
+    new: open,
+    waiting: waiting.filter((m) => m.status !== "unknown"),
+    attention: [...award, ...waiting.filter((m) => m.status === "unknown")],
+    declined,
+    closed: lost,
+  };
 }
 
 /** Clear on the airspace SCREEN (Class G or easy LAANC). A screen, not a clearance: the real KML is checked before flight. */
 export function flyableNow(m: OfficeMission): boolean {
   return m.airspace_level === "NONE" || m.airspace_level === "EASY_LAANC";
 }
+
+// ---------------------------------------------------------------- inbox
+
+export type InboxKind = "decision" | "call" | "mission" | "escalation";
+
+export interface InboxItem {
+  key: string;
+  kind: InboxKind;
+  title: string;
+  tone: Tone;
+  /** Who raised it, plain words. */
+  from: string;
+  /** When it started waiting. Null when the source does not say. */
+  at: string | null;
+  decision?: OfficeDecision;
+  call?: OfficeCall;
+  mission?: OfficeMission;
+  escalation?: OfficeEscalation;
+}
+
+const TONE_RANK: Record<Tone, number> = { crit: 0, warn: 1, hold: 2, info: 3, good: 4, idle: 5 };
+
+export function escalationTone(severity: string | null | undefined): Tone {
+  const s = (severity ?? "").toLowerCase();
+  if (s === "high" || s === "critical") return "crit";
+  if (s === "medium") return "warn";
+  return "idle";
+}
+
+/**
+ * One queue for everything that needs Adam: open decisions, open calls,
+ * missions he must check in the FlyGuys app, and escalation files. Most urgent
+ * first, then oldest first, so nothing old sinks under new noise.
+ */
+export function buildInbox(input: {
+  decisions: OfficeDecision[];
+  calls: OfficeCall[];
+  missions: OfficeMission[];
+  escalations: OfficeEscalation[];
+  outbriefDate?: string | null;
+}): InboxItem[] {
+  const items: InboxItem[] = [
+    ...input.decisions.map((d): InboxItem => ({
+      key: `decision-${d.n}`,
+      kind: "decision",
+      title: d.title,
+      tone: d.deadline ? "crit" : "warn",
+      from: "COO, Outbrief",
+      at: input.outbriefDate ?? null,
+      decision: d,
+    })),
+    ...input.calls.map((c): InboxItem => ({
+      key: `call-${c.id}`,
+      kind: "call",
+      title: c.title,
+      tone: c.unblocks > 0 ? "crit" : c.held ? "hold" : "warn",
+      from: c.assignee ? roleOf(c.assignee)[1] : "COO",
+      at: c.since,
+      call: c,
+    })),
+    ...input.missions.map((m): InboxItem => ({
+      key: `mission-${m.id}`,
+      kind: "mission",
+      title:
+        m.status === "unknown"
+          ? `FlyGuys ${m.id}${m.city ? `, ${m.city}` : ""}: delivery of your interest is unknown`
+          : `FlyGuys ${m.id}${m.city ? `, ${m.city}` : ""}: ${missionStatusTone(m.status).label}`,
+      tone: m.status === "possible_award" ? "crit" : "warn",
+      from: "Marketplace",
+      at: m.outcome_at ?? m.interest_at,
+      mission: m,
+    })),
+    ...input.escalations.map((e): InboxItem => ({
+      key: `escalation-${e.file}`,
+      kind: "escalation",
+      title: e.title,
+      tone: escalationTone(e.severity),
+      from: "Escalations",
+      at: e.updated,
+      escalation: e,
+    })),
+  ];
+  const t = (iso: string | null) => {
+    const n = iso ? new Date(iso).getTime() : NaN;
+    return Number.isNaN(n) ? Infinity : n;
+  };
+  return items.sort((a, b) => TONE_RANK[a.tone] - TONE_RANK[b.tone] || t(a.at) - t(b.at));
+}
+
+// ---------------------------------------------------------------- office floor
+//
+// Presence is live: every agent checks in to office_presence when it starts a
+// job, after each step and when it finishes (cron-agents/lib/presence.py, called
+// by the dispatcher, the scheduler and the Claude Code subagent hook). The page
+// subscribes to those rows, so a desk lights up without waiting for a snapshot.
+
+export interface OfficePresence {
+  agent: string;
+  kind: "specialist" | "automation";
+  state: "working" | "idle";
+  source: "dispatcher" | "session" | "scheduler";
+  job_id: string | null;
+  title: string | null;
+  step: string | null;
+  machine: string | null;
+  started_at: string | null;
+  updated_at: string;
+  finished_at: string | null;
+  outcome: string | null;
+}
+
+export interface OfficePresenceEvent {
+  id: number;
+  at: string;
+  agent: string;
+  event: "start" | "step" | "done";
+  job_id: string | null;
+  text: string | null;
+}
+
+export type DeskState = "working" | "stale" | "recent" | "quiet" | "never";
+
+/** A working check-in older than this reads "may have stopped": a crashed run never checks out. */
+export const STALE_WORKING_MS = 3 * 3600_000;
+const RECENT_MS = 6 * 3600_000;
+
+function latest(...isos: (string | null | undefined)[]): string | null {
+  let best: string | null = null;
+  let bestT = -Infinity;
+  for (const iso of isos) {
+    const n = iso ? new Date(iso).getTime() : NaN;
+    if (!Number.isNaN(n) && n > bestT) {
+      bestT = n;
+      best = iso as string;
+    }
+  }
+  return best;
+}
+
+/**
+ * Where a desk's state came from. "live": the agent's own presence row.
+ * "snapshot": no presence row (none yet, or the presence read failed or never
+ * loaded), so the 5-minute snapshot's team entry decides (QA 2026-10-17).
+ */
+export type DeskSource = "live" | "snapshot";
+
+export function deskState(
+  presence: OfficePresence | undefined,
+  employee: OfficeEmployee | undefined,
+  now: number = Date.now(),
+  /** When the snapshot holding `employee` was pushed. Its `doing` counts only while fresh. */
+  snapshotAt: string | null = null
+): { state: DeskState; tone: Tone; label: string; source: DeskSource } {
+  if (presence) {
+    if (presence.state === "working") {
+      const age = now - new Date(presence.updated_at).getTime();
+      if (age <= STALE_WORKING_MS) return { state: "working", tone: "good", label: "Working now", source: "live" };
+      return {
+        state: "stale",
+        tone: "warn",
+        label: `No check-in for ${ago(presence.updated_at, now).replace(" ago", "")}, may have stopped`,
+        source: "live",
+      };
+    }
+  } else if (employee?.doing) {
+    // A dispatcher job the snapshot saw in progress. Without this a desk running
+    // one read "No work recorded" whenever presence had no row for it. Only a
+    // FRESH snapshot counts: once the desktop stops syncing, the job may have
+    // ended long ago, so it reads "may have stopped" and is not counted as
+    // working (Codex 2026-10-17).
+    const t = snapshotAt ? new Date(snapshotAt).getTime() : NaN;
+    if (!Number.isNaN(t) && now - t <= SNAPSHOT_FRESH_MS) {
+      return { state: "working", tone: "good", label: "Working (5-minute snapshot)", source: "snapshot" };
+    }
+    return {
+      state: "stale",
+      tone: "warn",
+      label: Number.isNaN(t) ? "May have stopped (snapshot age unknown)" : `May have stopped (snapshot from ${ago(snapshotAt, now)})`,
+      source: "snapshot",
+    };
+  }
+  const source: DeskSource = presence ? "live" : "snapshot";
+  const last = latest(presence?.finished_at, presence?.updated_at, employee?.last_done_at);
+  if (!last) return { state: "never", tone: "idle", label: "No work recorded", source };
+  const age = now - new Date(last).getTime();
+  if (age < RECENT_MS) return { state: "recent", tone: "info", label: `Active ${ago(last, now)}`, source };
+  return { state: "quiet", tone: "idle", label: `Last active ${ago(last, now)}`, source };
+}
+
+/**
+ * The ids a marketplace press may send: those still in New, and for interest
+ * only from a current feed. A decline sends nothing to FlyGuys, so it does not
+ * need the feed. Empty = send nothing. The page's buttons are also disabled on
+ * a stale feed; this is the guard that holds even if a button is not.
+ */
+export function missionSendIds(kind: "interest" | "decline", ids: string[], openIds: Set<string>, feedOk: boolean): string[] {
+  if (kind === "interest" && !feedOk) return [];
+  return ids.filter((id) => openIds.has(id));
+}
+
+/** The check-ins for the desk's current job, oldest first; without one, the desk's last 10. */
+export function deskTimeline(events: OfficePresenceEvent[], agent: string, jobId: string | null | undefined): OfficePresenceEvent[] {
+  const mine = events.filter((e) => e.agent === agent).sort((a, b) => a.at.localeCompare(b.at));
+  if (jobId) {
+    const job = mine.filter((e) => e.job_id === jobId);
+    if (job.length) return job;
+  }
+  return mine.slice(-10);
+}
+
+/** Rooms on the floor. Desks are roster names; anyone not listed goes to "Other". */
+export const DEPARTMENTS: [room: string, members: string[]][] = [
+  ["Operations & engineering", ["engineering-devops-automator", "engineering-photo-processor", "testing-qa-specialist", "sai-ops", "sai-analysis-specialist"]],
+  ["Business", ["bd-contracts-officer", "finance-officer", "technical-writer", "office-manager", "marketing-reviewer"]],
+  ["Security & compliance", ["ciso-officer", "compliance-audit-officer"]],
+  ["Content studio", ["content-manager", "content-writer", "seo-analyst", "topic-researcher", "source-validator", "video-producer", "part107-quiz-writer"]],
+];
+
+export interface FloorRoom {
+  room: string;
+  desks: string[];
+}
+
+/**
+ * Specialist rooms from the roster plus anyone who checked in without being on
+ * it, then a room for scheduled automations (presence rows of kind automation).
+ * Empty rooms are dropped.
+ */
+export function floorRooms(teamNames: string[], presence: OfficePresence[]): FloorRoom[] {
+  const automations = presence.filter((p) => p.kind === "automation").map((p) => p.agent).sort();
+  const people = [...new Set([...teamNames, ...presence.filter((p) => p.kind !== "automation").map((p) => p.agent)])];
+  const placed = new Set<string>();
+  const rooms: FloorRoom[] = DEPARTMENTS.map(([room, members]) => {
+    const desks = members.filter((m) => people.includes(m));
+    desks.forEach((d) => placed.add(d));
+    return { room, desks };
+  });
+  rooms.push({ room: "Other", desks: people.filter((p) => !placed.has(p)).sort() });
+  rooms.push({ room: "Scheduled automations", desks: automations });
+  return rooms.filter((r) => r.desks.length > 0);
+}
+
+/** Two-letter desk monogram: "engineering-devops-automator" -> "DA". */
+export function initials(name: string): string {
+  const words = name.split("-").filter((w) => !["engineering", "officer", "specialist"].includes(w));
+  return (words.length ? words : name.split("-"))
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+export interface OfficePresenceData {
+  presence: OfficePresence[];
+  /** Oldest first. Last 14 days, at most 500 check-ins. */
+  events: OfficePresenceEvent[];
+}
+
+/** The page keeps at most this many check-ins (14 days of them, usually far fewer). */
+export const PRESENCE_LOG_LIMIT = 500;
+
+/** Pure: fold one Realtime change into the cached presence data. */
+export function applyPresenceChange(
+  old: OfficePresenceData,
+  table: "office_presence" | "office_presence_log",
+  eventType: string,
+  row: Record<string, unknown> | null | undefined,
+  oldRow?: Record<string, unknown> | null
+): OfficePresenceData {
+  if (table === "office_presence") {
+    if (eventType === "DELETE") {
+      const agent = (oldRow?.agent ?? row?.agent) as string | undefined;
+      return agent ? { ...old, presence: old.presence.filter((p) => p.agent !== agent) } : old;
+    }
+    if (!row?.agent) return old;
+    const next = row as unknown as OfficePresence;
+    return { ...old, presence: [...old.presence.filter((p) => p.agent !== next.agent), next] };
+  }
+  if (eventType !== "INSERT" || !row) return old;
+  const ev = row as unknown as OfficePresenceEvent;
+  if (old.events.some((e) => e.id === ev.id)) return old;
+  return { ...old, events: [...old.events, ev].slice(-PRESENCE_LOG_LIMIT) };
+}
+
