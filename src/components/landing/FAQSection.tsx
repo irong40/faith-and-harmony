@@ -6,7 +6,7 @@ export type FAQItem = {
 export const FAQ_ITEMS: FAQItem[] = [
   {
     question: "Do you need permission to fly near military bases in Hampton Roads?",
-    answer: "Yes. Commercial drone flights near Norfolk Naval Station, NAS Oceana, and Langley Air Force Base require LAANC clearance through the FAA. As a Part 107 certified operator, Sentinel requests airspace clearance for each flight through the LAANC system. Approval is typically near-instant for pre-approved grid altitudes. For operations outside standard grids, we submit further coordination requests in advance.",
+    answer: "Yes. Commercial drone flights near Norfolk Naval Station, NAS Oceana, and Langley Air Force Base require LAANC clearance through the FAA. Every Sentinel flight is flown by an FAA Part 107 certified remote pilot, who requests airspace clearance for each flight through the LAANC system. Approval is typically near-instant for pre-approved grid altitudes. For operations outside standard grids, we submit further coordination requests in advance.",
   },
   {
     question: "How long does it take to get edited photos after the shoot?",
@@ -18,11 +18,11 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "Do you serve Virginia Beach, Chesapeake, and Norfolk?",
-    answer: "Yes. The full service area covers Virginia Beach, Norfolk, Chesapeake, Portsmouth, Newport News, Hampton, Suffolk, and Williamsburg. We also serve Maryland and Northern North Carolina. If your property is in Hampton Roads, we can reach it.",
+    answer: "Yes. The full service area covers Virginia Beach, Norfolk, Chesapeake, Portsmouth, Newport News, Hampton, Suffolk, and Williamsburg. We also serve Northern North Carolina. If your property is in Hampton Roads, we can reach it.",
   },
   {
     question: "What equipment do you use?",
-    answer: "Primary operations use the DJI Matrice 4E, a commercial grade aircraft with a mechanical shutter, built in RTK positioning, and 49 minutes of flight time per battery. The Mavic 3 Enterprise serves as the secondary aircraft for residential work and as a backup. The Emlid Reach RS3 provides survey grade RTK corrections for mapping and photogrammetry jobs.",
+    answer: "Primary operations use the DJI Matrice 4E.",
   },
   {
     question: "Are you insured?",
@@ -30,19 +30,15 @@ export const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "How much does drone photography cost?",
-    answer: "Residential photography starts at $225 for the Listing Lite package (10 edited photos, next day delivery). The Listing Pro package is $450 and includes 25 photos, a 60 second video reel, and a 2D boundary overlay. Commercial packages start at $450 per visit for construction progress monitoring and go up to $1,200 for the full Inspection Data package.",
-  },
-  {
-    question: "Can you fly thermal for roof inspections?",
-    answer: "The Matrice 4E supports thermal imaging attachments. Thermal roof inspections identify moisture intrusion, insulation gaps, and electrical hotspots that are invisible in standard photography. Contact us to discuss your specific inspection requirements and confirm equipment availability for your job date.",
+    answer: "Residential photography starts at $450 for the Listing Pro package, which includes 25 photos, a 60 second video reel, and a 2D boundary overlay. Commercial packages start at $450 per visit for construction progress monitoring. Roof and Facility Inspection is starting at $1,200.",
   },
   {
     question: "What is LAANC authorization and why does it matter?",
-    answer: "LAANC stands for Low Altitude Authorization and Notification Capability. It is the FAA system that grants real time permission to fly in controlled airspace around airports and military installations. Without it, commercial drone flights in those areas are illegal. Hampton Roads has a dense network of controlled airspace. Sentinel maintains active LAANC authorization across the entire service area.",
+    answer: "LAANC stands for Low Altitude Authorization and Notification Capability. It is the FAA system that grants real time permission to fly in controlled airspace around airports and military installations. Without it, commercial drone flights in those areas are illegal. Hampton Roads has a dense network of controlled airspace. Sentinel requests FAA airspace authorization through LAANC for each flight in controlled airspace.",
   },
   {
     question: "What areas of Hampton Roads do you cover?",
-    answer: "Virginia Beach, Norfolk, Chesapeake, Portsmouth, Newport News, Hampton, Suffolk, and Williamsburg. Coverage extends into Maryland and Northern North Carolina. We routinely operate near the military installations that many operators avoid.",
+    answer: "Virginia Beach, Norfolk, Chesapeake, Portsmouth, Newport News, Hampton, Suffolk, and Williamsburg. Coverage extends into Northern North Carolina.",
   },
 ];
 

@@ -20,7 +20,7 @@ describe('isNetworkAvailable', () => {
   });
 
   it('returns true when fetch resolves with ok response', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true });
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     const result = await isNetworkAvailable();
     expect(result).toBe(true);
   });
@@ -59,16 +59,24 @@ describe('isNetworkAvailable', () => {
     expect(result).toBe(false);
   });
 
-  it('probe uses HEAD method and includes apikey header', async () => {
-    const mockFetch = vi.fn().mockResolvedValue({ ok: true });
+  // 2026-11-07: the API root answered 401 to the publishable key and every
+  // pilot showed offline. A server that answers at all is reachable.
+  it('returns true when the server answers 401 (reachable, key refused)', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 401 });
+    const result = await isNetworkAvailable();
+    expect(result).toBe(true);
+  });
+
+  it('probe GETs the auth health endpoint and includes apikey header', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     globalThis.fetch = mockFetch;
 
     await isNetworkAvailable();
 
     expect(mockFetch).toHaveBeenCalledWith(
-      `${SUPABASE_URL}/rest/v1/`,
+      `${SUPABASE_URL}/auth/v1/health`,
       expect.objectContaining({
-        method: 'HEAD',
+        method: 'GET',
         headers: expect.objectContaining({
           apikey: SUPABASE_ANON_KEY,
         }),

@@ -36,7 +36,7 @@ const RESIDENTIAL_PACKAGES = [
     name: 'Listing Pro',
     price: 450,
     code: 're_standard',
-    features: ['25 photos', '60 second reel', '2D boundary overlay', '48 hour turnaround'],
+    features: ['25 photos', '60 second reel', '2D boundary overlay', '48 hour delivery'],
   },
   {
     name: 'Luxury Listing',
