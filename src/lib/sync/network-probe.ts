@@ -1,9 +1,16 @@
 const PROBE_TIMEOUT_MS = 5000;
 
 /**
- * Probes Supabase with a HEAD request to determine actual network availability.
- * Returns false on any error, timeout, or non-ok response.
+ * Probes Supabase to determine actual network availability.
+ * Returns false on a network error, a timeout, or a 5xx response.
  * Does not rely on navigator.onLine.
+ *
+ * 2026-11-07: this used to HEAD `/rest/v1/` and require response.ok. After
+ * the switch to the sb_publishable_ key, the API root answers 401 to that
+ * key, so every pilot was reported offline and the sync engine never pushed
+ * the queue or pulled missions. The question here is reachability, so any
+ * answer from the server counts; only a 5xx (server down) counts as offline.
+ * `/auth/v1/health` is a GET health endpoint the publishable key may read.
  */
 export async function isNetworkAvailable(): Promise<boolean> {
   const controller = new AbortController();
@@ -11,9 +18,9 @@ export async function isNetworkAvailable(): Promise<boolean> {
 
   try {
     const response = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/`,
+      `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/health`,
       {
-        method: 'HEAD',
+        method: 'GET',
         headers: {
           apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
@@ -21,7 +28,7 @@ export async function isNetworkAvailable(): Promise<boolean> {
       },
     );
     clearTimeout(timer);
-    return response.ok;
+    return response.status < 500;
   } catch {
     clearTimeout(timer);
     return false;
