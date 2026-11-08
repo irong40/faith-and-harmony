@@ -5,7 +5,7 @@ const SUPABASE_URL = 'https://test-project.supabase.co';
 const SUPABASE_ANON_KEY = 'test-anon-key-1234';
 
 vi.stubEnv('VITE_SUPABASE_URL', SUPABASE_URL);
-vi.stubEnv('VITE_SUPABASE_ANON_KEY', SUPABASE_ANON_KEY);
+vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', SUPABASE_ANON_KEY);
 
 describe('isNetworkAvailable', () => {
   let originalFetch: typeof globalThis.fetch;
