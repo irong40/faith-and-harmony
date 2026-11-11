@@ -3,8 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, Cloud, CloudOff, CloudUpload, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
+import { getStatusBadge, type DroneJobStatus } from "@/lib/droneJobStatus";
 
-type MissionStatus = "scheduled" | "captured" | "complete" | "cancelled";
+// A string still renders: unknown values get the neutral fallback badge.
+type MissionStatus = DroneJobStatus | (string & {});
 type SyncStatus = "synced" | "pending" | "conflict" | "offline";
 
 interface MissionCardProps {
@@ -19,13 +21,6 @@ interface MissionCardProps {
     syncStatus?: SyncStatus;
 }
 
-const STATUS_CONFIG: Record<MissionStatus, { label: string; color: string }> = {
-    scheduled: { label: "SCHEDULED", color: "bg-blue-500" },
-    captured: { label: "IN PROGRESS", color: "bg-orange-500" },
-    complete: { label: "COMPLETE", color: "bg-green-500" },
-    cancelled: { label: "CANCELLED", color: "bg-gray-500" },
-};
-
 const SYNC_ICONS: Record<SyncStatus, { icon: React.ComponentType<{ className?: string }>; color: string }> = {
     synced: { icon: Cloud, color: "text-green-500" },
     pending: { icon: CloudUpload, color: "text-yellow-500" },
@@ -34,7 +29,7 @@ const SYNC_ICONS: Record<SyncStatus, { icon: React.ComponentType<{ className?: s
 };
 
 export default function MissionCard({ mission, syncStatus = "synced" }: MissionCardProps) {
-    const statusConfig = STATUS_CONFIG[mission.status];
+    const statusConfig = getStatusBadge(mission.status);
     const syncConfig = SYNC_ICONS[syncStatus];
     const SyncIcon = syncConfig.icon;
 
