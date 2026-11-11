@@ -30,13 +30,7 @@ import { useActiveAircraft, useActiveControllers } from "@/hooks/useFleet";
 import MissionLocationMap from "@/components/map/MissionLocationMap";
 import ElevationBadge from "@/components/pilot/ElevationBadge";
 import RoutePlannerCard from "@/components/pilot/RoutePlannerCard";
-
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-    scheduled: { label: "SCHEDULED", color: "bg-blue-500" },
-    captured: { label: "IN PROGRESS", color: "bg-orange-500" },
-    complete: { label: "COMPLETE", color: "bg-green-500" },
-    cancelled: { label: "CANCELLED", color: "bg-gray-500" },
-};
+import { getStatusBadge } from "@/lib/droneJobStatus";
 
 export default function PilotMissionDetail() {
     const { id } = useParams<{ id: string }>();
@@ -219,7 +213,7 @@ export default function PilotMissionDetail() {
         );
     }
 
-    const statusConfig = STATUS_CONFIG[mission.status] || STATUS_CONFIG.scheduled;
+    const statusConfig = getStatusBadge(mission.status);
 
     return (
         <div className="min-h-screen bg-background pb-24">

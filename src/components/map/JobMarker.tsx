@@ -1,12 +1,5 @@
 import { AdvancedMarker } from '@vis.gl/react-google-maps';
-
-const STATUS_COLORS: Record<string, string> = {
-  scheduled: '#3b82f6',   // blue
-  captured: '#f97316',    // orange (in_progress)
-  in_progress: '#f97316',
-  complete: '#22c55e',    // green
-  cancelled: '#6b7280',   // gray
-};
+import { getStatusBadge } from '@/lib/droneJobStatus';
 
 interface JobMarkerProps {
   lat: number;
@@ -16,7 +9,8 @@ interface JobMarkerProps {
 }
 
 export default function JobMarker({ lat, lng, status = 'scheduled', onClick }: JobMarkerProps) {
-  const color = STATUS_COLORS[status] || STATUS_COLORS.scheduled;
+  // 'in_progress' is not a drone_job_status value; the old map colored it like captured, so keep that.
+  const color = getStatusBadge(status === 'in_progress' ? 'captured' : status).hex;
 
   return (
     <AdvancedMarker position={{ lat, lng }} onClick={onClick}>

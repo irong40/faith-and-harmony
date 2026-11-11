@@ -4,13 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Calendar, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
-
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  scheduled: { label: 'Scheduled', color: 'bg-blue-500' },
-  captured: { label: 'In Progress', color: 'bg-orange-500' },
-  complete: { label: 'Complete', color: 'bg-green-500' },
-  cancelled: { label: 'Cancelled', color: 'bg-gray-500' },
-};
+import { getStatusBadge } from '@/lib/droneJobStatus';
 
 interface JobInfoCardProps {
   id: string;
@@ -29,7 +23,7 @@ export default function JobInfoCard({
   scheduledDate,
   onClose,
 }: JobInfoCardProps) {
-  const config = STATUS_CONFIG[status] || STATUS_CONFIG.scheduled;
+  const config = getStatusBadge(status);
 
   return (
     <Card className="absolute bottom-4 left-4 right-4 z-10 shadow-lg max-w-sm mx-auto">
