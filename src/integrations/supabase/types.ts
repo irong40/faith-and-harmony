@@ -1313,6 +1313,8 @@ export type Database = {
           job_number: string
           job_price: number | null
           latitude: number | null
+          lead_source: string | null
+          lead_stage: string | null
           longitude: number | null
           mission_number: number | null
           model_file_path: string | null
@@ -1388,6 +1390,8 @@ export type Database = {
           job_number: string
           job_price?: number | null
           latitude?: number | null
+          lead_source?: string | null
+          lead_stage?: string | null
           longitude?: number | null
           mission_number?: number | null
           model_file_path?: string | null
@@ -1463,6 +1467,8 @@ export type Database = {
           job_number?: string
           job_price?: number | null
           latitude?: number | null
+          lead_source?: string | null
+          lead_stage?: string | null
           longitude?: number | null
           mission_number?: number | null
           model_file_path?: string | null
