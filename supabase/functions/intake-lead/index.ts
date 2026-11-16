@@ -59,6 +59,8 @@ export type DroneJobInsert = {
   property_address: string;
   scheduled_date: string | null;
   admin_notes: string;
+  /** Provenance: a voice order is a phone lead. Allowed values: drone_jobs_lead_source_check. */
+  lead_source: 'phone';
 };
 
 // Pure function: validate webhook secret
@@ -147,6 +149,7 @@ export function buildDroneJobInsert(args: {
         payload.property_address || `Address pending (voice order from ${payload.caller_name})`,
       scheduled_date: payload.preferred_date || null,
       admin_notes: pkg ? baseNotes : baseNotes + reviewNote,
+      lead_source: 'phone',
     },
     matchedOn: resolution.matchedOn,
     matchedCode: pkg?.code ?? null,

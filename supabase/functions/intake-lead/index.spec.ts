@@ -290,3 +290,8 @@ Deno.test('REQUIRED_FIELDS has exactly 5 entries', () => {
   assert(REQUIRED_FIELDS.includes('job_description'));
   assert(REQUIRED_FIELDS.includes('call_id'));
 });
+
+Deno.test('a voice order job records its source as phone (P4)', () => {
+  const { insert } = build('LAND_SURVEY');
+  assertEquals(insert.lead_source, 'phone');
+});
