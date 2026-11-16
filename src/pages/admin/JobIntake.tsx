@@ -87,10 +87,17 @@ interface Client {
   phone: string | null;
 }
 
+const LEAD_SOURCES = [
+  "referral", "flyguys", "zeitview", "bees360", "droners", "web", "email", "phone", "other",
+] as const;
+
 export default function JobIntake() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  // Where the job came from. Kept outside the zod schema: optional, and the
+  // values are the drone_jobs_lead_source_check list. Blank saves null.
+  const [leadSource, setLeadSource] = useState("");
   const [selectedClientData, setSelectedClientData] = useState<Client | null>(null);
   // Once an admin picks a property_type by hand we stop re-deriving it from the
   // job type, otherwise changing the template would silently undo their choice.
@@ -278,6 +285,7 @@ export default function JobIntake() {
       pilot_id: values.pilot_id || null,
       aircraft_id: values.aircraft_id || null,
       admin_notes: values.notes || null,
+      lead_source: leadSource || null,
       status: "intake" as const,
       job_number: "",
     };
@@ -573,6 +581,25 @@ export default function JobIntake() {
                     </FormItem>
                   )}
                 />
+
+                <div className="space-y-2">
+                  <label htmlFor="lead-source" className="text-sm font-medium">
+                    Lead source
+                  </label>
+                  <select
+                    id="lead-source"
+                    value={leadSource}
+                    onChange={(e) => setLeadSource(e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="">Not recorded</option>
+                    {LEAD_SOURCES.map((v) => (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </CardContent>
             </Card>
 

@@ -258,6 +258,26 @@ describe('JobIntake — slice 5 fields', () => {
     expect(payload.site_address).toBe('1234 Main St, Norfolk, VA 23510');
   });
 
+  it('sends the chosen lead source, and null when none is chosen', async () => {
+    for (const choice of ['referral', '']) {
+      insertedPayloads.length = 0;
+      const { unmount } = renderPage();
+      await screen.findByRole('combobox', { name: /job type/i });
+      fireEvent.click(screen.getByRole('button', { name: /pick client/i }));
+      await chooseJobType('Mining Volumetrics');
+      fireEvent.change(screen.getByPlaceholderText(/start typing an address/i), {
+        target: { value: '1234 Main St, Norfolk, VA 23510' },
+      });
+      fireEvent.change(screen.getByLabelText(/lead source/i), { target: { value: choice } });
+      const future = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      fireEvent.change(screen.getByLabelText(/scheduled date/i), { target: { value: future } });
+      fireEvent.click(screen.getByRole('button', { name: /create job/i }));
+      await waitFor(() => expect(insertedPayloads).toHaveLength(1));
+      expect(insertedPayloads[0].lead_source).toBe(choice || null);
+      unmount();
+    }
+  });
+
   it('never sends source_platform — that column is the aircraft, not provenance', async () => {
     renderPage();
     await screen.findByRole('combobox', { name: /job type/i });
