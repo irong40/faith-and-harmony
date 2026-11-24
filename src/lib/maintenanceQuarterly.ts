@@ -107,7 +107,23 @@ function entriesFor(aircraftId: string, logs: MaintenanceLogEntry[]) {
         (e.aircraft_id === aircraftId ||
           (e.equipment_type === 'aircraft' && e.equipment_id === aircraftId))
     )
-    .sort((a, b) => b.performed_at.localeCompare(a.performed_at));
+    .sort(compareNewestFirst);
+}
+
+type Ordered = Pick<MaintenanceLogEntry, 'performed_at'> & { created_at?: string | null };
+
+/**
+ * Newest first: performed_at, then created_at. The form stamps every chosen
+ * date at 12:00Z, so same-day entries tie on performed_at; the row saved later
+ * counts as newer, whatever order the rows arrive in.
+ */
+export function compareNewestFirst(a: Ordered, b: Ordered): number {
+  return b.performed_at.localeCompare(a.performed_at) || (b.created_at ?? '').localeCompare(a.created_at ?? '');
+}
+
+/** Oldest first: the reverse of compareNewestFirst. */
+export function compareOldestFirst(a: Ordered, b: Ordered): number {
+  return compareNewestFirst(b, a);
 }
 
 /**
@@ -129,16 +145,27 @@ export function newestPerTypeAndComponent<T extends Pick<MaintenanceLogEntry, 'm
   return out;
 }
 
+/** True for rows written by the aircraft maintenance form, which has the open-issues field. */
+export function canRecordOpenIssues(e: Pick<MaintenanceLogEntry, 'aircraft_id'>): boolean {
+  return Boolean(e.aircraft_id);
+}
+
 /**
  * Open issues: each entry's open-issues field lists what is still open on its
  * component (or the airframe when no component is named). The newest entry for
  * that component replaces the list, so a later entry with the field left blank
  * closes the earlier issue.
+ *
+ * Only entries that can record open issues count. Rows from the older Fleet
+ * "Log maintenance" dialog have no open-issues field and no aircraft_id (they
+ * carry only equipment_type/equipment_id), so they are skipped here: a
+ * firmware update logged there must not close an issue nobody fixed.
  */
 export function openIssuesFrom(historyNewestFirst: MaintenanceLogEntry[]): { date: string; text: string }[] {
   const seen = new Set<string>();
   const out: { date: string; text: string }[] = [];
   for (const e of historyNewestFirst) {
+    if (!canRecordOpenIssues(e)) continue;
     const key = e.component_id ?? '';
     if (seen.has(key)) continue;
     seen.add(key);

@@ -33,6 +33,8 @@ export function useFleetMaintenanceLog() {
         .select('*')
         .eq('is_test', false)
         .order('performed_at', { ascending: false })
+        // Same-day entries tie on performed_at (the form stamps 12:00Z); the later save is newer.
+        .order('created_at', { ascending: false })
         .limit(2000);
       if (error) throw error;
       return (data ?? []) as MaintenanceLogEntry[];

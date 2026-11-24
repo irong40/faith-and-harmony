@@ -45,6 +45,8 @@ export function useAircraftMaintenanceHistory(aircraftId: string | undefined) {
         .or(`aircraft_id.eq.${aircraftId},and(equipment_type.eq.aircraft,equipment_id.eq.${aircraftId})`)
         .eq('is_test', false)
         .order('performed_at', { ascending: false })
+        // Same-day entries tie on performed_at (the form stamps 12:00Z); the later save is newer.
+        .order('created_at', { ascending: false })
         .limit(500);
       if (error) throw error;
       return (data ?? []) as MaintenanceLogEntry[];

@@ -13,7 +13,7 @@
 // @page bottom-right margin box. Rows never split across pages.
 import type { Aircraft, MaintenanceLogEntry } from '@/types/fleet';
 import { eventTypeLabel, formatFlightHours, formatNextDue, orUnknown } from '@/lib/maintenanceRecord';
-import { newestPerTypeAndComponent } from '@/lib/maintenanceQuarterly';
+import { compareNewestFirst, compareOldestFirst, newestPerTypeAndComponent } from '@/lib/maintenanceQuarterly';
 
 export const RECORD_TITLE = 'Aircraft Maintenance Record';
 export const NOT_A_CERTIFICATION =
@@ -75,7 +75,7 @@ export function entriesInPeriod(input: MaintenanceRecordInput): MaintenanceLogEn
         day(e.performed_at) >= period.from &&
         day(e.performed_at) <= period.to
     )
-    .sort((a, b) => a.performed_at.localeCompare(b.performed_at));
+    .sort(compareOldestFirst);
 }
 
 /**
@@ -92,7 +92,7 @@ export function nextDueItems(input: MaintenanceRecordInput): MaintenanceLogEntry
         (e.aircraft_id === aircraft.id || (e.equipment_type === 'aircraft' && e.equipment_id === aircraft.id)) &&
         (testBanner ? true : !e.is_test)
     )
-    .sort((a, b) => b.performed_at.localeCompare(a.performed_at));
+    .sort(compareNewestFirst);
   return newestPerTypeAndComponent(history)
     .filter(
       (e) => formatNextDue({ next_due_date: e.next_due_date, next_due_flight_hours: e.next_due_flight_hours ?? null }) !== 'not set'

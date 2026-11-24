@@ -152,6 +152,44 @@ describe('summarizeAircraft', () => {
       { date: '2026-10-01', text: 'TEST prop chip' },
     ]);
   });
+
+  it('an older-dialog entry logged after an issue leaves the issue open', () => {
+    // MaintenanceLogDialog rows carry equipment_type/equipment_id only: no aircraft_id, no open_issues field.
+    const issue = entry({ id: 'e1', open_issues: 'TEST cracked arm', performed_at: '2026-10-01T12:00:00Z' });
+    const firmware = entry({
+      id: 'e2',
+      maintenance_type: 'firmware_update' as MaintenanceLogEntry['maintenance_type'],
+      aircraft_id: undefined,
+      open_issues: undefined,
+      performed_at: '2026-11-01T15:30:00.000Z',
+      created_at: '2026-11-01T15:30:00.000Z',
+    });
+    for (const logs of [[issue, firmware], [firmware, issue]]) {
+      expect(summarizeAircraft(A, logs, [], TODAY).openIssues).toEqual([{ date: '2026-10-01', text: 'TEST cracked arm' }]);
+    }
+  });
+
+  it('an issue found and repaired the same day: the later save wins in either input order', () => {
+    const found = entry({ id: 'e1', open_issues: 'TEST chipped prop', performed_at: '2026-11-20T12:00:00Z', created_at: '2026-11-20T14:00:00Z' });
+    const swapped = entry({ id: 'e2', maintenance_type: 'repair', open_issues: null, performed_at: '2026-11-20T12:00:00Z', created_at: '2026-11-20T14:05:00Z' });
+    expect(summarizeAircraft(A, [found, swapped], [], TODAY).openIssues).toEqual([]);
+    expect(summarizeAircraft(A, [swapped, found], [], TODAY).openIssues).toEqual([]);
+    // And the reverse save order keeps the issue open in either input order.
+    const foundLater = { ...found, created_at: '2026-11-20T14:10:00Z' };
+    const want = [{ date: '2026-11-20', text: 'TEST chipped prop' }];
+    expect(summarizeAircraft(A, [foundLater, swapped], [], TODAY).openIssues).toEqual(want);
+    expect(summarizeAircraft(A, [swapped, foundLater], [], TODAY).openIssues).toEqual(want);
+  });
+
+  it('same-day entries give the same next-due date in either input order', () => {
+    const first = entry({ id: 'e1', performed_at: '2026-11-20T12:00:00Z', created_at: '2026-11-20T09:00:00Z', next_due_date: '2026-12-01' });
+    const second = entry({ id: 'e2', performed_at: '2026-11-20T12:00:00Z', created_at: '2026-11-20T10:00:00Z', next_due_date: '2027-02-20' });
+    const a = summarizeAircraft(A, [first, second], [], TODAY);
+    const b = summarizeAircraft(A, [second, first], [], TODAY);
+    expect(a).toEqual(b);
+    expect(JSON.stringify(a)).toContain('2027-02-20');
+    expect(JSON.stringify(a)).not.toContain('2026-12-01');
+  });
 });
 
 describe('buildFlightHoursPayload', () => {

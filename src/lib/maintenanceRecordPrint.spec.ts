@@ -108,6 +108,16 @@ describe('buildMaintenanceRecordHtml', () => {
     expect(nextDue).toContain('2026-09-01');
   });
 
+  it('same-day entries: next due and row order follow the later save in either input order', () => {
+    const base = { maintenance_type: 'inspection' as const, component_id: 'TEST-PROP-1', next_due_flight_hours: null, performed_at: '2026-11-23T12:00:00Z' };
+    const early = entry(0, { ...base, id: 'early', created_at: '2026-11-23T09:00:00Z', next_due_date: '2026-12-01' });
+    const late = entry(1, { ...base, id: 'late', created_at: '2026-11-23T10:00:00Z', next_due_date: '2027-02-23' });
+    expect(nextDueItems(input([early, late])).map((e) => e.id)).toEqual(['late']);
+    expect(nextDueItems(input([late, early])).map((e) => e.id)).toEqual(['late']);
+    expect(entriesInPeriod(input([late, early])).map((e) => e.id)).toEqual(['early', 'late']);
+    expect(entriesInPeriod(input([early, late])).map((e) => e.id)).toEqual(['early', 'late']);
+  });
+
   it('lists history oldest first with dates', () => {
     const html = buildMaintenanceRecordHtml(input([entry(2), entry(0)]));
     expect(html.indexOf('2026-01-05')).toBeLessThan(html.indexOf('2026-01-13'));
