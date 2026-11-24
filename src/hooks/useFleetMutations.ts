@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { addToSyncQueue } from '@/lib/sync/db';
 import type { SyncTable } from '@/lib/sync/db';
-import type { Aircraft, Battery, Controller, Accessory, MaintenanceLogEntry } from '@/types/fleet';
+import type { Aircraft, Battery, Controller, Accessory, MaintenanceLogEntry, MaintenanceType } from '@/types/fleet';
 
 async function enqueueOffline(
   action: 'insert_record' | 'update_record' | 'delete_record',
@@ -331,7 +331,7 @@ export function useDeleteAccessory() {
 interface MaintenanceInput {
   equipment_id: string;
   equipment_type: 'aircraft' | 'battery' | 'controller' | 'accessory';
-  maintenance_type: 'scheduled' | 'unscheduled' | 'repair' | 'inspection' | 'firmware_update' | 'calibration';
+  maintenance_type: MaintenanceType;
   description?: string | null;
   performed_at?: string;
   cost_cents?: number | null;

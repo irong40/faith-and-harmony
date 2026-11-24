@@ -155,6 +155,13 @@ export default function FleetOverview() {
                       >
                         <Wrench className="h-3 w-3 mr-1" /> Log Maintenance
                       </Button>
+                      {inAdmin && (
+                        <Link to={`/admin/settings/fleet/aircraft/${a.id}/maintenance`}>
+                          <Button variant="outline" size="sm" className="w-full mt-1 text-xs">
+                            Maintenance history
+                          </Button>
+                        </Link>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
