@@ -2149,6 +2149,45 @@ export type Database = {
           },
         ]
       }
+      aircraft_flight_hours: {
+        Row: {
+          id: string
+          aircraft_id: string
+          total_flight_hours: number
+          as_of_date: string
+          source: string
+          source_detail: string | null
+          entered_by: string | null
+          entered_by_name: string
+          entered_at: string
+          is_test: boolean
+        }
+        Insert: {
+          id?: string
+          aircraft_id: string
+          total_flight_hours: number
+          as_of_date: string
+          source: string
+          source_detail?: string | null
+          entered_by?: string | null
+          entered_by_name: string
+          entered_at?: string
+          is_test?: boolean
+        }
+        Update: {
+          id?: string
+          aircraft_id?: string
+          total_flight_hours?: number
+          as_of_date?: string
+          source?: string
+          source_detail?: string | null
+          entered_by?: string | null
+          entered_by_name?: string
+          entered_at?: string
+          is_test?: boolean
+        }
+        Relationships: []
+      }
       maintenance_log: {
         Row: {
           cost_cents: number | null

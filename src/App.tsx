@@ -59,6 +59,7 @@ const PortfolioFlights = lazy(() => import("./pages/pilot/PortfolioFlights"));
 const FleetOverview = lazy(() => import("./components/pilot/FleetOverview"));
 const MaintenanceHistory = lazy(() => import("./components/pilot/MaintenanceHistory"));
 const AircraftMaintenanceHistory = lazy(() => import("./components/pilot/AircraftMaintenanceHistory"));
+const MaintenanceQuarterly = lazy(() => import("./components/pilot/MaintenanceQuarterly"));
 
 import DefaultHelmet from "./components/seo/DefaultHelmet";
 import PWAUpdatePrompt from "./components/pwa/PWAUpdatePrompt";
@@ -199,6 +200,7 @@ const App = () => (
                       /pilot/fleet — a one-way exit out of the admin portal. */}
                   <Route path="fleet" element={<FleetOverview />} />
                   <Route path="fleet/maintenance" element={<MaintenanceHistory />} />
+                  <Route path="fleet/maintenance/quarterly" element={<MaintenanceQuarterly />} />
                   <Route path="fleet/aircraft/:aircraftId/maintenance" element={<AircraftMaintenanceHistory />} />
                 </Route>
               </Route>
