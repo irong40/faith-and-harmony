@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Wrench } from 'lucide-react';
+import { ArrowLeft, Plus, Printer, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -121,6 +121,13 @@ export default function AircraftMaintenanceHistory() {
               <ArrowLeft className="h-4 w-4 mr-1" /> Back to Fleet
             </Button>
           </Link>
+          {aircraft && (
+            <Link to={`/admin/settings/fleet/aircraft/${aircraft.id}/maintenance/print`}>
+              <Button variant="outline" size="sm">
+                <Printer className="h-4 w-4 mr-1" /> Print record
+              </Button>
+            </Link>
+          )}
           {aircraft && !showForm && (
             <Button size="sm" onClick={() => setShowForm(true)}>
               <Plus className="h-4 w-4 mr-1" /> Add record
