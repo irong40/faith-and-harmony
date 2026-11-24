@@ -6,6 +6,7 @@ import {
   buildMaintenanceRecordHtml,
   EMPTY_HISTORY,
   entriesInPeriod,
+  nextDueItems,
   NOT_A_CERTIFICATION,
   NO_NEXT_DUE,
   RECORD_TITLE,
@@ -94,6 +95,17 @@ describe('buildMaintenanceRecordHtml', () => {
     const html = buildMaintenanceRecordHtml(input([entry(1, { description: '<script>x</script>' })]));
     expect(html).not.toContain('<script>x');
     expect(html).toContain('&lt;script&gt;');
+  });
+
+  it('next due prints only the newest schedule per event type and component', () => {
+    const base = { maintenance_type: 'inspection' as const, component_id: null, next_due_flight_hours: null };
+    const march = entry(0, { ...base, id: 'mar', performed_at: '2026-03-01T12:00:00Z', next_due_date: '2026-06-01' });
+    const june = entry(1, { ...base, id: 'jun', performed_at: '2026-06-01T12:00:00Z', next_due_date: '2026-09-01' });
+    const batt = entry(2, { ...base, id: 'bat', component_id: 'TEST-BATT-1', performed_at: '2026-02-01T12:00:00Z', next_due_date: '2026-12-01' });
+    expect(nextDueItems(input([march, june, batt])).map((e) => e.id)).toEqual(['jun', 'bat']);
+    const html = buildMaintenanceRecordHtml(input([march, june, batt]));
+    const nextDue = textOf(html.slice(html.indexOf('Next due')));
+    expect(nextDue).toContain('2026-09-01');
   });
 
   it('lists history oldest first with dates', () => {

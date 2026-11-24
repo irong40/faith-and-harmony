@@ -13,7 +13,7 @@ import PageShell from '@/components/admin/PageShell';
 import { LoadingState } from '@/components/admin/PageState';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useActiveAircraft } from '@/hooks/useFleet';
+import { useAllAircraft } from '@/hooks/useFleet';
 import {
   useCreateFlightHoursReading,
   useFleetMaintenanceLog,
@@ -88,7 +88,9 @@ const today = () => new Date();
 export default function MaintenanceQuarterly() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const aircraftQ = useActiveAircraft();
+  // Every aircraft except retired ones: a grounded or in-maintenance aircraft
+  // is exactly the one whose overdue work and open issues must show here.
+  const aircraftQ = useAllAircraft();
   const logQ = useFleetMaintenanceLog();
   const hoursQ = useFlightHoursReadings();
   const create = useCreateFlightHoursReading();
@@ -103,13 +105,14 @@ export default function MaintenanceQuarterly() {
 
   const now = today();
   const quarter = quarterOf(now);
+  const fleet = useMemo(() => (aircraftQ.data ?? []).filter((a) => a.status !== 'retired'), [aircraftQ.data]);
   const summaries = useMemo(
     () =>
-      (aircraftQ.data ?? []).map((a) =>
+      fleet.map((a) =>
         summarizeAircraft(a, logQ.data ?? [], hoursQ.data ?? [], now)
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [aircraftQ.data, logQ.data, hoursQ.data]
+    [fleet, logQ.data, hoursQ.data]
   );
 
   async function onImport(e: ChangeEvent<HTMLInputElement>) {
@@ -192,7 +195,7 @@ export default function MaintenanceQuarterly() {
                 onChange={(e) => setAircraftId(e.target.value)}
               >
                 <option value="">Choose…</option>
-                {(aircraftQ.data ?? []).map((a) => (
+                {fleet.map((a) => (
                   <option key={a.id} value={a.id}>{a.nickname || a.model} ({a.serial_number || 'serial unknown'})</option>
                 ))}
               </select>

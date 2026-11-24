@@ -130,6 +130,28 @@ describe('summarizeAircraft', () => {
     const s = summarizeAircraft(A, [entry({ open_issues: 'TEST prop chip' })], [], TODAY);
     expect(s.openIssues).toEqual([{ date: '2026-10-01', text: 'TEST prop chip' }]);
   });
+
+  it('a later entry for the same component closes an earlier open issue', () => {
+    const issue = entry({ id: 'e1', open_issues: 'TEST prop chip', performed_at: '2026-10-01T12:00:00Z' });
+    const repair = entry({ id: 'e2', maintenance_type: 'repair', open_issues: null, performed_at: '2026-11-01T12:00:00Z' });
+    expect(summarizeAircraft(A, [issue, repair], [], TODAY).openIssues).toEqual([]);
+  });
+
+  it('a later entry restating the issue keeps it open with its newest date', () => {
+    const issue = entry({ id: 'e1', open_issues: 'TEST prop chip', performed_at: '2026-10-01T12:00:00Z' });
+    const recheck = entry({ id: 'e2', open_issues: 'TEST prop chip, re-check', performed_at: '2026-11-01T12:00:00Z' });
+    expect(summarizeAircraft(A, [issue, recheck], [], TODAY).openIssues).toEqual([
+      { date: '2026-11-01', text: 'TEST prop chip, re-check' },
+    ]);
+  });
+
+  it('an entry on another component does not close the issue', () => {
+    const issue = entry({ id: 'e1', component_id: 'TEST-PROP-1', open_issues: 'TEST prop chip', performed_at: '2026-10-01T12:00:00Z' });
+    const other = entry({ id: 'e2', component_id: 'TEST-BATT-1', maintenance_type: 'battery_replacement', performed_at: '2026-11-01T12:00:00Z' });
+    expect(summarizeAircraft(A, [issue, other], [], TODAY).openIssues).toEqual([
+      { date: '2026-10-01', text: 'TEST prop chip' },
+    ]);
+  });
 });
 
 describe('buildFlightHoursPayload', () => {
@@ -171,6 +193,13 @@ describe('parseFlightLogExport', () => {
     const r = parseFlightLogExport('Date,Duration\n2026-01-02,25\n');
     expect(r.ok).toBe(false);
     expect((r as Extract<typeof r, { ok: false }>).error).toMatch(/not guessed/);
+  });
+
+  it('refuses a file with a blank duration cell instead of an understated total', () => {
+    const r = parseFlightLogExport('Date,Flight Time\n2026-05-01,0:30:00\n2026-05-02,\n2026-05-03,1:00:00\n');
+    expect(r.ok).toBe(false);
+    expect((r as Extract<typeof r, { ok: false }>).error).toMatch(/row 3/);
+    expect((r as Extract<typeof r, { ok: false }>).error).toMatch(/understated/);
   });
 
   it('refuses a file without a duration column', () => {

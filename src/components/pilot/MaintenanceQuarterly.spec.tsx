@@ -15,9 +15,20 @@ vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     from: vi.fn((table: string) => {
       const chain: Record<string, unknown> = {};
-      for (const m of ["select", "eq", "or", "order", "limit"]) chain[m] = () => chain;
+      const filters: [string, unknown][] = [];
+      for (const m of ["select", "or", "order", "limit"]) chain[m] = () => chain;
+      // .eq filters like PostgREST does, so a status filter in a hook is visible to the test.
+      chain.eq = (col: string, val: unknown) => {
+        filters.push([col, val]);
+        return chain;
+      };
       chain.then = (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) =>
-        Promise.resolve({ data: rows[table] ?? [], error: null }).then(res, rej);
+        Promise.resolve({
+          data: ((rows[table] ?? []) as Record<string, unknown>[]).filter((r) =>
+            filters.every(([c, v]) => r[c] === undefined || r[c] === v)
+          ),
+          error: null,
+        }).then(res, rej);
       chain.insert = (payload: unknown) => {
         inserts.push({ table, payload });
         return chain;
@@ -70,6 +81,23 @@ beforeEach(() => {
 });
 
 describe("MaintenanceQuarterly", () => {
+  it("keeps grounded and in-maintenance aircraft in the view and the hours selector; leaves out retired", async () => {
+    rows.aircraft = [
+      ...aircraft,
+      { id: "00000000-0000-4000-8000-0000000000a3", model: "TEST grounded model", serial_number: "SN-TEST-3", nickname: "TEST grounded", status: "grounded" },
+      { id: "00000000-0000-4000-8000-0000000000a4", model: "TEST shop model", serial_number: "SN-TEST-4", nickname: "TEST in shop", status: "maintenance" },
+      { id: "00000000-0000-4000-8000-0000000000a5", model: "TEST retired model", serial_number: "SN-TEST-5", nickname: "TEST retired", status: "retired" },
+    ];
+    renderPage();
+    expect(await cardFor("TEST grounded")).toBeTruthy();
+    expect(await cardFor("TEST in shop")).toBeTruthy();
+    const names = (await screen.findAllByTestId("quarterly-aircraft")).map((c) => c.textContent ?? "");
+    expect(names.some((t) => t.includes("TEST retired"))).toBe(false);
+    const options = Array.from(document.querySelectorAll("option")).map((o) => o.textContent ?? "");
+    expect(options.some((t) => t.includes("TEST grounded"))).toBe(true);
+    expect(options.some((t) => t.includes("TEST retired"))).toBe(false);
+  });
+
   it("shows 'no maintenance recorded' for an aircraft with no history, not a blank", async () => {
     renderPage();
     const card = await cardFor("TEST two");

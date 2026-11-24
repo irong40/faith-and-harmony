@@ -110,6 +110,44 @@ function entriesFor(aircraftId: string, logs: MaintenanceLogEntry[]) {
     .sort((a, b) => b.performed_at.localeCompare(a.performed_at));
 }
 
+/**
+ * The newest entry per event type + component, from a history sorted newest
+ * first. An older entry of the same kind is superseded by the newer one, so its
+ * next-due values no longer apply. Used by the quarterly view and the print.
+ */
+export function newestPerTypeAndComponent<T extends Pick<MaintenanceLogEntry, 'maintenance_type' | 'component_id'>>(
+  historyNewestFirst: T[]
+): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const e of historyNewestFirst) {
+    const key = `${e.maintenance_type}|${e.component_id ?? ''}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(e);
+  }
+  return out;
+}
+
+/**
+ * Open issues: each entry's open-issues field lists what is still open on its
+ * component (or the airframe when no component is named). The newest entry for
+ * that component replaces the list, so a later entry with the field left blank
+ * closes the earlier issue.
+ */
+export function openIssuesFrom(historyNewestFirst: MaintenanceLogEntry[]): { date: string; text: string }[] {
+  const seen = new Set<string>();
+  const out: { date: string; text: string }[] = [];
+  for (const e of historyNewestFirst) {
+    const key = e.component_id ?? '';
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const text = (e.open_issues ?? '').trim();
+    if (text) out.push({ date: dateOnly(e.performed_at), text });
+  }
+  return out;
+}
+
 export function summarizeAircraft(
   aircraft: AircraftQuarterSummary['aircraft'],
   logs: MaintenanceLogEntry[],
@@ -129,18 +167,11 @@ export function summarizeAircraft(
       }`
     : NO_MAINTENANCE;
 
-  const openIssues = history
-    .filter((e) => e.open_issues && e.open_issues.trim())
-    .map((e) => ({ date: dateOnly(e.performed_at), text: (e.open_issues as string).trim() }));
+  const openIssues = openIssuesFrom(history);
 
-  // The newest entry per event type + component sets the next due; an older
-  // entry of the same kind is superseded by the newer one.
-  const seen = new Set<string>();
+  // The newest entry per event type + component sets the next due.
   const upcoming: UpcomingItem[] = [];
-  for (const e of history) {
-    const key = `${e.maintenance_type}|${e.component_id ?? ''}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
+  for (const e of newestPerTypeAndComponent(history)) {
     const base = {
       kind: eventTypeLabel(e.maintenance_type),
       component: e.component_id ?? null,
@@ -286,9 +317,19 @@ export function parseFlightLogExport(text: string): ExportParse {
   let total = 0;
   let flights = 0;
   const dates: string[] = [];
+  const blankRows: number[] = [];
+  rows.slice(1).forEach((r, i) => {
+    if (!(r[idx] ?? '').trim()) blankRows.push(i + 2);
+  });
+  if (blankRows.length) {
+    // A skipped flight would understate the total; refuse rather than guess.
+    return {
+      ok: false,
+      error: `${blankRows.length} row(s) have no flight duration (row ${blankRows.join(', ')}); the total would be understated, so the file was not read. Fix or remove those rows.`,
+    };
+  }
   for (const r of rows.slice(1)) {
     const raw = (r[idx] ?? '').trim();
-    if (!raw) continue;
     let hours: number;
     const m = raw.match(HMS);
     if (m) {

@@ -127,6 +127,10 @@ export default function AircraftMaintenanceForm({
       <div>
         <Label htmlFor="mx-issues" className="text-xs">Open issues</Label>
         <Textarea id="mx-issues" rows={2} value={form.open_issues} onChange={set('open_issues')} />
+        <p className="mt-1 text-xs text-muted-foreground">
+          List every issue still open on this component. This entry replaces the open issues of earlier entries for
+          the same component; leave it blank when they are fixed.
+        </p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">

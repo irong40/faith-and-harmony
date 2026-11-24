@@ -13,6 +13,7 @@
 // @page bottom-right margin box. Rows never split across pages.
 import type { Aircraft, MaintenanceLogEntry } from '@/types/fleet';
 import { eventTypeLabel, formatFlightHours, formatNextDue, orUnknown } from '@/lib/maintenanceRecord';
+import { newestPerTypeAndComponent } from '@/lib/maintenanceQuarterly';
 
 export const RECORD_TITLE = 'Aircraft Maintenance Record';
 export const NOT_A_CERTIFICATION =
@@ -77,15 +78,24 @@ export function entriesInPeriod(input: MaintenanceRecordInput): MaintenanceLogEn
     .sort((a, b) => a.performed_at.localeCompare(b.performed_at));
 }
 
-/** Next-due items across the aircraft's whole history (not only the period), soonest date first. */
+/**
+ * Next-due items across the aircraft's whole history (not only the period),
+ * soonest date first. Only the newest entry per event type + component counts
+ * (same rule as the quarterly view): a newer entry supersedes the older one's
+ * schedule.
+ */
 export function nextDueItems(input: MaintenanceRecordInput): MaintenanceLogEntry[] {
   const { aircraft, entries, testBanner } = input;
-  return entries
+  const history = entries
     .filter(
       (e) =>
         (e.aircraft_id === aircraft.id || (e.equipment_type === 'aircraft' && e.equipment_id === aircraft.id)) &&
-        (testBanner ? true : !e.is_test) &&
-        formatNextDue({ next_due_date: e.next_due_date, next_due_flight_hours: e.next_due_flight_hours ?? null }) !== 'not set'
+        (testBanner ? true : !e.is_test)
+    )
+    .sort((a, b) => b.performed_at.localeCompare(a.performed_at));
+  return newestPerTypeAndComponent(history)
+    .filter(
+      (e) => formatNextDue({ next_due_date: e.next_due_date, next_due_flight_hours: e.next_due_flight_hours ?? null }) !== 'not set'
     )
     .sort((a, b) => (a.next_due_date ?? '9999').localeCompare(b.next_due_date ?? '9999'));
 }
