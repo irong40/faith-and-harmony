@@ -78,7 +78,9 @@ export interface Accessory {
 }
 
 export type EquipmentType = 'aircraft' | 'battery' | 'controller' | 'accessory';
-export type MaintenanceType = 'scheduled' | 'unscheduled' | 'repair' | 'inspection' | 'firmware_update' | 'calibration';
+export type MaintenanceType =
+  | 'scheduled' | 'unscheduled' | 'repair' | 'inspection' | 'firmware_update' | 'calibration'
+  | 'service' | 'part_replacement' | 'battery_replacement';
 
 export interface MaintenanceLogEntry {
   id: string;
@@ -93,4 +95,15 @@ export interface MaintenanceLogEntry {
   next_due_date: string | null;
   notes: string | null;
   created_at: string;
+  // Aircraft history fields (migration 20261124130000). Optional because rows
+  // read before the migration is applied do not carry them; null = unknown.
+  aircraft_id?: string | null;
+  component_id?: string | null;
+  flight_hours_at_service?: number | null;
+  results?: string | null;
+  performed_by_name?: string | null;
+  evidence_url?: string | null;
+  open_issues?: string | null;
+  next_due_flight_hours?: number | null;
+  is_test?: boolean;
 }

@@ -2149,6 +2149,45 @@ export type Database = {
           },
         ]
       }
+      aircraft_flight_hours: {
+        Row: {
+          id: string
+          aircraft_id: string
+          total_flight_hours: number
+          as_of_date: string
+          source: string
+          source_detail: string | null
+          entered_by: string | null
+          entered_by_name: string
+          entered_at: string
+          is_test: boolean
+        }
+        Insert: {
+          id?: string
+          aircraft_id: string
+          total_flight_hours: number
+          as_of_date: string
+          source: string
+          source_detail?: string | null
+          entered_by?: string | null
+          entered_by_name: string
+          entered_at?: string
+          is_test?: boolean
+        }
+        Update: {
+          id?: string
+          aircraft_id?: string
+          total_flight_hours?: number
+          as_of_date?: string
+          source?: string
+          source_detail?: string | null
+          entered_by?: string | null
+          entered_by_name?: string
+          entered_at?: string
+          is_test?: boolean
+        }
+        Relationships: []
+      }
       maintenance_log: {
         Row: {
           cost_cents: number | null
@@ -2163,6 +2202,15 @@ export type Database = {
           parts_used: string[] | null
           performed_at: string
           performed_by: string | null
+          aircraft_id: string | null
+          component_id: string | null
+          evidence_url: string | null
+          flight_hours_at_service: number | null
+          is_test: boolean
+          next_due_flight_hours: number | null
+          open_issues: string | null
+          performed_by_name: string | null
+          results: string | null
         }
         Insert: {
           cost_cents?: number | null
@@ -2177,6 +2225,15 @@ export type Database = {
           parts_used?: string[] | null
           performed_at?: string
           performed_by?: string | null
+          aircraft_id?: string | null
+          component_id?: string | null
+          evidence_url?: string | null
+          flight_hours_at_service?: number | null
+          is_test?: boolean
+          next_due_flight_hours?: number | null
+          open_issues?: string | null
+          performed_by_name?: string | null
+          results?: string | null
         }
         Update: {
           cost_cents?: number | null
@@ -2191,8 +2248,24 @@ export type Database = {
           parts_used?: string[] | null
           performed_at?: string
           performed_by?: string | null
+          aircraft_id?: string | null
+          component_id?: string | null
+          evidence_url?: string | null
+          flight_hours_at_service?: number | null
+          is_test?: boolean
+          next_due_flight_hours?: number | null
+          open_issues?: string | null
+          performed_by_name?: string | null
+          results?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "maintenance_log_aircraft_id_fkey"
+            columns: ["aircraft_id"]
+            isOneToOne: false
+            referencedRelation: "aircraft"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "maintenance_log_performed_by_fkey"
             columns: ["performed_by"]
@@ -5106,6 +5179,9 @@ export type Database = {
         | "inspection"
         | "firmware_update"
         | "calibration"
+        | "service"
+        | "part_replacement"
+        | "battery_replacement"
       order_status:
         | "pending"
         | "confirmed"
@@ -5424,6 +5500,9 @@ export const Constants = {
         "inspection",
         "firmware_update",
         "calibration",
+        "service",
+        "part_replacement",
+        "battery_replacement",
       ],
       order_status: [
         "pending",
