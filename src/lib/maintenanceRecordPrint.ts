@@ -211,7 +211,7 @@ export function buildMaintenanceRecordHtml(input: MaintenanceRecordInput): strin
 </td></tr></thead>
 <tfoot><tr><td>
   <div class="letterhead-footer">
-    <div>Sentinel Aerial Inspections &mdash; a DBA of Faith &amp; Harmony LLC &middot; Maintenance record, not a certification</div>
+    <div>Sentinel Aerial Inspections &mdash; a DBA of Faith and Harmony LLC &middot; Maintenance record, not a certification</div>
     <div>Generated ${escapeHtml(generatedOn)}</div>
   </div>
 </td></tr></tfoot>

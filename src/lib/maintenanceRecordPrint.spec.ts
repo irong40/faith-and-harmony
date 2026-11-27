@@ -81,6 +81,13 @@ describe('buildMaintenanceRecordHtml', () => {
     expect(html).not.toMatch(/Harmony LLC \(DBA\)/);
   });
 
+  it('writes the legal name Faith and Harmony LLC everywhere on the page, footer included, never with "&"', () => {
+    const html = buildMaintenanceRecordHtml(input(Array.from({ length: 3 }, (_, i) => entry(i))));
+    expect(html).toContain('a DBA of Faith and Harmony LLC');
+    expect(html).not.toContain('Faith &amp; Harmony');
+    expect(html).not.toMatch(/Faith\s*(&amp;|&#0*38;|&)\s*Harmony/i);
+  });
+
   it('never claims certification, airworthiness or compliance outside the disclaimer', () => {
     const html = buildMaintenanceRecordHtml(input(Array.from({ length: 6 }, (_, i) => entry(i))));
     const rest = textOf(html).replace(NOT_A_CERTIFICATION, '').replace('Maintenance record, not a certification', '');
