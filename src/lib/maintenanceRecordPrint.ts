@@ -26,7 +26,7 @@ export const NO_NEXT_DUE = 'No next-due date or flight-hour threshold is recorde
 export const SAI_LETTERHEAD = {
   company: 'Sentinel Aerial Inspections',
   tagline: 'Veteran-Owned',
-  legalName: 'Faith &amp; Harmony LLC (DBA)',
+  legalName: 'Faith and Harmony LLC',
   cityState: 'Chesapeake, Virginia',
   phone: '757.843.8772',
   email: 'info@faithandharmonyllc.com',
